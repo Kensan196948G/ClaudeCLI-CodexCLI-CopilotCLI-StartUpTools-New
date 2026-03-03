@@ -111,6 +111,16 @@ start.bat
   - `defaultLayout`: レイアウト (`"auto"` / `"default"` / `"review-team"` 等)
   - `panes`: 各ペインの有効化・更新間隔設定
   - `theme`: ステータスバー・ペインボーダーの配色
+- `logging`: セッションログ管理設定 (以下を含む)
+  - `enabled`: ログ記録の有効化 (`true`/`false`)
+  - `logDir`: ログ保存ディレクトリ
+  - `logPrefix`: ログファイルプレフィックス
+  - `successKeepDays` / `failureKeepDays` / `legacyKeepDays`: 保持日数
+  - `archiveAfterDays`: アーカイブ化するまでの日数
+- `mcp`: MCP サーバー設定 (以下を含む)
+  - `enabled`: MCP機能の有効化 (`true`/`false`)
+  - `requiredServers`: 必須MCPサーバーリスト
+  - `githubToken` / `braveApiKey`: APIトークン
 
 #### tmux ダッシュボード (オプション機能)
 `config.json` の `tmux.enabled: true` で有効化。メインペインでClaude Codeを実行しつつ、サイドペインでリアルタイム監視を行う。
@@ -235,7 +245,8 @@ Claude-EdgeChromeDevTools/
 │   │   ├── SSHHelper.psm1               # SSH引数エスケープ・接続テスト・バッチ実行
 │   │   ├── UI.psm1                      # ブラウザ/プロジェクト選択・ドライブ解決UI
 │   │   ├── ScriptGenerator.psm1         # run-claude.sh生成・base64エンコード・JSON生成
-│   │   └── ErrorHandler.psm1            # カテゴリ別エラーハンドリング
+│   │   ├── ErrorHandler.psm1            # カテゴリ別エラーハンドリング
+│   │   └── LogManager.psm1             # ★ v1.8.0 NEW: セッションログ管理（ローテーション・アーカイブ）
 │   ├── main/
 │   │   ├── Claude-DevTools.ps1          # ★ v1.3.0 NEW: 統合スクリプト (CLI引数対応)
 │   │   ├── Claude-EdgeDevTools.ps1      # Edge版ラッパー (→ Claude-DevTools.ps1 -Browser edge)
@@ -282,6 +293,7 @@ Claude-EdgeChromeDevTools/
 │   ├── SSHHelper.Tests.ps1              # SSHHelper.psm1 テスト
 │   ├── ScriptGenerator.Tests.ps1        # ScriptGenerator.psm1 テスト
 │   ├── ErrorHandler.Tests.ps1           # ErrorHandler.psm1 テスト
+│   ├── LogManager.Tests.ps1             # LogManager.psm1 テスト (v1.8.0)
 │   └── Integration.Tests.ps1            # 統合テスト
 ├── docs/
 │   ├── plans/                           # 設計ドキュメント

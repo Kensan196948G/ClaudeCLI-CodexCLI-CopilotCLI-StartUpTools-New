@@ -29,6 +29,15 @@ Claude-EdgeChromeDevTools/
 ├── config/
 │   └── config.json                      # 中央設定ファイル（ポート、ブラウザ、claudeCode設定等）
 ├── scripts/
+│   ├── lib/                             # v1.3.0+ モジュール群
+│   │   ├── Config.psm1                  # 設定読み込み・検証・バックアップ
+│   │   ├── PortManager.psm1             # ポート検出・管理
+│   │   ├── BrowserManager.psm1          # ブラウザ起動・プロセス管理
+│   │   ├── SSHHelper.psm1              # SSH引数エスケープ・接続テスト
+│   │   ├── UI.psm1                      # ブラウザ/プロジェクト選択UI
+│   │   ├── ScriptGenerator.psm1         # run-claude.sh生成
+│   │   ├── ErrorHandler.psm1            # カテゴリ別エラーハンドリング
+│   │   └── LogManager.psm1             # セッションログ管理 (v1.8.0)
 │   ├── main/
 │   │   ├── Claude-EdgeDevTools.ps1      # Edge版メインスクリプト
 │   │   └── Claude-ChromeDevTools-Final.ps1  # Chrome版メインスクリプト
@@ -39,6 +48,16 @@ Claude-EdgeChromeDevTools/
 │   │   ├── test-edge.ps1               # Edge接続テスト
 │   │   └── test-chrome.ps1             # Chrome接続テスト
 │   └── statusline.sh                    # Claude Code Statuslineスクリプト
+├── tests/                               # Pester ユニットテスト (v1.4.0+)
+│   ├── Config.Tests.ps1
+│   ├── PortManager.Tests.ps1
+│   ├── BrowserManager.Tests.ps1
+│   ├── UI.Tests.ps1
+│   ├── SSHHelper.Tests.ps1
+│   ├── ScriptGenerator.Tests.ps1
+│   ├── ErrorHandler.Tests.ps1
+│   ├── LogManager.Tests.ps1
+│   └── Integration.Tests.ps1
 ├── docs/
 │   ├── SystemAdministrator/             # システム管理者向けドキュメント
 │   └── non-SystemAdministrator/         # 一般ユーザー向けドキュメント
@@ -149,6 +168,8 @@ PowerShellターミナルから実行します。
 | `statusline` | Statusline機能の詳細設定（各表示項目の有効/無効） |
 | `claudeCode.env` | Claude Code実行時に設定される環境変数 |
 | `claudeCode.settings` | Claude Codeのアプリケーション設定（`settings.json` にマージ） |
+| `logging` | セッションログ管理設定（logDir, ローテーション日数, アーカイブ設定） |
+| `mcp` | MCPサーバー設定（必須サーバーリスト、APIトークン） |
 
 ### 環境変数一覧（`claudeCode.env`）
 
