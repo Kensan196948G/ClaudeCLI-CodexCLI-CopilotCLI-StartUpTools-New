@@ -399,3 +399,38 @@ Describe 'New-RunClaudeScript' {
         }
     }
 }
+
+Describe 'New-RunClaudeScript ログセクション' {
+
+    Context 'ログ設定がデフォルトの場合' {
+
+        BeforeAll {
+            $script:Params = @{
+                Port        = 9222
+                LinuxBase   = '/mnt/LinuxHDD'
+                ProjectName = 'TestProject'
+            }
+            $script:Script = New-RunClaudeScript -Params $script:Params
+        }
+
+        It 'LOG_DIR 変数が定義されていること' {
+            $script:Script | Should -Match 'LOG_DIR='
+        }
+
+        It 'mkdir -p で LOG_DIR を作成すること' {
+            $script:Script | Should -Match 'mkdir -p.*\$LOG_DIR'
+        }
+
+        It 'tee コマンドで stdout/stderr をログに記録すること' {
+            $script:Script | Should -Match 'tee -a'
+        }
+
+        It 'ログローテーション (find -mtime -delete) が含まれること' {
+            $script:Script | Should -Match 'find.*-mtime.*-delete'
+        }
+
+        It '月次アーカイブ (zip) が含まれること' {
+            $script:Script | Should -Match 'zip.*archive'
+        }
+    }
+}

@@ -221,6 +221,32 @@ PROJECT_ROOT="$projectPath"
 DEVTOOLS_PORT=$port
 SESSION_NAME="$sessionName"
 
+# --- ログ設定 ---
+LOG_DIR="`$PROJECT_ROOT/logs"
+MCP_LOG_DIR="`$LOG_DIR/mcp"
+LOG_TIMESTAMP=`$(date +%Y%m%d-%H%M%S)
+SESSION_LOG="`$LOG_DIR/claude-session-`$LOG_TIMESTAMP.log"
+
+mkdir -p "`$LOG_DIR" "`$MCP_LOG_DIR"
+
+# stdout + stderr をファイルとターミナル両方に出力
+exec > >(tee -a "`$SESSION_LOG") 2>&1
+
+# --- ログローテーション (30日超を削除) ---
+find "`$LOG_DIR" -maxdepth 1 -name "claude-session-*.log" -mtime +30 -delete 2>/dev/null || true
+find "`$MCP_LOG_DIR" -name "mcp-health-*.log" -mtime +30 -delete 2>/dev/null || true
+
+# --- 月次アーカイブ ---
+ARCHIVE_DIR="`$LOG_DIR/archive"
+PREV_MONTH=`$(date -d "last month" +%Y-%m 2>/dev/null || date -v-1m +%Y-%m 2>/dev/null)
+if [ -n "`$PREV_MONTH" ]; then
+    ARCHIVE_FILES=`$(find "`$LOG_DIR" -maxdepth 1 -name "claude-session-`${PREV_MONTH}*.log" 2>/dev/null)
+    if [ -n "`$ARCHIVE_FILES" ]; then
+        mkdir -p "`$ARCHIVE_DIR"
+        zip -j "`${ARCHIVE_DIR}/`${PREV_MONTH}.zip" `$ARCHIVE_FILES 2>/dev/null && rm -f `$ARCHIVE_FILES
+    fi
+fi
+
 # --- 環境変数設定 ---
 export CLAUDE_CHROME_DEBUG_PORT="`$DEVTOOLS_PORT"
 export MCP_CHROME_DEBUG_PORT="`$DEVTOOLS_PORT"
