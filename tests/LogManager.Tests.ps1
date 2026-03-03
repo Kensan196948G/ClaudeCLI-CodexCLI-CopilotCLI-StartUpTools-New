@@ -264,3 +264,46 @@ Describe 'Invoke-LogRotation' {
         }
     }
 }
+
+Describe 'Invoke-LogArchive' {
+
+    Context 'archiveAfterDays 超過ファイルの ZIP 圧縮' {
+
+        BeforeAll {
+            $script:ArchDir = Join-Path $TestDrive 'archive-test'
+            New-Item -ItemType Directory -Path $script:ArchDir -Force | Out-Null
+
+            # 31日前の SUCCESS ログ (archiveAfterDays=30 なのでアーカイブ対象)
+            $script:OldLog = Join-Path $script:ArchDir 'claude-devtools-P-edge-9222-20260201-120000-SUCCESS.log'
+            Set-Content -Path $script:OldLog -Value 'archive target'
+            (Get-Item $script:OldLog).LastWriteTime = (Get-Date).AddDays(-31)
+
+            # 1日前のログ (アーカイブ対象外)
+            $script:NewLog = Join-Path $script:ArchDir 'claude-devtools-P-edge-9222-20260302-120000-SUCCESS.log'
+            Set-Content -Path $script:NewLog -Value 'keep'
+            (Get-Item $script:NewLog).LastWriteTime = (Get-Date).AddDays(-1)
+
+            $script:ArchConfig = [pscustomobject]@{
+                logging = [pscustomobject]@{
+                    enabled = $true; logDir = $script:ArchDir; logPrefix = 'claude-devtools'
+                    successKeepDays = 30; failureKeepDays = 90
+                    archiveAfterDays = 30; legacyKeepDays = 7
+                }
+            }
+        }
+
+        It 'archiveAfterDays 超過ファイルの ZIP が作成されること' {
+            Invoke-LogArchive -Config $script:ArchConfig
+            $zips = Get-ChildItem -Path $script:ArchDir -Filter '*.zip' -Recurse
+            $zips.Count | Should -BeGreaterOrEqual 1
+        }
+
+        It 'アーカイブ後に元ファイルが削除されること' {
+            Test-Path $script:OldLog | Should -BeFalse
+        }
+
+        It 'archiveAfterDays 以内のファイルは残ること' {
+            Test-Path $script:NewLog | Should -BeTrue
+        }
+    }
+}

@@ -163,7 +163,45 @@ function Invoke-LogArchive {
         [Parameter(Mandatory=$true)]
         [psobject]$Config
     )
-    throw "Not implemented"
+
+    if ($null -eq $Config.logging -or $Config.logging.enabled -ne $true) { return }
+
+    $logConfig = $Config.logging
+    $logDir    = $logConfig.logDir
+    if (-not (Test-Path $logDir)) { return }
+
+    $now = Get-Date
+    $prefix = if ($logConfig.logPrefix) { $logConfig.logPrefix } else { 'claude-devtools' }
+    $archiveDir = Join-Path $logDir 'archive'
+
+    $toArchive = Get-ChildItem -Path $logDir -Filter "${prefix}-*.log" -File | Where-Object {
+        ($now - $_.LastWriteTime).Days -gt $logConfig.archiveAfterDays
+    }
+
+    if ($toArchive.Count -eq 0) { return }
+
+    if (-not (Test-Path $archiveDir)) {
+        New-Item -ItemType Directory -Path $archiveDir -Force | Out-Null
+    }
+
+    $monthGroup = $toArchive | Group-Object { $_.LastWriteTime.ToString('yyyy-MM') }
+    foreach ($group in $monthGroup) {
+        $zipName = "$($group.Name).zip"
+        $zipPath = Join-Path $archiveDir $zipName
+
+        try {
+            Compress-Archive -Path ($group.Group | Select-Object -ExpandProperty FullName) `
+                             -DestinationPath $zipPath -Update -ErrorAction Stop
+
+            # アーカイブ成功後に元ファイル削除
+            foreach ($file in $group.Group) {
+                Remove-Item -Path $file.FullName -Force
+            }
+            Write-Verbose "ログアーカイブ: $($group.Group.Count) ファイル → $zipName"
+        } catch {
+            Write-Warning "ログアーカイブに失敗しました ($zipName): $_"
+        }
+    }
 }
 
 function Get-LogSummary {
