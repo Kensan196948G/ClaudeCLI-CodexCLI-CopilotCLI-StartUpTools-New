@@ -95,11 +95,12 @@ function Stop-SessionLog {
         try {
             Rename-Item -Path $script:CurrentLogPath -NewName $newName -Force
             Write-Host "📝 ログ記録終了: $newPath" -ForegroundColor Gray
-            $script:CurrentLogPath = $newPath
         } catch {
             Write-Warning "ログファイルのリネームに失敗しました: $_"
         }
     }
+
+    $script:CurrentLogPath = $null
 }
 
 function Invoke-LogRotation {
