@@ -105,3 +105,63 @@ Describe 'Start-SessionLog' {
         }
     }
 }
+
+Describe 'Stop-SessionLog' {
+
+    BeforeEach {
+        Mock Start-Transcript {} -ModuleName LogManager
+        Mock Stop-Transcript {} -ModuleName LogManager
+    }
+
+    Context 'SUCCESS サフィックス付与' {
+
+        BeforeAll {
+            $script:LogDir = Join-Path $TestDrive 'stop-logs'
+            New-Item -ItemType Directory -Path $script:LogDir -Force | Out-Null
+            # ダミーログファイル作成
+            $script:DummyLog = Join-Path $script:LogDir 'claude-devtools-Proj-edge-9222-20260303-120000.log'
+            Set-Content -Path $script:DummyLog -Value 'test log content'
+        }
+
+        It 'SUCCESS サフィックスが付いたファイル名にリネームされること' {
+            # モジュール内部状態をセット（テスト用）
+            $mod = Get-Module LogManager
+            & $mod { $script:CurrentLogPath = $args[0]; $script:LoggingActive = $true } $script:DummyLog
+
+            Stop-SessionLog -Success $true
+
+            $expected = Join-Path $script:LogDir 'claude-devtools-Proj-edge-9222-20260303-120000-SUCCESS.log'
+            Test-Path $expected | Should -BeTrue
+        }
+    }
+
+    Context 'FAILURE サフィックス付与' {
+
+        BeforeAll {
+            $script:LogDir2 = Join-Path $TestDrive 'stop-logs-fail'
+            New-Item -ItemType Directory -Path $script:LogDir2 -Force | Out-Null
+            $script:DummyLog2 = Join-Path $script:LogDir2 'claude-devtools-Proj-chrome-9223-20260303-130000.log'
+            Set-Content -Path $script:DummyLog2 -Value 'test log content'
+        }
+
+        It 'FAILURE サフィックスが付いたファイル名にリネームされること' {
+            $mod = Get-Module LogManager
+            & $mod { $script:CurrentLogPath = $args[0]; $script:LoggingActive = $true } $script:DummyLog2
+
+            Stop-SessionLog -Success $false
+
+            $expected = Join-Path $script:LogDir2 'claude-devtools-Proj-chrome-9223-20260303-130000-FAILURE.log'
+            Test-Path $expected | Should -BeTrue
+        }
+    }
+
+    Context 'ログが開始されていない場合' {
+
+        It '例外をスローしないこと' {
+            $mod = Get-Module LogManager
+            & $mod { $script:CurrentLogPath = $null; $script:LoggingActive = $false }
+
+            { Stop-SessionLog -Success $true } | Should -Not -Throw
+        }
+    }
+}

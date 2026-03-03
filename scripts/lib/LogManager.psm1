@@ -73,7 +73,33 @@ function Stop-SessionLog {
         [Parameter(Mandatory=$true)]
         [bool]$Success
     )
-    throw "Not implemented"
+
+    if (-not $script:LoggingActive -or $null -eq $script:CurrentLogPath) {
+        return
+    }
+
+    # Transcript 停止
+    try { Stop-Transcript -ErrorAction SilentlyContinue } catch { }
+
+    $script:LoggingActive = $false
+
+    # サフィックス付与リネーム
+    if (Test-Path $script:CurrentLogPath) {
+        $suffix = if ($Success) { 'SUCCESS' } else { 'FAILURE' }
+        $dir      = [System.IO.Path]::GetDirectoryName($script:CurrentLogPath)
+        $baseName = [System.IO.Path]::GetFileNameWithoutExtension($script:CurrentLogPath)
+        $ext      = [System.IO.Path]::GetExtension($script:CurrentLogPath)
+        $newName  = "${baseName}-${suffix}${ext}"
+        $newPath  = Join-Path $dir $newName
+
+        try {
+            Rename-Item -Path $script:CurrentLogPath -NewName $newName -Force
+            Write-Host "📝 ログ記録終了: $newPath" -ForegroundColor Gray
+            $script:CurrentLogPath = $newPath
+        } catch {
+            Write-Warning "ログファイルのリネームに失敗しました: $_"
+        }
+    }
 }
 
 function Invoke-LogRotation {
