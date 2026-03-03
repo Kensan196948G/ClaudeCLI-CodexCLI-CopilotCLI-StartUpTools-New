@@ -109,7 +109,40 @@ function Invoke-LogRotation {
         [Parameter(Mandatory=$true)]
         [psobject]$Config
     )
-    throw "Not implemented"
+
+    if ($null -eq $Config.logging -or $Config.logging.enabled -ne $true) { return }
+
+    $logConfig = $Config.logging
+    $logDir    = $logConfig.logDir
+    if (-not (Test-Path $logDir)) { return }
+
+    $now = Get-Date
+    $prefix = if ($logConfig.logPrefix) { $logConfig.logPrefix } else { 'claude-devtools' }
+
+    Get-ChildItem -Path $logDir -Filter "${prefix}-*.log" -File | ForEach-Object {
+        $age = ($now - $_.LastWriteTime).Days
+        $name = $_.Name
+
+        if ($name -match '-SUCCESS\.log$') {
+            if ($age -gt $logConfig.successKeepDays) {
+                Remove-Item -Path $_.FullName -Force
+                Write-Verbose "ログローテーション: 削除 (SUCCESS, ${age}日経過) $name"
+            }
+        }
+        elseif ($name -match '-FAILURE\.log$') {
+            if ($age -gt $logConfig.failureKeepDays) {
+                Remove-Item -Path $_.FullName -Force
+                Write-Verbose "ログローテーション: 削除 (FAILURE, ${age}日経過) $name"
+            }
+        }
+        else {
+            # レガシーログ (サフィックスなし)
+            if ($age -gt $logConfig.legacyKeepDays) {
+                Remove-Item -Path $_.FullName -Force
+                Write-Verbose "ログローテーション: 削除 (LEGACY, ${age}日経過) $name"
+            }
+        }
+    }
 }
 
 function Invoke-LogArchive {

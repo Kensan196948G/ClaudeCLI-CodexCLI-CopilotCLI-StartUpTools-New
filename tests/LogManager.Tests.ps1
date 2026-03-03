@@ -165,3 +165,102 @@ Describe 'Stop-SessionLog' {
         }
     }
 }
+
+Describe 'Invoke-LogRotation' {
+
+    Context 'SUCCESS ログの期限切れ削除' {
+
+        BeforeAll {
+            $script:RotDir = Join-Path $TestDrive 'rotation'
+            New-Item -ItemType Directory -Path $script:RotDir -Force | Out-Null
+
+            # 期限切れファイル (31日前)
+            $script:OldSuccess = Join-Path $script:RotDir 'claude-devtools-P-edge-9222-20260201-120000-SUCCESS.log'
+            Set-Content -Path $script:OldSuccess -Value 'old'
+            (Get-Item $script:OldSuccess).LastWriteTime = (Get-Date).AddDays(-31)
+
+            # 期限内ファイル (1日前)
+            $script:NewSuccess = Join-Path $script:RotDir 'claude-devtools-P-edge-9222-20260302-120000-SUCCESS.log'
+            Set-Content -Path $script:NewSuccess -Value 'new'
+            (Get-Item $script:NewSuccess).LastWriteTime = (Get-Date).AddDays(-1)
+
+            $script:RotConfig = [pscustomobject]@{
+                logging = [pscustomobject]@{
+                    enabled = $true; logDir = $script:RotDir; logPrefix = 'claude-devtools'
+                    successKeepDays = 30; failureKeepDays = 90
+                    archiveAfterDays = 30; legacyKeepDays = 7
+                }
+            }
+        }
+
+        It '期限切れ SUCCESS ログが削除されること' {
+            Invoke-LogRotation -Config $script:RotConfig
+            Test-Path $script:OldSuccess | Should -BeFalse
+        }
+
+        It '期限内 SUCCESS ログが保持されること' {
+            Test-Path $script:NewSuccess | Should -BeTrue
+        }
+    }
+
+    Context 'FAILURE ログの長期保持' {
+
+        BeforeAll {
+            $script:FailDir = Join-Path $TestDrive 'rotation-fail'
+            New-Item -ItemType Directory -Path $script:FailDir -Force | Out-Null
+
+            # 31日前の FAILURE (failureKeepDays=90 なので保持)
+            $script:RecentFailure = Join-Path $script:FailDir 'claude-devtools-P-edge-9222-20260201-120000-FAILURE.log'
+            Set-Content -Path $script:RecentFailure -Value 'fail-recent'
+            (Get-Item $script:RecentFailure).LastWriteTime = (Get-Date).AddDays(-31)
+
+            # 91日前の FAILURE (failureKeepDays=90 なので削除)
+            $script:OldFailure = Join-Path $script:FailDir 'claude-devtools-P-edge-9222-20251201-120000-FAILURE.log'
+            Set-Content -Path $script:OldFailure -Value 'fail-old'
+            (Get-Item $script:OldFailure).LastWriteTime = (Get-Date).AddDays(-91)
+
+            $script:FailConfig = [pscustomobject]@{
+                logging = [pscustomobject]@{
+                    enabled = $true; logDir = $script:FailDir; logPrefix = 'claude-devtools'
+                    successKeepDays = 30; failureKeepDays = 90
+                    archiveAfterDays = 30; legacyKeepDays = 7
+                }
+            }
+        }
+
+        It '90日以内の FAILURE ログが保持されること' {
+            Invoke-LogRotation -Config $script:FailConfig
+            Test-Path $script:RecentFailure | Should -BeTrue
+        }
+
+        It '90日超の FAILURE ログが削除されること' {
+            Test-Path $script:OldFailure | Should -BeFalse
+        }
+    }
+
+    Context 'レガシーログ (サフィックスなし) の削除' {
+
+        BeforeAll {
+            $script:LegacyDir = Join-Path $TestDrive 'rotation-legacy'
+            New-Item -ItemType Directory -Path $script:LegacyDir -Force | Out-Null
+
+            # 8日前のレガシーログ (legacyKeepDays=7 なので削除)
+            $script:OldLegacy = Join-Path $script:LegacyDir 'claude-devtools-20260223-120000.log'
+            Set-Content -Path $script:OldLegacy -Value 'legacy'
+            (Get-Item $script:OldLegacy).LastWriteTime = (Get-Date).AddDays(-8)
+
+            $script:LegacyConfig = [pscustomobject]@{
+                logging = [pscustomobject]@{
+                    enabled = $true; logDir = $script:LegacyDir; logPrefix = 'claude-devtools'
+                    successKeepDays = 30; failureKeepDays = 90
+                    archiveAfterDays = 30; legacyKeepDays = 7
+                }
+            }
+        }
+
+        It 'legacyKeepDays 超過のサフィックスなしログが削除されること' {
+            Invoke-LogRotation -Config $script:LegacyConfig
+            Test-Path $script:OldLegacy | Should -BeFalse
+        }
+    }
+}
