@@ -125,21 +125,33 @@ function Invoke-LogRotation {
 
         if ($name -match '-SUCCESS\.log$') {
             if ($age -gt $logConfig.successKeepDays) {
-                Remove-Item -Path $_.FullName -Force
-                Write-Verbose "ログローテーション: 削除 (SUCCESS, ${age}日経過) $name"
+                try {
+                    Remove-Item -Path $_.FullName -Force -ErrorAction Stop
+                    Write-Verbose "ログローテーション: 削除 (SUCCESS, ${age}日経過) $name"
+                } catch {
+                    Write-Warning "ログ削除失敗: $name - $_"
+                }
             }
         }
         elseif ($name -match '-FAILURE\.log$') {
             if ($age -gt $logConfig.failureKeepDays) {
-                Remove-Item -Path $_.FullName -Force
-                Write-Verbose "ログローテーション: 削除 (FAILURE, ${age}日経過) $name"
+                try {
+                    Remove-Item -Path $_.FullName -Force -ErrorAction Stop
+                    Write-Verbose "ログローテーション: 削除 (FAILURE, ${age}日経過) $name"
+                } catch {
+                    Write-Warning "ログ削除失敗: $name - $_"
+                }
             }
         }
         else {
             # レガシーログ (サフィックスなし)
             if ($age -gt $logConfig.legacyKeepDays) {
-                Remove-Item -Path $_.FullName -Force
-                Write-Verbose "ログローテーション: 削除 (LEGACY, ${age}日経過) $name"
+                try {
+                    Remove-Item -Path $_.FullName -Force -ErrorAction Stop
+                    Write-Verbose "ログローテーション: 削除 (LEGACY, ${age}日経過) $name"
+                } catch {
+                    Write-Warning "ログ削除失敗: $name - $_"
+                }
             }
         }
     }
