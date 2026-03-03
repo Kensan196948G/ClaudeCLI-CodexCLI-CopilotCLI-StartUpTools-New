@@ -60,20 +60,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# ===== ログ記録開始 =====
+# ===== ログ記録開始（LogManager: Config読み込み後に再設定） =====
 $LogPath = $null
-$LogTimestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-$LogDir = $env:TEMP
-$LogPrefix = "claude-devtools"
-$LogPath = Join-Path $LogDir "${LogPrefix}-${LogTimestamp}.log"
-
-try {
-    Start-Transcript -Path $LogPath -Append -ErrorAction Stop
-    Write-Host "📝 ログ記録開始: $LogPath" -ForegroundColor Gray
-} catch {
-    Write-Warning "ログ記録の開始に失敗しましたが続行します: $_"
-    $LogPath = $null
-}
 
 # ===== モジュール読み込み =====
 $LibPath = Join-Path (Split-Path $PSScriptRoot -Parent) "lib"
@@ -81,6 +69,7 @@ $LibPath = Join-Path (Split-Path $PSScriptRoot -Parent) "lib"
 $modulesToLoad = @(
     "ErrorHandler.psm1",
     "Config.psm1",
+    "LogManager.psm1",
     "PortManager.psm1",
     "SSHHelper.psm1",
     "BrowserManager.psm1",
@@ -275,6 +264,12 @@ $ProjectRoot = $selectedProject.FullName
 
 Write-Host "`n✅ 選択プロジェクト: $ProjectName" -ForegroundColor Green
 
+# ===== LogManager によるセッションログ開始 =====
+if (-not $DryRun) {
+    $logResult = Start-SessionLog -Config $Config -ProjectName $ProjectName -Browser $SelectedBrowser -Port $DevToolsPort
+    $LogPath = $logResult.LogPath
+}
+
 if ($HistoryEnabled -and $HistoryPath -and -not $DryRun) {
     try {
         Update-RecentProjects -ProjectName $ProjectName -HistoryPath $HistoryPath -MaxHistory $Config.recentProjects.maxHistory
@@ -307,7 +302,6 @@ if ($DryRun) {
     Write-Host ""
     Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Yellow
 
-    if ($LogPath) { try { Stop-Transcript } catch { } }
     exit 0
 }
 
@@ -577,6 +571,7 @@ if ($sshExitCode -ne 0) {
 
 # ===== ログ記録終了 =====
 if ($LogPath) {
-    try { Stop-Transcript } catch { }
-    Write-Host "`n📝 ログ記録終了: $LogPath" -ForegroundColor Gray
+    $sshSuccess = ($sshExitCode -eq 0)
+    Stop-SessionLog -Success $sshSuccess
+    Invoke-LogRotation -Config $Config
 }
