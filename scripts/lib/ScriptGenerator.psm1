@@ -290,7 +290,8 @@ while true; do
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo "`$INIT_PROMPT"
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        claude --dangerously-skip-permissions "`$INIT_PROMPT" || true
+        # プロンプト付き対話モード: /dev/tty で TTY を確保しつつ INIT_PROMPT を初期メッセージとして送信
+        claude --dangerously-skip-permissions "`$INIT_PROMPT" </dev/tty >/dev/tty 2>&1 || true
     else
         # 対話モード: exec tee によるstdoutリダイレクト迂回のため /dev/tty を使用
         claude --dangerously-skip-permissions </dev/tty >/dev/tty 2>&1 || true
