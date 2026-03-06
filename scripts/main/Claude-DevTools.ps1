@@ -297,7 +297,7 @@ if ($DryRun) {
     Write-Host "  実行される処理:"
     Write-Host "  1. ブラウザ起動 (--remote-debugging-port=$DevToolsPort)"
     Write-Host "  2. run-claude.sh 生成 → Linux 側に転送"
-    Write-Host "  3. SSH バッチセットアップ (statusline/settings/MCP)"
+    Write-Host "  3. SSH バッチセットアップ (MCP)"
     Write-Host "  4. SSH 接続 + run-claude.sh 実行"
     Write-Host ""
     Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Yellow
@@ -403,52 +403,6 @@ Write-Host "✅ run-claude.sh 生成完了: $RunClaudePath" -ForegroundColor Gre
 # ===== リモートセットアップ (SSH バッチ) =====
 Write-Host "`n🔧 リモートセットアップ実行中..." -ForegroundColor Cyan
 
-# statusline.sh 読み込み
-$StatuslineSource = Join-Path (Split-Path $PSScriptRoot -Parent) "statusline.sh"
-$statuslineEnabled = $Config.statusline -and $Config.statusline.enabled -and (Test-Path $StatuslineSource)
-$encodedStatusline = ""
-$encodedSettings   = ""
-$encodedGlobalScript = ""
-
-if ($statuslineEnabled) {
-    $statuslineContent = Get-Content $StatuslineSource -Raw
-    $statuslineContent = $statuslineContent -replace "`r`n", "`n" -replace "`r", "`n"
-    $encodedStatusline = ConvertTo-Base64Utf8 -Content $statuslineContent
-
-    # settings.json 生成
-    $settingsObj = @{
-        statusLine = @{
-            type    = "command"
-            command = "$LinuxBase/$ProjectName/.claude/statusline.sh"
-            padding = 0
-        }
-    }
-    $settingsJson = $settingsObj | ConvertTo-Json -Depth 3 -Compress
-    $encodedSettings = ConvertTo-Base64Utf8 -Content $settingsJson
-
-    # グローバル設定更新スクリプト生成
-    $jsonParts = Build-ClaudeCodeJsonFromConfig -ClaudeEnv $Config.claudeCode.env -ClaudeSettings $Config.claudeCode.settings
-    $globalScript = @"
-#!/bin/bash
-SETTINGS_FILE="`$HOME/.claude/settings.json"
-mkdir -p "`$HOME/.claude"
-
-if [ -f "`$SETTINGS_FILE" ] && command -v jq &>/dev/null; then
-    jq '. + $($jsonParts.SettingsJson) + {
-      "statusLine": {"type": "command", "command": "~/.claude/statusline.sh", "padding": 0}
-    } | .env = ((.env // {}) + $($jsonParts.EnvJson))' "`$SETTINGS_FILE" > "`$SETTINGS_FILE.tmp" && mv "`$SETTINGS_FILE.tmp" "`$SETTINGS_FILE"
-    echo "✅ グローバル設定をマージ更新しました"
-else
-    cat > "`$SETTINGS_FILE" << 'SETTINGSEOF'
-$($jsonParts.FullJson)
-SETTINGSEOF
-    echo "✅ グローバル設定を新規作成しました"
-fi
-"@
-    $globalScript = $globalScript -replace "`r`n", "`n" -replace "`r", "`n"
-    $encodedGlobalScript = ConvertTo-Base64Utf8 -Content $globalScript
-}
-
 # MCP セットアップ
 $McpSetupSource = Join-Path (Split-Path $PSScriptRoot -Parent) "mcp\setup-mcp.sh"
 $McpEnabled = $Config.mcp -and $Config.mcp.enabled -and $Config.mcp.autoSetup -and (Test-Path $McpSetupSource)
@@ -489,22 +443,6 @@ echo "📁 ディレクトリ作成中..."
 mkdir -p $EscapedLinuxBase/$EscapedProjectName/.claude
 mkdir -p ~/.claude
 
-$(if ($statuslineEnabled -and $encodedStatusline) {
-"echo '📝 statusline.sh 配置中...'
-echo '$encodedStatusline' | base64 -d > $EscapedLinuxBase/$EscapedProjectName/.claude/statusline.sh
-chmod +x $EscapedLinuxBase/$EscapedProjectName/.claude/statusline.sh
-cp $EscapedLinuxBase/$EscapedProjectName/.claude/statusline.sh ~/.claude/statusline.sh
-
-echo '⚙️  settings.json 配置中...'
-echo '$encodedSettings' | base64 -d > $EscapedLinuxBase/$EscapedProjectName/.claude/settings.json
-
-echo '🔄 グローバル設定更新中...'
-echo '$encodedGlobalScript' | base64 -d > /tmp/update_global_settings.sh
-chmod +x /tmp/update_global_settings.sh
-/tmp/update_global_settings.sh
-rm /tmp/update_global_settings.sh"
-} else { "echo 'ℹ️  Statusline 無効'" })
-
 echo "📦 .mcp.json バックアップ中..."
 if [ -f $EscapedLinuxBase/$EscapedProjectName/.mcp.json ]; then
     cp $EscapedLinuxBase/$EscapedProjectName/.mcp.json $EscapedLinuxBase/$EscapedProjectName/.mcp.json.bak.`${MCP_BACKUP_TIMESTAMP}
@@ -539,13 +477,6 @@ if ($LASTEXITCODE -ne 0) {
     throw "リモートセットアップが失敗しました (exit code: $LASTEXITCODE)"
 }
 Write-Host $setupResult
-
-if ($statuslineEnabled) {
-    Write-Host ""
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
-    Write-Host "  Statusline 反映: Claude Code で /statusline を実行" -ForegroundColor Yellow
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
-}
 
 # ===== SSH 接続 + Claude 起動 =====
 Write-Host "`n🎉 セットアップ完了"
