@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Claude Code Statusline v2
 # Format:
-#   🤖 Opus 4.6 │ 📊 25% │ ✏️  +5/-1 │ 🔀 main
+#   🤖 Opus 4.6 │ 📁 Linux-Management-Systm │ 🌿 main  │ 🔑 -  │ 🖥 Linux
+#   📊 25% │ ✏️  +5/-1 │🌐 online
 #   ⏱ 5h  ▰▰▰▱▱▱▱▱▱▱  28%  Resets 9pm (Asia/Tokyo)
 #   📅 7d  ▰▰▰▰▰▰▱▱▱▱  59%  Resets Mar 6 at 1pm (Asia/Tokyo)
 set -euo pipefail
@@ -25,6 +26,8 @@ LINES_REMOVED=$(echo "$input" | jq -r '.session.lines_removed // 0')
 DIR=$(echo "$input" | jq -r '.workspace.current_dir // "."')
 DIR="${DIR:-.}"
 
+DIR_NAME=$(basename "$DIR")
+
 # Git ブランチ
 GIT_BRANCH=""
 if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1; then
@@ -34,10 +37,18 @@ if git -C "$DIR" rev-parse --git-dir >/dev/null 2>&1; then
     fi
 fi
 BRANCH_SEG=""
-[ -n "$GIT_BRANCH" ] && BRANCH_SEG=" │ 🔀 $GIT_BRANCH"
+[ -n "$GIT_BRANCH" ] && BRANCH_SEG=" │ 🌿 $GIT_BRANCH"
+
+# APIキー状態・OS種別・ネット状態
+API_KEY_STATUS=$([ -n "${ANTHROPIC_API_KEY:-}" ] && echo "✓" || echo "-")
+OS_TYPE=$(uname -s 2>/dev/null || echo "Linux")
+NET_STATUS=$(curl -sf --max-time 2 https://api.anthropic.com >/dev/null 2>&1 && echo "online" || echo "offline")
 
 # === Line 1 出力 ===
-echo "🤖 ${MODEL_SHORT} │ 📊 ${USED_PCT}% │ ✏️  +${LINES_ADDED}/-${LINES_REMOVED}${BRANCH_SEG}"
+echo "🤖 ${MODEL_SHORT} │ 📁 ${DIR_NAME}${BRANCH_SEG}  │ 🔑 ${API_KEY_STATUS}  │ 🖥 ${OS_TYPE}"
+
+# === Line 2 出力 ===
+echo "📊 ${USED_PCT}% │ ✏️  +${LINES_ADDED}/-${LINES_REMOVED} │🌐 ${NET_STATUS}"
 
 # === ユーティリティ関数 ===
 
@@ -79,7 +90,7 @@ CACHE_TTL=360  # 6分
 RATE_HEADERS=""
 
 if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
-    : # APIキー未設定 → Line 2/3 をスキップ
+    : # APIキー未設定 → Line 3/4 をスキップ
 elif [ -f "$CACHE_FILE" ]; then
     cache_mtime=$(stat -c %Y "$CACHE_FILE" 2>/dev/null || echo 0)
     cache_age=$(( $(date +%s) - cache_mtime ))
@@ -99,7 +110,7 @@ if [ -z "$RATE_HEADERS" ] && [ -n "${ANTHROPIC_API_KEY:-}" ]; then
     [ -n "$RATE_HEADERS" ] && echo "$RATE_HEADERS" > "$CACHE_FILE" || true
 fi
 
-# === Line 2/3 出力 (APIキーあり + レート制限取得成功時) ===
+# === Line 3/4 出力 (APIキーあり + レート制限取得成功時) ===
 if [ -n "$RATE_HEADERS" ]; then
     # requests ヘッダー抽出
     REQ_REMAINING=$(echo "$RATE_HEADERS" | grep -i '^anthropic-ratelimit-requests-remaining:' | awk '{print $2}' | head -1 | tr -d '[:space:]')
@@ -129,9 +140,9 @@ if [ -n "$RATE_HEADERS" ]; then
     REQ_RESET_STR=$(format_reset "$REQ_RESET")
     TOK_RESET_STR=$(format_reset "$TOK_RESET")
 
-    # Line 2: requests ウィンドウ (⏱ 5h)
+    # Line 3: requests ウィンドウ (⏱ 5h)
     echo "⏱ 5h  ${REQ_BAR}  ${REQ_PCT}%  ${REQ_RESET_STR}"
 
-    # Line 3: tokens ウィンドウ (📅 7d)
+    # Line 4: tokens ウィンドウ (📅 7d)
     echo "📅 7d  ${TOK_BAR}  ${TOK_PCT}%  ${TOK_RESET_STR}"
 fi
