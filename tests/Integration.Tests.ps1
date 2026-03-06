@@ -25,7 +25,6 @@ BeforeAll {
         chromeExe  = "C:\\chrome.exe"
         defaultBrowser = "edge"
         autoCleanup    = $false
-        statusline = @{ enabled = $false }
         claudeCode = @{
             env = @{
                 CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"
