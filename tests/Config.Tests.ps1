@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # Config.Tests.ps1 - Config.psm1 のユニットテスト
 # Pester 5.x
 # ============================================================
@@ -7,274 +7,430 @@ BeforeAll {
     Import-Module "$PSScriptRoot\..\scripts\lib\Config.psm1" -Force
 }
 
-Describe 'Import-DevToolsConfig' {
+Describe 'Import-StartupConfig' {
 
     Context '有効な config.json を読み込む場合' {
 
         BeforeAll {
-            # 一時 config.json を作成
             $script:TempDir = Join-Path $TestDrive 'config'
             New-Item -ItemType Directory -Path $script:TempDir -Force | Out-Null
             $script:ValidConfigPath = Join-Path $script:TempDir 'config.json'
             $validJson = @{
-                ports     = @(9222, 9223)
-                zDrive    = 'X:\'
+                version   = '2.0.0'
                 linuxHost = 'testhost'
                 linuxBase = '/mnt/LinuxHDD'
-            } | ConvertTo-Json -Depth 3
+                tools     = @{
+                    defaultTool = 'claude'
+                    claude      = @{ enabled = $true; command = 'claude' }
+                }
+            } | ConvertTo-Json -Depth 5
             Set-Content -Path $script:ValidConfigPath -Value $validJson -Encoding UTF8
         }
 
         It '読み込んだオブジェクトが $null でないこと' {
-            $result = Import-DevToolsConfig -ConfigPath $script:ValidConfigPath
+            $result = Import-StartupConfig -ConfigPath $script:ValidConfigPath
             $result | Should -Not -BeNullOrEmpty
         }
 
-        It 'ports フィールドが配列として読み込まれること' {
-            $result = Import-DevToolsConfig -ConfigPath $script:ValidConfigPath
-            $result.ports | Should -Not -BeNullOrEmpty
-        }
-
         It 'linuxHost フィールドが正しく読み込まれること' {
-            $result = Import-DevToolsConfig -ConfigPath $script:ValidConfigPath
+            $result = Import-StartupConfig -ConfigPath $script:ValidConfigPath
             $result.linuxHost | Should -Be 'testhost'
         }
 
         It 'linuxBase フィールドが正しく読み込まれること' {
-            $result = Import-DevToolsConfig -ConfigPath $script:ValidConfigPath
+            $result = Import-StartupConfig -ConfigPath $script:ValidConfigPath
             $result.linuxBase | Should -Be '/mnt/LinuxHDD'
+        }
+
+        It 'tools.defaultTool が正しく読み込まれること' {
+            $result = Import-StartupConfig -ConfigPath $script:ValidConfigPath
+            $result.tools.defaultTool | Should -Be 'claude'
+        }
+
+        It 'tools.claude.enabled が true であること' {
+            $result = Import-StartupConfig -ConfigPath $script:ValidConfigPath
+            $result.tools.claude.enabled | Should -Be $true
         }
     }
 
     Context 'ファイルが存在しない場合' {
 
         It '例外をスローすること' {
-            $missingPath = Join-Path $TestDrive 'nonexistent\config.json'
-            { Import-DevToolsConfig -ConfigPath $missingPath } | Should -Throw
-        }
-
-        It 'エラーメッセージにパスが含まれること' {
-            $missingPath = Join-Path $TestDrive 'missing.json'
-            { Import-DevToolsConfig -ConfigPath $missingPath } | Should -Throw -ExpectedMessage '*見つかりません*'
+            { Import-StartupConfig -ConfigPath 'C:\nonexistent\config.json' } |
+                Should -Throw -ExceptionType ([System.Exception])
         }
     }
 
     Context '必須フィールドが欠けている場合' {
 
-        BeforeAll {
-            $script:IncompleteDir = Join-Path $TestDrive 'incomplete'
-            New-Item -ItemType Directory -Path $script:IncompleteDir -Force | Out-Null
-        }
-
-        It 'ports が欠けている場合に例外をスローすること' {
-            $path = Join-Path $script:IncompleteDir 'no-ports.json'
-            @{ zDrive = 'X:\'; linuxHost = 'host'; linuxBase = '/mnt' } |
-                ConvertTo-Json | Set-Content -Path $path -Encoding UTF8
-            { Import-DevToolsConfig -ConfigPath $path } | Should -Throw
+        It 'version が欠けている場合に例外をスローすること' {
+            $tempPath = Join-Path $TestDrive 'missing-version.json'
+            @{ linuxHost = 'host'; tools = @{ defaultTool = 'claude' } } |
+                ConvertTo-Json | Set-Content $tempPath
+            { Import-StartupConfig -ConfigPath $tempPath } | Should -Throw
         }
 
         It 'linuxHost が欠けている場合に例外をスローすること' {
-            $path = Join-Path $script:IncompleteDir 'no-linuxHost.json'
-            @{ ports = @(9222); zDrive = 'X:\'; linuxBase = '/mnt' } |
-                ConvertTo-Json | Set-Content -Path $path -Encoding UTF8
-            { Import-DevToolsConfig -ConfigPath $path } | Should -Throw
+            $tempPath = Join-Path $TestDrive 'missing-host.json'
+            @{ version = '2.0.0'; tools = @{ defaultTool = 'claude' } } |
+                ConvertTo-Json | Set-Content $tempPath
+            { Import-StartupConfig -ConfigPath $tempPath } | Should -Throw
         }
 
-        It 'linuxBase が欠けている場合に例外をスローすること' {
-            $path = Join-Path $script:IncompleteDir 'no-linuxBase.json'
-            @{ ports = @(9222); zDrive = 'X:\'; linuxHost = 'host' } |
-                ConvertTo-Json | Set-Content -Path $path -Encoding UTF8
-            { Import-DevToolsConfig -ConfigPath $path } | Should -Throw
-        }
-    }
-
-    Context '不正な JSON の場合' {
-
-        It '不正な JSON で例外をスローすること' {
-            $path = Join-Path $TestDrive 'invalid.json'
-            Set-Content -Path $path -Value '{ this is not valid json' -Encoding UTF8
-            { Import-DevToolsConfig -ConfigPath $path } | Should -Throw
+        It 'tools が欠けている場合に例外をスローすること' {
+            $tempPath = Join-Path $TestDrive 'missing-tools.json'
+            @{ version = '2.0.0'; linuxHost = 'host' } |
+                ConvertTo-Json | Set-Content $tempPath
+            { Import-StartupConfig -ConfigPath $tempPath } | Should -Throw
         }
     }
 
-    Context 'ポート範囲の検証' {
-
-        It 'ポートが範囲外の場合に例外をスローすること' {
-            $path = Join-Path $TestDrive 'bad-port.json'
-            @{ ports = @(80); zDrive = 'X:\'; linuxHost = 'host'; linuxBase = '/mnt' } |
-                ConvertTo-Json | Set-Content -Path $path -Encoding UTF8
-            { Import-DevToolsConfig -ConfigPath $path } | Should -Throw
-        }
-    }
-
-    Context 'initPromptFile の検証' {
+    Context '後方互換エイリアス' {
 
         BeforeAll {
-            $script:TempDir2 = Join-Path $TestDrive 'initprompt'
+            $script:TempDir2 = Join-Path $TestDrive 'config2'
             New-Item -ItemType Directory -Path $script:TempDir2 -Force | Out-Null
+            $script:AliasConfigPath = Join-Path $script:TempDir2 'config.json'
+            $validJson = @{
+                version   = '2.0.0'
+                linuxHost = 'alias-testhost'
+                linuxBase = '/mnt/LinuxHDD'
+                tools     = @{ defaultTool = 'claude'; claude = @{ enabled = $true } }
+            } | ConvertTo-Json -Depth 5
+            Set-Content -Path $script:AliasConfigPath -Value $validJson -Encoding UTF8
         }
 
-        It '存在する initPromptFile は警告なしで成功すること' {
-            $promptFile = Join-Path $script:TempDir2 'prompt.txt'
-            Set-Content -Path $promptFile -Value 'Test prompt' -Encoding UTF8
-            $configPath = Join-Path $script:TempDir2 'config-with-prompt.json'
-            @{ ports = @(9222); zDrive = 'X:\'; linuxHost = 'host'; linuxBase = '/mnt'; initPromptFile = $promptFile } |
-                ConvertTo-Json | Set-Content -Path $configPath -Encoding UTF8
-            { Import-DevToolsConfig -ConfigPath $configPath } | Should -Not -Throw
-        }
-
-        It '存在しない initPromptFile は警告を出すが成功すること' {
-            $configPath = Join-Path $script:TempDir2 'config-missing-prompt.json'
-            @{ ports = @(9222); zDrive = 'X:\'; linuxHost = 'host'; linuxBase = '/mnt'; initPromptFile = 'C:\nonexistent\prompt.txt' } |
-                ConvertTo-Json | Set-Content -Path $configPath -Encoding UTF8
-            { Import-DevToolsConfig -ConfigPath $configPath } | Should -Not -Throw
-        }
-
-        It 'initPromptFile が null の場合は検証をスキップすること' {
-            $configPath = Join-Path $script:TempDir2 'config-null-prompt.json'
-            @{ ports = @(9222); zDrive = 'X:\'; linuxHost = 'host'; linuxBase = '/mnt' } |
-                ConvertTo-Json | Set-Content -Path $configPath -Encoding UTF8
-            { Import-DevToolsConfig -ConfigPath $configPath } | Should -Not -Throw
-        }
-    }
-
-    Context 'tmux スキーマ検証' {
-
-        BeforeAll {
-            $script:TempDir3 = Join-Path $TestDrive 'tmux'
-            New-Item -ItemType Directory -Path $script:TempDir3 -Force | Out-Null
-        }
-
-        It '有効な tmux 設定は警告なしで成功すること' {
-            $configPath = Join-Path $script:TempDir3 'config-valid-tmux.json'
-            @{
-                ports = @(9222); zDrive = 'X:\'; linuxHost = 'host'; linuxBase = '/mnt'
-                tmux = @{ enabled = $false; defaultLayout = 'auto' }
-            } | ConvertTo-Json -Depth 3 | Set-Content -Path $configPath -Encoding UTF8
-            { Import-DevToolsConfig -ConfigPath $configPath } | Should -Not -Throw
-        }
-
-        It 'tmux セクションがない場合は検証をスキップすること' {
-            $configPath = Join-Path $script:TempDir3 'config-no-tmux.json'
-            @{ ports = @(9222); zDrive = 'X:\'; linuxHost = 'host'; linuxBase = '/mnt' } |
-                ConvertTo-Json | Set-Content -Path $configPath -Encoding UTF8
-            { Import-DevToolsConfig -ConfigPath $configPath } | Should -Not -Throw
+        It 'Import-DevToolsConfig エイリアスが動作すること' {
+            $result = Import-DevToolsConfig -ConfigPath $script:AliasConfigPath
+            $result | Should -Not -BeNullOrEmpty
         }
     }
 }
 
-Describe 'Test-McpServerAvailability' {
+Describe 'Backup-ConfigFile' {
 
-    Context '全必須サーバーが .mcp.json に存在する場合' {
+    Context 'バックアップが正常に作成される場合' {
 
         BeforeAll {
-            $script:McpDir = Join-Path $TestDrive 'mcp-test'
-            New-Item -ItemType Directory -Path $script:McpDir -Force | Out-Null
-
-            $mcpJson = @{
-                mcpServers = @{
-                    'brave-search' = @{ command = 'npx'; args = @() }
-                    'context7'     = @{ command = 'npx'; args = @() }
-                    'github'       = @{ command = 'npx'; args = @() }
-                    'memory'       = @{ command = 'npx'; args = @() }
-                    'playwright'   = @{ command = 'npx'; args = @() }
-                    'puppeteer'    = @{ command = 'node'; args = @() }
-                    'sequential-thinking' = @{ command = 'npx'; args = @() }
-                }
-            } | ConvertTo-Json -Depth 3
-            Set-Content -Path (Join-Path $script:McpDir '.mcp.json') -Value $mcpJson -Encoding UTF8
-
-            $script:McpConfig = [pscustomobject]@{
-                mcp = [pscustomobject]@{
-                    enabled = $true
-                    requiredServers = @('brave-search','context7','github','memory','playwright','puppeteer','sequential-thinking')
-                    optionalServers = @('codex')
-                    githubToken = 'ghp_xxxxxxxxxxxx'
-                    braveApiKey = ''
-                }
-            }
+            $script:BackupTempDir = Join-Path $TestDrive 'backup_test'
+            New-Item -ItemType Directory -Path $script:BackupTempDir -Force | Out-Null
+            $script:SourceConfig = Join-Path $script:BackupTempDir 'config.json'
+            $script:BackupDir = Join-Path $script:BackupTempDir 'backups'
+            @{ version = '2.0.0'; linuxHost = 'host'; tools = @{} } |
+                ConvertTo-Json | Set-Content $script:SourceConfig -Encoding UTF8
         }
 
-        It 'Missing が空であること' {
-            $result = Test-McpServerAvailability -Config $script:McpConfig -ProjectRoot $script:McpDir
-            $result.Missing.Count | Should -Be 0
-        }
-
-        It 'Available に全必須サーバーが含まれること' {
-            $result = Test-McpServerAvailability -Config $script:McpConfig -ProjectRoot $script:McpDir
-            $result.Available.Count | Should -Be 7
+        It 'バックアップファイルが作成されること' {
+            Backup-ConfigFile -ConfigPath $script:SourceConfig -BackupDir $script:BackupDir
+            $backups = Get-ChildItem $script:BackupDir -Filter '*.json' -ErrorAction SilentlyContinue
+            $backups.Count | Should -BeGreaterThan 0
         }
     }
 
-    Context '必須サーバーが一部欠落している場合' {
+    Context 'ファイルが存在しない場合' {
 
-        BeforeAll {
-            $script:McpDir2 = Join-Path $TestDrive 'mcp-test2'
-            New-Item -ItemType Directory -Path $script:McpDir2 -Force | Out-Null
+        It '警告を出力してエラーにならないこと' {
+            { Backup-ConfigFile -ConfigPath 'C:\nonexistent.json' -BackupDir $TestDrive } |
+                Should -Not -Throw
+        }
+    }
+}
 
-            $mcpJson = @{
-                mcpServers = @{
-                    'brave-search' = @{ command = 'npx'; args = @() }
-                    'context7'     = @{ command = 'npx'; args = @() }
-                }
-            } | ConvertTo-Json -Depth 3
-            Set-Content -Path (Join-Path $script:McpDir2 '.mcp.json') -Value $mcpJson -Encoding UTF8
+Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
 
-            $script:McpConfig2 = [pscustomobject]@{
-                mcp = [pscustomobject]@{
-                    enabled = $true
-                    requiredServers = @('brave-search','context7','github','memory','playwright','puppeteer','sequential-thinking')
-                    optionalServers = @('codex')
-                    githubToken = ''; braveApiKey = ''
+    Context 'template 相当の設定を検証する場合' {
+
+        It '必要なキーが揃っていればエラーなしで通ること' {
+            $config = @{
+                version        = '2.0.0'
+                projectsDir    = 'X:\'
+                sshProjectsDir = 'Z:\'
+                projectsDirUnc = '\\server\share'
+                linuxHost      = 'host'
+                linuxBase      = '/mnt/LinuxHDD'
+                tools          = @{
+                    defaultTool = 'claude'
+                    claude      = @{
+                        enabled        = $true
+                        command        = 'claude'
+                        args           = @()
+                        installCommand = 'install-claude'
+                        env            = @{}
+                        apiKeyEnvVar   = 'ANTHROPIC_API_KEY'
+                    }
+                    codex       = @{
+                        enabled        = $true
+                        command        = 'codex'
+                        args           = @()
+                        installCommand = 'install-codex'
+                        env            = @{ OPENAI_API_KEY = '' }
+                        apiKeyEnvVar   = 'OPENAI_API_KEY'
+                    }
+                    copilot     = @{
+                        enabled        = $true
+                        command        = 'gh'
+                        args           = @('copilot')
+                        installCommand = 'install-copilot'
+                        env            = @{}
+                    }
                 }
             }
+
+            $errors = Test-StartupConfigSchema -Config $config
+            $errors | Should -BeNullOrEmpty
         }
 
-        It 'Missing に欠落サーバーが含まれること' {
-            $result = Test-McpServerAvailability -Config $script:McpConfig2 -ProjectRoot $script:McpDir2
-            $result.Missing.Count | Should -Be 5
-            $result.Missing | Should -Contain 'github'
+        It 'Assert-StartupConfigSchema が template 相当ファイルを受け入れること' {
+            $configPath = Join-Path $TestDrive 'template-config.json'
+            $config = @{
+                version        = '2.0.0'
+                projectsDir    = 'X:\'
+                sshProjectsDir = 'Z:\'
+                projectsDirUnc = '\\server\share'
+                linuxHost      = 'host'
+                linuxBase      = '/mnt/LinuxHDD'
+                tools          = @{
+                    defaultTool = 'claude'
+                    claude      = @{
+                        enabled        = $true
+                        command        = 'claude'
+                        args           = @()
+                        installCommand = 'install-claude'
+                        env            = @{}
+                        apiKeyEnvVar   = 'ANTHROPIC_API_KEY'
+                    }
+                    codex       = @{
+                        enabled        = $true
+                        command        = 'codex'
+                        args           = @()
+                        installCommand = 'install-codex'
+                        env            = @{ OPENAI_API_KEY = '' }
+                        apiKeyEnvVar   = 'OPENAI_API_KEY'
+                    }
+                    copilot     = @{
+                        enabled        = $true
+                        command        = 'gh'
+                        args           = @('copilot')
+                        installCommand = 'install-copilot'
+                        env            = @{}
+                    }
+                }
+            } | ConvertTo-Json -Depth 10
+
+            Set-Content -Path $configPath -Value $config -Encoding UTF8
+            { Assert-StartupConfigSchema -ConfigPath $configPath } | Should -Not -Throw
+        }
+
+        It '必要キーが不足していればエラーを返すこと' {
+            $config = @{
+                version = '2.0.0'
+                tools   = @{
+                    defaultTool = 'claude'
+                }
+            }
+
+            $errors = Test-StartupConfigSchema -Config $config
+            $errors | Should -Not -BeNullOrEmpty
+            ($errors -join "`n") | Should -Match 'projectsDir'
+        }
+
+        It 'defaultTool の値域が不正ならエラーを返すこと' {
+            $config = @{
+                version        = '2.0.0'
+                projectsDir    = 'X:\'
+                sshProjectsDir = 'Z:\'
+                projectsDirUnc = '\\server\share'
+                linuxHost      = 'host'
+                linuxBase      = '/mnt/LinuxHDD'
+                tools          = @{
+                    defaultTool = 'invalid'
+                    claude      = @{
+                        enabled        = $true
+                        command        = 'claude'
+                        args           = @()
+                        installCommand = 'install-claude'
+                        env            = @{}
+                        apiKeyEnvVar   = 'ANTHROPIC_API_KEY'
+                    }
+                    codex       = @{
+                        enabled        = $true
+                        command        = 'codex'
+                        args           = @()
+                        installCommand = 'install-codex'
+                        env            = @{ OPENAI_API_KEY = '' }
+                        apiKeyEnvVar   = 'OPENAI_API_KEY'
+                    }
+                    copilot     = @{
+                        enabled        = $true
+                        command        = 'gh'
+                        args           = @('copilot')
+                        installCommand = 'install-copilot'
+                        env            = @{}
+                    }
+                }
+                recentProjects = @{
+                    enabled = $true
+                    maxHistory = 10
+                    historyFile = '%USERPROFILE%\\.ai-startup\\recent.json'
+                }
+            }
+
+            $errors = Test-StartupConfigSchema -Config $config
+            ($errors -join "`n") | Should -Match 'defaultTool'
+        }
+
+        It 'recentProjects.maxHistory が不正ならエラーを返すこと' {
+            $config = @{
+                version        = '2.0.0'
+                projectsDir    = 'X:\'
+                sshProjectsDir = 'Z:\'
+                projectsDirUnc = '\\server\share'
+                linuxHost      = 'host'
+                linuxBase      = '/mnt/LinuxHDD'
+                tools          = @{
+                    defaultTool = 'claude'
+                    claude      = @{
+                        enabled        = $true
+                        command        = 'claude'
+                        args           = @()
+                        installCommand = 'install-claude'
+                        env            = @{}
+                        apiKeyEnvVar   = 'ANTHROPIC_API_KEY'
+                    }
+                    codex       = @{
+                        enabled        = $true
+                        command        = 'codex'
+                        args           = @()
+                        installCommand = 'install-codex'
+                        env            = @{ OPENAI_API_KEY = '' }
+                        apiKeyEnvVar   = 'OPENAI_API_KEY'
+                    }
+                    copilot     = @{
+                        enabled        = $true
+                        command        = 'gh'
+                        args           = @('copilot')
+                        installCommand = 'install-copilot'
+                        env            = @{}
+                    }
+                }
+                recentProjects = @{
+                    enabled = $true
+                    maxHistory = 0
+                    historyFile = '%USERPROFILE%\\.ai-startup\\recent.json'
+                }
+            }
+
+            $errors = Test-StartupConfigSchema -Config $config
+            ($errors -join "`n") | Should -Match 'recentProjects.maxHistory'
+        }
+
+        It 'logging.successKeepDays が不正ならエラーを返すこと' {
+            $config = @{
+                version        = '2.0.0'
+                projectsDir    = 'X:\'
+                sshProjectsDir = 'Z:\'
+                projectsDirUnc = '\\server\share'
+                linuxHost      = 'host'
+                linuxBase      = '/mnt/LinuxHDD'
+                tools          = @{
+                    defaultTool = 'claude'
+                    claude      = @{ enabled = $true; command = 'claude'; args = @(); installCommand = 'install-claude'; env = @{}; apiKeyEnvVar = 'ANTHROPIC_API_KEY' }
+                    codex       = @{ enabled = $true; command = 'codex'; args = @(); installCommand = 'install-codex'; env = @{ OPENAI_API_KEY = '' }; apiKeyEnvVar = 'OPENAI_API_KEY' }
+                    copilot     = @{ enabled = $true; command = 'gh'; args = @('copilot'); installCommand = 'install-copilot'; env = @{} }
+                }
+                logging = @{
+                    enabled = $true
+                    successKeepDays = 0
+                    failureKeepDays = 90
+                }
+            }
+
+            $errors = Test-StartupConfigSchema -Config $config
+            ($errors -join "`n") | Should -Match 'logging.successKeepDays'
+        }
+
+        It 'backupConfig.maxBackups が不正ならエラーを返すこと' {
+            $config = @{
+                version        = '2.0.0'
+                projectsDir    = 'X:\'
+                sshProjectsDir = 'Z:\'
+                projectsDirUnc = '\\server\share'
+                linuxHost      = 'host'
+                linuxBase      = '/mnt/LinuxHDD'
+                tools          = @{
+                    defaultTool = 'claude'
+                    claude      = @{ enabled = $true; command = 'claude'; args = @(); installCommand = 'install-claude'; env = @{}; apiKeyEnvVar = 'ANTHROPIC_API_KEY' }
+                    codex       = @{ enabled = $true; command = 'codex'; args = @(); installCommand = 'install-codex'; env = @{ OPENAI_API_KEY = '' }; apiKeyEnvVar = 'OPENAI_API_KEY' }
+                    copilot     = @{ enabled = $true; command = 'gh'; args = @('copilot'); installCommand = 'install-copilot'; env = @{} }
+                }
+                backupConfig = @{
+                    enabled = $true
+                    backupDir = 'config/backups'
+                    maxBackups = 0
+                    maskSensitive = $true
+                    sensitiveKeys = @()
+                }
+            }
+
+            $errors = Test-StartupConfigSchema -Config $config
+            ($errors -join "`n") | Should -Match 'backupConfig.maxBackups'
+        }
+    }
+}
+
+Describe 'Get-RecentProjects and Update-RecentProjects' {
+
+    Context '履歴ファイルが存在しない場合' {
+
+        It 'Get-RecentProjects が空配列を返すこと' {
+            $result = Get-RecentProjects -HistoryPath (Join-Path $TestDrive 'nonexistent.json')
+            $result | Should -BeNullOrEmpty
         }
     }
 
-    Context 'トークン形式検証' {
+    Context 'Update-RecentProjects のテスト' {
 
         BeforeAll {
-            $script:McpDir3 = Join-Path $TestDrive 'mcp-test3'
-            New-Item -ItemType Directory -Path $script:McpDir3 -Force | Out-Null
-            Set-Content -Path (Join-Path $script:McpDir3 '.mcp.json') -Value '{"mcpServers":{}}' -Encoding UTF8
-
-            $script:McpConfig3 = [pscustomobject]@{
-                mcp = [pscustomobject]@{
-                    enabled = $true
-                    requiredServers = @(); optionalServers = @()
-                    githubToken = 'invalid_token_format'
-                    braveApiKey = ''
-                }
-            }
+            $script:HistoryPath = Join-Path $TestDrive 'recent.json'
         }
 
-        It 'githubToken 形式不正で Warnings に含まれること' {
-            $result = Test-McpServerAvailability -Config $script:McpConfig3 -ProjectRoot $script:McpDir3
-            $result.Warnings.Count | Should -BeGreaterOrEqual 1
-            $result.Warnings[0] | Should -Match 'githubToken'
+        BeforeEach {
+            Remove-Item $script:HistoryPath -Force -ErrorAction SilentlyContinue
         }
-    }
 
-    Context '.mcp.json が存在しない場合' {
+        It 'プロジェクトが追加されること' {
+            Update-RecentProjects -ProjectName 'TestProject' -Tool 'claude' -Mode 'local' -Result 'success' -ElapsedMs 100 -HistoryPath $script:HistoryPath
+            $result = Get-RecentProjects -HistoryPath $script:HistoryPath
+            $result.project | Should -Contain 'TestProject'
+            $result[0].tool | Should -Be 'claude'
+            $result[0].mode | Should -Be 'local'
+            $result[0].result | Should -Be 'success'
+            $result[0].elapsedMs | Should -Be 100
+            $result[0].timestamp | Should -Not -BeNullOrEmpty
+        }
 
-        It 'Missing に全必須サーバーが含まれること' {
-            $emptyDir = Join-Path $TestDrive 'no-mcp'
-            New-Item -ItemType Directory -Path $emptyDir -Force | Out-Null
-            $config = [pscustomobject]@{
-                mcp = [pscustomobject]@{
-                    enabled = $true
-                    requiredServers = @('brave-search','context7')
-                    optionalServers = @(); githubToken = ''; braveApiKey = ''
-                }
+        It '重複が削除されること' {
+            Update-RecentProjects -ProjectName 'TestProject' -Tool 'codex' -Mode 'ssh' -HistoryPath $script:HistoryPath
+            Update-RecentProjects -ProjectName 'TestProject' -Tool 'codex' -Mode 'ssh' -HistoryPath $script:HistoryPath
+            $result = Get-RecentProjects -HistoryPath $script:HistoryPath
+            ($result | Where-Object { $_.project -eq 'TestProject' }).Count | Should -Be 1
+        }
+
+        It 'MaxHistory を超えた場合に古いエントリが削除されること' {
+            1..12 | ForEach-Object {
+                Update-RecentProjects -ProjectName "Project$_" -Tool 'claude' -Mode 'ssh' -HistoryPath $script:HistoryPath -MaxHistory 3
             }
-            $result = Test-McpServerAvailability -Config $config -ProjectRoot $emptyDir
-            $result.Missing.Count | Should -Be 2
+            $result = Get-RecentProjects -HistoryPath $script:HistoryPath
+            $result.Count | Should -BeLessOrEqual 3
+        }
+
+        It '旧形式の文字列配列も正規化して読み込めること' {
+            $legacyPath = Join-Path $TestDrive 'recent-legacy.json'
+            @{ projects = @('LegacyProject') } | ConvertTo-Json -Depth 5 | Set-Content -Path $legacyPath -Encoding UTF8
+            $result = Get-RecentProjects -HistoryPath $legacyPath
+            $result[0].project | Should -Be 'LegacyProject'
+            $result[0].tool | Should -BeNullOrEmpty
+            $result[0].mode | Should -BeNullOrEmpty
         }
     }
 }

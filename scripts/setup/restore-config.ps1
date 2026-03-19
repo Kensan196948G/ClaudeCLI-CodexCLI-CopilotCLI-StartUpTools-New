@@ -26,8 +26,10 @@ if (-not (Test-Path $BackupDir)) {
 }
 
 # 利用可能なバックアップ一覧
-$AvailableBackups = Get-ChildItem -Path $BackupDir -Filter "config-*.json" |
-    Sort-Object LastWriteTime -Descending
+$AvailableBackups = @(
+    Get-ChildItem -Path $BackupDir -Filter "config_*.json" -ErrorAction SilentlyContinue
+    Get-ChildItem -Path $BackupDir -Filter "config-*.json" -ErrorAction SilentlyContinue
+) | Sort-Object LastWriteTime -Descending
 
 if ($AvailableBackups.Count -eq 0) {
     Write-Error "❌ バックアップファイルが見つかりません"

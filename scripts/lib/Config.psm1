@@ -1,14 +1,211 @@
-# ============================================================
+﻿# ============================================================
 # Config.psm1 - 設定管理モジュール
-# Claude-EdgeChromeDevTools v1.3.0
+# ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools v2.0.0
 # ============================================================
 
 # 必須フィールドの定義
-$script:RequiredFields = @('ports', 'zDrive', 'linuxHost', 'linuxBase')
+$script:RequiredFields = @('version', 'linuxHost', 'tools')
+$script:TemplateRequiredFields = @('version', 'projectsDir', 'sshProjectsDir', 'projectsDirUnc', 'linuxHost', 'linuxBase', 'tools')
+$script:TemplateToolRequiredFields = @{
+    claude  = @('enabled', 'command', 'args', 'installCommand', 'env', 'apiKeyEnvVar')
+    codex   = @('enabled', 'command', 'args', 'installCommand', 'env', 'apiKeyEnvVar')
+    copilot = @('enabled', 'command', 'args', 'installCommand', 'env')
+}
+$script:AllowedDefaultTools = @('claude', 'codex', 'copilot')
+$script:AllowedLauncherModes = @('local', 'ssh')
 
-# ポートの有効範囲
-$script:PortMin = 1024
-$script:PortMax = 65535
+function Test-IntegerValueInRange {
+    param(
+        [object]$Value,
+        [int]$Minimum,
+        [int]$Maximum = [int]::MaxValue
+    )
+
+    if ($null -eq $Value) {
+        return $false
+    }
+
+    try {
+        $number = [int64]$Value
+    }
+    catch {
+        return $false
+    }
+
+    return ($number -ge $Minimum -and $number -le $Maximum)
+}
+
+function Add-SchemaError {
+    param(
+        [Parameter(Mandatory=$true)]
+        [AllowEmptyCollection()]
+        [System.Collections.Generic.List[string]]$Errors,
+        [Parameter(Mandatory=$true)]
+        [string]$Message
+    )
+
+    $Errors.Add($Message)
+}
+
+function Test-StartupConfigSchema {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [object]$Config
+    )
+
+    $errors = [System.Collections.Generic.List[string]]::new()
+
+    foreach ($field in $script:TemplateRequiredFields) {
+        $value = $Config.$field
+        if ($null -eq $value -or ($value -is [string] -and [string]::IsNullOrWhiteSpace($value))) {
+            Add-SchemaError -Errors $errors -Message "必須フィールドが不足しています: $field"
+        }
+    }
+
+    if ($null -eq $Config.tools) {
+        Add-SchemaError -Errors $errors -Message "必須フィールドが不足しています: tools"
+        return @($errors)
+    }
+
+    if ([string]::IsNullOrWhiteSpace($Config.tools.defaultTool)) {
+        Add-SchemaError -Errors $errors -Message "必須フィールドが不足しています: tools.defaultTool"
+    }
+    elseif ($Config.tools.defaultTool -notin $script:AllowedDefaultTools) {
+        Add-SchemaError -Errors $errors -Message "tools.defaultTool は claude/codex/copilot のいずれかである必要があります"
+    }
+
+    foreach ($pathField in @('projectsDir', 'sshProjectsDir', 'projectsDirUnc', 'linuxHost', 'linuxBase')) {
+        $value = $Config.$pathField
+        if ($null -ne $value -and $value -isnot [string]) {
+            Add-SchemaError -Errors $errors -Message "$pathField は文字列である必要があります"
+        }
+    }
+
+    if ($null -ne $Config.localExcludes -and $Config.localExcludes -isnot [System.Array]) {
+        Add-SchemaError -Errors $errors -Message "localExcludes は配列である必要があります"
+    }
+
+    foreach ($toolName in $script:TemplateToolRequiredFields.Keys) {
+        $toolConfig = $Config.tools.$toolName
+        if ($null -eq $toolConfig) {
+            Add-SchemaError -Errors $errors -Message "必須フィールドが不足しています: tools.$toolName"
+            continue
+        }
+
+        foreach ($field in $script:TemplateToolRequiredFields[$toolName]) {
+            $value = $toolConfig.$field
+            if ($null -eq $value -or ($value -is [string] -and [string]::IsNullOrWhiteSpace($value))) {
+                Add-SchemaError -Errors $errors -Message "必須フィールドが不足しています: tools.$toolName.$field"
+            }
+        }
+
+        if ($toolConfig.enabled -isnot [bool]) {
+            Add-SchemaError -Errors $errors -Message "tools.$toolName.enabled は boolean である必要があります"
+        }
+        if ($toolConfig.command -isnot [string]) {
+            Add-SchemaError -Errors $errors -Message "tools.$toolName.command は文字列である必要があります"
+        }
+        if ($toolConfig.args -isnot [System.Array]) {
+            Add-SchemaError -Errors $errors -Message "tools.$toolName.args は配列である必要があります"
+        }
+        if ($toolConfig.installCommand -isnot [string]) {
+            Add-SchemaError -Errors $errors -Message "tools.$toolName.installCommand は文字列である必要があります"
+        }
+        if ($null -eq $toolConfig.env -or $toolConfig.env -is [string] -or $toolConfig.env -is [System.Array]) {
+            Add-SchemaError -Errors $errors -Message "tools.$toolName.env はオブジェクトである必要があります"
+        }
+        if (($toolName -ne 'copilot') -and ($toolConfig.apiKeyEnvVar -isnot [string])) {
+            Add-SchemaError -Errors $errors -Message "tools.$toolName.apiKeyEnvVar は文字列である必要があります"
+        }
+    }
+
+    if ($null -ne $Config.recentProjects) {
+        if ($Config.recentProjects.enabled -isnot [bool]) {
+            Add-SchemaError -Errors $errors -Message "recentProjects.enabled は boolean である必要があります"
+        }
+        if (-not (Test-IntegerValueInRange -Value $Config.recentProjects.maxHistory -Minimum 1)) {
+            Add-SchemaError -Errors $errors -Message "recentProjects.maxHistory は 1 以上の整数である必要があります"
+        }
+        if ($Config.recentProjects.historyFile -isnot [string]) {
+            Add-SchemaError -Errors $errors -Message "recentProjects.historyFile は文字列である必要があります"
+        }
+    }
+
+    if ($null -ne $Config.logging) {
+        if ($Config.logging.enabled -isnot [bool]) {
+            Add-SchemaError -Errors $errors -Message "logging.enabled は boolean である必要があります"
+        }
+        if ($null -ne $Config.logging.logDir -and $Config.logging.logDir -isnot [string]) {
+            Add-SchemaError -Errors $errors -Message "logging.logDir は文字列である必要があります"
+        }
+        if ($null -ne $Config.logging.logPrefix -and $Config.logging.logPrefix -isnot [string]) {
+            Add-SchemaError -Errors $errors -Message "logging.logPrefix は文字列である必要があります"
+        }
+        if ($null -ne $Config.logging.successKeepDays -and -not (Test-IntegerValueInRange -Value $Config.logging.successKeepDays -Minimum 1 -Maximum 3650)) {
+            Add-SchemaError -Errors $errors -Message "logging.successKeepDays は 1 から 3650 の整数である必要があります"
+        }
+        if ($null -ne $Config.logging.failureKeepDays -and -not (Test-IntegerValueInRange -Value $Config.logging.failureKeepDays -Minimum 1 -Maximum 3650)) {
+            Add-SchemaError -Errors $errors -Message "logging.failureKeepDays は 1 から 3650 の整数である必要があります"
+        }
+    }
+
+    if ($null -ne $Config.ssh) {
+        if ($null -ne $Config.ssh.autoCleanup -and $Config.ssh.autoCleanup -isnot [bool]) {
+            Add-SchemaError -Errors $errors -Message "ssh.autoCleanup は boolean である必要があります"
+        }
+        if ($null -ne $Config.ssh.options -and $Config.ssh.options -isnot [System.Array]) {
+            Add-SchemaError -Errors $errors -Message "ssh.options は配列である必要があります"
+        }
+    }
+
+    if ($null -ne $Config.backupConfig) {
+        if ($null -ne $Config.backupConfig.enabled -and $Config.backupConfig.enabled -isnot [bool]) {
+            Add-SchemaError -Errors $errors -Message "backupConfig.enabled は boolean である必要があります"
+        }
+        if ($null -ne $Config.backupConfig.backupDir -and $Config.backupConfig.backupDir -isnot [string]) {
+            Add-SchemaError -Errors $errors -Message "backupConfig.backupDir は文字列である必要があります"
+        }
+        if ($null -ne $Config.backupConfig.maxBackups -and -not (Test-IntegerValueInRange -Value $Config.backupConfig.maxBackups -Minimum 1 -Maximum 1000)) {
+            Add-SchemaError -Errors $errors -Message "backupConfig.maxBackups は 1 から 1000 の整数である必要があります"
+        }
+        if ($null -ne $Config.backupConfig.maskSensitive -and $Config.backupConfig.maskSensitive -isnot [bool]) {
+            Add-SchemaError -Errors $errors -Message "backupConfig.maskSensitive は boolean である必要があります"
+        }
+        if ($null -ne $Config.backupConfig.sensitiveKeys -and $Config.backupConfig.sensitiveKeys -isnot [System.Array]) {
+            Add-SchemaError -Errors $errors -Message "backupConfig.sensitiveKeys は配列である必要があります"
+        }
+    }
+
+    return @($errors)
+}
+
+function Assert-StartupConfigSchema {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$ConfigPath
+    )
+
+    if (-not (Test-Path $ConfigPath)) {
+        throw "設定ファイルが見つかりません: $ConfigPath"
+    }
+
+    try {
+        $content = Get-Content -Path $ConfigPath -Raw -Encoding UTF8
+        $config = $content | ConvertFrom-Json
+    }
+    catch {
+        throw "config.jsonのJSONパースに失敗しました: $_"
+    }
+
+    $errors = Test-StartupConfigSchema -Config $config
+    if ($errors.Count -gt 0) {
+        throw ($errors -join "`n")
+    }
+
+    return $true
+}
 
 <#
 .SYNOPSIS
@@ -16,15 +213,15 @@ $script:PortMax = 65535
 
 .DESCRIPTION
     指定されたパスからconfig.jsonを読み込み、必須フィールドの存在確認と
-    ポート範囲の検証を行う。検証失敗時は例外をスローする。
+    ツール設定の検証を行う。検証失敗時は例外をスローする。
 
 .PARAMETER ConfigPath
     config.jsonのファイルパス
 
 .EXAMPLE
-    $config = Import-DevToolsConfig -ConfigPath ".\config\config.json"
+    $config = Import-StartupConfig -ConfigPath ".\config\config.json"
 #>
-function Import-DevToolsConfig {
+function Import-StartupConfig {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
@@ -40,7 +237,7 @@ function Import-DevToolsConfig {
     try {
         $content = Get-Content -Path $ConfigPath -Raw -Encoding UTF8
         $config = $content | ConvertFrom-Json
-        Write-Host "⚙️  設定ファイル読み込み: $ConfigPath" -ForegroundColor Cyan
+        Write-Host "[INFO]  設定ファイル読み込み: $ConfigPath" -ForegroundColor Cyan
     }
     catch {
         throw "config.jsonのJSONパースに失敗しました: $_"
@@ -53,43 +250,35 @@ function Import-DevToolsConfig {
             throw "config.jsonに必須フィールドがありません: '$field'"
         }
     }
-    Write-Host "✅ 必須フィールド検証OK" -ForegroundColor Green
+    Write-Host "[ OK ]  必須フィールド検証OK" -ForegroundColor Green
 
-    # ポート配列の検証
-    if ($null -eq $config.ports -or $config.ports.Count -eq 0) {
-        throw "config.jsonの 'ports' が空またはnullです"
+    # プレースホルダーの検出
+    if ($config.linuxHost -eq "<your-linux-host>") {
+        Write-Warning "config.json の linuxHost がプレースホルダーのままです。実際のホスト名に変更してください。"
     }
 
-    foreach ($port in $config.ports) {
-        if ($port -lt $script:PortMin -or $port -gt $script:PortMax) {
-            throw "ポート番号が有効範囲外です: $port (有効範囲: $($script:PortMin)-$($script:PortMax))"
+    # ツール設定の検証
+    $validTools = @('claude', 'codex', 'copilot')
+    foreach ($toolName in $validTools) {
+        $toolConf = $config.tools.$toolName
+        if ($null -ne $toolConf) {
+            if ($null -eq $toolConf.enabled) {
+                Write-Warning "tools.$toolName.enabled が未設定です"
+            }
+            if ($null -eq $toolConf.command) {
+                Write-Warning "tools.$toolName.command が未設定です"
+            }
         }
     }
-    Write-Host "✅ ポート範囲検証OK ($($config.ports.Count) ポート)" -ForegroundColor Green
-
-    # initPromptFile の検証（オプション）
-    if ($null -ne $config.initPromptFile -and -not [string]::IsNullOrWhiteSpace($config.initPromptFile)) {
-        if (-not (Test-Path $config.initPromptFile)) {
-            Write-Warning "initPromptFile が見つかりません: $($config.initPromptFile) (スキップして続行)"
-        } else {
-            Write-Host "✅ initPromptFile 検証OK: $($config.initPromptFile)" -ForegroundColor Green
-        }
-    }
-
-    # tmux 設定のスキーマ検証（オプション）
-    if ($null -ne $config.tmux) {
-        $tmuxValidLayouts = @('auto', 'default', 'review-team', 'fullstack-dev-team', 'debug-team')
-        if ($null -ne $config.tmux.defaultLayout -and
-            $tmuxValidLayouts -notcontains $config.tmux.defaultLayout) {
-            Write-Warning "tmux.defaultLayout が無効な値です: '$($config.tmux.defaultLayout)' (有効値: $($tmuxValidLayouts -join ', '))"
-        }
-        if ($null -ne $config.tmux.enabled -and $config.tmux.enabled -isnot [bool]) {
-            Write-Warning "tmux.enabled はブール値である必要があります: '$($config.tmux.enabled)'"
-        }
-        Write-Host "✅ tmux 設定スキーマ検証OK" -ForegroundColor Green
-    }
+    Write-Host "[ OK ]  ツール設定検証OK" -ForegroundColor Green
 
     return $config
+}
+
+# 後方互換性のためのラッパー関数
+function Import-DevToolsConfig {
+    param([string]$ConfigPath)
+    Import-StartupConfig -ConfigPath $ConfigPath
 }
 
 <#
@@ -113,7 +302,7 @@ function Import-DevToolsConfig {
     機密情報をマスクするか（デフォルト: $true）
 
 .PARAMETER SensitiveKeys
-    マスクするキーのリスト（例: @('mcp.githubToken', 'mcp.braveApiKey')）
+    マスクするキーのリスト（例: @('tools.codex.env.OPENAI_API_KEY')）
 
 .EXAMPLE
     Backup-ConfigFile -ConfigPath ".\config\config.json" -BackupDir ".\config\backups"
@@ -181,7 +370,7 @@ function Backup-ConfigFile {
         }
 
         Set-Content -Path $backupFile -Value $content -Encoding UTF8
-        Write-Host "💾 設定バックアップ作成: $backupFile" -ForegroundColor Cyan
+        Write-Host "[INFO]  設定バックアップ作成: $backupFile" -ForegroundColor Cyan
 
         # 古いバックアップを削除（MaxBackupsを超えた分）
         $pattern = "${baseName}_*${ext}"
@@ -190,7 +379,7 @@ function Backup-ConfigFile {
             $toDelete = $backups | Select-Object -Skip $MaxBackups
             foreach ($old in $toDelete) {
                 Remove-Item -Path $old.FullName -Force
-                Write-Host "🗑️  古いバックアップ削除: $($old.Name)" -ForegroundColor DarkGray
+                Write-Host "[INFO]  古いバックアップ削除: $($old.Name)" -ForegroundColor DarkGray
             }
         }
     }
@@ -203,15 +392,11 @@ function Backup-ConfigFile {
 .SYNOPSIS
     最近使用プロジェクト履歴を取得
 
-.DESCRIPTION
-    JSONファイルから最近使用したプロジェクトのリストを読み込む。
-    ファイルが存在しない場合は空の配列を返す。
-
 .PARAMETER HistoryPath
     履歴ファイルのパス（%USERPROFILE% などの環境変数を展開する）
 
 .EXAMPLE
-    $recent = Get-RecentProjects -HistoryPath "%USERPROFILE%\.claude\recent-projects.json"
+    $recent = Get-RecentProjects -HistoryPath "%USERPROFILE%\.ai-startup\recent-projects.json"
 #>
 function Get-RecentProjects {
     [CmdletBinding()]
@@ -220,7 +405,6 @@ function Get-RecentProjects {
         [string]$HistoryPath
     )
 
-    # 環境変数を展開
     $expandedPath = [System.Environment]::ExpandEnvironmentVariables($HistoryPath)
 
     if (-not (Test-Path $expandedPath)) {
@@ -235,7 +419,36 @@ function Get-RecentProjects {
             return @()
         }
 
-        return @($data.projects)
+        $normalized = @()
+        foreach ($entry in @($data.projects)) {
+            if ($entry -is [string]) {
+                $normalized += [pscustomobject]@{
+                    project = $entry
+                    tool = $null
+                    mode = $null
+                    timestamp = $null
+                    result = $null
+                    elapsedMs = $null
+                }
+                continue
+            }
+
+            if ($entry.PSObject.Properties.Name -contains 'project') {
+                $tool = if ($entry.PSObject.Properties.Name -contains 'tool') { "$($entry.tool)" } else { $null }
+                $mode = if ($entry.PSObject.Properties.Name -contains 'mode') { "$($entry.mode)" } else { $null }
+                $timestamp = if ($entry.PSObject.Properties.Name -contains 'timestamp') { "$($entry.timestamp)" } else { $null }
+                $normalized += [pscustomobject]@{
+                    project = "$($entry.project)"
+                    tool = if ([string]::IsNullOrWhiteSpace($tool)) { $null } else { $tool }
+                    mode = if ([string]::IsNullOrWhiteSpace($mode)) { $null } else { $mode }
+                    timestamp = if ([string]::IsNullOrWhiteSpace($timestamp)) { $null } else { $timestamp }
+                    result = if ($entry.PSObject.Properties.Name -contains 'result' -and -not [string]::IsNullOrWhiteSpace("$($entry.result)")) { "$($entry.result)" } else { $null }
+                    elapsedMs = if ($entry.PSObject.Properties.Name -contains 'elapsedMs' -and $null -ne $entry.elapsedMs) { [int]$entry.elapsedMs } else { $null }
+                }
+            }
+        }
+
+        return @($normalized)
     }
     catch {
         Write-Warning "最近使用プロジェクト履歴の読み込みに失敗しました: $_"
@@ -247,27 +460,38 @@ function Get-RecentProjects {
 .SYNOPSIS
     最近使用プロジェクト履歴を更新
 
-.DESCRIPTION
-    指定されたプロジェクトを履歴の先頭に追加する。
-    重複は削除し、MaxHistoryを超えた古いエントリは削除する。
-
 .PARAMETER ProjectName
     追加するプロジェクト名
 
 .PARAMETER HistoryPath
-    履歴ファイルのパス（%USERPROFILE% などの環境変数を展開する）
+    履歴ファイルのパス
 
 .PARAMETER MaxHistory
     保持する最大履歴数（デフォルト: 10）
 
 .EXAMPLE
-    Update-RecentProjects -ProjectName "MyProject" -HistoryPath "%USERPROFILE%\.claude\recent-projects.json"
+    Update-RecentProjects -ProjectName "MyProject" -HistoryPath "%USERPROFILE%\.ai-startup\recent-projects.json"
 #>
 function Update-RecentProjects {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
         [string]$ProjectName,
+
+        [Parameter(Mandatory=$false)]
+        [ValidateSet('claude', 'codex', 'copilot', '')]
+        [string]$Tool = '',
+
+        [Parameter(Mandatory=$false)]
+        [ValidateSet('local', 'ssh', '')]
+        [string]$Mode = '',
+
+        [Parameter(Mandatory=$false)]
+        [ValidateSet('success', 'failure', 'cancelled', 'unknown', '')]
+        [string]$Result = '',
+
+        [Parameter(Mandatory=$false)]
+        [Nullable[int]]$ElapsedMs = $null,
 
         [Parameter(Mandatory=$true)]
         [string]$HistoryPath,
@@ -276,122 +500,66 @@ function Update-RecentProjects {
         [int]$MaxHistory = 10
     )
 
-    # 環境変数を展開
     $expandedPath = [System.Environment]::ExpandEnvironmentVariables($HistoryPath)
 
-    # ディレクトリ作成
     $dir = Split-Path $expandedPath -Parent
     if (-not (Test-Path $dir)) {
         New-Item -ItemType Directory -Path $dir -Force | Out-Null
     }
 
-    # 既存履歴を読み込み
-    $projects = [System.Collections.Generic.List[string]]::new()
+    $projects = [System.Collections.Generic.List[object]]::new()
     $existing = Get-RecentProjects -HistoryPath $HistoryPath
     foreach ($p in $existing) {
-        if ($p -ne $ProjectName) {
+        $sameProject = ($p.project -eq $ProjectName)
+        $sameTool = (([string]::IsNullOrWhiteSpace($Tool) -and [string]::IsNullOrWhiteSpace($p.tool)) -or ($p.tool -eq $Tool))
+        $sameMode = (([string]::IsNullOrWhiteSpace($Mode) -and [string]::IsNullOrWhiteSpace($p.mode)) -or ($p.mode -eq $Mode))
+        if (-not ($sameProject -and $sameTool -and $sameMode)) {
             $projects.Add($p)
         }
     }
 
-    # 先頭に追加
-    $projects.Insert(0, $ProjectName)
+    $projects.Insert(0, [pscustomobject]@{
+        project = $ProjectName
+        tool = if ([string]::IsNullOrWhiteSpace($Tool)) { $null } else { $Tool }
+        mode = if ([string]::IsNullOrWhiteSpace($Mode)) { $null } else { $Mode }
+        timestamp = (Get-Date).ToString('o')
+        result = if ([string]::IsNullOrWhiteSpace($Result)) { $null } else { $Result }
+        elapsedMs = if ($PSBoundParameters.ContainsKey('ElapsedMs') -and $null -ne $ElapsedMs) { [int]$ElapsedMs } else { $null }
+    })
 
-    # MaxHistoryに切り詰め
     if ($projects.Count -gt $MaxHistory) {
-        $projects = [System.Collections.Generic.List[string]]($projects | Select-Object -First $MaxHistory)
+        $projects = [System.Collections.Generic.List[object]]($projects | Select-Object -First $MaxHistory)
     }
 
-    # JSONとして保存
     try {
         $data = @{ projects = @($projects) }
         $json = $data | ConvertTo-Json -Depth 3
         Set-Content -Path $expandedPath -Value $json -Encoding UTF8
-        Write-Host "📝 最近使用プロジェクト更新: $ProjectName" -ForegroundColor Cyan
+        Write-Host "[INFO]  最近使用プロジェクト更新: $ProjectName" -ForegroundColor Cyan
     }
     catch {
         Write-Warning "最近使用プロジェクト履歴の保存に失敗しました: $_"
     }
 }
 
-<#
-.SYNOPSIS
-    MCP サーバーの可用性を検証
-.DESCRIPTION
-    config.json の mcp.requiredServers と .mcp.json を比較し、
-    不足しているサーバーやトークン形式の問題を報告する。
-.PARAMETER Config
-    config.json から読み込んだ設定オブジェクト
-.PARAMETER ProjectRoot
-    プロジェクトルートディレクトリ (.mcp.json の存在場所)
-.EXAMPLE
-    $result = Test-McpServerAvailability -Config $Config -ProjectRoot "X:\MyProject"
-#>
-function Test-McpServerAvailability {
+function Test-RecentProjectsEnabled {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
-        [psobject]$Config,
-
-        [Parameter(Mandatory=$true)]
-        [string]$ProjectRoot
+        [object]$Config
     )
 
-    $result = @{
-        Available = @()
-        Missing   = @()
-        Warnings  = @()
-    }
-
-    if ($null -eq $Config.mcp -or $Config.mcp.enabled -ne $true) {
-        return $result
-    }
-
-    $mcpConfig = $Config.mcp
-    $mcpJsonPath = Join-Path $ProjectRoot '.mcp.json'
-
-    # .mcp.json 読み込み
-    $mcpServers = @{}
-    if (Test-Path $mcpJsonPath) {
-        try {
-            $mcpContent = Get-Content -Path $mcpJsonPath -Raw -Encoding UTF8 | ConvertFrom-Json
-            if ($null -ne $mcpContent.mcpServers) {
-                foreach ($prop in $mcpContent.mcpServers.PSObject.Properties) {
-                    $mcpServers[$prop.Name] = $true
-                }
-            }
-        } catch {
-            $result.Warnings += ".mcp.json のパースに失敗しました: $_"
-        }
-    }
-
-    # 必須サーバー検証
-    if ($null -ne $mcpConfig.requiredServers) {
-        foreach ($server in $mcpConfig.requiredServers) {
-            if ($mcpServers.ContainsKey($server)) {
-                $result.Available += $server
-            } else {
-                $result.Missing += $server
-            }
-        }
-    }
-
-    # トークン形式検証
-    if ($null -ne $mcpConfig.githubToken -and $mcpConfig.githubToken -ne '') {
-        $token = $mcpConfig.githubToken
-        if ($token -notmatch '^(ghp_|github_pat_)') {
-            $result.Warnings += "githubToken の形式が不正です (ghp_ または github_pat_ プレフィックスが必要)"
-        }
-    }
-
-    return $result
+    return ($null -ne $Config.recentProjects -and $Config.recentProjects.enabled -and -not [string]::IsNullOrWhiteSpace($Config.recentProjects.historyFile))
 }
 
 # モジュールのエクスポート
 Export-ModuleMember -Function @(
+    'Import-StartupConfig',
     'Import-DevToolsConfig',
+    'Test-StartupConfigSchema',
+    'Assert-StartupConfigSchema',
     'Backup-ConfigFile',
     'Get-RecentProjects',
     'Update-RecentProjects',
-    'Test-McpServerAvailability'
+    'Test-RecentProjectsEnabled'
 )

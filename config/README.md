@@ -1,120 +1,90 @@
-# Configuration Setup
+# 設定ファイル運用
 
-## クイックスタート
+このリポジトリでは、設定の正本を [config/config.json.template](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/config/config.json.template) とし、実機固有の値だけを `config/config.json` に持たせます。
 
-### 1. config.json の作成
+## 基本ルール
+
+- `config/config.json.template`: リポジトリで共有する基準設定
+- `config/config.json`: 各端末で使う実設定
+- `config/agent-teams-backlog-rules.json`: Agent Teams backlog 同期時の metadata 推定ルール
+- 新しい設定キーを追加したら、先に template を更新する
+- 手順書や README は template ベースで説明する
+
+## 初期作成
 
 ```powershell
-# テンプレートから config.json をコピー
-cd config
-cp config.json.template config.json
+Copy-Item .\config\config.json.template .\config\config.json
+Copy-Item .\config\agent-teams-backlog-rules.json.template .\config\agent-teams-backlog-rules.json
 ```
 
-### 2. 環境に合わせて編集
+## `config.json` で編集する代表項目
 
-`config.json` を開き、以下を設定：
+- `projectsDir`
+- `sshProjectsDir`
+- `projectsDirUnc`
+- `linuxHost`
+- `linuxBase`
+- `localExcludes`
 
-#### 必須設定
+これらは端末やネットワーク構成に依存するため、template ではプレースホルダのままにします。
 
-| 項目 | 説明 | 例 |
-|------|------|-----|
-| `zDrive` | プロジェクトがマウントされているドライブ | `"X:\\"` または `"Z:\\"` |
-| `zDriveUncPath` | ドライブのUNCパス | `"\\\\192.168.1.100\\Projects"` |
-| `linuxHost` | SSH接続先ホスト名（~/.ssh/config で定義） | `"your-linux-host"` |
-| `linuxBase` | Linuxプロジェクトベースパス | `"/mnt/Projects"` |
+## 項目対応表
 
-#### オプション設定
+template のキーを追加・変更した場合は、少なくともこの表に対応があるか確認します。
 
-**GitHub MCP を使用する場合**:
+| template キー | 用途 | 主な参照先 |
+|---|---|---|
+| `version` | 設定バージョン | `scripts/lib/Config.psm1` |
+| `projectsDir` | ローカル起動時のプロジェクトルート | `scripts/main/Start-*.ps1`, `scripts/test/Test-AllTools.ps1` |
+| `sshProjectsDir` | SSH 実行時に Windows 側で参照する共有ドライブ | `scripts/main/Start-*.ps1`, `scripts/test/test-drive-mapping.ps1` |
+| `projectsDirUnc` | UNC フォールバック | `scripts/test/test-drive-mapping.ps1`, `scripts/test/Test-AllTools.ps1` |
+| `linuxHost` | SSH 接続先 | `scripts/main/Start-*.ps1`, `scripts/main/Start-Menu.ps1` |
+| `linuxBase` | Linux 側プロジェクトルート | `scripts/main/Start-*.ps1`, `README.md` |
+| `localExcludes` | ローカル選択から除外するディレクトリ | `scripts/lib/LauncherCommon.psm1` |
+| `tools.defaultTool` | 統合ランチャーのデフォルト | `scripts/main/Start-All.ps1` |
+| `tools.claude.*` | Claude Code の起動設定 | `scripts/main/Start-ClaudeCode.ps1`, `docs/claude/*` |
+| `tools.codex.*` | Codex CLI の起動設定 | `scripts/main/Start-CodexCLI.ps1`, `docs/codex/*` |
+| `tools.copilot.*` | GitHub Copilot CLI の起動設定 | `scripts/main/Start-CopilotCLI.ps1`, `docs/copilot/*` |
+| `ssh.*` | SSH 実行まわりの補助設定 | `config/config.json.template`, 将来の SSH 共通化拡張 |
+| `logging.*` | ログ出力設定 | `scripts/lib/LogManager.psm1` |
+| `backupConfig.*` | 設定バックアップ制御 | `scripts/lib/Config.psm1` |
+| `recentProjects.*` | 最近使用履歴 | `scripts/lib/Config.psm1` |
+| `agent-teams-backlog-rules.json` | backlog metadata 自動付与ルール | `scripts/tools/Sync-AgentTeamsBacklog.ps1`, `TASKS.md` |
+
+## 更新チェック手順
+
+1. `config/config.json.template` を更新する
+2. この README の対応表を更新する
+3. `scripts/lib/Config.psm1` のスキーマ検証を更新する
+4. 関連する `docs/*` と `README.md` を更新する
+5. `Invoke-Pester .\tests` を実行する
+
+## Agent Teams backlog ルール
+
+`scripts/tools/Sync-AgentTeamsBacklog.ps1 -ApplyMetadata` は、`config/agent-teams-backlog-rules.json` を読んで `TASKS.md` の自動抽出項目へ `Priority` / `Owner` / `Source` を付与します。
+
+- 共通ルールを見直す場合は `config/agent-teams-backlog-rules.json` を更新する
+- 新規端末では template から実ファイルを作成する
+- 変更後は `.\scripts\tools\Sync-AgentTeamsBacklog.ps1 -Action sync -ApplyMetadata` を実行する
+
+## ツール設定の基準
+
+- Claude Code: `tools.claude`
+- Codex CLI: `tools.codex`
+- GitHub Copilot CLI: `tools.copilot`
+
+Copilot の基準コマンドは `gh copilot` です。
+
 ```json
-{
-  "mcp": {
-    "githubToken": "<Base64エンコード済みToken>"
-  }
+"copilot": {
+  "enabled": true,
+  "command": "gh",
+  "args": ["copilot"],
+  "env": {}
 }
 ```
 
-Token の Base64 エンコード方法:
-```powershell
-$token = "ghp_YOUR_GITHUB_TOKEN"
-$encoded = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($token))
-Write-Host $encoded
-# 出力された文字列を githubToken に設定
-```
+## 関連ドキュメント
 
-**Brave Search MCP を使用する場合**:
-```json
-{
-  "mcp": {
-    "braveApiKey": "YOUR_BRAVE_API_KEY"
-  }
-}
-```
-
-### 3. SSH 設定
-
-`~/.ssh/config` にホストを定義：
-
-```
-Host your-linux-host
-    HostName 192.168.1.100
-    User your-username
-    IdentityFile ~/.ssh/id_ed25519
-    IdentitiesOnly yes
-    ServerAliveInterval 60
-```
-
-SSH鍵がない場合は生成：
-```bash
-ssh-keygen -t ed25519 -C "your-email@example.com"
-ssh-copy-id your-linux-host
-```
-
-### 4. 動作確認
-
-```cmd
-start.bat
-```
-
-メニューからオプション 1 (Edge) または 2 (Chrome) を選択。
-
----
-
-## トラブルシューティング
-
-### config.json が見つからない
-
-**エラー**: `❌ 設定ファイルが見つかりません: config\config.json`
-
-**解決策**: `config.json.template` から `config.json` を作成してください（上記手順1参照）
-
-### SSH接続できない
-
-**確認事項**:
-1. `~/.ssh/config` でホストが定義されているか
-2. `ssh your-linux-host` でパスワードなしで接続できるか
-3. SSH鍵の権限が正しいか（Windows の場合は icacls で確認）
-
-### X:\ ドライブが見つからない
-
-スクリプトは自動的に `zDriveUncPath` の UNC パスにフォールバックします。
-
-UNC パスが正しく設定されているか確認：
-```powershell
-Test-Path "\\your-server\your-share"
-```
-
----
-
-## config.json スキーマ
-
-完全なスキーマは `config.json.template` を参照してください。
-
-主要セクション:
-- `ports`: DevToolsポート配列
-- `zDrive` / `zDriveUncPath`: プロジェクトルート
-- `linuxHost` / `linuxBase`: Linux環境
-- `edgeExe` / `chromeExe`: ブラウザパス
-- `statusline`: Statusline表示設定
-- `claudeCode`: Claude Code環境変数・設定
-- `mcp`: MCP自動セットアップ設定
+- [docs/common/07_設定運用ガイド.md](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/docs/common/07_設定運用ガイド.md)
+- [README.md](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/README.md)

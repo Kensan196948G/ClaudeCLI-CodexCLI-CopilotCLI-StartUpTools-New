@@ -1,6 +1,6 @@
 # ============================================================
 # LogManager.psm1 - セッションログ管理モジュール
-# Claude-EdgeChromeDevTools v1.8.0
+# ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools v2.0.0
 # ============================================================
 
 # --- モジュールスコープ変数 ---
@@ -16,11 +16,8 @@ function Start-SessionLog {
         [Parameter(Mandatory=$true)]
         [string]$ProjectName,
 
-        [Parameter(Mandatory=$true)]
-        [string]$Browser,
-
-        [Parameter(Mandatory=$true)]
-        [int]$Port
+        [Parameter(Mandatory=$false)]
+        [string]$ToolName = "ai-tool"
     )
 
     # logging セクション未定義 or disabled の場合はスキップ
@@ -30,9 +27,9 @@ function Start-SessionLog {
     }
 
     $logging = $Config.logging
-    $prefix = if ($logging.logPrefix) { $logging.logPrefix } else { "claude-devtools" }
+    $prefix = if ($logging.logPrefix) { $logging.logPrefix } else { "ai-startup" }
     $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $fileName = "$prefix-$ProjectName-$Browser-$Port-$timestamp.log"
+    $fileName = "$prefix-$ProjectName-$ToolName-$timestamp.log"
 
     # ログディレクトリの決定（フォールバック付き）
     $logDir = $logging.logDir

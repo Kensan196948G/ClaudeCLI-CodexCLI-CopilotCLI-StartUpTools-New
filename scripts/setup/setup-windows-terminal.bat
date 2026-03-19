@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 rem ============================================
-rem Windows Terminal Setup Guide for Claude DevTools
+rem Windows Terminal Setup Guide for AI CLI Startup
 rem ============================================
 
 rem Check Windows Terminal settings path
@@ -21,7 +21,7 @@ if exist "%WT_SETTINGS_PATH%" (
 
 echo.
 echo ============================================
-echo Windows Terminal Settings for Claude DevTools
+echo Windows Terminal Settings for AI CLI Startup
 echo ============================================
 echo.
 echo Recommended Settings:
@@ -41,7 +41,7 @@ echo 2. Press Ctrl + Shift + , (comma) to open settings
 echo 3. Add the following profile:
 echo.
 echo {
-echo   "name": "Claude DevTools",
+echo   "name": "AI CLI Startup",
 echo   "commandline": "powershell.exe",
 echo   "font": {
 echo     "face": "Cascadia Code",
@@ -56,9 +56,14 @@ echo   "padding": "8"
 echo }
 echo.
 echo [Method 2: Auto-Setup Script]
-echo Run PowerShell as Administrator and execute:
+echo Run PowerShell and execute:
 echo.
 echo   .\setup-windows-terminal.ps1
+echo   .\setup-windows-terminal.ps1 -SetAsDefault -StartingDirectory "D:\Work" -NonInteractive
+echo   .\setup-windows-terminal.ps1 -Theme "Campbell" -FontSize 20 -Opacity 90 -NonInteractive
+echo   .\setup-windows-terminal.ps1 -FontFace "Fira Code" -UseAcrylic:$false -NonInteractive
+echo   .\setup-windows-terminal.ps1 -ThemeJsonPath ".\my-theme.json" -NonInteractive
+echo   .\setup-windows-terminal.ps1 -ProfileName "AI CLI Main" -AdditionalProfileNames "AI CLI Ops","AI CLI QA" -NonInteractive
 echo.
 echo ============================================
 echo Useful Shortcut Keys

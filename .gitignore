@@ -39,8 +39,14 @@ DevTools-chrome-*
 # Claude Code ローカルファイル
 .claude/logs/
 .claude/memory/project-context.json
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
 .mcp.json.bak.*
 .mcp.json.backup.*
+
+# Claude CLI ツール設定（API キーを含む可能性）
+Claude/settings.json
+Claude/settings.local.json
 
 # config.json バックアップ（機密情報含む可能性があるため除外）
 config/backups/*.json
