@@ -118,7 +118,7 @@ function Get-DriveMappingReport {
 
     if (Test-Path $drivePath) {
         $report.directAccess = $true
-        $report.directoryCount = (Get-ChildItem $drivePath -Directory -ErrorAction SilentlyContinue | Measure-Object).Count
+        $report.directoryCount = @(Get-ChildItem $drivePath -ErrorAction SilentlyContinue | Where-Object { $_.PSIsContainer }).Count
     }
 
     if (Test-Path $registryPath) {

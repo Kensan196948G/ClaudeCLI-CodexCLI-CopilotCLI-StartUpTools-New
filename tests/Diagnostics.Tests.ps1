@@ -17,7 +17,7 @@ Describe 'Get-DriveMappingReport' {
                 default { $false }
             }
         }
-        Mock Get-ChildItem { param($Path, [switch]$Directory, $ErrorAction) @([pscustomobject]@{ Name = 'a' }, [pscustomobject]@{ Name = 'b' }) }
+        Mock Get-ChildItem { @([pscustomobject]@{ Name = 'a'; PSIsContainer = $true }, [pscustomobject]@{ Name = 'b'; PSIsContainer = $true }) }
         Mock Get-ItemProperty { [pscustomobject]@{ RemotePath = '\\server\share' } }
         Mock Get-SmbMapping { [pscustomobject]@{ LocalPath = 'Z:'; RemotePath = '\\server\share'; Status = 'OK' } }
         Mock Get-PSDrive { [pscustomobject]@{ Root = 'Z:\'; DisplayRoot = '\\server\share'; Provider = 'FileSystem' } }
