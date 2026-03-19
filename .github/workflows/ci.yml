@@ -26,6 +26,11 @@ jobs:
         run: |
           Invoke-Pester .\tests -CI
 
+      - name: Restore files modified by Pester
+        shell: pwsh
+        run: |
+          git checkout -- TASKS.md
+
       - name: Validate Config Template Schema
         shell: pwsh
         run: |
