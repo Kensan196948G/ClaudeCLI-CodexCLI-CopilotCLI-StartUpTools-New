@@ -1,0 +1,47 @@
+{
+  "title": "Test-AllTools Report Schema",
+  "schemaVersion": "1.0.0",
+  "required": [
+    "schemaVersion",
+    "configPath",
+    "configExists",
+    "configValid",
+    "schemaValid",
+    "errors",
+    "common",
+    "tools",
+    "mcp",
+    "paths",
+    "examples",
+    "summary"
+  ],
+  "mcpRequired": [
+    "configured",
+    "configPath",
+    "servers",
+    "connections",
+    "summary"
+  ],
+  "mcpServerRequired": [
+    "name",
+    "command",
+    "commandExists",
+    "startupCommand",
+    "startupCommandTimeoutSec",
+    "shutdownCommand",
+    "shutdownCommandTimeoutSec",
+    "healthCommand",
+    "healthCommandTimeoutSec",
+    "healthStatus",
+    "status"
+  ],
+  "mcpConnectionRequired": [
+    "name",
+    "kind",
+    "connected",
+    "status",
+    "output",
+    "operatingProcedure",
+    "runtimeProbe"
+  ]
+}

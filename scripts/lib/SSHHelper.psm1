@@ -1,6 +1,6 @@
 # ============================================================
 # SSHHelper.psm1 - SSH接続ヘルパーモジュール
-# Claude-EdgeChromeDevTools v1.3.0
+# ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools v2.0.0
 # ============================================================
 
 <#

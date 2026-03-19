@@ -1,16 +1,15 @@
 # ============================================================
 # ErrorHandler.psm1 - カテゴリ別エラーハンドリングモジュール
+# ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools v2.0.0
 # ============================================================
 
 # エラーカテゴリの定義
 enum ErrorCategory {
     SSH_CONNECTION          # SSH 接続エラー
-    DEVTOOLS_PROTOCOL       # DevTools Protocol エラー
-    PORT_CONFLICT           # ポート競合
     CONFIG_INVALID          # 設定ファイルエラー
-    DEPENDENCY_MISSING      # 依存関係不足
-    BROWSER_LAUNCH          # ブラウザ起動エラー
-    MCP_CONNECTION          # MCP サーバー接続エラー
+    DEPENDENCY_MISSING      # 依存関係不足（ツール未インストール）
+    TOOL_NOT_FOUND          # AI CLIツールが見つからない
+    API_KEY_MISSING         # APIキー未設定
     DRIVE_ACCESS            # ドライブアクセスエラー
     PERMISSION_DENIED       # 権限エラー
     NETWORK_TIMEOUT         # ネットワークタイムアウト
@@ -18,30 +17,24 @@ enum ErrorCategory {
     PROCESS_MANAGEMENT      # プロセス起動/終了エラー
     CONFIG_MISMATCH         # config.json と実態の不整合
     LOG_OPERATION           # ログ書き込み/ローテーションエラー
-    SCRIPT_GENERATION       # run-claude.sh 生成エラー
-    TMUX_SESSION            # tmux セッション操作エラー
     UNKNOWN                 # 未分類エラー
 }
 
 # カテゴリごとの絵文字
 $script:CategoryEmoji = @{
-    SSH_CONNECTION = "🔐"
-    DEVTOOLS_PROTOCOL = "🌐"
-    PORT_CONFLICT = "⚠️"
-    CONFIG_INVALID = "⚙️"
+    SSH_CONNECTION     = "🔐"
+    CONFIG_INVALID     = "⚙️"
     DEPENDENCY_MISSING = "📦"
-    BROWSER_LAUNCH = "🚀"
-    MCP_CONNECTION = "🔌"
-    DRIVE_ACCESS = "💾"
-    PERMISSION_DENIED = "🚫"
-    NETWORK_TIMEOUT = "⏱️"
-    FILE_SYSTEM = "📄"
+    TOOL_NOT_FOUND     = "🔍"
+    API_KEY_MISSING    = "🔑"
+    DRIVE_ACCESS       = "💾"
+    PERMISSION_DENIED  = "🚫"
+    NETWORK_TIMEOUT    = "⏱️"
+    FILE_SYSTEM        = "📄"
     PROCESS_MANAGEMENT = "⚡"
-    CONFIG_MISMATCH = "🔀"
-    LOG_OPERATION = "📝"
-    SCRIPT_GENERATION = "🔧"
-    TMUX_SESSION = "🖥️"
-    UNKNOWN = "❓"
+    CONFIG_MISMATCH    = "🔀"
+    LOG_OPERATION      = "📝"
+    UNKNOWN            = "❓"
 }
 
 # カテゴリごとの推奨アクション
@@ -52,40 +45,31 @@ $script:CategorySolutions = @{
         "3. ホストへの疎通確認: ping <hostname>",
         "4. 詳細ログ確認: ssh -vvv <hostname>"
     )
-    DEVTOOLS_PROTOCOL = @(
-        "1. ブラウザが起動しているか確認",
-        "2. DevTools エンドポイント確認: curl http://localhost:<port>/json/version",
-        "3. ブラウザを再起動してください",
-        "4. ポート番号が正しいか確認（9222-9229）"
-    )
-    PORT_CONFLICT = @(
-        "1. 既存プロセスを終了: Get-Process | Where-Object {`$_.Name -match 'msedge|chrome'}",
-        "2. または別のポートを使用: config.json の ports 配列を編集",
-        "3. ポート使用状況確認: Get-NetTCPConnection -LocalPort <port>"
-    )
     CONFIG_INVALID = @(
         "1. config.json の JSON 構文を確認",
-        "2. 必須フィールドが存在するか確認: ports, zDrive, linuxHost, linuxBase",
+        "2. 必須フィールドが存在するか確認: version, linuxHost, tools",
         "3. config.json.template と比較して不足項目を確認"
     )
     DEPENDENCY_MISSING = @(
         "1. 不足しているコマンドをインストール",
-        "2. Linux: jq, curl, fuser, git をインストール",
-        "3. Windows: PowerShell 7, SSH client をインストール"
+        "2. Node.js: https://nodejs.org/ からインストール",
+        "3. 診断スクリプトを実行: .\scripts\test\Test-AllTools.ps1"
     )
-    BROWSER_LAUNCH = @(
-        "1. ブラウザがインストールされているか確認",
-        "2. ブラウザのパスが正しいか確認: config.json の edgeExe/chromeExe",
-        "3. すべてのブラウザウィンドウを閉じてから再実行"
+    TOOL_NOT_FOUND = @(
+        "1. claude インストール: npm install -g @anthropic-ai/claude-code",
+        "2. codex インストール: npm install -g @openai/codex",
+        "3. copilot インストール: gh extension install github/gh-copilot",
+        "4. 診断スクリプトを実行: .\scripts\test\Test-AllTools.ps1"
     )
-    MCP_CONNECTION = @(
-        "1. .mcp.json が存在するか確認",
-        "2. npx コマンドがインストールされているか確認: npx --version",
-        "3. MCP セットアップを再実行: bash scripts/mcp/setup-mcp.sh"
+    API_KEY_MISSING = @(
+        "1. ANTHROPIC_API_KEY: https://console.anthropic.com/ で取得",
+        "2. OPENAI_API_KEY: https://platform.openai.com/api-keys で取得",
+        "3. GitHub Copilot: gh auth login で認証",
+        "4. 環境変数に設定: `$env:ANTHROPIC_API_KEY = 'your-key'"
     )
     DRIVE_ACCESS = @(
-        "1. ドライブ診断を実行: start.bat → オプション 8",
-        "2. config.json に zDriveUncPath を設定",
+        "1. ドライブ診断を実行: start.bat → オプション 6",
+        "2. config.json に projectsDirUnc を設定",
         "3. UNC パスへの直接アクセスを確認: Test-Path '\\\\server\\share'"
     )
     PERMISSION_DENIED = @(
@@ -95,7 +79,7 @@ $script:CategorySolutions = @{
     )
     NETWORK_TIMEOUT = @(
         "1. ネットワーク接続を確認: ping <hostname>",
-        "2. ファイアウォール設定を確認（ポート 22, 9222-9229）",
+        "2. ファイアウォール設定を確認（ポート 22）",
         "3. タイムアウト値を増やす: ConnectTimeout=10"
     )
     FILE_SYSTEM = @(
@@ -117,16 +101,6 @@ $script:CategorySolutions = @{
         "1. ログディレクトリの書き込み権限を確認",
         "2. ディスク容量を確認",
         "3. logging.enabled = false で一時的にログを無効化"
-    )
-    SCRIPT_GENERATION = @(
-        "1. ScriptGenerator.psm1 が正しく読み込まれているか確認",
-        "2. 必須パラメータ (Port, LinuxBase, ProjectName) を確認",
-        "3. テンプレートファイルの存在を確認"
-    )
-    TMUX_SESSION = @(
-        "1. tmux がインストールされているか確認: tmux -V",
-        "2. 既存セッションを確認: tmux ls",
-        "3. tmux を無効化: config.json の tmux.enabled = false"
     )
     UNKNOWN = @(
         "1. エラーメッセージの詳細を確認",
@@ -158,7 +132,7 @@ $script:CategorySolutions = @{
     Show-CategorizedError -Category SSH_CONNECTION -Message "SSH接続がタイムアウトしました"
 
 .EXAMPLE
-    Show-CategorizedError -Category PORT_CONFLICT -Message "ポート 9222 は既に使用中です" -Details @{Port=9222; Process="chrome.exe"}
+    Show-CategorizedError -Category TOOL_NOT_FOUND -Message "claude コマンドが見つかりません" -Details @{Tool="claude"; InstallCmd="npm install -g @anthropic-ai/claude-code"}
 #>
 function Show-CategorizedError {
     [CmdletBinding()]
@@ -235,23 +209,17 @@ function Get-ErrorCategory {
     if ($message -match "ssh|authorized|authentication|connection refused") {
         return [ErrorCategory]::SSH_CONNECTION
     }
-    elseif ($message -match "devtools|websocket|protocol|/json") {
-        return [ErrorCategory]::DEVTOOLS_PROTOCOL
-    }
-    elseif ($message -match "port.*already|port.*in use|port.*conflict|listening") {
-        return [ErrorCategory]::PORT_CONFLICT
-    }
     elseif ($message -match "config\.json|invalid json|parse error|schema") {
         return [ErrorCategory]::CONFIG_INVALID
     }
-    elseif ($message -match "command not found|not installed|jq|curl|npx") {
+    elseif ($message -match "api.?key|apikey|api_key") {
+        return [ErrorCategory]::API_KEY_MISSING
+    }
+    elseif ($message -match "command not found|not installed|not recognized|jq|curl|npx|node") {
         return [ErrorCategory]::DEPENDENCY_MISSING
     }
-    elseif ($message -match "browser|msedge|chrome|firefox") {
-        return [ErrorCategory]::BROWSER_LAUNCH
-    }
-    elseif ($message -match "mcp|\.mcp\.json") {
-        return [ErrorCategory]::MCP_CONNECTION
+    elseif ($message -match "claude.*not found|codex.*not found|copilot.*not found|tool.*not found|which.*claude|which.*codex") {
+        return [ErrorCategory]::TOOL_NOT_FOUND
     }
     elseif ($message -match "drive|unc path|network|x:\\|z:\\") {
         return [ErrorCategory]::DRIVE_ACCESS
@@ -273,12 +241,6 @@ function Get-ErrorCategory {
     }
     elseif ($message -match "\blog\b|\btranscript\b|\brotation\b|archive.*\blog\b") {
         return [ErrorCategory]::LOG_OPERATION
-    }
-    elseif ($message -match "run-claude|script.*gen|generate.*script") {
-        return [ErrorCategory]::SCRIPT_GENERATION
-    }
-    elseif ($message -match "\btmux\b|tmux.*session.*create|\bpane\b") {
-        return [ErrorCategory]::TMUX_SESSION
     }
     else {
         return [ErrorCategory]::UNKNOWN

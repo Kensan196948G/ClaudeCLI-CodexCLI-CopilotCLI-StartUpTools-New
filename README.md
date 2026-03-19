@@ -1,326 +1,276 @@
-# Claude-EdgeChromeDevTools
+# ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools
 
-WindowsマシンとリモートLinuxホスト間でClaude Codeとブラウザ開発者ツール(DevTools)を統合するためのセットアップ自動化スクリプト群です。
+Windows から `Claude Code`、`Codex CLI`、`GitHub Copilot CLI` を統一的に起動するためのスタートアップツールです。ローカル起動と SSH リモート起動の両方に対応し、設定・診断・ガイドをこのリポジトリに集約しています。
+
+## 対応ツール
+
+| ツール | 提供元 | 主な用途 |
+|--------|--------|---------|
+| Claude Code | Anthropic | 大規模なコード修正、レビュー、実装支援 |
+| Codex CLI | OpenAI | ターミナル中心のコード生成、シェル支援 |
+| GitHub Copilot CLI | GitHub | `gh copilot` によるシェル・GitHub 操作支援 |
 
 ## 主な機能
 
-- 🚀 **ワンクリック起動**: 対話型メニューからClaude Code開発環境を瞬時にセットアップ
-- 🌐 **ブラウザ統合**: Edge/ChromeのDevToolsとClaude Codeをシームレスに連携
-- 🔄 **プロジェクト切り替え**: 複数プロジェクト間の簡単な切り替えと同時実行
-- 🎨 **Statusline表示**: カレントディレクトリ、Gitブランチ、モデル名、コンテキスト使用率を可視化
-- ⚙️ **中央管理設定**: config.jsonでClaude Code環境変数・UI設定を一元管理
-- 🤝 **Agent Teams対応**: 複数Claude Codeインスタンスによる並列作業オーケストレーション
-- 🏗️ **モジュール化アーキテクチャ** (v1.3.0): 7つの独立モジュールによる保守性向上
-- 🤖 **CLI引数対応** (v1.3.0): `-NonInteractive` モードによるCI/CD統合
+- `start.bat` から対話メニューで起動
+- ツール別の専用起動スクリプトを提供
+- Windows ローカル起動と Linux への SSH 起動を切り替え可能
+- `config/config.json` による一元設定
+- `scripts/test/Test-AllTools.ps1` による診断
+- プロジェクトごとに `CLAUDE.md`、`AGENTS.md`、`.github/copilot-instructions.md` を自動配備
+- `config/config.json.template` を正本とした設定運用
 
 ## クイックスタート
 
 ### 前提条件
 
-**Windows側:**
+Windows 側:
 - Windows 10/11
-- PowerShell 5.1以降
-- Microsoft Edge または Google Chrome
-- SSH クライアント (OpenSSH)
-- Windows Terminal (推奨)
+- PowerShell 5.1 以上
+- Node.js 18 以上
+- Git
+- SSH クライアント
+- GitHub CLI `gh`（Copilot 利用時）
 
-**Linux側:**
-- `claude` CLI
-- `curl`, `jq`, `fuser`, `git`
-- SSHキーベース認証設定済み
+Linux 側（SSH 起動時）:
+- `claude` / `codex` を実行できる環境
+- SSH 鍵認証
+- プロジェクトディレクトリへのアクセス
 
-### インストール
+### セットアップ
 
-1. リポジトリをクローン:
-   ```cmd
-   git clone <repository-url> D:\Claude-EdgeChromeDevTools
-   cd D:\Claude-EdgeChromeDevTools
-   ```
+1. リポジトリをクローン
 
-2. `config/config.json` を環境に合わせて編集:
-   ```json
-   {
-     "zDrive": "Z:\\",
-     "linuxHost": "your-linux-host",
-     "linuxBase": "/mnt/LinuxHDD",
-     "ports": [9222, 9223, 9224, 9225]
-   }
-   ```
+```cmd
+git clone <repository-url> D:\ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New
+cd D:\ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New
+```
 
-3. SSH接続を設定 (`~/.ssh/config`):
-   ```
-   Host your-linux-host
-     HostName 192.168.1.100
-     User your-username
-     IdentityFile ~/.ssh/id_rsa
-   ```
+2. 設定ファイルを作成
 
-### 使用方法
+```cmd
+copy config\config.json.template config\config.json
+```
 
-#### 方法1: 対話型ランチャー (推奨)
+3. `config/config.json` を環境に合わせて編集
+
+```json
+{
+  "projectsDir": "D:\\",
+  "sshProjectsDir": "Z:\\",
+  "projectsDirUnc": "\\\\your-linux-host\\LinuxHDD",
+  "linuxHost": "your-linux-host",
+  "linuxBase": "/mnt/LinuxHDD",
+  "tools": {
+    "defaultTool": "claude"
+  }
+}
+```
+
+4. 各ツールをインストール
+
+```powershell
+npm install -g @anthropic-ai/claude-code
+npm install -g @openai/codex
+gh extension install github/gh-copilot
+```
+
+5. 必要に応じて認証
+
+```powershell
+# Claude Code
+claude
+# 起動後に /login
+
+# Codex CLI
+codex --login
+
+# GitHub Copilot CLI
+gh auth login
+```
+
+6. 診断を実行
+
+```powershell
+.\scripts\test\Test-AllTools.ps1
+.\scripts\test\Test-AllTools.ps1 -OutputFormat Json
+pwsh -NoProfile -File .\scripts\test\Test-McpRuntime.ps1 -OutputFormat Json
+```
+
+## 使用方法
+
+### 対話メニュー
 
 ```cmd
 start.bat
 ```
 
-メニューから機能を選択:
-- `[1]` Edge版セットアップ
-- `[2]` Chrome版セットアップ
-- `[3]` Edge接続テスト
-- `[4]` Chrome接続テスト
+現行メニュー:
+- `S1` Claude Code を SSH 起動
+- `S2` Codex CLI を SSH 起動
+- `S3` GitHub Copilot CLI を SSH 起動
+- `L1` Claude Code をローカル起動
+- `L2` Codex CLI をローカル起動
+- `L3` GitHub Copilot CLI をローカル起動
+- `5` ツール確認・診断
+- `6` ドライブマッピング診断
+- `7` Windows Terminal セットアップ
+- `R1`〜`R5` 最近使用したプロジェクトを保存済み `tool / mode` で再起動
+- `RF` recent project の tool filter
+- `RS` recent project の検索
+- `RO` recent project の sort 切替
+- `RC` recent project の filter / search / sort を初期化
 
-#### 方法2: 統合スクリプト Claude-DevTools.ps1 (v1.3.0 新規)
+`5` の診断では、設定スキーマ、CLI コマンド、認証状態、共有パス、起動例をまとめて確認します。
+
+### PowerShell から直接起動
 
 ```powershell
-# 対話モード (デフォルト)
-.\scripts\main\Claude-DevTools.ps1
-
-# Chrome + 特定プロジェクト指定
-.\scripts\main\Claude-DevTools.ps1 -Browser chrome -Project "my-app"
-
-# 完全非対話モード (CI/CD対応)
-.\scripts\main\Claude-DevTools.ps1 -Browser edge -Project "backend" -NonInteractive
-
-# 実行内容プレビュー (変更なし)
-.\scripts\main\Claude-DevTools.ps1 -DryRun
-
-# tmux なし
-.\scripts\main\Claude-DevTools.ps1 -Layout none
+.\scripts\main\Start-All.ps1
+.\scripts\main\Start-ClaudeCode.ps1 -Project "my-project"
+.\scripts\main\Start-CodexCLI.ps1 -Project "my-project"
+.\scripts\main\Start-CopilotCLI.ps1 -Project "my-project" -Local
 ```
 
-#### 方法3: 既存スクリプト直接実行 (後方互換)
+### 非対話モード
 
 ```powershell
-# Edge版
-.\scripts\main\Claude-EdgeDevTools.ps1
-
-# Chrome版
-.\scripts\main\Claude-ChromeDevTools-Final.ps1
+.\scripts\main\Start-ClaudeCode.ps1 -Project "backend-api" -NonInteractive
+.\scripts\main\Start-CodexCLI.ps1 -Project "backend-api" -NonInteractive
+.\scripts\main\Start-CopilotCLI.ps1 -Project "backend-api" -NonInteractive -Local
 ```
 
 ## アーキテクチャ
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         Windows マシン                                   │
-│                                                                          │
-│  Edge/Chrome (DevTools) ─→ localhost:9222                               │
-│           ↓                      │                                       │
-│    DevTools Protocol             │ SSH リモートポートフォワーディング      │
-│                                  │ ssh -R 9222:127.0.0.1:9222           │
-└──────────────────────────────────┼──────────────────────────────────────┘
-                                   │
-                                   ↓
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        Linux ホスト                                      │
-│                                                                          │
-│  127.0.0.1:9222 ─→ MCP Chrome DevTools ─→ Claude Code                   │
-│                                               ↓                          │
-│                                      Agent Teams 機能                    │
-│                                   (Team Lead, Teammates,                │
-│                                    Task List, Mailbox)                  │
-└─────────────────────────────────────────────────────────────────────────┘
+```text
+Windows
+├─ start.bat
+├─ scripts/main/Start-Menu.ps1
+├─ scripts/main/Start-All.ps1
+└─ scripts/main/Start-{ClaudeCode,CodexCLI,CopilotCLI}.ps1
+   ├─ ローカル起動: projectsDir 配下で実行
+   └─ SSH 起動: linuxHost / linuxBase 上で実行
 ```
 
-### ワークフロー
+## 設定の要点
 
-1. **プロジェクト選択** - Xドライブのディレクトリから対話的に選択
-2. **ポート自動割り当て** - `config.json`の`ports`配列から利用可能なポートを検索
-3. **ブラウザ起動** - 専用プロファイル + リモートデバッグモードで起動
-4. **run-claude.sh生成** - プロジェクトルートにbashスクリプトを動的生成 (heredoc INIT_PROMPT)
-5. **設定自動適用** - Linux側 `~/.claude/settings.json` へjqマージ (base64転送)
-6. **SSHリモート実行** - ポートフォワーディング付きSSH接続でClaude Codeを起動
+| キー | 説明 |
+|------|------|
+| `projectsDir` | ローカル参照用のプロジェクトルート |
+| `sshProjectsDir` | SSH 実行時に Windows 側で参照する共有ドライブ |
+| `projectsDirUnc` | 共有ドライブの UNC パス |
+| `linuxHost` | SSH 接続先 |
+| `linuxBase` | Linux 側のプロジェクトルート |
+| `tools.defaultTool` | `Start-All.ps1` のデフォルトツール |
 
-## config.json 設定リファレンス
+Copilot は `gh copilot` を前提にしています。
 
-### 基本設定
+設定運用の詳細は [config/README.md](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/config/README.md) と [docs/common/07_設定運用ガイド.md](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/docs/common/07_設定運用ガイド.md) を参照してください。
 
-| キー | 説明 | デフォルト |
-|------|------|-----------|
-| `ports` | 使用可能なDevToolsポート配列 | `[9222, 9223, 9224, 9225, 9226, 9227, 9228, 9229]` |
-| `zDrive` | Windowsプロジェクトルート | `"X:\\"` |
-| `linuxHost` | SSHホスト名 | `"<your-linux-host>"` |
-| `linuxBase` | Linuxプロジェクトベースパス | `"/mnt/LinuxHDD"` |
-| `defaultBrowser` | デフォルトブラウザ | `"edge"` |
-| `autoCleanup` | 自動クリーンアップ | `true` |
-
-### Claude Code設定 (`claudeCode` セクション)
-
-**環境変数 (`env`):**
-- `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`: Agent Teams有効化 (`"1"`)
-- `ENABLE_TOOL_SEARCH`: MCP Tool Search有効化 (`"true"`)
-- `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`: 自動コンパクト閾値 (`"50"`)
-- `CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION`: プロンプトサジェスション (`"true"`)
-
-**UI/動作設定 (`settings`):**
-- `language`: 表示言語 (`"日本語"`)
-- `outputStyle`: 出力スタイル (`"Explanatory"`)
-- `alwaysThinkingEnabled`: 思考モード常時有効 (`true`)
-- `spinnerTipsEnabled`: スピナーTips表示 (`true`)
-- `promptSuggestionEnabled`: プロンプトサジェスション (`true`)
-- `respectGitignore`: .gitignore尊重 (`true`)
-- `autoUpdatesChannel`: 自動更新チャンネル (`"latest"`)
-- `includeCoAuthoredBy`: Co-Authored-By追加 (`true`)
-
-## 主要コンポーネント
-
-### PowerShellスクリプト
-
-- **`Claude-EdgeDevTools.ps1`** - Edge版メインスクリプト
-  - DevTools Preferences事前設定 (キャッシュ無効化、ログ保持)
-  - base64 SSH転送でグローバル設定を自動適用
-
-- **`Claude-ChromeDevTools-Final.ps1`** - Chrome版メインスクリプト
-  - Chrome専用最適化
-  - Edge版と同等の機能
-
-### 動的生成ファイル
-
-- **`run-claude.sh`** - Claude Code起動スクリプト
-  - heredoc形式のINIT_PROMPT定義
-  - Agent Teams環境変数 (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`)
-  - DevTools接続確認 (最大10回リトライ)
-  - 自動再起動ループ
-
-- **`~/.claude/settings.json`** - グローバル設定
-  - jqマージパターンで既存設定を保持しつつ更新
-  - `. + {...} | .env = ((.env // {}) + {...})` パターン使用
-
-## 重要な技術仕様
-
-### SSH経由のスクリプト転送 (base64方式)
-
-```powershell
-# PowerShell側
-$encoded = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($content))
-ssh $LinuxHost "echo '$encoded' | base64 -d > /tmp/script.sh && chmod +x /tmp/script.sh && /tmp/script.sh"
+```json
+"copilot": {
+  "enabled": true,
+  "displayName": "GitHub Copilot CLI",
+  "command": "gh",
+  "args": ["copilot"],
+  "installCommand": "gh extension install github/gh-copilot",
+  "checkCommand": "gh copilot --version"
+}
 ```
 
-- 日本語文字、JSON特殊文字、バッククォートの破損を防止
-- CRLF/LF改行コードの問題を回避
+## ディレクトリ構成
 
-### INIT_PROMPT (heredoc方式)
-
-```bash
-INIT_PROMPT=$(cat << 'INITPROMPTEOF'
-プロンプト内容（バッククォート、二重引用符を含めてもOK）
-INITPROMPTEOF
-)
+```text
+config/           設定テンプレートと設定ドキュメント
+docs/             利用ガイド
+scripts/lib/      共通モジュール
+scripts/main/     起動スクリプト
+scripts/setup/    セットアップ補助
+scripts/templates 各ツール向けテンプレート
+scripts/test/     診断スクリプト
+tests/            Pester テスト
+Claude/           ClaudeOS 互換ポリシー群
 ```
-
-- シングルクォート付きデリミタにより変数展開・コマンド置換を完全に無効化
-- bash double-quoted stringは使用禁止（重大バグのため）
-
-### グローバル設定の自動適用 (jqマージ)
-
-```bash
-jq '. + {
-  "language": "日本語",
-  "outputStyle": "Explanatory",
-  ...
-} | .env = ((.env // {}) + {
-  "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-  ...
-})' "$SETTINGS_FILE" > "$SETTINGS_FILE.tmp" && mv "$SETTINGS_FILE.tmp" "$SETTINGS_FILE"
-```
-
-- 既存のpermissions, plugins, hooksを保持
-- statusLine以外の全設定も包括的に適用
 
 ## ドキュメント
 
-### システム管理者向け
+- `docs/common/01_はじめに.md`
+- `docs/common/02_ツール比較ガイド.md`
+- `docs/common/03_Windowsセットアップ.md`
+- `docs/common/04_SSHリモート実行.md`
+- `docs/common/05_トラブルシューティング.md`
+- `docs/common/06_FAQ.md`
+- `docs/common/08_AgentTeams対応表.md`
+- `docs/common/09_CIと実機ヘルスチェック.md`
+- `docs/common/10_区切りサマリ.md`
+- `docs/claude/01_概要.md`
+- `docs/claude/03_使い方.md`
+- `docs/codex/01_概要.md`
+- `docs/copilot/01_概要.md`
 
-- [01_プロジェクト概要](docs/SystemAdministrator/01_プロジェクト概要(Project-Overview).txt)
-- [02_セットアップガイド](docs/SystemAdministrator/02_セットアップガイド(Setup-Guide).txt)
-- [04_設定ファイル詳細](docs/SystemAdministrator/04_設定ファイル詳細(Configuration-Details).txt)
-- [07_アーキテクチャ](docs/SystemAdministrator/07_アーキテクチャ(Architecture).txt)
-- [12_環境変数](docs/SystemAdministrator/12_環境変数(Environment-Variables).txt)
-- その他7ファイル
+## 診断とテスト
 
-### 一般ユーザー向け
+```powershell
+.\scripts\test\Test-AllTools.ps1
+.\scripts\test\test-drive-mapping.ps1
+Invoke-Pester .\tests\
+```
 
-- [01_はじめに](docs/non-SystemAdministrator/01_はじめに(Getting-Started).txt)
-- [02_インストール方法](docs/non-SystemAdministrator/02_インストール方法(Installation).txt)
-- [03_基本的な使い方](docs/non-SystemAdministrator/03_基本的な使い方(Basic-Usage).txt)
-- [06_用語集](docs/non-SystemAdministrator/06_用語集(Glossary).txt)
-- その他2ファイル
+機械可読な診断結果が必要な場合:
 
-## トラブルシューティング
+```powershell
+.\scripts\test\Test-AllTools.ps1 -OutputFormat Json
+.\scripts\test\test-drive-mapping.ps1 -OutputFormat Json
+```
 
-### DevTools接続失敗
+`Test-AllTools.ps1 -OutputFormat Json` の主な出力項目:
 
-1. すべてのブラウザウィンドウを閉じる
-2. 接続テスト実行: `start.bat` → `[3]` または `[4]`
-3. エンドポイント確認: `http://localhost:9222/json/version`
+```json
+{
+  "schemaVersion": "1.0.0",
+  "configPath": "config path",
+  "configExists": true,
+  "configValid": true,
+  "schemaValid": true,
+  "errors": [],
+  "common": [],
+  "tools": [],
+  "mcp": {
+    "configured": false,
+    "configPath": "",
+    "servers": [],
+    "summary": "..."
+  },
+  "paths": [],
+  "examples": [],
+  "summary": {
+    "ok": true,
+    "message": "..."
+  }
+}
+```
 
-### Statusline未反映
+`test-drive-mapping.ps1 -OutputFormat Json` では `recommendation`、`repairAdvice`、`remapCommand`、`netUseIssue` も返します。Windows Terminal セットアップでは `-FontFace`、`-UseAcrylic`、`-ThemeJsonPath` を指定できます。診断スキーマ本体は [test-all-tools-report.schema.json](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/docs/common/schemas/test-all-tools-report.schema.json) です。
 
-1. Claude Code内で `/statusline` コマンド実行
-2. または Claude Code を再起動
+MCP を使う場合は `.mcp.json` の各 server 定義に `healthCommand` を追加できます。利用可能な環境では `Test-AllTools.ps1` が疎通確認まで実行し、利用不能な環境では `health_command_unavailable` または `unavailable` を返します。
 
-### SSH接続エラー
+実機で startup / shutdown / health の runtime probe まで回す場合は、CI ではなく次を使います。
 
-1. `~/.ssh/config` でホスト設定を確認
-2. SSHキーベース認証が正しく設定されているか確認
-3. `ssh -vvv <linux-host>` で詳細ログを確認
+```powershell
+pwsh -NoProfile -File .\scripts\test\Test-McpRuntime.ps1
+pwsh -NoProfile -File .\scripts\test\Test-McpRuntime.ps1 -OutputFormat Json
+```
 
-詳細は [05_トラブルシューティング](docs/SystemAdministrator/05_トラブルシューティング(Troubleshooting).txt) を参照してください。
+2026年3月13日に `pwsh -NoProfile -File .\scripts\test\Test-McpRuntime.ps1 -OutputFormat Json` を実行した結果、`config/config.json` の読込は成功し、`.mcp.json` が存在しないため `mcp.configured = false` を返しました。現状は `MCP 設定未作成` の状態です。
 
-## 変更履歴
+CI と実機チェックの境界は [09_CIと実機ヘルスチェック.md](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/docs/common/09_CIと実機ヘルスチェック.md) を参照してください。
 
-### v1.1.0 (2026-02-06)
+## 注意事項
 
-**新機能:**
-- ✨ Agent Teams機能の統合
-- ✨ Claude Code設定の中央管理 (`claudeCode`セクション)
-- ✨ グローバル設定の包括的自動適用
-
-**改善:**
-- 🔧 INIT_PROMPT heredoc方式への移行
-- 🔧 base64 SSH転送の統一
-- 🔧 新環境変数の追加 (`ENABLE_TOOL_SEARCH`, `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`, `CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION`)
-
-**バグ修正:**
-- 🐛 INIT_PROMPT bash引用符バグの修正 (重大)
-- 🐛 Edge版SSH実行方法の不整合修正
-
-完全な変更履歴は [09_変更履歴](docs/SystemAdministrator/09_変更履歴(Changelog).txt) を参照してください。
+- `Claude Code` は設定上 `--dangerously-skip-permissions` を利用できます。開発環境専用です。
+- API キーをソースに保存しないでください。
+- SSH 実行では Linux 側の `linuxBase` と Windows 側の共有パスが同じプロジェクト群を指す前提です。
 
 ## ライセンス
 
-MIT License - 詳細は [10_ライセンス](docs/SystemAdministrator/10_ライセンス(License).txt) を参照してください。
-
-## サポート
-
-- **FAQ**: [一般ユーザー向けFAQ](docs/non-SystemAdministrator/04_よくある質問(FAQ).txt) | [システム管理者向けFAQ](docs/SystemAdministrator/08_FAQ.txt)
-- **トラブルシューティング**: [一般向け](docs/non-SystemAdministrator/05_困ったときは(Troubleshooting).txt) | [管理者向け](docs/SystemAdministrator/05_トラブルシューティング(Troubleshooting).txt)
-- **詳細ドキュメント**: [CLAUDE.md](CLAUDE.md) (Claude Code向けプロジェクト指示書) | [GEMINI.md](GEMINI.md) (プロジェクト詳細)
-
-## プロジェクト構造
-
-```
-Claude-EdgeChromeDevTools/
-├── config/
-│   └── config.json                      # 中央集約設定
-├── scripts/
-│   ├── main/                            # メインスクリプト
-│   ├── setup/                           # セットアップスクリプト
-│   ├── test/                            # テストスクリプト
-│   └── statusline.sh                    # Statusline表示スクリプト
-├── docs/
-│   ├── SystemAdministrator/             # システム管理者向けドキュメント (12ファイル)
-│   └── non-SystemAdministrator/         # 一般ユーザー向けドキュメント (6ファイル)
-├── start.bat                            # 対話型ランチャー
-├── CLAUDE.md                            # Claude Code向けプロジェクト指示書
-├── GEMINI.md                            # プロジェクトドキュメント (日本語)
-└── README.md                            # このファイル
-```
-
-## 貢献
-
-Pull RequestやIssue報告を歓迎します。詳細は [06_開発ガイド](docs/SystemAdministrator/06_開発ガイド(Development-Guide).txt) を参照してください。
-
----
-
-**注意**: このスクリプトは `--dangerously-skip-permissions` フラグを使用します。開発環境専用です。
+MIT License

@@ -45,50 +45,42 @@ Describe 'Get-ErrorCategory' {
         }
     }
 
-    Context 'DevTools 関連のエラーメッセージ' {
+    Context 'AIツール未インストールのエラーメッセージ' {
 
-        It 'devtools キーワードから DEVTOOLS_PROTOCOL カテゴリを返すこと' {
-            $result = Get-ErrorCategory -ErrorMessage 'devtools connection failed'
-            $result.ToString() | Should -Be 'DEVTOOLS_PROTOCOL'
+        It 'claude not found キーワードから TOOL_NOT_FOUND カテゴリを返すこと' {
+            $result = Get-ErrorCategory -ErrorMessage 'claude not found'
+            $result.ToString() | Should -Be 'TOOL_NOT_FOUND'
         }
 
-        It 'websocket キーワードから DEVTOOLS_PROTOCOL カテゴリを返すこと' {
-            $result = Get-ErrorCategory -ErrorMessage 'websocket error'
-            $result.ToString() | Should -Be 'DEVTOOLS_PROTOCOL'
+        It 'codex not found キーワードから TOOL_NOT_FOUND カテゴリを返すこと' {
+            $result = Get-ErrorCategory -ErrorMessage 'codex not found'
+            $result.ToString() | Should -Be 'TOOL_NOT_FOUND'
         }
     }
 
-    Context 'ポート競合のエラーメッセージ' {
+    Context 'APIキー未設定のエラーメッセージ' {
 
-        It 'port already キーワードから PORT_CONFLICT カテゴリを返すこと' {
-            $result = Get-ErrorCategory -ErrorMessage 'port already in use'
-            $result.ToString() | Should -Be 'PORT_CONFLICT'
+        It 'api_key キーワードから API_KEY_MISSING カテゴリを返すこと' {
+            $result = Get-ErrorCategory -ErrorMessage 'OPENAI_API_KEY not set'
+            $result.ToString() | Should -Be 'API_KEY_MISSING'
+        }
+
+        It 'apikey キーワードから API_KEY_MISSING カテゴリを返すこと' {
+            $result = Get-ErrorCategory -ErrorMessage 'api key missing'
+            $result.ToString() | Should -Be 'API_KEY_MISSING'
         }
     }
 
     Context '依存関係不足のエラーメッセージ' {
 
-        It 'jq キーワードから DEPENDENCY_MISSING カテゴリを返すこと' {
-            $result = Get-ErrorCategory -ErrorMessage 'jq command not found'
+        It 'node キーワードから DEPENDENCY_MISSING カテゴリを返すこと' {
+            $result = Get-ErrorCategory -ErrorMessage 'node command not found'
             $result.ToString() | Should -Be 'DEPENDENCY_MISSING'
         }
 
-        It 'curl キーワードから DEPENDENCY_MISSING カテゴリを返すこと' {
+        It 'curl not installed から DEPENDENCY_MISSING カテゴリを返すこと' {
             $result = Get-ErrorCategory -ErrorMessage 'curl not installed'
             $result.ToString() | Should -Be 'DEPENDENCY_MISSING'
-        }
-    }
-
-    Context 'ブラウザ起動のエラーメッセージ' {
-
-        It 'chrome キーワードから BROWSER_LAUNCH カテゴリを返すこと' {
-            $result = Get-ErrorCategory -ErrorMessage 'chrome failed to launch'
-            $result.ToString() | Should -Be 'BROWSER_LAUNCH'
-        }
-
-        It 'msedge キーワードから BROWSER_LAUNCH カテゴリを返すこと' {
-            $result = Get-ErrorCategory -ErrorMessage 'msedge not found'
-            $result.ToString() | Should -Be 'BROWSER_LAUNCH'
         }
     }
 
@@ -132,22 +124,6 @@ Describe 'Get-ErrorCategory' {
         }
     }
 
-    Context 'スクリプト生成エラー' {
-
-        It 'run-claude/script gen キーワードから SCRIPT_GENERATION カテゴリを返すこと' {
-            $result = Get-ErrorCategory -ErrorMessage 'run-claude.sh generation failed'
-            $result.ToString() | Should -Be 'SCRIPT_GENERATION'
-        }
-    }
-
-    Context 'tmux エラー' {
-
-        It 'tmux キーワードから TMUX_SESSION カテゴリを返すこと' {
-            $result = Get-ErrorCategory -ErrorMessage 'tmux session creation failed'
-            $result.ToString() | Should -Be 'TMUX_SESSION'
-        }
-    }
-
     Context 'config mismatch エラー' {
 
         It 'mismatch/inconsistent キーワードから CONFIG_MISMATCH カテゴリを返すこと' {
@@ -169,7 +145,7 @@ Describe 'Get-ErrorCategory' {
         }
 
         It '"profile not found" は FILE_SYSTEM ではないこと' {
-            $result = Get-ErrorCategory -ErrorMessage 'browser profile not found'
+            $result = Get-ErrorCategory -ErrorMessage 'user profile not found'
             $result.ToString() | Should -Not -Be 'FILE_SYSTEM'
         }
 
@@ -198,7 +174,7 @@ Describe 'Show-CategorizedError' {
     Context 'ThrowAfter = $false の場合' {
 
         It '例外をスローしないこと' {
-            { Show-CategorizedError -Category 'PORT_CONFLICT' -Message 'ポート競合テスト' -ThrowAfter $false } |
+            { Show-CategorizedError -Category 'DEPENDENCY_MISSING' -Message '依存関係テスト' -ThrowAfter $false } |
                 Should -Not -Throw
         }
     }

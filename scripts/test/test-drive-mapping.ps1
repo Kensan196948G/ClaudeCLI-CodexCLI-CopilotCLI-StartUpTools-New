@@ -1,175 +1,423 @@
-# ============================================================
-# test-drive-mapping.ps1
-# X:\ ドライブマッピング診断スクリプト
-# ============================================================
+<#
+.SYNOPSIS
+    共有ドライブ診断スクリプト
 
-$ErrorActionPreference = "Continue"  # エラーでも継続
+.DESCRIPTION
+    `sshProjectsDir` と `projectsDirUnc` を基準に、共有ドライブの到達性と
+    解決経路を診断します。`-OutputFormat Json` で機械可読出力にも対応します。
+#>
 
-# config.json から設定読み込み
+param(
+    [ValidateSet('Text', 'Json')]
+    [string]$OutputFormat = 'Text'
+)
+
+$ErrorActionPreference = "Continue"
+
 $RootDir = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-$ConfigPath = Join-Path $RootDir "config\config.json"
+Import-Module (Join-Path $RootDir "scripts\lib\LauncherCommon.psm1") -Force
 
-if (Test-Path $ConfigPath) {
-    $Config = Get-Content $ConfigPath -Raw | ConvertFrom-Json
-    $driveLetter = ($Config.zDrive -replace '[:\\]', '')
-    $configUncPath = $Config.zDriveUncPath
-} else {
-    Write-Host "⚠️  config.json が見つかりません。デフォルト値で診断します。" -ForegroundColor Yellow
-    $driveLetter = "X"
-    $configUncPath = $null
-}
+function Get-DriveMappingConfig {
+    param([string]$ConfigPath)
 
-Write-Host "`n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
-Write-Host "🔍 ドライブマッピング診断: ${driveLetter}:\" -ForegroundColor Cyan
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n" -ForegroundColor Cyan
-
-$results = @{
-    directAccess = $false
-    registry = $null
-    smbMapping = $null
-    psDrive = $null
-    configUnc = $null
-}
-
-# ============================================================
-# 1. ドライブレター直接アクセステスト
-# ============================================================
-Write-Host "[1] ドライブレター直接アクセステスト" -ForegroundColor Yellow
-Write-Host "    Test-Path ${driveLetter}:\" -ForegroundColor Gray
-
-if (Test-Path "${driveLetter}:\") {
-    Write-Host "    ✅ ${driveLetter}:\ は直接アクセス可能" -ForegroundColor Green
-    $results.directAccess = $true
-
-    # ディレクトリ数を表示
-    $dirCount = (Get-ChildItem "${driveLetter}:\" -Directory -ErrorAction SilentlyContinue | Measure-Object).Count
-    Write-Host "    📁 ディレクトリ数: $dirCount" -ForegroundColor Gray
-} else {
-    Write-Host "    ❌ ${driveLetter}:\ は直接アクセス不可" -ForegroundColor Red
-}
-
-# ============================================================
-# 2. レジストリ確認
-# ============================================================
-Write-Host "`n[2] レジストリ (HKCU:\Network\${driveLetter})" -ForegroundColor Yellow
-
-$regPath = "HKCU:\Network\${driveLetter}"
-if (Test-Path $regPath) {
-    $remotePath = (Get-ItemProperty $regPath -ErrorAction SilentlyContinue).RemotePath
-    if ($remotePath) {
-        Write-Host "    ✅ UNC パス: $remotePath" -ForegroundColor Green
-        $results.registry = $remotePath
-    } else {
-        Write-Host "    ⚠️  レジストリエントリはあるが RemotePath なし" -ForegroundColor Yellow
+    if (-not (Test-Path $ConfigPath)) {
+        return [pscustomobject]@{
+            sshProjectsDir = 'Z:\'
+            projectsDirUnc = $null
+            linuxHost = $null
+            configFound = $false
+        }
     }
-} else {
-    Write-Host "    ❌ レジストリエントリなし" -ForegroundColor Red
-}
 
-# ============================================================
-# 3. SMB マッピング確認
-# ============================================================
-Write-Host "`n[3] SMB マッピング" -ForegroundColor Yellow
-
-$smbMapping = Get-SmbMapping -ErrorAction SilentlyContinue | Where-Object LocalPath -eq "${driveLetter}:"
-if ($smbMapping) {
-    Write-Host "    ✅ UNC パス: $($smbMapping.RemotePath)" -ForegroundColor Green
-    Write-Host "    📊 ステータス: $($smbMapping.Status)" -ForegroundColor Gray
-    $results.smbMapping = $smbMapping.RemotePath
-} else {
-    Write-Host "    ❌ SMB マッピングなし" -ForegroundColor Red
-}
-
-# ============================================================
-# 4. PSDrive 確認
-# ============================================================
-Write-Host "`n[4] PSDrive" -ForegroundColor Yellow
-
-$psDrive = Get-PSDrive -Name $driveLetter -ErrorAction SilentlyContinue
-if ($psDrive) {
-    Write-Host "    ✅ Provider: $($psDrive.Provider)" -ForegroundColor Green
-    Write-Host "    📁 Root: $($psDrive.Root)" -ForegroundColor Gray
-    if ($psDrive.DisplayRoot) {
-        Write-Host "    🌐 DisplayRoot: $($psDrive.DisplayRoot)" -ForegroundColor Gray
-        $results.psDrive = $psDrive.DisplayRoot
+    $config = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    return [pscustomobject]@{
+        sshProjectsDir = if ($config.sshProjectsDir) { $config.sshProjectsDir } else { $config.zDrive }
+        projectsDirUnc = if ($config.projectsDirUnc) { $config.projectsDirUnc } else { $config.zDriveUncPath }
+        linuxHost = $config.linuxHost
+        configFound = $true
     }
-} else {
-    Write-Host "    ❌ PSDrive なし" -ForegroundColor Red
 }
 
-# ============================================================
-# 5. Net Use 確認（CMD経由）
-# ============================================================
-Write-Host "`n[5] Net Use (CMD)" -ForegroundColor Yellow
+function Get-NetUseLine {
+    param([string]$DriveLetter)
 
-$netUse = net use 2>&1 | Select-String "${driveLetter}:"
-if ($netUse) {
-    Write-Host "    ✅ $netUse" -ForegroundColor Green
-} else {
-    Write-Host "    ❌ Net Use にエントリなし" -ForegroundColor Red
+    return (net use 2>&1 | Select-String "${DriveLetter}:")
 }
 
-# ============================================================
-# 6. config.json の zDriveUncPath 確認
-# ============================================================
-Write-Host "`n[6] config.json の zDriveUncPath" -ForegroundColor Yellow
+function Get-NetUseIssueType {
+    param([string]$NetUseLine)
 
-if ($configUncPath) {
-    Write-Host "    ✅ 設定値: $configUncPath" -ForegroundColor Green
-    $results.configUnc = $configUncPath
-
-    if (Test-Path $configUncPath) {
-        Write-Host "    ✅ UNC パス直接アクセス成功" -ForegroundColor Green
-    } else {
-        Write-Host "    ❌ UNC パス直接アクセス失敗" -ForegroundColor Red
+    if ([string]::IsNullOrWhiteSpace($NetUseLine)) {
+        return $null
     }
-} else {
-    Write-Host "    ❌ config.json に zDriveUncPath が設定されていません" -ForegroundColor Red
-}
 
-# ============================================================
-# 7. 診断結果サマリー
-# ============================================================
-Write-Host "`n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
-Write-Host "📊 診断結果サマリー" -ForegroundColor Cyan
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n" -ForegroundColor Cyan
-
-Write-Host "検出された UNC パス:" -ForegroundColor Yellow
-$uncPaths = @()
-if ($results.registry) { $uncPaths += "Registry: $($results.registry)" }
-if ($results.smbMapping) { $uncPaths += "SMB: $($results.smbMapping)" }
-if ($results.psDrive) { $uncPaths += "PSDrive: $($results.psDrive)" }
-if ($results.configUnc) { $uncPaths += "config.json: $($results.configUnc)" }
-
-if ($uncPaths.Count -gt 0) {
-    foreach ($path in $uncPaths) {
-        Write-Host "  • $path" -ForegroundColor White
+    if ($NetUseLine -match 'logon failure|access is denied|credential|system error 1219') {
+        return 'CredentialError'
     }
-} else {
-    Write-Host "  ❌ UNC パスが検出されませんでした" -ForegroundColor Red
+    if ($NetUseLine -match 'system error 53|network path was not found|name not found|could not be found') {
+        return 'NameResolutionFailure'
+    }
+
+    return $null
 }
 
-Write-Host ""
-Write-Host "推奨アクション:" -ForegroundColor Yellow
+function Get-UncHostName {
+    param([string]$UncPath)
 
-if ($results.directAccess) {
-    Write-Host "  ✅ ${driveLetter}:\ は直接アクセス可能です。問題ありません。" -ForegroundColor Green
-} elseif ($uncPaths.Count -gt 0) {
-    Write-Host "  ⚠️  ${driveLetter}:\ は直接アクセスできませんが、UNC パスが検出されました。" -ForegroundColor Yellow
-    Write-Host "     スクリプトは自動的に UNC パス経由でアクセスします。" -ForegroundColor White
+    if ([string]::IsNullOrWhiteSpace($UncPath)) {
+        return $null
+    }
+    if ($UncPath -match '^\\\\([^\\]+)\\') {
+        return $Matches[1]
+    }
+    return $null
+}
+
+function Get-DriveMappingReport {
+    param(
+        [Parameter(Mandatory)]
+        [pscustomobject]$ConfigInfo
+    )
+
+    $sshDir = if ($ConfigInfo.sshProjectsDir) { $ConfigInfo.sshProjectsDir } else { 'Z:\' }
+    $driveLetter = ($sshDir -replace '[:\\]', '').Trim()
+    if ([string]::IsNullOrWhiteSpace($driveLetter)) {
+        $driveLetter = 'Z'
+    }
+
+    $drivePath = "${driveLetter}:\"
+    $registryPath = "HKCU:\Network\${driveLetter}"
+    $report = [ordered]@{
+        configFound = $ConfigInfo.configFound
+        driveLetter = $driveLetter
+        drivePath = $drivePath
+        sshProjectsDir = $sshDir
+        projectsDirUnc = $ConfigInfo.projectsDirUnc
+        directAccess = $false
+        directoryCount = 0
+        registryRemotePath = $null
+        smbRemotePath = $null
+        smbStatus = $null
+        smbShareName = $null
+        smbShareCandidates = @()
+        psDriveRoot = $null
+        psDriveDisplayRoot = $null
+        netUseLine = $null
+        netUseIssue = $null
+        targetHost = $null
+        dnsResolved = $null
+        pingReachable = $null
+        smbPort445Reachable = $null
+        uncAccessible = $false
+        uncCandidates = @()
+        recommendation = $null
+        repairAdvice = @()
+        remapCommand = $null
+        reconnectCommands = @()
+    }
+
+    if (Test-Path $drivePath) {
+        $report.directAccess = $true
+        $report.directoryCount = @(Get-ChildItem $drivePath -ErrorAction SilentlyContinue | Where-Object { $_.PSIsContainer }).Count
+    }
+
+    if (Test-Path $registryPath) {
+        $remotePath = (Get-ItemProperty $registryPath -ErrorAction SilentlyContinue).RemotePath
+        if ($remotePath) {
+            $report.registryRemotePath = $remotePath
+        }
+    }
+
+    $smbMappings = @(Get-SmbMapping -ErrorAction SilentlyContinue)
+    $smbMapping = $null
+    foreach ($entry in $smbMappings) {
+        if ($null -ne $entry -and $entry.LocalPath -eq "${driveLetter}:") {
+            $smbMapping = $entry
+            break
+        }
+    }
+    if ($smbMapping) {
+        $report.smbRemotePath = $smbMapping.RemotePath
+        $report.smbStatus = $smbMapping.Status
+        if ($smbMapping.RemotePath -match '^\\\\[^\\]+\\([^\\]+)') {
+            $report.smbShareName = $Matches[1]
+        }
+    }
+
+    $psDrive = Get-PSDrive -Name $driveLetter -ErrorAction SilentlyContinue
+    if ($psDrive) {
+        $report.psDriveRoot = $psDrive.Root
+        $report.psDriveDisplayRoot = $psDrive.DisplayRoot
+    }
+
+    $netUseLine = Get-NetUseLine -DriveLetter $driveLetter
+    if ($netUseLine) {
+        $report.netUseLine = "$netUseLine"
+        $report.netUseIssue = Get-NetUseIssueType -NetUseLine $report.netUseLine
+    }
+
+    if ($ConfigInfo.projectsDirUnc -and (Test-Path $ConfigInfo.projectsDirUnc)) {
+        $report.uncAccessible = $true
+    }
+
+    $uncCandidates = [System.Collections.Generic.List[string]]::new()
+    foreach ($candidate in @($report.registryRemotePath, $report.smbRemotePath, $report.psDriveDisplayRoot, $ConfigInfo.projectsDirUnc)) {
+        if (-not [string]::IsNullOrWhiteSpace($candidate) -and -not $uncCandidates.Contains($candidate)) {
+            $uncCandidates.Add($candidate)
+        }
+    }
+    $report.uncCandidates = @($uncCandidates)
+    $report.smbShareCandidates = @(
+        $uncCandidates |
+            ForEach-Object {
+                if ($_ -match '^\\\\[^\\]+\\([^\\]+)') { $Matches[1] }
+            } |
+            Where-Object { $_ } |
+            Select-Object -Unique
+    )
+    $report.targetHost = Get-UncHostName -UncPath $(if ($report.uncCandidates.Count -gt 0) { $report.uncCandidates[0] } else { $ConfigInfo.projectsDirUnc })
+
+    if ($report.targetHost) {
+        try {
+            $dns = Resolve-DnsName -Name $report.targetHost -ErrorAction Stop
+            $report.dnsResolved = (@($dns).Count -gt 0)
+        }
+        catch {
+            $report.dnsResolved = $false
+        }
+
+        try {
+            $report.pingReachable = [bool](Test-Connection -ComputerName $report.targetHost -Count 1 -Quiet -ErrorAction Stop)
+        }
+        catch {
+            $report.pingReachable = $false
+        }
+
+        if (Get-Command Test-NetConnection -ErrorAction SilentlyContinue) {
+            try {
+                $tnc = Test-NetConnection -ComputerName $report.targetHost -Port 445 -InformationLevel Quiet -WarningAction SilentlyContinue
+                $report.smbPort445Reachable = [bool]$tnc
+            }
+            catch {
+                $report.smbPort445Reachable = $false
+            }
+        }
+    }
+
+    if ($report.directAccess) {
+        $report.recommendation = 'DirectAccess'
+        $report.repairAdvice = @('現在の共有ドライブは直接利用可能です。追加対応は不要です。')
+    }
+    elseif ($report.smbStatus -in @('Unavailable', 'Disconnected')) {
+        $report.recommendation = 'RemapDisconnectedSmb'
+        $report.remapCommand = "Remove-PSDrive -Name $driveLetter -Force -ErrorAction SilentlyContinue; New-PSDrive -Name $driveLetter -PSProvider FileSystem -Root '$($report.uncCandidates[0])' -Persist"
+        $report.repairAdvice = @(
+            "SMB 状態が $($report.smbStatus) のため、既存マッピングの再作成が必要です。",
+            '既存のドライブ割当を削除してから再マッピングしてください。',
+            '資格情報キャッシュとネットワーク到達性も確認してください。'
+        )
+    }
+    elseif ($report.netUseIssue -eq 'CredentialError') {
+        $report.recommendation = 'CheckCredentials'
+        $report.repairAdvice = @(
+            '資格情報エラーの可能性があります。',
+            'Windows 資格情報マネージャーの既存エントリを見直してください。',
+            '必要なら net use /delete と再認証を実行してください。'
+        )
+        if ($report.uncCandidates.Count -gt 0) {
+            $report.remapCommand = "cmd /c `"net use ${driveLetter}: /delete /y && net use ${driveLetter}: $($report.uncCandidates[0]) /persistent:yes`""
+        }
+    }
+    elseif ($report.netUseIssue -eq 'NameResolutionFailure') {
+        $report.recommendation = 'CheckNameResolution'
+        $report.repairAdvice = @(
+            '共有先ホスト名の名前解決に失敗している可能性があります。',
+            'DNS / hosts / VPN / SMB 到達性を確認してください。',
+            'UNC パスを IP アドレスで試すか、サーバー名を再確認してください。'
+        )
+    }
+    elseif ($report.targetHost -and $report.dnsResolved -eq $false) {
+        $report.recommendation = 'CheckDns'
+        $report.repairAdvice = @(
+            'UNC 先ホストの DNS 解決に失敗しています。',
+            'hosts、DNS サフィックス、VPN 接続を確認してください。'
+        )
+    }
+    elseif ($report.targetHost -and $report.pingReachable -eq $false) {
+        $report.recommendation = 'CheckNetworkReachability'
+        $report.repairAdvice = @(
+            '対象ホストへ ping 到達できません。',
+            'ネットワーク疎通、FW、SMB サーバー側の状態を確認してください。'
+        )
+    }
+    elseif ($report.targetHost -and $report.smbPort445Reachable -eq $false) {
+        $report.recommendation = 'CheckSmbPort445'
+        $report.repairAdvice = @(
+            'SMB port 445 へ接続できません。',
+            'Windows Defender Firewall、VPN、サーバー側 SMB サービスを確認してください。',
+            'Test-NetConnection で TCP 445 の疎通を再確認してください。'
+        )
+    }
+    elseif ($report.smbStatus -eq 'OK' -and -not $report.directAccess) {
+        $report.recommendation = 'InvestigateClientAccess'
+        $report.repairAdvice = @(
+            'SMB マッピング自体は OK ですが、ドライブ文字からの直接アクセスに失敗しています。',
+            'Explorer の再接続、権限、オフラインファイル、AV の干渉を確認してください。',
+            '一時回避として UNC パス利用に切り替えられます。'
+        )
+        if ($report.uncCandidates.Count -gt 0) {
+            $report.remapCommand = "New-PSDrive -Name $driveLetter -PSProvider FileSystem -Root '$($report.uncCandidates[0])' -Persist"
+        }
+    }
+    elseif ($report.uncCandidates.Count -gt 0) {
+        $report.recommendation = 'UseUncFallback'
+        $report.remapCommand = "New-PSDrive -Name $driveLetter -PSProvider FileSystem -Root '$($report.uncCandidates[0])' -Persist"
+        $report.repairAdvice = @(
+            '共有ドライブ文字は使えませんが、UNC 経由でアクセスできます。',
+            '起動スクリプトは UNC フォールバックで継続できます。',
+            '必要なら永続マッピングを再作成してください。'
+        )
+    }
+    else {
+        $report.recommendation = 'MissingMapping'
+        $report.remapCommand = "New-PSDrive -Name $driveLetter -PSProvider FileSystem -Root '\\\\server\\share' -Persist"
+        $report.repairAdvice = @(
+            '共有ドライブと UNC の両方が解決できていません。',
+            'Windows Explorer または New-PSDrive で再マッピングしてください。',
+            'config.json の sshProjectsDir / projectsDirUnc を確認してください。'
+        )
+    }
+
+    if ($report.uncCandidates.Count -gt 0) {
+        $reconnectCommands = [System.Collections.Generic.List[string]]::new()
+        foreach ($uncPath in $report.uncCandidates) {
+            $reconnectCommands.Add("cmd /c `"net use ${driveLetter}: /delete /y`"")
+            $reconnectCommands.Add("cmd /c `"net use ${driveLetter}: $uncPath /persistent:yes`"")
+            $reconnectCommands.Add("New-PSDrive -Name $driveLetter -PSProvider FileSystem -Root '$uncPath' -Persist")
+        }
+        $report.reconnectCommands = @($reconnectCommands | Select-Object -Unique)
+    }
+
+    return [pscustomobject]$report
+}
+
+function Show-DriveMappingReport {
+    param(
+        [Parameter(Mandatory)]
+        [pscustomobject]$Report
+    )
+
     Write-Host ""
-    Write-Host "  💡 永続的なドライブマッピングを作成する場合:" -ForegroundColor Cyan
-    Write-Host "     New-PSDrive -Name $driveLetter -PSProvider FileSystem -Root '$($uncPaths[0].Split(': ')[1])' -Persist" -ForegroundColor White
-} else {
-    Write-Host "  ❌ ドライブマッピングが見つかりません。" -ForegroundColor Red
+    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+    Write-Host "ドライブマッピング診断: $($Report.drivePath)" -ForegroundColor Cyan
+    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "  💡 対処方法:" -ForegroundColor Cyan
-    Write-Host "     1. Windows Explorer でネットワークドライブを割り当て" -ForegroundColor White
-    Write-Host "     2. または PowerShell で手動マッピング:" -ForegroundColor White
-    Write-Host "        New-PSDrive -Name $driveLetter -PSProvider FileSystem -Root '\\\\server\\share' -Persist" -ForegroundColor White
-    Write-Host "     3. config.json に zDriveUncPath を設定" -ForegroundColor White
+
+    if (-not $Report.configFound) {
+        Write-Host "config.json が見つからないため、既定値で診断しています。" -ForegroundColor Yellow
+        Write-Host ""
+    }
+
+    Write-Host "[1] 直接アクセス" -ForegroundColor Yellow
+    if ($Report.directAccess) {
+        Write-Host "    OK: $($Report.drivePath) はアクセス可能 ($($Report.directoryCount) ディレクトリ)" -ForegroundColor Green
+    }
+    else {
+        Write-Host "    FAIL: $($Report.drivePath) はアクセス不可" -ForegroundColor Red
+    }
+
+    Write-Host "`n[2] レジストリ" -ForegroundColor Yellow
+    if ($Report.registryRemotePath) {
+        Write-Host "    OK: $($Report.registryRemotePath)" -ForegroundColor Green
+    }
+    else {
+        Write-Host "    FAIL: HKCU:\\Network\\$($Report.driveLetter) から取得できません" -ForegroundColor Red
+    }
+
+    Write-Host "`n[3] SMB マッピング" -ForegroundColor Yellow
+    if ($Report.smbRemotePath) {
+        Write-Host "    OK: $($Report.smbRemotePath) [$($Report.smbStatus)]" -ForegroundColor Green
+    }
+    else {
+        Write-Host "    FAIL: SMB マッピングなし" -ForegroundColor Red
+    }
+
+    Write-Host "`n[4] PSDrive" -ForegroundColor Yellow
+    if ($Report.psDriveRoot -or $Report.psDriveDisplayRoot) {
+        Write-Host "    OK: Root=$($Report.psDriveRoot) DisplayRoot=$($Report.psDriveDisplayRoot)" -ForegroundColor Green
+    }
+    else {
+        Write-Host "    FAIL: PSDrive なし" -ForegroundColor Red
+    }
+
+    Write-Host "`n[5] net use" -ForegroundColor Yellow
+    if ($Report.netUseLine) {
+        Write-Host "    OK: $($Report.netUseLine.Trim())" -ForegroundColor Green
+        if ($Report.netUseIssue) {
+            Write-Host "    Issue: $($Report.netUseIssue)" -ForegroundColor Yellow
+        }
+    }
+    else {
+        Write-Host "    FAIL: net use にエントリなし" -ForegroundColor Red
+    }
+
+    Write-Host "`n[6] config の UNC" -ForegroundColor Yellow
+    if ($Report.projectsDirUnc) {
+        Write-Host "    設定値: $($Report.projectsDirUnc)" -ForegroundColor White
+        if ($Report.uncAccessible) {
+            Write-Host "    OK: UNC パスに直接アクセス可能" -ForegroundColor Green
+        }
+        else {
+            Write-Host "    WARN: UNC パスに直接アクセスできません" -ForegroundColor Yellow
+        }
+    }
+    else {
+        Write-Host "    FAIL: projectsDirUnc 未設定" -ForegroundColor Red
+    }
+
+    Write-Host "`n[7] 名前解決/疎通" -ForegroundColor Yellow
+    if ($Report.targetHost) {
+        Write-Host "    Host: $($Report.targetHost)" -ForegroundColor White
+        Write-Host "    DNS: $(if ($null -eq $Report.dnsResolved) { 'N/A' } elseif ($Report.dnsResolved) { 'OK' } else { 'FAIL' })" -ForegroundColor $(if ($Report.dnsResolved -eq $false) { 'Yellow' } else { 'White' })
+        Write-Host "    Ping: $(if ($null -eq $Report.pingReachable) { 'N/A' } elseif ($Report.pingReachable) { 'OK' } else { 'FAIL' })" -ForegroundColor $(if ($Report.pingReachable -eq $false) { 'Yellow' } else { 'White' })
+        Write-Host "    SMB445: $(if ($null -eq $Report.smbPort445Reachable) { 'N/A' } elseif ($Report.smbPort445Reachable) { 'OK' } else { 'FAIL' })" -ForegroundColor $(if ($Report.smbPort445Reachable -eq $false) { 'Yellow' } else { 'White' })
+    }
+    else {
+        Write-Host "    FAIL: 解析対象ホストなし" -ForegroundColor Red
+    }
+
+    Write-Host "`n[Summary]" -ForegroundColor Cyan
+    foreach ($path in $Report.uncCandidates) {
+        Write-Host "    UNC: $path" -ForegroundColor White
+    }
+    foreach ($share in $Report.smbShareCandidates) {
+        Write-Host "    Share: $share" -ForegroundColor White
+    }
+    if ($Report.uncCandidates.Count -eq 0) {
+        Write-Host "    UNC 候補なし" -ForegroundColor Red
+    }
+    Write-Host "    Recommendation: $($Report.recommendation)" -ForegroundColor Cyan
+    if ($Report.remapCommand) {
+        Write-Host "    RemapCommand: $($Report.remapCommand)" -ForegroundColor White
+    }
+    foreach ($command in @($Report.reconnectCommands)) {
+        Write-Host "    Reconnect: $command" -ForegroundColor White
+    }
+    foreach ($item in $Report.repairAdvice) {
+        Write-Host "    Advice: $item" -ForegroundColor White
+    }
+    Write-Host ""
 }
 
-Write-Host "`n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
-Write-Host "診断完了" -ForegroundColor Cyan
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n" -ForegroundColor Cyan
+if ($MyInvocation.InvocationName -ne '.') {
+    $configPath = Get-StartupConfigPath -StartupRoot $RootDir
+    $configInfo = Get-DriveMappingConfig -ConfigPath $configPath
+    $report = Get-DriveMappingReport -ConfigInfo $configInfo
+
+    if ($OutputFormat -eq 'Json') {
+        $report | ConvertTo-Json -Depth 6
+    }
+    else {
+        Show-DriveMappingReport -Report $report
+    }
+}

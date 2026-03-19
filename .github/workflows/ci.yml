@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  test-and-validate:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PowerShell Modules
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module Pester -Force -SkipPublisherCheck -Scope CurrentUser
+
+      - name: Run Pester
+        shell: pwsh
+        run: |
+          Invoke-Pester .\tests -CI
+
+      - name: Restore files modified by Pester
+        shell: pwsh
+        run: |
+          git checkout -- TASKS.md
+
+      - name: Validate Config Template Schema
+        shell: pwsh
+        run: |
+          Import-Module .\scripts\lib\Config.psm1 -Force
+          Assert-StartupConfigSchema -ConfigPath .\config\config.json.template
+
+      - name: Validate Diagnostics JSON Schema
+        shell: pwsh
+        run: |
+          $tempRoot = Join-Path $env:TEMP 'ai-startup-ci'
+          $bin = Join-Path $tempRoot 'bin'
+          $projects = Join-Path $tempRoot 'projects'
+          New-Item -ItemType Directory -Force -Path $bin, $projects, (Join-Path $projects 'demo') | Out-Null
+          Set-Content -Path (Join-Path $bin 'claude.cmd') -Encoding ASCII -Value "@echo off`r`nif ""%1""==""--version"" ( echo claude 1.0 & exit /b 0 )`r`necho claude stub"
+          Set-Content -Path (Join-Path $bin 'codex.cmd') -Encoding ASCII -Value "@echo off`r`nif ""%1""==""--version"" ( echo codex 1.0 & exit /b 0 )`r`necho codex stub"
+          Set-Content -Path (Join-Path $bin 'gh.cmd') -Encoding ASCII -Value "@echo off`r`nif ""%1""==""--version"" ( echo gh 1.0 & exit /b 0 )`r`nif ""%1""==""copilot"" if ""%2""==""--version"" ( echo gh-copilot 1.0 & exit /b 0 )`r`nif ""%1""==""auth"" if ""%2""==""status"" ( exit /b 0 )`r`necho gh stub"
+          Set-Content -Path (Join-Path $bin 'node.cmd') -Encoding ASCII -Value "@echo off`r`necho v20.0.0"
+          Set-Content -Path (Join-Path $bin 'npm.cmd') -Encoding ASCII -Value "@echo off`r`necho 10.0.0"
+          Set-Content -Path (Join-Path $bin 'git.cmd') -Encoding ASCII -Value "@echo off`r`necho git version 2.0.0"
+          Set-Content -Path (Join-Path $bin 'ssh.cmd') -Encoding ASCII -Value "@echo off`r`necho OpenSSH_9"
+          $config = @{
+            version = '2.0.0'
+            projectsDir = $projects
+            sshProjectsDir = $projects
+            projectsDirUnc = '\\server\share'
+            linuxHost = 'host'
+            linuxBase = '/mnt/LinuxHDD'
+            localExcludes = @()
+            tools = @{
+              defaultTool = 'claude'
+              claude = @{ enabled = $true; command = 'claude'; args = @(); installCommand = 'install-claude'; env = @{}; apiKeyEnvVar = 'ANTHROPIC_API_KEY' }
+              codex = @{ enabled = $true; command = 'codex'; args = @(); installCommand = 'install-codex'; env = @{ OPENAI_API_KEY = '' }; apiKeyEnvVar = 'OPENAI_API_KEY' }
+              copilot = @{ enabled = $true; command = 'gh'; args = @('copilot'); installCommand = 'install-copilot'; env = @{}; apiKeyEnvVar = '' }
+            }
+            recentProjects = @{ enabled = $true; maxHistory = 10; historyFile = '%USERPROFILE%\\.ai-startup\\recent-projects.json' }
+            logging = @{ enabled = $true }
+          } | ConvertTo-Json -Depth 10
+          $configPath = Join-Path $tempRoot 'config.json'
+          $mcpPath = Join-Path $tempRoot '.mcp.json'
+          Set-Content -Path $configPath -Value $config -Encoding UTF8
+          @{ mcpServers = @{ memory = @{ command = 'node'; args = @('memory.js') } } } | ConvertTo-Json -Depth 10 | Set-Content -Path $mcpPath -Encoding UTF8
+          $env:AI_STARTUP_CONFIG_PATH = $configPath
+          $env:AI_STARTUP_MCP_CONFIG_PATH = $mcpPath
+          $env:PATH = "$bin;$env:PATH"
+          . .\scripts\test\Test-AllTools.ps1
+          $schema = Get-Content .\docs\common\schemas\test-all-tools-report.schema.json -Raw | ConvertFrom-Json
+          if ($schema.schemaVersion -ne '1.0.0') { throw "schemaVersion mismatch in schema document: $($schema.schemaVersion)" }
+          $report = Get-AllToolsDiagnostics -ConfigPath $configPath
+          $errors = Test-AllToolsReportSchema -Report $report
+          if ($errors.Count -gt 0) { throw ($errors -join "`n") }
+
+      - name: Validate Agent Teams Backlog Sync
+        shell: pwsh
+        run: |
+          $doc = Get-Content .\docs\common\08_AgentTeams対応表.md -Raw -Encoding UTF8
+          $tasks = Get-Content .\TASKS.md -Raw -Encoding UTF8
+          $requiredTerms = @('Agent Teams', 'MCP', 'Worktree', 'Backlog')
+          foreach ($term in $requiredTerms) {
+            if ($doc -notmatch [regex]::Escape($term)) { throw "対応表にキーワードがありません: $term" }
+            if ($tasks -notmatch [regex]::Escape($term)) { throw "TASKS.md にキーワードがありません: $term" }
+          }
+
+      - name: Validate TASKS Tooling
+        shell: pwsh
+        run: |
+          .\scripts\tools\Update-TASKS.ps1 -Action list | Out-Null
+          .\scripts\tools\Sync-AgentTeamsBacklog.ps1 -Action check
+
+      - name: Check Legacy References
+        shell: pwsh
+        run: |
+          $patterns = @(
+            'Claude-DevTools',
+            'Claude-ChromeDevTools-Final',
+            'Claude-EdgeDevTools',
+            'run-codex\.sh',
+            'copilot --yolo',
+            'scripts\\Start-CodexCLI\.ps1',
+            'scripts\\Start-CopilotCLI\.ps1',
+            '"zDrive"',
+            'claudeCode'
+          )
+          $targets = @('README.md', 'CLAUDE.md') + @(Get-ChildItem -Path docs, config -Recurse -File | ForEach-Object { $_.FullName })
+          foreach ($pattern in $patterns) {
+            $found = $targets | Where-Object { Test-Path $_ } | ForEach-Object { Select-String -Path $_ -Pattern $pattern -CaseSensitive -ErrorAction SilentlyContinue }
+            if ($found) {
+              $found | ForEach-Object { Write-Host "$($_.Path):$($_.LineNumber): $($_.Line)" }
+              throw "旧構成の参照が残っています: $pattern"
+            }
+          }

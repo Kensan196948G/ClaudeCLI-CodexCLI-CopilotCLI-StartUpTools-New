@@ -1,0 +1,44 @@
+{
+  "default": {
+    "priority": "P2",
+    "owner": "ScrumMaster",
+    "source": "AgentTeamsMatrix"
+  },
+  "rules": [
+    {
+      "pattern": "MCP|memory",
+      "priority": "P1",
+      "owner": "Ops"
+    },
+    {
+      "pattern": "health|runtime probe|実機|疎通",
+      "priority": "P1",
+      "owner": "Ops"
+    },
+    {
+      "pattern": "diagnostic|diagnostics|test|verify|CI",
+      "priority": "P1",
+      "owner": "QA"
+    },
+    {
+      "pattern": "dashboard|lane|Architect|ClaudeOS",
+      "priority": "P1",
+      "owner": "Architect"
+    },
+    {
+      "pattern": "worktree|branch",
+      "priority": "P2",
+      "owner": "Ops"
+    },
+    {
+      "pattern": "Agent Teams|multi-agent",
+      "priority": "P1",
+      "owner": "Architect"
+    },
+    {
+      "pattern": "docs|README|documentation|guide|運用",
+      "priority": "P2",
+      "owner": "ScrumMaster"
+    }
+  ]
+}
