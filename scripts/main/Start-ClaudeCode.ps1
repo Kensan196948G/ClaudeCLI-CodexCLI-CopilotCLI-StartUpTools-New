@@ -105,6 +105,9 @@ function Invoke-ClaudeSshViaStdin {
         return 0
     }
 
+    # Bash on the remote side must receive LF-only content.
+    $normalizedScript = (($ScriptText -replace "`r`n", "`n") -replace "`r", "`n")
+
     $sshCommand = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { 'ssh' }
     $connectTimeout = if ($env:AI_STARTUP_SSH_CONNECT_TIMEOUT) { $env:AI_STARTUP_SSH_CONNECT_TIMEOUT } else { '10' }
 
@@ -122,8 +125,8 @@ function Invoke-ClaudeSshViaStdin {
     Write-Info "SSH 接続中: $LinuxHost ..."
     [void]$process.Start()
     $process.StandardInput.NewLine = "`n"
-    $process.StandardInput.Write($ScriptText)
-    if (-not $ScriptText.EndsWith("`n")) {
+    $process.StandardInput.Write($normalizedScript)
+    if (-not $normalizedScript.EndsWith("`n")) {
         $process.StandardInput.WriteLine()
     }
     $process.StandardInput.Close()
