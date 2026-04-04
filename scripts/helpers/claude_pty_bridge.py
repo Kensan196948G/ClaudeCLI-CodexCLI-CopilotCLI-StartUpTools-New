@@ -44,7 +44,23 @@ def main() -> int:
         os.write(master_fd, b"\x1b[200~")
         os.write(master_fd, payload.encode("utf-8"))
         os.write(master_fd, b"\x1b[201~")
-        time.sleep(0.25)
+
+        # Wait for Claude Code TUI to finish rendering the pasted content.
+        # Large pastes (500+ lines) need more time to be processed by the TUI.
+        time.sleep(2.0)
+
+        # Drain any pending output from the TUI during processing.
+        for _ in range(5):
+            rr, _, _ = select.select([master_fd], [], [], 0.3)
+            if master_fd in rr:
+                try:
+                    chunk = os.read(master_fd, 16384)
+                    if chunk:
+                        os.write(stdout_fd, chunk)
+                except (BlockingIOError, OSError):
+                    pass
+
+        # Send Enter to submit the pasted prompt.
         os.write(master_fd, b"\r")
         prompt_sent = True
 
