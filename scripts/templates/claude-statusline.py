@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Claude Code status line script.
+"""Claude Code status line script with ANSI colors.
 
 Reads JSON from stdin, outputs formatted multi-line status bar.
 Deployed to each project's .claude/statusline.py by the launcher.
@@ -12,6 +12,21 @@ import sys
 from datetime import datetime, timezone, timedelta
 
 JST = timezone(timedelta(hours=9))
+
+# ANSI color codes
+CYAN = "\x1b[36m"
+GREEN = "\x1b[32m"
+YELLOW = "\x1b[33m"
+MAGENTA = "\x1b[35m"
+BLUE = "\x1b[34m"
+WHITE = "\x1b[97m"
+GRAY = "\x1b[90m"
+RED = "\x1b[31m"
+BOLD = "\x1b[1m"
+DIM = "\x1b[2m"
+R = "\x1b[0m"
+
+SEP = f" {GRAY}\u2502{R} "
 
 
 def get_git_branch() -> str:
@@ -28,7 +43,13 @@ def get_git_branch() -> str:
 def progress_bar(pct: float, width: int = 10) -> str:
     filled = round(pct / 100 * width)
     empty = width - filled
-    return "\u25b0" * filled + "\u25b1" * empty
+    if pct >= 80:
+        color = RED
+    elif pct >= 50:
+        color = YELLOW
+    else:
+        color = GREEN
+    return color + "\u25b0" * filled + DIM + "\u25b1" * empty + R
 
 
 def format_duration(ms: float) -> str:
@@ -83,36 +104,36 @@ def main() -> None:
 
     # Line 1: Model / Project / Branch / OS
     line1_parts = [
-        f"\U0001f916 {model_name}",
-        f"\U0001f4c1 {project}",
-        f"\U0001f33f {branch}",
-        f"\U0001f5a5  {os_name}",
+        f"{MAGENTA}\U0001f916 {BOLD}{model_name}{R}",
+        f"{YELLOW}\U0001f4c1 {project}{R}",
+        f"{GREEN}\U0001f33f {branch}{R}",
+        f"{CYAN}\U0001f5a5  {os_name}{R}",
     ]
-    print(" \u2502 ".join(line1_parts))
+    print(SEP.join(line1_parts))
 
-    # Line 2: Context % / File changes / Online
+    # Line 2: Context % / File changes / Duration
     ctx_bar = progress_bar(ctx_pct)
     line2_parts = [
-        f"\U0001f4ca {ctx_pct:.0f}% {ctx_bar}",
-        f"\u270f\ufe0f  +{lines_added}/-{lines_removed}",
+        f"{BLUE}\U0001f4ca {WHITE}{ctx_pct:.0f}%{R} {ctx_bar}",
+        f"{CYAN}\u270f\ufe0f  {GREEN}+{lines_added}{R}/{RED}-{lines_removed}{R}",
     ]
     if duration_ms > 0:
-        line2_parts.append(f"\u23f1  {format_duration(duration_ms)}")
-    print(" \u2502 ".join(line2_parts))
+        line2_parts.append(f"{BLUE}\u23f1  {WHITE}{format_duration(duration_ms)}{R}")
+    print(SEP.join(line2_parts))
 
     # Line 3: 5-hour rate limit (if available)
     five_pct = five_hour.get("used_percentage")
     if five_pct is not None:
         five_bar = progress_bar(five_pct)
         five_reset = format_reset_time(five_hour.get("resets_at"))
-        print(f"\u23f1  5h  {five_bar}  {five_pct:.0f}%     {five_reset}")
+        print(f"{BLUE}\u23f1  5h{R}  {five_bar}  {WHITE}{five_pct:.0f}%{R}     {DIM}{five_reset}{R}")
 
     # Line 4: 7-day rate limit (if available)
     seven_pct = seven_day.get("used_percentage")
     if seven_pct is not None:
         seven_bar = progress_bar(seven_pct)
         seven_reset = format_reset_time(seven_day.get("resets_at"))
-        print(f"\U0001f4c5 7d  {seven_bar}  {seven_pct:.0f}%  \u5168\u30e2\u30c7\u30eb     {seven_reset}")
+        print(f"{BLUE}\U0001f4c5 7d{R}  {seven_bar}  {WHITE}{seven_pct:.0f}%{R}  {CYAN}\u5168\u30e2\u30c7\u30eb{R}     {DIM}{seven_reset}{R}")
 
 
 if __name__ == "__main__":
