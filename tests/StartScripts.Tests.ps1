@@ -87,15 +87,7 @@ Describe 'Start-*.ps1 dry-run flows' {
         $LASTEXITCODE | Should -Be 0
         $output | Should -Match '\[DryRun\].*claude'
         $output | Should -Match 'demo'
-        $claudePath = Join-Path $script:ProjectsRoot 'demo\CLAUDE.md'
-        if (-not (Test-Path $claudePath)) {
-            Write-Host "[DEBUG] CLAUDE.md not found at: $claudePath" -ForegroundColor Red
-            Write-Host "[DEBUG] ProjectsRoot: $($script:ProjectsRoot)" -ForegroundColor Red
-            Write-Host "[DEBUG] RepoRoot: $($script:RepoRoot)" -ForegroundColor Red
-            Write-Host "[DEBUG] Output: $output" -ForegroundColor Red
-            Write-Host "[DEBUG] demo dir contents: $(Get-ChildItem (Join-Path $script:ProjectsRoot 'demo') -Recurse -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)" -ForegroundColor Red
-        }
-        (Test-Path $claudePath) | Should -BeTrue
+        (Test-Path (Join-Path $script:ProjectsRoot 'demo\CLAUDE.md')) | Should -BeTrue
         (Test-Path (Join-Path $script:ProjectsRoot 'demo\.claude\settings.json')) | Should -BeTrue
         (Test-Path (Join-Path $script:ProjectsRoot 'demo\.mcp.json')) | Should -BeTrue
         (Test-Path (Join-Path $script:ProjectsRoot 'demo\.claude\claudeos\system\orchestrator.md')) | Should -BeTrue
