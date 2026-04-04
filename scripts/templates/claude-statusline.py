@@ -20,13 +20,11 @@ YELLOW = "\x1b[33m"
 MAGENTA = "\x1b[35m"
 BLUE = "\x1b[34m"
 WHITE = "\x1b[97m"
-GRAY = "\x1b[90m"
 RED = "\x1b[31m"
 BOLD = "\x1b[1m"
-DIM = "\x1b[2m"
 R = "\x1b[0m"
 
-SEP = f" {GRAY}\u2502{R} "
+SEP = f" {BLUE}\u2502{R} "
 
 
 def get_git_branch() -> str:
@@ -49,7 +47,7 @@ def progress_bar(pct: float, width: int = 10) -> str:
         color = YELLOW
     else:
         color = GREEN
-    return color + "\u25b0" * filled + DIM + "\u25b1" * empty + R
+    return color + "\u25b0" * filled + CYAN + "\u25b1" * empty + R
 
 
 def format_duration(ms: float) -> str:
@@ -126,14 +124,14 @@ def main() -> None:
     if five_pct is not None:
         five_bar = progress_bar(five_pct)
         five_reset = format_reset_time(five_hour.get("resets_at"))
-        print(f"{BLUE}\u23f1  5h{R}  {five_bar}  {WHITE}{five_pct:.0f}%{R}     {DIM}{five_reset}{R}")
+        print(f"{BLUE}\u23f1  5h{R}  {five_bar}  {WHITE}{five_pct:.0f}%{R}     {CYAN}{five_reset}{R}")
 
     # Line 4: 7-day rate limit (if available)
     seven_pct = seven_day.get("used_percentage")
     if seven_pct is not None:
         seven_bar = progress_bar(seven_pct)
         seven_reset = format_reset_time(seven_day.get("resets_at"))
-        print(f"{BLUE}\U0001f4c5 7d{R}  {seven_bar}  {WHITE}{seven_pct:.0f}%{R}  {CYAN}\u5168\u30e2\u30c7\u30eb{R}     {DIM}{seven_reset}{R}")
+        print(f"{BLUE}\U0001f4c5 7d{R}  {seven_bar}  {WHITE}{seven_pct:.0f}%{R}  {CYAN}\u5168\u30e2\u30c7\u30eb{R}     {CYAN}{seven_reset}{R}")
 
 
 if __name__ == "__main__":
