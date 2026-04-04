@@ -12,9 +12,9 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $ProjectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-Import-Module (Join-Path $ProjectRoot "scripts\lib\LauncherCommon.psm1") -Force
+Import-Module (Join-Path $ProjectRoot "scripts\lib\LauncherCommon.psm1") -Force -DisableNameChecking
 Import-Module (Join-Path $ProjectRoot "scripts\lib\Config.psm1") -Force
-Import-Module (Join-Path $ProjectRoot "scripts\lib\MenuCommon.psm1") -Force
+Import-Module (Join-Path $ProjectRoot "scripts\lib\MenuCommon.psm1") -Force -DisableNameChecking
 
 Set-Location $ProjectRoot
 
@@ -228,9 +228,34 @@ function Invoke-MenuScript {
     )
 
     & $ShellExe -NoProfile -ExecutionPolicy Bypass -File $File @ScriptArgs
+    $scriptExitCode = $LASTEXITCODE
+
     Write-Host ""
-    Write-Host "  何かキーを押してメニューに戻ります..." -ForegroundColor DarkGray
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    if ($scriptExitCode -ne 0) {
+        $logDir = Join-Path $ProjectRoot "logs"
+        if (-not (Test-Path $logDir)) {
+            New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+        }
+        $timestamp = (Get-Date -Format 'yyyyMMdd-HHmmss')
+        $logFile = Join-Path $logDir "menu-error-$timestamp.log"
+
+        $logContent = @(
+            "Timestamp : $timestamp"
+            "Script    : $File"
+            "Args      : $($ScriptArgs -join ' ')"
+            "ExitCode  : $scriptExitCode"
+            "Host      : $env:COMPUTERNAME"
+        ) -join "`n"
+        Set-Content -Path $logFile -Value $logContent -Encoding UTF8
+
+        Write-Host "  ========================================" -ForegroundColor Red
+        Write-Host "  エラーが発生しました (終了コード: $scriptExitCode)" -ForegroundColor Red
+        Write-Host "  ログ: $logFile" -ForegroundColor Yellow
+        Write-Host "  ========================================" -ForegroundColor Red
+    }
+
+    Write-Host ""
+    Read-Host "  Enterキーでメニューに戻ります（Ctrl+Cでコピー可）"
 }
 
 function Invoke-ToolFromMenu {

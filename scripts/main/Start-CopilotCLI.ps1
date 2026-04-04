@@ -2,7 +2,7 @@
 .SYNOPSIS
     GitHub Copilot CLI startup script.
 .DESCRIPTION
-    ClaudeOS Agent Teams lane entry for DevUI / Ops / QA.
+    ClaudeOS-compatible custom-agent lane entry for Main / Task / Code Review / Ops.
     See docs/common/08_AgentTeams対応表.md for the mapping table.
 #>
 
@@ -17,7 +17,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $StartupRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-Import-Module (Join-Path $StartupRoot 'scripts\lib\LauncherCommon.psm1') -Force
+Import-Module (Join-Path $StartupRoot 'scripts\lib\LauncherCommon.psm1') -Force -DisableNameChecking
 Import-Module (Join-Path $StartupRoot 'scripts\lib\Config.psm1') -Force
 
 $ConfigPath = Get-StartupConfigPath -StartupRoot $StartupRoot
@@ -36,8 +36,8 @@ try {
         throw 'GitHub Copilot CLI is disabled in config.json.'
     }
 
-    $command = if ([string]::IsNullOrWhiteSpace($toolConfig.command)) { 'gh' } else { "$($toolConfig.command)" }
-    $arguments = if ($null -ne $toolConfig.args) { @($toolConfig.args | ForEach-Object { "$_" }) } else { @('copilot') }
+    $command = if ([string]::IsNullOrWhiteSpace($toolConfig.command)) { 'copilot' } else { "$($toolConfig.command)" }
+    $arguments = if ($null -ne $toolConfig.args) { @($toolConfig.args | ForEach-Object { "$_" }) } else { @('--yolo') }
 
     if ($Local) {
         Write-Info 'Checking GitHub Copilot CLI availability...'
@@ -73,17 +73,7 @@ try {
         Write-Info "Starting GitHub Copilot CLI locally for $Project"
         Set-Location $projectDir
         Set-LauncherEnvironment -EnvMap $toolConfig.env
-
-        # CopilotCLI\AGENTS.md を正規ソースとして使用（フォールバック: scripts\templates\copilot-instructions.md）
-        $copilotTemplatePath = Join-Path $StartupRoot 'CopilotCLI\AGENTS.md'
-        if (-not (Test-Path $copilotTemplatePath)) {
-            $copilotTemplatePath = Join-Path $StartupRoot 'scripts\templates\copilot-instructions.md'
-        }
-        Sync-ProjectTemplate `
-            -TemplatePath $copilotTemplatePath `
-            -TargetPath (Join-Path $projectDir '.github\copilot-instructions.md') `
-            -Label 'copilot-instructions.md' `
-            -EnsureParentDirectory
+        Sync-LauncherCopilotGlobalConfig -StartupRoot $StartupRoot -ProjectDir $projectDir
 
         if ($DryRun) {
             foreach ($line in (New-LauncherDryRunMessage -Command $command -Arguments $arguments -WorkingDirectory $projectDir)) {

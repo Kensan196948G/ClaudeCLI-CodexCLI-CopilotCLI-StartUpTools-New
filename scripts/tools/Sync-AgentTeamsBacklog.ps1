@@ -111,9 +111,16 @@ switch ($Action) {
         exit 0
     }
     'check' {
-        $missing = Compare-Object -ReferenceObject $items -DifferenceObject $currentExtracted -PassThru | Where-Object { $_ -in $items }
+        $diff = @(Compare-Object -ReferenceObject $items -DifferenceObject $currentExtracted)
+        $missing = @($diff | Where-Object { $_.SideIndicator -eq '<=' } | ForEach-Object { $_.InputObject })
+        $stale = @($diff | Where-Object { $_.SideIndicator -eq '=>' } | ForEach-Object { $_.InputObject })
         if (@($missing).Count -gt 0) {
             $missing | ForEach-Object { Write-Host "Missing extracted task: $_" -ForegroundColor Yellow }
+        }
+        if (@($stale).Count -gt 0) {
+            $stale | ForEach-Object { Write-Host "Stale extracted task: $_" -ForegroundColor Yellow }
+        }
+        if (@($missing).Count -gt 0 -or @($stale).Count -gt 0) {
             throw 'TASKS.md auto extracted section is out of sync.'
         }
         exit 0

@@ -27,6 +27,110 @@ function Write-Ok { param($Message) Write-Host "[ OK ]  $Message" -ForegroundCol
 function Write-Warn { param($Message) Write-Host "[WARN]  $Message" -ForegroundColor Yellow }
 function Write-Error2 { param($Message) Write-Host "[ERR]   $Message" -ForegroundColor Red }
 
+function ConvertTo-BashSingleQuoted {
+    param([Parameter(Mandatory)][string]$Value)
+
+    $quote = [string][char]39
+    $replacement = $quote + '"' + $quote + '"' + $quote
+    return $quote + $Value.Replace($quote, $replacement) + $quote
+}
+
+function New-RemoteTemplateDeployScript {
+    param(
+        [Parameter(Mandatory)][string]$TemplatePath,
+        [Parameter(Mandatory)][string]$TargetPath,
+        [Parameter(Mandatory)][string]$Label,
+        [switch]$EnsureParentDirectory
+    )
+
+    if (-not (Test-Path $TemplatePath)) {
+        return ""
+    }
+
+    $content = Get-Content -Path $TemplatePath -Raw -Encoding UTF8
+    $base64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($content))
+    $normalizedTargetPath = $TargetPath.Replace('\', '/')
+    $mkdir = ""
+    if ($EnsureParentDirectory) {
+        $mkdir = "mkdir -p `"`$(dirname `"$normalizedTargetPath`")`"`n"
+    }
+
+    return @"
+$mkdir
+TMP_FILE=`$(mktemp)
+printf '%s' '$base64' | base64 -d > "`$TMP_FILE"
+if [ ! -f "$normalizedTargetPath" ] || ! cmp -s "`$TMP_FILE" "$normalizedTargetPath"; then
+  mv "`$TMP_FILE" "$normalizedTargetPath"
+  echo "[OK] $Label を配置/更新しました: $normalizedTargetPath"
+else
+  rm -f "`$TMP_FILE"
+  echo "[INFO] $Label は最新です: $normalizedTargetPath"
+fi
+"@
+}
+
+function Get-StartPromptSections {
+    param([Parameter(Mandatory)][string]$PromptPath)
+
+    $content = Get-Content -Path $PromptPath -Raw -Encoding UTF8
+    $content = $content.TrimStart([char]0xFEFF)
+
+    $loopMatch = [regex]::Match($content, '(?ms)^##\s*LOOP_COMMANDS\s*\r?\n(.*?)(?=^##\s*PROMPT_BODY\s*$)')
+    $bodyMatch = [regex]::Match($content, '(?ms)^##\s*PROMPT_BODY\s*\r?\n(.*)$')
+
+    if (-not $loopMatch.Success -or -not $bodyMatch.Success) {
+        throw "START_PROMPT.md の形式が不正です。'## LOOP_COMMANDS' と '## PROMPT_BODY' が必要です。"
+    }
+
+    return [pscustomobject]@{
+        LoopCommands = ($loopMatch.Groups[1].Value.Trim())
+        PromptBody   = ($bodyMatch.Groups[1].Value.Trim())
+        FullText     = (($loopMatch.Groups[1].Value.Trim()) + "`r`n`r`n" + ($bodyMatch.Groups[1].Value.Trim())).Trim()
+    }
+}
+
+function Invoke-ClaudeSshViaStdin {
+    param(
+        [Parameter(Mandatory)][string]$LinuxHost,
+        [Parameter(Mandatory)][string]$ScriptText
+    )
+
+    if ($env:AI_STARTUP_SSH_CAPTURE_DIR) {
+        $captureDir = $env:AI_STARTUP_SSH_CAPTURE_DIR
+        if (-not (Test-Path $captureDir)) {
+            New-Item -ItemType Directory -Force -Path $captureDir | Out-Null
+        }
+        Set-Content -Path (Join-Path $captureDir "deploy-script.sh") -Value $ScriptText -Encoding UTF8
+        Write-Host "[INFO] SSH_CAPTURE deploy $LinuxHost" -ForegroundColor DarkGray
+        return 0
+    }
+
+    $sshCommand = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { 'ssh' }
+    $connectTimeout = if ($env:AI_STARTUP_SSH_CONNECT_TIMEOUT) { $env:AI_STARTUP_SSH_CONNECT_TIMEOUT } else { '10' }
+
+    $psi = [System.Diagnostics.ProcessStartInfo]::new()
+    $psi.FileName = $sshCommand
+    $psi.UseShellExecute = $false
+    $psi.RedirectStandardInput = $true
+    $psi.RedirectStandardOutput = $false
+    $psi.RedirectStandardError = $false
+    $psi.Arguments = ('-T -o ConnectTimeout={0} -o StrictHostKeyChecking=accept-new {1} "bash -s"' -f $connectTimeout, $LinuxHost)
+
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $psi
+
+    Write-Info "SSH 接続中: $LinuxHost ..."
+    [void]$process.Start()
+    $process.StandardInput.NewLine = "`n"
+    $process.StandardInput.Write($ScriptText)
+    if (-not $ScriptText.EndsWith("`n")) {
+        $process.StandardInput.WriteLine()
+    }
+    $process.StandardInput.Close()
+    $process.WaitForExit()
+    return $process.ExitCode
+}
+
 $launchContext = New-LauncherExecutionContext
 $Config = $null
 
@@ -48,7 +152,6 @@ try {
 
     $Local = Resolve-LauncherMode -Config $Config -Local:$Local -NonInteractive:$NonInteractive -ConfigPath $ConfigPath
 
-    # SSH モードではリモート側の認証を使うため、ローカルの API キー警告は不要
     if ($Local -and [string]::IsNullOrEmpty($apiKey)) {
         Show-LauncherApiKeyWarning -ApiKeyName $apiKeyName -LoginHint 'Use /login after Claude Code starts if you rely on account auth.' -ApiHint "Set environment variable $apiKeyName for API auth."
     }
@@ -73,6 +176,8 @@ try {
         Set-Location $localProjectDir
         Set-LauncherEnvironment -EnvMap $toolConfig.env
 
+        Sync-LauncherClaudeGlobalConfig -StartupRoot $ScriptRoot -ProjectDir $localProjectDir
+
         if ($DryRun) {
             foreach ($line in (New-LauncherDryRunMessage -Command 'claude' -Arguments @($toolConfig.args) -WorkingDirectory $localProjectDir)) {
                 Write-Info $line
@@ -81,37 +186,107 @@ try {
             exit 0
         }
 
-        Sync-ProjectTemplate -TemplatePath (Join-Path $ScriptRoot 'scripts\templates\CLAUDE.md') -TargetPath (Join-Path $localProjectDir 'CLAUDE.md') -Label 'CLAUDE.md'
         & claude @($toolConfig.args)
         $launchContext.Result = if ($LASTEXITCODE -eq 0) { 'success' } else { 'failure' }
         exit $LASTEXITCODE
     }
 
     $linuxProject = "$linuxBase/$Project"
-    $claudeArgs = $toolConfig.args -join ' '
+    $claudeArgs = if ($toolConfig.args) { $toolConfig.args -join ' ' } else { '' }
+    $claudeCommand = "export LANG=C.UTF-8; export LC_ALL=C.UTF-8; cd $(ConvertTo-BashSingleQuoted -Value $linuxProject) && claude $claudeArgs".Trim()
 
-    # ssh -tt HOST "cd PROJECT && claude ARGS" の直接コマンド
-    $runScript = "cd '$linuxProject' && claude $claudeArgs"
+    $templateClaude = Join-Path $ScriptRoot 'Claude\templates\claude\CLAUDE.md'
+    $templateSettings = Join-Path $ScriptRoot 'Claude\templates\claude\settings.json'
+    $templatePrompt = Join-Path $ScriptRoot 'Claude\templates\claude\START_PROMPT.md'
+    $bridgeSource = Join-Path $ScriptRoot 'scripts\helpers\claude_pty_bridge.py'
+
+    $promptSections = Get-StartPromptSections -PromptPath $templatePrompt
+
+    Write-Host ""
+    Write-Host "=== Claude 設定サマリー ===" -ForegroundColor Yellow
+    Write-Host "Template : $templateClaude"
+    Write-Host "Settings : $templateSettings"
+    Write-Host "Prompt   : $templatePrompt"
+    Write-Host "Language : 日本語"
+    Write-Host "Structure: .claude/claudeos"
+    Write-Host "Mode     : Auto Mode + Agent Teams / WorkTree"
+    Write-Host "Loop     : Monitor -> Build -> Verify -> Improve"
+    Write-Host "Git Rule : main 直接 push 禁止 / PR 必須 / CI 成功のみ merge"
+    Write-Host "Stop     : 8 時間 / Loop Guard / Token 95% / 重大リスク"
+    if ($toolConfig.env) {
+        $envLabels = @($toolConfig.env.PSObject.Properties | ForEach-Object { '{0}={1}' -f $_.Name, $_.Value })
+        if ($envLabels.Count -gt 0) {
+            Write-Host ("Env      : " + ($envLabels -join ', '))
+        }
+    }
+
+    Write-Host ""
+    Write-Host "=== Claude 起動プロンプト ===" -ForegroundColor Yellow
+    Write-Host "SSH 自動投入時も以下を基準に送信します。" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "[LOOP_COMMANDS]" -ForegroundColor DarkGray
+    Write-Host $promptSections.LoopCommands
+    Write-Host ""
+    Write-Host "[PROMPT_BODY]" -ForegroundColor DarkGray
+    Write-Host $promptSections.PromptBody
+
+    $remoteBootstrap = "$linuxProject/.claude/claude_startup_bridge.sh"
+    $remoteBridgePath = "$linuxProject/.claude/claude_pty_bridge.py"
+
+    $startupCmdB64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($claudeCommand))
+    $promptB64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($promptSections.FullText))
+
+    $deployParts = @(
+        "set -e"
+        "mkdir -p $(ConvertTo-BashSingleQuoted -Value "$linuxProject/.claude")"
+        (New-RemoteTemplateDeployScript -TemplatePath $templateClaude -TargetPath "$linuxProject/CLAUDE.md" -Label 'CLAUDE.md')
+        (New-RemoteTemplateDeployScript -TemplatePath $templateClaude -TargetPath "$linuxProject/.claude/CLAUDE.md" -Label '.claude/CLAUDE.md' -EnsureParentDirectory)
+        (New-RemoteTemplateDeployScript -TemplatePath $templateSettings -TargetPath "$linuxProject/.claude/settings.json" -Label '.claude/settings.json' -EnsureParentDirectory)
+        (New-RemoteTemplateDeployScript -TemplatePath $templatePrompt -TargetPath "$linuxProject/.claude/START_PROMPT.md" -Label '.claude/START_PROMPT.md' -EnsureParentDirectory)
+        (New-RemoteTemplateDeployScript -TemplatePath $bridgeSource -TargetPath $remoteBridgePath -Label '.claude/claude_pty_bridge.py' -EnsureParentDirectory)
+@"
+cat > $(ConvertTo-BashSingleQuoted -Value $remoteBootstrap) <<'EOF'
+#!/usr/bin/env bash
+set -e
+cd $(ConvertTo-BashSingleQuoted -Value $linuxProject)
+export STARTUP_CMD_B64='${startupCmdB64}'
+export PROMPT_B64='${promptB64}'
+exec python3 $(ConvertTo-BashSingleQuoted -Value $remoteBridgePath)
+EOF
+chmod +x $(ConvertTo-BashSingleQuoted -Value $remoteBootstrap)
+"@
+    ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
+    $deployScript = ($deployParts -join "`n`n") + "`n"
 
     if ($DryRun) {
-        $dryRunLines = New-LauncherDryRunMessage -Command 'claude' -LinuxHost $linuxHost -RemoteScript $runScript
-        Write-Info $dryRunLines[0]
-        Write-Host $dryRunLines[1]
+        Write-Info "SSH接続先: $linuxHost"
+        Write-Host $deployScript
+        Write-Host ""
+        Write-Host ("exec bash " + (ConvertTo-BashSingleQuoted -Value $remoteBootstrap))
         $launchContext.Result = 'success'
         exit 0
     }
 
     Write-Info "Connecting via SSH: $linuxHost"
+    $deployExitCode = Invoke-ClaudeSshViaStdin -LinuxHost $linuxHost -ScriptText $deployScript
+    if ($deployExitCode -ne 0) {
+        $launchContext.Result = 'failure'
+        exit $deployExitCode
+    }
+
+    $runScript = "cd $(ConvertTo-BashSingleQuoted -Value $linuxProject) && exec bash $(ConvertTo-BashSingleQuoted -Value $remoteBootstrap)"
     $sshExitCode = Invoke-LauncherSshScript -LinuxHost $linuxHost -RunScript $runScript -RemoteScriptName "run-claude-$Project.sh"
-    # 255 は SSH 接続失敗（Invoke-LauncherSshScript 内で診断メッセージ表示済み）
-    # それ以外の終了コードはツールの正常終了として扱う
     if ($sshExitCode -eq 255) {
         $launchContext.Result = 'failure'
         exit $sshExitCode
     }
 
-    $launchContext.Result = 'success'
-    Write-Ok 'Claude Code session finished.'
+    $launchContext.Result = if ($sshExitCode -eq 0) { 'success' } else { 'failure' }
+    if ($sshExitCode -eq 0) {
+        Write-Ok 'Claude Code session finished.'
+    }
+    exit $sshExitCode
 }
 catch {
     if ($_.Exception.Message -eq 'USER_CANCELLED') {

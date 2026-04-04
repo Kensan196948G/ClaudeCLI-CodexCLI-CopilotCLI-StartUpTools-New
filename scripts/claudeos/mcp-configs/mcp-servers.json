@@ -1,0 +1,20 @@
+{
+  "servers": [
+    {
+      "name": "github",
+      "purpose": "Issue、PR、Actions、Repository 操作"
+    },
+    {
+      "name": "supabase",
+      "purpose": "DB、auth、storage の確認"
+    },
+    {
+      "name": "vercel",
+      "purpose": "フロントエンドのデプロイと状態確認"
+    },
+    {
+      "name": "railway",
+      "purpose": "バックエンドや DB の運用確認"
+    }
+  ]
+}

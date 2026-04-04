@@ -46,7 +46,7 @@ codex --version
 
 ```powershell
 gh extension install github/gh-copilot
-gh copilot --version
+copilot --version
 ```
 
 ---
@@ -115,7 +115,7 @@ start.bat
 診断では次の観点を確認します。
 
 - `config/config.json` の存在とスキーマ
-- `claude` / `codex` / `gh copilot` の利用可否
+- `claude` / `codex` / `copilot` の利用可否
 - `projectsDir` / `sshProjectsDir` / `projectsDirUnc` の参照可否
 - 起動確認用の `-DryRun` コマンド例
 

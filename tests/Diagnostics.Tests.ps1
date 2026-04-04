@@ -2,7 +2,7 @@ BeforeAll {
     $script:RepoRoot = Split-Path -Parent $PSScriptRoot
     . (Join-Path $script:RepoRoot 'scripts\test\test-drive-mapping.ps1')
     . (Join-Path $script:RepoRoot 'scripts\test\Test-AllTools.ps1')
-    Import-Module (Join-Path $script:RepoRoot 'scripts\lib\MenuCommon.psm1') -Force
+Import-Module (Join-Path $script:RepoRoot 'scripts\lib\MenuCommon.psm1') -Force -DisableNameChecking
     $script:PowerShellExe = (Get-Process -Id $PID).Path
 }
 
@@ -240,7 +240,7 @@ echo OpenSSH_9
                 defaultTool = 'claude'
                 claude = @{ enabled = $true; command = 'claude'; args = @(); installCommand = 'install-claude'; env = @{}; apiKeyEnvVar = 'ANTHROPIC_API_KEY' }
                 codex = @{ enabled = $true; command = 'codex'; args = @(); installCommand = 'install-codex'; env = @{ OPENAI_API_KEY = '' }; apiKeyEnvVar = 'OPENAI_API_KEY' }
-                copilot = @{ enabled = $true; command = 'gh'; args = @('copilot'); installCommand = 'install-copilot'; env = @{} }
+                copilot = @{ enabled = $true; command = 'copilot'; args = @('--yolo'); installCommand = 'install-copilot'; env = @{}; checkCommand = 'copilot --version' }
             }
         } | ConvertTo-Json -Depth 10
 
@@ -547,7 +547,7 @@ Describe 'Start-Menu recent projects' {
                 defaultTool = 'claude'
                 claude = @{ enabled = $true; command = 'claude'; args = @(); installCommand = 'install-claude'; env = @{}; apiKeyEnvVar = 'ANTHROPIC_API_KEY' }
                 codex = @{ enabled = $true; command = 'codex'; args = @(); installCommand = 'install-codex'; env = @{}; apiKeyEnvVar = 'OPENAI_API_KEY' }
-                copilot = @{ enabled = $true; command = 'gh'; args = @('copilot'); installCommand = 'install-copilot'; env = @{} }
+                copilot = @{ enabled = $true; command = 'copilot'; args = @('--yolo'); installCommand = 'install-copilot'; env = @{}; checkCommand = 'copilot --version' }
             }
             recentProjects = @{
                 enabled = $true

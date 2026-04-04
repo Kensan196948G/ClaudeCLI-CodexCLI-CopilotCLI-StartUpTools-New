@@ -1,0 +1,20 @@
+{
+  "name": "everything-claude-code-market",
+  "interface": {
+    "displayName": "Everything Claude Code Marketplace"
+  },
+  "plugins": [
+    {
+      "name": "everything-claude-code",
+      "source": {
+        "source": "local",
+        "path": "./everything-claude-code"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

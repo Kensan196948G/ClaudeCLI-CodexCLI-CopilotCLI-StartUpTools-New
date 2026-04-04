@@ -15,7 +15,7 @@ param(
 $ErrorActionPreference = "Continue"
 
 $RootDir = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-Import-Module (Join-Path $RootDir "scripts\lib\LauncherCommon.psm1") -Force
+Import-Module (Join-Path $RootDir "scripts\lib\LauncherCommon.psm1") -Force -DisableNameChecking
 
 function Get-DriveMappingConfig {
     param([string]$ConfigPath)

@@ -46,7 +46,8 @@ jobs:
           New-Item -ItemType Directory -Force -Path $bin, $projects, (Join-Path $projects 'demo') | Out-Null
           Set-Content -Path (Join-Path $bin 'claude.cmd') -Encoding ASCII -Value "@echo off`r`nif ""%1""==""--version"" ( echo claude 1.0 & exit /b 0 )`r`necho claude stub"
           Set-Content -Path (Join-Path $bin 'codex.cmd') -Encoding ASCII -Value "@echo off`r`nif ""%1""==""--version"" ( echo codex 1.0 & exit /b 0 )`r`necho codex stub"
-          Set-Content -Path (Join-Path $bin 'gh.cmd') -Encoding ASCII -Value "@echo off`r`nif ""%1""==""--version"" ( echo gh 1.0 & exit /b 0 )`r`nif ""%1""==""copilot"" if ""%2""==""--version"" ( echo gh-copilot 1.0 & exit /b 0 )`r`nif ""%1""==""auth"" if ""%2""==""status"" ( exit /b 0 )`r`necho gh stub"
+          Set-Content -Path (Join-Path $bin 'gh.cmd') -Encoding ASCII -Value "@echo off`r`nif ""%1""==""--version"" ( echo gh 1.0 & exit /b 0 )`r`nif ""%1""==""auth"" if ""%2""==""status"" ( exit /b 0 )`r`necho gh stub"
+          Set-Content -Path (Join-Path $bin 'copilot.cmd') -Encoding ASCII -Value "@echo off`r`nif ""%1""==""--version"" ( echo copilot 1.0 & exit /b 0 )`r`nif ""%1""==""auth"" ( exit /b 0 )`r`necho copilot stub"
           Set-Content -Path (Join-Path $bin 'node.cmd') -Encoding ASCII -Value "@echo off`r`necho v20.0.0"
           Set-Content -Path (Join-Path $bin 'npm.cmd') -Encoding ASCII -Value "@echo off`r`necho 10.0.0"
           Set-Content -Path (Join-Path $bin 'git.cmd') -Encoding ASCII -Value "@echo off`r`necho git version 2.0.0"
@@ -63,7 +64,7 @@ jobs:
               defaultTool = 'claude'
               claude = @{ enabled = $true; command = 'claude'; args = @(); installCommand = 'install-claude'; env = @{}; apiKeyEnvVar = 'ANTHROPIC_API_KEY' }
               codex = @{ enabled = $true; command = 'codex'; args = @(); installCommand = 'install-codex'; env = @{ OPENAI_API_KEY = '' }; apiKeyEnvVar = 'OPENAI_API_KEY' }
-              copilot = @{ enabled = $true; command = 'gh'; args = @('copilot'); installCommand = 'install-copilot'; env = @{}; apiKeyEnvVar = '' }
+              copilot = @{ enabled = $true; command = 'copilot'; args = @('--yolo'); installCommand = 'install-copilot'; env = @{}; apiKeyEnvVar = '' }
             }
             recentProjects = @{ enabled = $true; maxHistory = 10; historyFile = '%USERPROFILE%\\.ai-startup\\recent-projects.json' }
             logging = @{ enabled = $true }
@@ -107,7 +108,6 @@ jobs:
             'Claude-ChromeDevTools-Final',
             'Claude-EdgeDevTools',
             'run-codex\.sh',
-            'copilot --yolo',
             'scripts\\Start-CodexCLI\.ps1',
             'scripts\\Start-CopilotCLI\.ps1',
             '"zDrive"',

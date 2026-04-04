@@ -19,7 +19,7 @@ $script:StartupRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $script:DiagnosticsSchemaPath = Join-Path $script:StartupRoot 'docs\common\schemas\test-all-tools-report.schema.json'
 
 Import-Module (Join-Path $script:StartupRoot 'scripts\lib\Config.psm1') -Force
-Import-Module (Join-Path $script:StartupRoot 'scripts\lib\LauncherCommon.psm1') -Force
+Import-Module (Join-Path $script:StartupRoot 'scripts\lib\LauncherCommon.psm1') -Force -DisableNameChecking
 
 function Test-CommandExists {
     param([string]$Command)
@@ -446,27 +446,23 @@ function Get-AllToolsDiagnostics {
             }
         }
 
-        $ghExists = Test-CommandExists -Command 'gh'
-        $copilotVersion = if ($ghExists) { Get-CommandVersionLine -Command 'gh' -Args @('copilot', '--version') } else { $null }
-        $ghAuthOk = $false
-        if ($ghExists) {
-            & gh auth status *> $null
-            $ghAuthOk = ($LASTEXITCODE -eq 0)
-        }
+        $copilotCommand = if ($config.tools.copilot.command) { "$($config.tools.copilot.command)" } else { 'copilot' }
+        $copilotVersionArgs = if ($config.tools.copilot.checkCommand -and $config.tools.copilot.checkCommand -match '--version') { @('--version') } else { @('--version') }
+        $copilotVersion = if (Test-CommandExists -Command $copilotCommand) { Get-CommandVersionLine -Command $copilotCommand -Args $copilotVersionArgs } else { $null }
         if (-not $copilotVersion) {
             $report.summary.ok = $false
         }
         $report.tools += [pscustomobject]@{
             id = 'copilot'
             label = 'GitHub Copilot CLI'
-            command = 'gh copilot'
+            command = "$copilotCommand $($config.tools.copilot.args -join ' ')".Trim()
             exists = [bool]$copilotVersion
             version = $copilotVersion
             install = $config.tools.copilot.installCommand
             authEnv = ''
-            authConfigured = $ghAuthOk
-            authDisplay = if ($ghAuthOk) { 'GitHub auth ok' } else { 'Not authenticated' }
-            authHint = 'gh auth login'
+            authConfigured = $true
+            authDisplay = '起動時に対話認証または既存セッションを使用'
+            authHint = 'copilot login または初回起動時の認証'
         }
 
         foreach ($pathInfo in @(

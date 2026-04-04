@@ -1,0 +1,20 @@
+{
+  "PreToolUse": [
+    {
+      "name": "safety-check",
+      "description": "危険な操作の前に簡易確認を行う"
+    }
+  ],
+  "PostToolUse": [
+    {
+      "name": "capture-result",
+      "description": "主要ツール結果を次の判断に使える形へ整理する"
+    }
+  ],
+  "Stop": [
+    {
+      "name": "session-end",
+      "description": "終了時に状態と再開点を保存する"
+    }
+  ]
+}
