@@ -168,8 +168,8 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
                     }
                     copilot     = @{
                         enabled        = $true
-                        command        = 'gh'
-                        args           = @('copilot')
+                        command        = 'copilot'
+                        args           = @('--yolo')
                         installCommand = 'install-copilot'
                         env            = @{}
                     }
@@ -209,8 +209,8 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
                     }
                     copilot     = @{
                         enabled        = $true
-                        command        = 'gh'
-                        args           = @('copilot')
+                        command        = 'copilot'
+                        args           = @('--yolo')
                         installCommand = 'install-copilot'
                         env            = @{}
                     }
@@ -262,8 +262,8 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
                     }
                     copilot     = @{
                         enabled        = $true
-                        command        = 'gh'
-                        args           = @('copilot')
+                        command        = 'copilot'
+                        args           = @('--yolo')
                         installCommand = 'install-copilot'
                         env            = @{}
                     }
@@ -307,8 +307,8 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
                     }
                     copilot     = @{
                         enabled        = $true
-                        command        = 'gh'
-                        args           = @('copilot')
+                        command        = 'copilot'
+                        args           = @('--yolo')
                         installCommand = 'install-copilot'
                         env            = @{}
                     }
@@ -336,7 +336,7 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
                     defaultTool = 'claude'
                     claude      = @{ enabled = $true; command = 'claude'; args = @(); installCommand = 'install-claude'; env = @{}; apiKeyEnvVar = 'ANTHROPIC_API_KEY' }
                     codex       = @{ enabled = $true; command = 'codex'; args = @(); installCommand = 'install-codex'; env = @{ OPENAI_API_KEY = '' }; apiKeyEnvVar = 'OPENAI_API_KEY' }
-                    copilot     = @{ enabled = $true; command = 'gh'; args = @('copilot'); installCommand = 'install-copilot'; env = @{} }
+                    copilot     = @{ enabled = $true; command = 'copilot'; args = @('--yolo'); installCommand = 'install-copilot'; env = @{} }
                 }
                 logging = @{
                     enabled = $true
@@ -361,7 +361,7 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
                     defaultTool = 'claude'
                     claude      = @{ enabled = $true; command = 'claude'; args = @(); installCommand = 'install-claude'; env = @{}; apiKeyEnvVar = 'ANTHROPIC_API_KEY' }
                     codex       = @{ enabled = $true; command = 'codex'; args = @(); installCommand = 'install-codex'; env = @{ OPENAI_API_KEY = '' }; apiKeyEnvVar = 'OPENAI_API_KEY' }
-                    copilot     = @{ enabled = $true; command = 'gh'; args = @('copilot'); installCommand = 'install-copilot'; env = @{} }
+                    copilot     = @{ enabled = $true; command = 'copilot'; args = @('--yolo'); installCommand = 'install-copilot'; env = @{} }
                 }
                 backupConfig = @{
                     enabled = $true

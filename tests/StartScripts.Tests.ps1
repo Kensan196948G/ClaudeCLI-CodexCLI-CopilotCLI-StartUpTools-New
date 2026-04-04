@@ -49,9 +49,9 @@ BeforeAll {
             }
             copilot     = @{
                 enabled        = $true
-                command        = 'gh'
-                args           = @('copilot')
-                installCommand = 'winget install GitHub.cli'
+                command        = 'copilot'
+                args           = @('--yolo')
+                installCommand = 'npm install -g @githubnext/github-copilot-cli'
                 env            = @{}
             }
         }
@@ -107,7 +107,7 @@ Describe 'Start-*.ps1 dry-run flows' {
         $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-CopilotCLI.ps1'
         $output = & $script:PowerShellExe -NoProfile -File $scriptPath -Project demo -Local -NonInteractive -DryRun 2>&1 | Out-String
         $LASTEXITCODE | Should -Be 0
-        $output | Should -Match '\[DryRun\].*gh copilot'
+        $output | Should -Match '\[DryRun\].*copilot --yolo'
         $output | Should -Match 'demo'
         (Test-Path (Join-Path $script:ProjectsRoot 'demo\.github\copilot-instructions.md')) | Should -BeTrue
         (Test-Path (Join-Path $script:ProjectsRoot 'demo\.github\mcp.json')) | Should -BeTrue
@@ -188,7 +188,7 @@ Describe 'Start-Menu helper flows' {
                 defaultTool = 'claude'
                 claude = @{ enabled = $true; command = 'claude'; args = @(); installCommand = 'install-claude'; env = @{}; apiKeyEnvVar = 'ANTHROPIC_API_KEY' }
                 codex = @{ enabled = $true; command = 'codex'; args = @(); installCommand = 'install-codex'; env = @{}; apiKeyEnvVar = 'OPENAI_API_KEY' }
-                copilot = @{ enabled = $true; command = 'gh'; args = @('copilot'); installCommand = 'install-copilot'; env = @{} }
+                copilot = @{ enabled = $true; command = 'copilot'; args = @('--yolo'); installCommand = 'install-copilot'; env = @{} }
             }
             recentProjects = @{
                 enabled = $true
