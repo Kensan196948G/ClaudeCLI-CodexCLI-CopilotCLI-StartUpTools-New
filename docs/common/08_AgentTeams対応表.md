@@ -1,6 +1,8 @@
 # Agent Teams 対応表
 
-このドキュメントは、[Claude/claudeos](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/Claude/claudeos/) にある Agent Teams / ClaudeOS ポリシーと、現行ランチャー実装の対応関係を整理するためのものです。
+このドキュメントは、[Claude/claudeos](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/Claude/claudeos/) にある ClaudeOS ポリシーと、現行ランチャー実装およびツール別テンプレートの対応関係を整理するためのものです。
+
+ツール別の可能 / 擬似実装 / 不可 は [12_自律機能対応表.md](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/docs/common/12_自律機能対応表.md) を参照してください。
 
 ## 対応状況
 
@@ -40,6 +42,8 @@
 - 診断スクリプトのテキスト / JSON 出力
 - recent projects 記録と `Start-Menu.ps1` からの再利用
 - CI による Pester 実行と設定検証
+- 共通コア文書とツール別テンプレートの分離
+- Claude 用 Agent Teams、Codex 用 manager-worker、Copilot 用 custom agents + fleet という翻訳方針
 
 ## 未実装機能
 

@@ -41,7 +41,9 @@
       "enabled": true,
       "displayName": "Codex CLI (OpenAI)",
       "command": "codex",
-      "args": [],
+      "args": [
+        "--full-auto"
+      ],
       "installCommand": "npm install -g @openai/codex",
       "checkCommand": "codex --version",
       "env": {
@@ -56,7 +58,7 @@
       "args": [
         "--yolo"
       ],
-      "installCommand": "npm install -g @githubnext/github-copilot-cli",
+      "installCommand": "npm install -g @github/copilot",
       "checkCommand": "copilot --version",
       "env": {},
       "apiKeyEnvVar": ""

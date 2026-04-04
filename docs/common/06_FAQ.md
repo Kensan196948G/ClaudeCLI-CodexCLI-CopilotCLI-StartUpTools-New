@@ -10,7 +10,7 @@
 
 ## Q2. Copilot は何を前提にしていますか？
 
-現行構成では `GitHub Copilot CLI` を `gh copilot` 前提で扱います。`gh auth login` と `gh extension install github/gh-copilot` が必要です。
+現行構成では `GitHub Copilot CLI` を `copilot --yolo` 前提で扱います。`npm install -g @github/copilot` と初回起動時の認証が必要です。
 
 ---
 

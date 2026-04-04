@@ -2,7 +2,7 @@
 .SYNOPSIS
     Codex CLI startup script
 .DESCRIPTION
-    ClaudeOS Agent Teams lane: Architect / DevAPI / QA.
+    ClaudeOS-compatible manager-worker lane: Manager / Architect / Build / Review / Test.
 #>
 
 param(
@@ -16,7 +16,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $ScriptRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-Import-Module (Join-Path $ScriptRoot 'scripts\lib\LauncherCommon.psm1') -Force
+Import-Module (Join-Path $ScriptRoot 'scripts\lib\LauncherCommon.psm1') -Force -DisableNameChecking
 Import-Module (Join-Path $ScriptRoot 'scripts\lib\Config.psm1') -Force
 
 $ScriptRoot = Get-StartupRoot -PSScriptRootPath $PSScriptRoot
@@ -73,6 +73,8 @@ try {
             [Environment]::SetEnvironmentVariable($apiKeyName, $apiKey, 'Process')
         }
 
+        Sync-LauncherCodexGlobalConfig -StartupRoot $ScriptRoot -ProjectDir $localProjectDir
+
         if ($DryRun) {
             foreach ($line in (New-LauncherDryRunMessage -Command 'codex' -Arguments @($toolConfig.args) -WorkingDirectory $localProjectDir)) {
                 Write-Info $line
@@ -81,12 +83,6 @@ try {
             exit 0
         }
 
-        # Codex\AGENTS.md を正規ソースとして使用（フォールバック: scripts\templates\AGENTS.md）
-        $agentsTemplatePath = Join-Path $ScriptRoot 'Codex\AGENTS.md'
-        if (-not (Test-Path $agentsTemplatePath)) {
-            $agentsTemplatePath = Join-Path $ScriptRoot 'scripts\templates\AGENTS.md'
-        }
-        Sync-ProjectTemplate -TemplatePath $agentsTemplatePath -TargetPath (Join-Path $localProjectDir 'AGENTS.md') -Label 'AGENTS.md'
         & codex @($toolConfig.args)
         $launchContext.Result = if ($LASTEXITCODE -eq 0) { 'success' } else { 'failure' }
         exit $LASTEXITCODE

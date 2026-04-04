@@ -103,3 +103,6 @@ logs/tmux-monitor-*.log
 config/config/
 *.backup-pre-puppeteer
 testResults.xml
+
+# バックアップディレクトリ
+scripts/claudeos-back/

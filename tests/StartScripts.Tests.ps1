@@ -17,7 +17,7 @@ BeforeAll {
     New-Item -ItemType Directory -Path (Join-Path $script:ProjectsRoot 'demo') -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $script:SshProjectsRoot 'demo') -Force | Out-Null
 
-    foreach ($cmd in @('claude', 'codex', 'gh')) {
+    foreach ($cmd in @('claude', 'codex', 'gh', 'copilot')) {
         $cmdPath = Join-Path $script:BinRoot "$cmd.cmd"
         Set-Content -Path $cmdPath -Encoding ASCII -Value "@echo off`recho $cmd stub"
     }
@@ -87,6 +87,10 @@ Describe 'Start-*.ps1 dry-run flows' {
         $LASTEXITCODE | Should -Be 0
         $output | Should -Match '\[DryRun\].*claude'
         $output | Should -Match 'demo'
+        (Test-Path (Join-Path $script:ProjectsRoot 'demo\CLAUDE.md')) | Should -BeTrue
+        (Test-Path (Join-Path $script:ProjectsRoot 'demo\.claude\settings.json')) | Should -BeTrue
+        (Test-Path (Join-Path $script:ProjectsRoot 'demo\.mcp.json')) | Should -BeTrue
+        (Test-Path (Join-Path $script:ProjectsRoot 'demo\.claude\claudeos\system\orchestrator.md')) | Should -BeTrue
     }
 
     It 'Start-CodexCLI.ps1 がローカル DryRun を実行できること' {
@@ -95,6 +99,8 @@ Describe 'Start-*.ps1 dry-run flows' {
         $LASTEXITCODE | Should -Be 0
         $output | Should -Match '\[DryRun\].*codex'
         $output | Should -Match 'demo'
+        (Test-Path (Join-Path $script:ProjectsRoot 'demo\AGENTS.md')) | Should -BeTrue
+        (Test-Path (Join-Path $script:ProjectsRoot 'demo\.codex\config.toml')) | Should -BeTrue
     }
 
     It 'Start-CopilotCLI.ps1 がローカル DryRun を実行できること' {
@@ -103,6 +109,8 @@ Describe 'Start-*.ps1 dry-run flows' {
         $LASTEXITCODE | Should -Be 0
         $output | Should -Match '\[DryRun\].*gh copilot'
         $output | Should -Match 'demo'
+        (Test-Path (Join-Path $script:ProjectsRoot 'demo\.github\copilot-instructions.md')) | Should -BeTrue
+        (Test-Path (Join-Path $script:ProjectsRoot 'demo\.github\mcp.json')) | Should -BeTrue
     }
 
     It 'Start-All.ps1 が Claude へ委譲できること' {
@@ -220,4 +228,3 @@ Describe 'Start-Menu helper flows' {
         $entries[0].project | Should -Be 'demo-copilot'
     }
 }
-

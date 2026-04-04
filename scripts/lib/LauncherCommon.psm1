@@ -177,17 +177,50 @@ function Resolve-LauncherProject {
     }
 
     $projectsRoot = if ($Local) { $Config.projectsDir } else { $Config.sshProjectsDir }
+    $dirs = $null
 
-    if (-not (Test-Path $projectsRoot)) {
+    if (Test-Path $projectsRoot) {
+        $dirs = Get-ChildItem -Path $projectsRoot -Directory | Sort-Object Name
+        if ($Local -and $Config.localExcludes) {
+            $dirs = $dirs | Where-Object { $_.Name -notin $Config.localExcludes }
+        }
+    }
+    elseif (-not $Local -and $LinuxHost -and $Config.linuxBase) {
+        # Z: ドライブ等が未接続でも SSH 経由でリモートのプロジェクト一覧を取得
+        Write-Host "[INFO] $projectsRoot にアクセスできません。SSH 経由でプロジェクト一覧を取得します..." -ForegroundColor Cyan
+        $sshCommand = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { "ssh" }
+        $connectTimeout = if ($env:AI_STARTUP_SSH_CONNECT_TIMEOUT) { $env:AI_STARTUP_SSH_CONNECT_TIMEOUT } else { "10" }
+        try {
+            $remoteDirs = & $sshCommand -o "ConnectTimeout=$connectTimeout" -o "StrictHostKeyChecking=accept-new" $LinuxHost "ls -d $($Config.linuxBase)/*/ 2>/dev/null" 2>&1
+            if ($LASTEXITCODE -eq 0 -and $remoteDirs) {
+                $dirNames = @($remoteDirs | ForEach-Object { ($_ -replace '/$', '').Split('/')[-1] } | Sort-Object)
+                if ($dirNames.Count -gt 0) {
+                    $dirs = $dirNames | ForEach-Object { [pscustomobject]@{ Name = $_ } }
+                }
+            }
+            else {
+                throw "SSH 接続またはディレクトリ取得に失敗しました (exit=$LASTEXITCODE)"
+            }
+        }
+        catch {
+            throw @"
+SSH プロジェクトフォルダにアクセスできません。
+
+ローカルパス ($projectsRoot) が未接続で、SSH 経由の取得にも失敗しました:
+  $_
+
+確認事項:
+  1. Linux ホスト ($LinuxHost) が起動しているか確認
+  2. ssh $LinuxHost echo test で手動接続を確認
+  3. ネットワークドライブを接続: net use $($projectsRoot.Substring(0,2)) $($Config.projectsDirUnc)
+"@
+        }
+    }
+    else {
         throw "プロジェクトルートが見つかりません: $projectsRoot"
     }
 
-    $dirs = Get-ChildItem -Path $projectsRoot -Directory | Sort-Object Name
-    if ($Local -and $Config.localExcludes) {
-        $dirs = $dirs | Where-Object { $_.Name -notin $Config.localExcludes }
-    }
-
-    if (-not $dirs) {
+    if (-not $dirs -or @($dirs).Count -eq 0) {
         throw "プロジェクトが見つかりません: $projectsRoot"
     }
 
@@ -368,6 +401,180 @@ function Sync-ProjectTemplate {
     }
 }
 
+function Sync-ProjectDirectory {
+    param(
+        [Parameter(Mandatory)]
+        [string]$SourceDirectory,
+        [Parameter(Mandatory)]
+        [string]$TargetDirectory,
+        [Parameter(Mandatory)]
+        [string]$Label
+    )
+
+    if (-not (Test-Path $SourceDirectory)) {
+        return
+    }
+
+    if (-not (Test-Path $TargetDirectory)) {
+        New-Item -ItemType Directory -Force -Path $TargetDirectory | Out-Null
+    }
+
+    Copy-Item -Path (Join-Path $SourceDirectory '*') -Destination $TargetDirectory -Recurse -Force
+    Write-Host "[OK] $Label を配置/更新しました: $TargetDirectory" -ForegroundColor Green
+}
+
+function Sync-ProjectTemplateDirectory {
+    param(
+        [Parameter(Mandatory)]
+        [string]$TemplateDir,
+        [Parameter(Mandatory)]
+        [string]$TargetDir,
+        [string]$Label = 'template directory'
+    )
+
+    if (-not (Test-Path $TemplateDir)) {
+        return
+    }
+
+    if (-not (Test-Path $TargetDir)) {
+        New-Item -ItemType Directory -Force -Path $TargetDir | Out-Null
+    }
+
+    $files = @(Get-ChildItem -Path $TemplateDir -Recurse -File | Sort-Object FullName)
+    if ($files.Count -eq 0) {
+        return
+    }
+
+    foreach ($file in $files) {
+        $relativePath = $file.FullName.Substring($TemplateDir.Length).TrimStart('\', '/')
+        $targetPath = Join-Path $TargetDir $relativePath
+        $parentDir = Split-Path -Parent $targetPath
+        if (-not (Test-Path $parentDir)) {
+            New-Item -ItemType Directory -Force -Path $parentDir | Out-Null
+        }
+
+        Sync-ProjectTemplate -TemplatePath $file.FullName -TargetPath $targetPath -Label "$Label/$relativePath"
+    }
+}
+
+function Seed-ProjectTemplate {
+    param(
+        [Parameter(Mandatory)]
+        [string]$TemplatePath,
+        [Parameter(Mandatory)]
+        [string]$TargetPath,
+        [Parameter(Mandatory)]
+        [string]$Label,
+        [switch]$EnsureParentDirectory
+    )
+
+    if (-not (Test-Path $TemplatePath)) {
+        return
+    }
+
+    if ($EnsureParentDirectory) {
+        $parent = Split-Path -Parent $TargetPath
+        if (-not (Test-Path $parent)) {
+            New-Item -ItemType Directory -Force -Path $parent | Out-Null
+        }
+    }
+
+    if (Test-Path $TargetPath) {
+        Write-Host "[INFO] 既存の $Label を維持します: $TargetPath" -ForegroundColor Cyan
+        return
+    }
+
+    Copy-Item $TemplatePath $TargetPath -Force
+    Write-Host "[OK] $Label を初期配置しました: $TargetPath" -ForegroundColor Green
+}
+
+function Sync-LauncherClaudeGlobalConfig {
+    param(
+        [Parameter(Mandatory)]
+        [string]$StartupRoot,
+        [Parameter(Mandatory)]
+        [string]$ProjectDir
+    )
+
+    $claudeTemplatePath = Join-Path $StartupRoot 'Claude\templates\claude\CLAUDE.md'
+    if (-not (Test-Path $claudeTemplatePath)) {
+        $claudeTemplatePath = Join-Path $StartupRoot 'scripts\templates\CLAUDE.md'
+    }
+
+    Sync-ProjectTemplate `
+        -TemplatePath $claudeTemplatePath `
+        -TargetPath (Join-Path $ProjectDir 'CLAUDE.md') `
+        -Label 'CLAUDE.md'
+
+    Sync-ProjectTemplateDirectory `
+        -TemplateDir (Join-Path $StartupRoot 'scripts\templates\claudeos') `
+        -TargetDir (Join-Path $ProjectDir '.claude\claudeos') `
+        -Label '.claude/claudeos'
+
+    $settingsTemplatePath = Join-Path $StartupRoot 'scripts\templates\claude-settings.json'
+    Seed-ProjectTemplate `
+        -TemplatePath $settingsTemplatePath `
+        -TargetPath (Join-Path $ProjectDir '.claude\settings.json') `
+        -Label '.claude/settings.json' `
+        -EnsureParentDirectory
+
+    Seed-ProjectTemplate `
+        -TemplatePath (Join-Path $StartupRoot 'scripts\templates\claude-mcp.json') `
+        -TargetPath (Join-Path $ProjectDir '.mcp.json') `
+        -Label '.mcp.json'
+}
+
+function Sync-LauncherCodexGlobalConfig {
+    param(
+        [Parameter(Mandatory)]
+        [string]$StartupRoot,
+        [Parameter(Mandatory)]
+        [string]$ProjectDir
+    )
+
+    $agentsTemplatePath = Join-Path $StartupRoot 'Codex\AGENTS.md'
+    if (-not (Test-Path $agentsTemplatePath)) {
+        $agentsTemplatePath = Join-Path $StartupRoot 'scripts\templates\AGENTS.md'
+    }
+
+    Sync-ProjectTemplate `
+        -TemplatePath $agentsTemplatePath `
+        -TargetPath (Join-Path $ProjectDir 'AGENTS.md') `
+        -Label 'AGENTS.md'
+
+    Seed-ProjectTemplate `
+        -TemplatePath (Join-Path $StartupRoot 'scripts\templates\codex-config.toml') `
+        -TargetPath (Join-Path $ProjectDir '.codex\config.toml') `
+        -Label '.codex/config.toml' `
+        -EnsureParentDirectory
+}
+
+function Sync-LauncherCopilotGlobalConfig {
+    param(
+        [Parameter(Mandatory)]
+        [string]$StartupRoot,
+        [Parameter(Mandatory)]
+        [string]$ProjectDir
+    )
+
+    $copilotTemplatePath = Join-Path $StartupRoot 'CopilotCLI\AGENTS.md'
+    if (-not (Test-Path $copilotTemplatePath)) {
+        $copilotTemplatePath = Join-Path $StartupRoot 'scripts\templates\copilot-instructions.md'
+    }
+
+    Sync-ProjectTemplate `
+        -TemplatePath $copilotTemplatePath `
+        -TargetPath (Join-Path $ProjectDir '.github\copilot-instructions.md') `
+        -Label 'copilot-instructions.md' `
+        -EnsureParentDirectory
+
+    Seed-ProjectTemplate `
+        -TemplatePath (Join-Path $StartupRoot 'scripts\templates\copilot-mcp.json') `
+        -TargetPath (Join-Path $ProjectDir '.github\mcp.json') `
+        -Label '.github/mcp.json' `
+        -EnsureParentDirectory
+}
+
 function New-RemoteTemplateDeployScript {
     param(
         [Parameter(Mandatory)]
@@ -417,6 +624,9 @@ function Invoke-LauncherSshScript {
         [string]$RemoteScriptName
     )
 
+    # Bash on the remote side must receive LF-only content.
+    $normalizedRunScript = (($RunScript -replace "`r`n", "`n") -replace "`r", "`n")
+
     if ($env:AI_STARTUP_SSH_CAPTURE_DIR) {
         $captureDir = $env:AI_STARTUP_SSH_CAPTURE_DIR
         if (-not (Test-Path $captureDir)) {
@@ -425,7 +635,7 @@ function Invoke-LauncherSshScript {
 
         Set-Content -Path (Join-Path $captureDir "host.txt") -Value $LinuxHost -Encoding UTF8
         Set-Content -Path (Join-Path $captureDir "script-name.txt") -Value $RemoteScriptName -Encoding UTF8
-        Set-Content -Path (Join-Path $captureDir "script.sh") -Value $RunScript -Encoding UTF8
+        Set-Content -Path (Join-Path $captureDir "script.sh") -Value $normalizedRunScript -Encoding UTF8
         Write-Host "[INFO] SSH_CAPTURE $LinuxHost $RemoteScriptName" -ForegroundColor DarkGray
         return 0
     }
@@ -440,7 +650,7 @@ function Invoke-LauncherSshScript {
     $sshArgList = @("-tt",
         "-o", "ConnectTimeout=$connectTimeout",
         "-o", "StrictHostKeyChecking=accept-new",
-        $LinuxHost, $RunScript)
+        $LinuxHost, $normalizedRunScript)
 
     $process = Start-Process -FilePath $sshCommand -ArgumentList $sshArgList `
         -NoNewWindow -Wait -PassThru
@@ -935,6 +1145,11 @@ Export-ModuleMember -Function Confirm-LauncherStart
 Export-ModuleMember -Function Set-LauncherEnvironment
 Export-ModuleMember -Function ConvertTo-BashExports
 Export-ModuleMember -Function Sync-ProjectTemplate
+Export-ModuleMember -Function Sync-ProjectTemplateDirectory
+Export-ModuleMember -Function Seed-ProjectTemplate
+Export-ModuleMember -Function Sync-LauncherClaudeGlobalConfig
+Export-ModuleMember -Function Sync-LauncherCodexGlobalConfig
+Export-ModuleMember -Function Sync-LauncherCopilotGlobalConfig
 Export-ModuleMember -Function New-RemoteTemplateDeployScript
 Export-ModuleMember -Function Invoke-LauncherSshScript
 Export-ModuleMember -Function Get-LauncherShell
@@ -951,3 +1166,43 @@ Export-ModuleMember -Function Get-LauncherToolStatistics
 Export-ModuleMember -Function Get-LauncherAgentLaneEvents
 Export-ModuleMember -Function Get-LauncherTokenBudgetStatus
 Export-ModuleMember -Function Get-LauncherBacklogSummary
+
+function New-RemoteTemplateDeployScript {
+    param(
+        [Parameter(Mandatory)]
+        [string]$TemplatePath,
+        [Parameter(Mandatory)]
+        [string]$TargetPath,
+        [Parameter(Mandatory)]
+        [string]$Label,
+        [switch]$EnsureParentDirectory
+    )
+
+    if (-not (Test-Path $TemplatePath)) {
+        return ""
+    }
+
+    $content = Get-Content $TemplatePath -Raw -Encoding UTF8
+    $base64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($content))
+    $normalizedTargetPath = $TargetPath.Replace('\', '/')
+    $mkdir = ""
+    if ($EnsureParentDirectory) {
+        $mkdir = "mkdir -p `"`$(dirname `"$normalizedTargetPath`")`"`n"
+    }
+
+    return @"
+$mkdir
+TMP_FILE=`$(mktemp)
+printf '%s' '$base64' | base64 -d > "`$TMP_FILE"
+if [ ! -f "$normalizedTargetPath" ] || ! cmp -s "`$TMP_FILE" "$normalizedTargetPath"; then
+  mv "`$TMP_FILE" "$normalizedTargetPath"
+  echo "[OK] $Label を配置/更新しました: $normalizedTargetPath"
+else
+  rm -f "`$TMP_FILE"
+  echo "[INFO] $Label は最新です: $normalizedTargetPath"
+fi
+"@
+}
+
+Export-ModuleMember -Function New-RemoteTemplateDeployScript
+Export-ModuleMember -Function Sync-ProjectDirectory

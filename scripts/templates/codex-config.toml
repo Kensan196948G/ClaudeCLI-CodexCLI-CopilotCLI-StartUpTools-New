@@ -1,0 +1,19 @@
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
+personality = "pragmatic"
+
+[features]
+multi_agent = true
+apps = true
+
+[profiles.default]
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+[profiles.full_auto]
+approval_policy = "never"
+sandbox_mode = "workspace-write"
+
+[profiles.yolo]
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
