@@ -178,15 +178,25 @@ try {
 
         Sync-LauncherClaudeGlobalConfig -StartupRoot $ScriptRoot -ProjectDir $localProjectDir
 
+        $localPromptPath = Join-Path $ScriptRoot 'Claude\templates\claude\START_PROMPT.md'
+        $localPromptArgs = @()
+        if (Test-Path $localPromptPath) {
+            $localPromptSections = Get-StartPromptSections -PromptPath $localPromptPath
+            $localPromptArgs = @($localPromptSections.FullText)
+            Write-Info "START_PROMPT を自動送信します ($localPromptPath)"
+        }
+
+        $claudeLocalArgs = @($toolConfig.args) + $localPromptArgs
+
         if ($DryRun) {
-            foreach ($line in (New-LauncherDryRunMessage -Command 'claude' -Arguments @($toolConfig.args) -WorkingDirectory $localProjectDir)) {
+            foreach ($line in (New-LauncherDryRunMessage -Command 'claude' -Arguments $claudeLocalArgs -WorkingDirectory $localProjectDir)) {
                 Write-Info $line
             }
             $launchContext.Result = 'success'
             exit 0
         }
 
-        & claude @($toolConfig.args)
+        & claude @claudeLocalArgs
         $launchContext.Result = if ($LASTEXITCODE -eq 0) { 'success' } else { 'failure' }
         exit $LASTEXITCODE
     }
