@@ -87,6 +87,9 @@ codex --login
 
 # GitHub Copilot CLI
 copilot auth
+
+# GitHub Projects 連携（ClaudeOS で必要）
+gh auth refresh -h github.com -s read:project,project
 ```
 
 6. 診断を実行
