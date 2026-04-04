@@ -81,7 +81,15 @@ def main() -> int:
                 if not data:
                     break
 
-                os.write(stdout_fd, data)
+                try:
+                    os.write(stdout_fd, data)
+                except BlockingIOError:
+                    import select as _sel
+                    _sel.select([], [stdout_fd], [], 0.1)
+                    try:
+                        os.write(stdout_fd, data)
+                    except BlockingIOError:
+                        pass
                 buffer = (buffer + data)[-16384:]
                 activity_deadline = time.time() + 1.0
                 if (not prompt_sent) and (
