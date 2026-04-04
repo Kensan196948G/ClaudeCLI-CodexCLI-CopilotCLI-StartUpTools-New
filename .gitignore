@@ -106,3 +106,15 @@ testResults.xml
 
 # バックアップディレクトリ
 scripts/claudeos-back/
+
+# 認証・資格情報（絶対にコミットしない）
+.credentials.json
+**/credentials.json
+**/.credentials.json
+
+# Sample ディレクトリ（ローカル作業コピー・2GB超のため全除外）
+# テンプレートは Claude/templates/ に集約済み
+Sample/
+
+# バックアッププロンプト
+Claude/templates/claude/START_PROMPT-backup*.md
