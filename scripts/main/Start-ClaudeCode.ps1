@@ -257,6 +257,7 @@ try {
         (New-RemoteTemplateDeployScript -TemplatePath $templateSettings -TargetPath "$linuxProject/.claude/settings.json" -Label '.claude/settings.json' -EnsureParentDirectory)
         (New-RemoteTemplateDeployScript -TemplatePath $templatePrompt -TargetPath "$linuxProject/.claude/START_PROMPT.md" -Label '.claude/START_PROMPT.md' -EnsureParentDirectory)
         (New-RemoteTemplateDeployScript -TemplatePath $bridgeSource -TargetPath $remoteBridgePath -Label '.claude/claude_pty_bridge.py' -EnsureParentDirectory)
+        (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'scripts\templates\claude-statusline.py') -TargetPath "$linuxProject/.claude/statusline.py" -Label '.claude/statusline.py' -EnsureParentDirectory)
 @"
 cat > $(ConvertTo-BashSingleQuoted -Value $remoteBootstrap) <<'EOF'
 #!/usr/bin/env bash
