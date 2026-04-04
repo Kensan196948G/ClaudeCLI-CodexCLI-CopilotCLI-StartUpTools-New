@@ -522,6 +522,12 @@ function Sync-LauncherClaudeGlobalConfig {
         -TemplatePath (Join-Path $StartupRoot 'scripts\templates\claude-mcp.json') `
         -TargetPath (Join-Path $ProjectDir '.mcp.json') `
         -Label '.mcp.json'
+
+    Sync-ProjectTemplate `
+        -TemplatePath (Join-Path $StartupRoot 'scripts\templates\claude-statusline.py') `
+        -TargetPath (Join-Path $ProjectDir '.claude\statusline.py') `
+        -Label '.claude/statusline.py' `
+        -EnsureParentDirectory
 }
 
 function Sync-LauncherCodexGlobalConfig {
