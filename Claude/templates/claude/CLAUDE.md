@@ -13,9 +13,9 @@
 
 ```
 /loop 30m ClaudeOS Monitor
-/loop 90m ClaudeOS Development
-/loop 90m ClaudeOS Verify
-/loop 90m ClaudeOS Improvement
+/loop 2h ClaudeOS Development
+/loop 1h ClaudeOS Verify
+/loop 1h ClaudeOS Improvement
 ```
 
 ### ステップ 2: 自律開発の開始
@@ -55,9 +55,9 @@ GitHub Projects / Issues / PR / Actions と連動し、自律開発を実行し�
 
 ```
 /loop 30m  Monitor
-/loop 90m  Build
-/loop 90m  Verify
-/loop 90m  Improve
+/loop 2h  Build
+/loop 1h  Verify
+/loop 1h  Improve
 ```
 
 `Monitor → Build → Verify → Improve`

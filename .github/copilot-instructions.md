@@ -37,9 +37,9 @@ MCP: 設定時に有効
 | ループ | 時間 | 責務 |
 |---|---|---|
 | Monitor | 30m | GitHub/CI/Issue状態確認、タスク分解 |
-| Build | 90m | 設計、実装、修復 |
-| Verify | 90m | test/lint/build/security確認、STABLE判定 |
-| Improve | 90m | 改善、docs更新、再開メモ |
+| Build | 2h | 設計、実装、修復 |
+| Verify | 1h | test/lint/build/security確認、STABLE判定 |
+| Improve | 1h | 改善、docs更新、再開メモ |
 
 ## トークン制御
 

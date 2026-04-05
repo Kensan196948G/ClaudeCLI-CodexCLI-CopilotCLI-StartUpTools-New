@@ -34,9 +34,9 @@
 | ループ | 時間目安 | 責務 | 禁止事項 |
 |---|---|---|---|
 | Monitor | 30m | 要件・設計・README 差分確認、Git/CI 状態確認、タスク分解 | 実装・修復 |
-| Build | 90m | 設計メモ作成、実装、テスト追加、WorkTree 管理 | ついでの大規模整理、main 直接 push |
-| Verify | 90m | test / lint / build / security 確認、STABLE 判定 | 未テストの merge |
-| Improve | 90m | 命名整理、リファクタリング、README / docs 更新、再開メモ | 破壊的変更の無断実行 |
+| Build | 2h | 設計メモ作成、実装、テスト追加、WorkTree 管理 | ついでの大規模整理、main 直接 push |
+| Verify | 1h | test / lint / build / security 確認、STABLE 判定 | 未テストの merge |
+| Improve | 1h | 命名整理、リファクタリング、README / docs 更新、再開メモ | 破壊的変更の無断実行 |
 
 ### ループ判定の原則
 
