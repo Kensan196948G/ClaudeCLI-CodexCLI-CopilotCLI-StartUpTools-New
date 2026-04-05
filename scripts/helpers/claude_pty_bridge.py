@@ -10,6 +10,25 @@ import time
 import tty
 
 
+def _write_all(fd: int, data: bytes, max_retries: int = 5) -> None:
+    """Write all data to fd, retrying on BlockingIOError with select()."""
+    written = 0
+    retries = 0
+    while written < len(data):
+        try:
+            n = os.write(fd, data[written:])
+            written += n
+            retries = 0
+        except BlockingIOError:
+            retries += 1
+            if retries > max_retries:
+                lost = len(data) - written
+                sys.stderr.write(f"[pty-bridge] stdout buffer full, {lost} bytes lost\n")
+                sys.stderr.flush()
+                break
+            select.select([], [fd], [], 0.2)
+
+
 def main() -> int:
     startup_cmd = base64.b64decode(os.environ["STARTUP_CMD_B64"]).decode("utf-8")
     prompt_text = base64.b64decode(os.environ["PROMPT_B64"]).decode("utf-8")
@@ -24,6 +43,7 @@ def main() -> int:
     tty.setraw(stdin_fd)
     os.set_blocking(stdin_fd, False)
     os.set_blocking(master_fd, False)
+    os.set_blocking(stdout_fd, False)
 
     buffer = b""
     prompt_sent = False
@@ -56,7 +76,7 @@ def main() -> int:
                 try:
                     chunk = os.read(master_fd, 16384)
                     if chunk:
-                        os.write(stdout_fd, chunk)
+                        _write_all(stdout_fd, chunk)
                 except (BlockingIOError, OSError):
                     pass
 
@@ -81,7 +101,7 @@ def main() -> int:
                 if not data:
                     break
 
-                os.write(stdout_fd, data)
+                _write_all(stdout_fd, data)
                 buffer = (buffer + data)[-16384:]
                 activity_deadline = time.time() + 1.0
                 if (not prompt_sent) and (

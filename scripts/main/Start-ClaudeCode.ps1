@@ -75,8 +75,8 @@ function Get-StartPromptSections {
     $content = Get-Content -Path $PromptPath -Raw -Encoding UTF8
     $content = $content.TrimStart([char]0xFEFF)
 
-    $loopMatch = [regex]::Match($content, '(?ms)^##\s*LOOP_COMMANDS\s*\r?\n(.*?)(?=^##\s*PROMPT_BODY\s*$)')
-    $bodyMatch = [regex]::Match($content, '(?ms)^##\s*PROMPT_BODY\s*\r?\n(.*)$')
+    $loopMatch = [regex]::Match($content, '(?ms)^##\s*LOOP_COMMANDS[^\r\n]*\r?\n(.*?)(?=^##\s*PROMPT_BODY\b)')
+    $bodyMatch = [regex]::Match($content, '(?ms)^##\s*PROMPT_BODY[^\r\n]*\r?\n(.*)$')
 
     if (-not $loopMatch.Success -or -not $bodyMatch.Success) {
         throw "START_PROMPT.md の形式が不正です。'## LOOP_COMMANDS' と '## PROMPT_BODY' が必要です。"

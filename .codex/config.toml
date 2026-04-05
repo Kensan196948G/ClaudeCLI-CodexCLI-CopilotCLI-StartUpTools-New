@@ -1,0 +1,24 @@
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
+personality = "pragmatic"
+
+[features]
+apps = true
+multi_agent = true
+
+[profiles.default]
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+[profiles.full_auto]
+approval_policy = "never"
+sandbox_mode = "workspace-write"
+
+[shell_environment_policy]
+inherit = "core"
+
+[shell_environment_policy.set]
+CLAUDE_AUTOCOMPACT_PCT_OVERRIDE = "50"
+CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION = "true"
+CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"
+ENABLE_TOOL_SEARCH = "true"

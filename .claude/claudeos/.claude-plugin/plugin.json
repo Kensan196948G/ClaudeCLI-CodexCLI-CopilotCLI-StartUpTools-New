@@ -1,0 +1,31 @@
+{
+  "name": "everything-claude-code",
+  "version": "1.0.0",
+  "description": "Claude Code の完全自立開発を支える統合プラグイン。30体の専門エージェント、スキル、コマンド、ルール、フック、スクリプトをまとめて提供します。",
+  "author": "OpenAI Codex x Project-Specification-change",
+  "homepage": "local://everything-claude-code",
+  "interface": {
+    "displayName": "Everything Claude Code",
+    "summary": "設計、実装、レビュー、検証、学習、文書化、運用自動化を一括で支援する Claude Code プラグインパック",
+    "primaryColor": "#1f4b99"
+  },
+  "components": {
+    "agentsPath": "./agents",
+    "skillsPath": "./skills",
+    "commandsPath": "./commands",
+    "rulesPath": "./rules",
+    "hooksPath": "./hooks",
+    "scriptsPath": "./scripts",
+    "contextsPath": "./contexts",
+    "examplesPath": "./examples",
+    "mcpConfigsPath": "./mcp-configs"
+  },
+  "capabilities": [
+    "autonomous-development",
+    "multi-agent-orchestration",
+    "documentation-sync",
+    "verification-loops",
+    "language-specific-review",
+    "hook-automation"
+  ]
+}

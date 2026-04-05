@@ -1,0 +1,19 @@
+{
+  "servers": {
+    "github": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "github-mcp-server"],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      }
+    },
+    "fetch": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-fetch"]
+    },
+    "time": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-time"]
+    }
+  }
+}
