@@ -21,7 +21,7 @@ Quality analysis and bug detection.
 - 推測でOK出さない
 - 再現性重視
 
-## 8h Rule
+## 5h Rule
 - 未検証項目を必ず記録
 - テスト結果を残す
 

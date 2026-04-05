@@ -13,7 +13,7 @@
 - Start Time: {{timestamp}}
 - Elapsed: {{time}}
 - Remaining: {{time}}
-- Limit: 8h
+- Limit: 5h
 
 Status:
 - OK / WARNING / STOP
@@ -73,7 +73,7 @@ Status:
 
 ## 🛑 Stop Conditions
 
-- 8h reached: {{yes/no}}
+- 5h reached: {{yes/no}}
 - Retry limit: {{yes/no}}
 - Blocked: {{yes/no}}
 

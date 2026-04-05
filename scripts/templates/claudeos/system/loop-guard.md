@@ -10,7 +10,7 @@
 - Blockedステータス継続時間
 
 ## Stop Conditions
-- 8時間到達：セッション開始からの経過時間
+- 5時間到達：セッション開始からの経過時間
 - same error 連続3回：直前3回のループで同一エラー文字列が一致
 - CI retry 同一PR 5回：同一PRへのActions再実行が5回到達
 - security issue：severity critical / high の検知（件数不問）

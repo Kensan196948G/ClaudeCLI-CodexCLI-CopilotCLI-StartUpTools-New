@@ -35,7 +35,7 @@ Displays system initialization state.
 ## Session Control
 
 - Start Time: {{timestamp}}
-- Max Duration: 8h
+- Max Duration: 5h
 - Remaining Time: {{remaining}}
 
 ---

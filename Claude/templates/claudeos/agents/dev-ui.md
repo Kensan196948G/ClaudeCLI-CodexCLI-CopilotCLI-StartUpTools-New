@@ -21,7 +21,7 @@ Frontend/UI implementation.
 - UIのみでなくUXも考慮
 - API仕様と不整合禁止
 
-## 8h Rule
+## 5h Rule
 - UI未完成でも状態保存
 - スクリーン/仕様を残す
 

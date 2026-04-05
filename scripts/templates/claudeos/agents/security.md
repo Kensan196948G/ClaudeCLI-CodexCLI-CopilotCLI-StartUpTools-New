@@ -19,7 +19,7 @@ Security scanning and vulnerability detection.
 ## Constraints
 - 危険変更を許可しない
 
-## 8h Rule
+## 5h Rule
 - 未解決リスクは必ず記録
 
 ## Collaboration

@@ -20,7 +20,7 @@ Infrastructure and deployment monitoring.
 ## Constraints
 - STABLE以外はdeploy禁止
 
-## 8h Rule
+## 5h Rule
 - deploy未完なら停止
 
 ## Collaboration

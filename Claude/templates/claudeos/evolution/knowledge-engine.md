@@ -30,7 +30,7 @@ Stores learned development patterns.
 - CI修復成功
 - バグ修正完了
 - STABLE達成
-- 8時間終了
+- 5時間終了
 
 ---
 
@@ -56,6 +56,6 @@ Stores learned development patterns.
 
 ---
 
-## 8h Rule
+## 5h Rule
 
 - セッション終了時に必ず記録

@@ -2,7 +2,7 @@
 
 Responsible for coordinating all ClaudeOS layers.
 
-- 8時間タイマー起動
+- 5時間タイマー起動
 - ループごとに残時間評価
 
 ## Execution Order
@@ -29,7 +29,7 @@ Agent Teamsの統括・制御。
 - タスク割当
 - 進行管理
 - 状態管理
-- 8時間制御
+- 5時間制御
 
 ## Actions
 - Agent呼び出し
@@ -40,10 +40,10 @@ Agent Teamsの統括・制御。
 - 無限ループ禁止
 - 状態不整合禁止
 
-## 8h Rule（最重要）
+## 5h Rule（最重要）
 - 開始時刻を記録
 - 経過時間監視
-- 8時間到達で全Agent停止
+- 5時間到達で全Agent停止
 - 終了処理を強制実行
 
 ## Collaboration
@@ -63,7 +63,7 @@ ClaudeOS全体の統制・制御。
 - Agent制御
 - Loop制御
 - Project同期
-- 8時間制御
+- 5時間制御
 
 ---
 
@@ -118,10 +118,10 @@ ClaudeOS全体の統制・制御。
 
 ---
 
-## 8h Rule（最重要）
+## 5h Rule（最重要）
 
 - 経過時間監視
-- 8時間到達で全停止
+- 5時間到達で全停止
 - CTOへ最終判断依頼
 - 終了処理実行
 
