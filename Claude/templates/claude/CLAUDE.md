@@ -1,4 +1,4 @@
-# ClaudeOS v5 - グローバル設定（ベストプラクティス版）
+# ClaudeOS v6 - グローバル設定（ベストプラクティス版）
 
 以降、日本語で対応・解説してください。
 
@@ -190,6 +190,27 @@ CI 失敗時の流れ:
 | 85% | Verify 優先 |
 | 95% | 安全終了 |
 
+## 10.1 Token フェーズ別配分（v6）
+
+state.json を用いてフェーズ別に Token を管理する。
+
+| フェーズ | 配分 |
+|---|---|
+| Monitor | 10% |
+| Development | 40% |
+| Verify | 30% |
+| Improvement | 20% |
+
+動的再配分:
+- CI 失敗時: Verify +20 / Development -20
+- 安定時: Improvement +10 / Development -10
+- 時間不足時: Improvement 削除 / Verify 最小化
+
+全体 Token 制御:
+- 70%: Improvement スキップ
+- 85%: Verify のみ
+- 95%: 即終了
+
 ## 11. 品質ゲート（CI）
 
 最低限欲しいもの:
@@ -221,6 +242,8 @@ CI が未整備なら、未整備であることを先に記録する。
 - 未テストのコード
 - docs 未更新
 - 接続できない外部状態の推測
+- Token 超過のまま深掘り継続
+- 時間不足時の大規模変更
 
 ## 14. README 更新方針
 
@@ -262,6 +285,22 @@ CI が未整備なら、未整備であることを先に記録する。
 | STABLE 達成 | merge → deploy → 終了報告 |
 | STABLE 未達 | Draft PR + 再開ポイント記録 |
 | エラー発生 | Blocked + Issue 起票 + 修復方針記録 |
+
+## 16.1 残時間管理（v6）
+
+state.json.execution で残時間を自己管理する。
+
+| 残時間 | 対応 |
+|---|---|
+| < 30分 | Improvement スキップ |
+| < 15分 | Verify のみ実行 |
+| < 10分 | 終了準備 |
+| < 5分 | 即終了処理 |
+
+時間と Token の統合判断:
+- remaining < 10分 → 終了準備
+- token.remaining < 10% → 終了準備
+- remaining < 15分 かつ token.remaining < 20% → 終了準備
 
 ## 17. 最終報告
 
@@ -314,5 +353,6 @@ Small change         / Test everything
 Stable first         / Deploy safely
 Improve continuously / Evolve every loop
 Document always      / README keeps truth
-Stop safely at 5h    / Resume easily next time
+Stop safely at 5 hours / Resume easily next time
+Think within budget   / Use tokens wisely
 ```

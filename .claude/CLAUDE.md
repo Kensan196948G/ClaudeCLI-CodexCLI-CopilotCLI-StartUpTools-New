@@ -189,6 +189,7 @@ CI が未整備なら、未整備であることを先に記録する。
 Small change         / Test everything
 Stable first         / Deploy safely
 Improve continuously / Stop at 5 hours safely
+Think within budget  / Use tokens wisely
 Document always      / README keeps truth
 ```
 
