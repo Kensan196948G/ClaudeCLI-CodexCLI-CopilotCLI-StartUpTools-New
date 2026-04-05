@@ -1,6 +1,6 @@
 # AGENTS.md
 
-# Codex 自律開発システム
+# Codex 自律開発システム（5時間最適化版）
 
 このファイルは、Codex をこのプロジェクトにおける自律型実行エンジンとして使うための正式テンプレートです。
 
@@ -17,7 +17,7 @@ Codex 固有の前提:
 ## 起動時表示
 
 ```text
-Codex 自律開発システム
+Codex 自律開発システム（5時間最適化版）
 
 モード: 自動モード
 オーケストレーション: 管理者-担当者分担
@@ -25,6 +25,7 @@ Codex 自律開発システム
 MCP: 設定時に有効
 Sandbox: プロファイルで制御
 Approval: プロファイルで制御
+最大作業時間: 5時間
 ```
 
 ## 推奨プロファイル
@@ -36,6 +37,27 @@ Approval: プロファイルで制御
 | `yolo` | 強い権限が必要な限定作業。`danger-full-access` を使う | 低 |
 
 `yolo` profile は常用しません。通常の自律実行は `codex --full-auto` を基準にします。
+
+## 時間制御
+
+- 最大5時間
+- 到達時は即安全停止
+- 未完でも必ず引継ぎ
+
+## ループ構成（5時間最適化）
+
+| ループ | 時間 | 責務 |
+|---|---|---|
+| Monitor | 30m | 要件確認、Git/CI状態確認、タスク分解 |
+| Build | 90m | 設計、実装、テスト追加 |
+| Verify | 90m | test/lint/build確認、STABLE判定 |
+| Improve | 90m | リファクタリング、docs更新、再開メモ |
+
+## トークン制御
+
+- 70% → Improvement スキップ
+- 85% → Verify のみ
+- 95% → 即終了
 
 ## システム目的
 
@@ -56,6 +78,19 @@ Approval: プロファイルで制御
 | Review | 差分レビュー |
 | Research | 必要時の調査 |
 | Ops | CI、MCP、実行環境確認 |
+
+## CI Manager（自動修復）
+
+- CI失敗は必ず失敗として扱う
+- 成功偽装禁止（|| true 禁止）
+- 修復は最小差分、1修復 = 1仮説
+- 最大15回リトライ、同一エラー3回 → Blocked
+
+## STABLE判定
+
+以下すべて成功時のみ:
+- install / lint / test / build / CI
+- error 0 / security issue 0
 
 ## 標準ループ
 
@@ -82,10 +117,20 @@ Manager ディスカッション
 - `main` へ直接 push しない
 - write-heavy task は責務分離してから並列化する
 - unsafe profile は限定利用にする
-- 停止条件:
-  - 同一エラーが 3 回続く
-  - CI 修復が 5 回続いても改善しない
-  - 同じ修正ループを繰り返す
+- Issue 駆動開発
+- PR 必須、CI 成功のみ merge
+
+## 停止条件
+
+- STABLE + Merge 成功
+- 5時間到達
+- Blocked（同一エラー3回）
+
+## 終了処理（必須）
+
+- commit / push / PR（Draft可）
+- CI結果整理
+- 残課題・再開ポイント明確化
 
 ## 承認ルール
 
@@ -94,19 +139,14 @@ Manager ディスカッション
 - sandbox 内の安全なコマンド
 
 ユーザー確認を入れるもの:
-- `push`
-- `merge`
-- `delete branch`
-- `release`
+- `push` / `merge` / `delete branch` / `release`
 - 破壊的変更
 - 認証 / secret / 権限変更
 
-## 出力順序
+## 行動原則
 
 ```text
-1. Manager ディスカッション
-2. 設計決定
-3. 実装
-4. 検証
-5. 次のアクション
+Small change         / Test everything
+Stable first         / Deploy safely
+Improve continuously / Stop at 5 hours safely
 ```

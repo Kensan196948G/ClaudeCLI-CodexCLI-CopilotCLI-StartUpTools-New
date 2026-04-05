@@ -24,8 +24,8 @@ Responsible for system architecture integrity.
 - 実装に直接介入しすぎない
 - 既存構造を破壊しない
 
-## 8h Rule
-- 設計未完でも8時間で区切り
+## 5h Rule
+- 設計未完でも5時間で区切り
 - 次サイクルへ設計引継ぎ
 
 ## Collaboration

@@ -33,10 +33,10 @@
 
 | ループ | 時間目安 | 責務 | 禁止事項 |
 |---|---|---|---|
-| Monitor | 1h | 要件・設計・README 差分確認、Git/CI 状態確認、タスク分解 | 実装・修復 |
-| Build | 2h | 設計メモ作成、実装、テスト追加、WorkTree 管理 | ついでの大規模整理、main 直接 push |
-| Verify | 2h | test / lint / build / security 確認、STABLE 判定 | 未テストの merge |
-| Improve | 3h | 命名整理、リファクタリング、README / docs 更新、再開メモ | 破壊的変更の無断実行 |
+| Monitor | 30m | 要件・設計・README 差分確認、Git/CI 状態確認、タスク分解 | 実装・修復 |
+| Build | 90m | 設計メモ作成、実装、テスト追加、WorkTree 管理 | ついでの大規模整理、main 直接 push |
+| Verify | 90m | test / lint / build / security 確認、STABLE 判定 | 未テストの merge |
+| Improve | 90m | 命名整理、リファクタリング、README / docs 更新、再開メモ | 破壊的変更の無断実行 |
 
 ### ループ判定の原則
 
@@ -96,7 +96,7 @@ STABLE 未達は merge / deploy 禁止。
 
 | ロール | 責務 |
 |---|---|
-| CTO | 優先順位判断、継続可否、8 時間終了時の最終判断 |
+| CTO | 優先順位判断、継続可否、5 時間終了時の最終判断 |
 | Architect | アーキテクチャ設計、責務分離、構造改善 |
 | Developer | 実装、修正、修復 |
 | Reviewer | コード品質、保守性、差分確認 |
@@ -151,7 +151,7 @@ CI が未整備なら、未整備であることを先に記録する。
 - 1 ファイルの小修正
 - ドキュメント更新のみ
 
-## 11. 8 時間到達時の必須処理
+## 11. 5 時間到達時の必須処理
 
 1. 現在の作業内容を整理
 2. 最小単位で commit
@@ -188,7 +188,7 @@ CI が未整備なら、未整備であることを先に記録する。
 ```text
 Small change         / Test everything
 Stable first         / Deploy safely
-Improve continuously / Stop at 8 hours safely
+Improve continuously / Stop at 5 hours safely
 Document always      / README keeps truth
 ```
 

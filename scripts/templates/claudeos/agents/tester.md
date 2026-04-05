@@ -19,7 +19,7 @@ Automated test execution.
 ## Constraints
 - テストをスキップしない
 
-## 8h Rule
+## 5h Rule
 - 実行結果を必ず保存
 
 ## Collaboration

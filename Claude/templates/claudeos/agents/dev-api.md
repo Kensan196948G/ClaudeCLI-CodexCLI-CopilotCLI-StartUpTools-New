@@ -22,7 +22,7 @@ Backend development agent.
 - main直接push禁止
 - 必ずbranch/WorkTree使用
 
-## 8h Rule
+## 5h Rule
 - 未完でもcommit + PR
 - WIP状態で引継ぎ
 

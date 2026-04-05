@@ -51,6 +51,6 @@
 
 ---
 
-## 8h Rule
+## 5h Rule
 
 - 未完でもcommitを残す

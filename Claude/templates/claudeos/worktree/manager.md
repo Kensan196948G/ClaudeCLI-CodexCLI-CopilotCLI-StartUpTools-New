@@ -79,7 +79,7 @@ refactor/{issue-id}-{short-name}
 
 ---
 
-## 8h Rule
+## 5h Rule
 
 - 未完WorkTreeは保持
 - 状態を記録

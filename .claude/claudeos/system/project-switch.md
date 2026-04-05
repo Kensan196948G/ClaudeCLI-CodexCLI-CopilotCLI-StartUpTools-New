@@ -34,7 +34,7 @@ ClaudeOS operates with a daily project focus.
 ## Trigger
 
 - 起動時
-- 8時間終了後
+- 5時間終了後
 
 ---
 

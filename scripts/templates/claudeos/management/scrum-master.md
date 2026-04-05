@@ -19,7 +19,7 @@
 - ループ開始時
 - 各フェーズ終了時
 - Blocked発生
-- 8時間終了時
+- 5時間終了時
 
 ---
 
@@ -61,6 +61,6 @@ Backlog → Ready → Development → Verify → Deploy Gate → Done
 
 ---
 
-## 8h Rule
+## 5h Rule
 
 - 未完でも整理して終了
