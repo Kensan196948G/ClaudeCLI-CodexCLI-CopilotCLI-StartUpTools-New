@@ -1,6 +1,6 @@
 # AGENTS.md
 
-# Codex 自律開発システム（5時間最適化版）
+# Codex 自律開発システム（5時間最適化・Token管理版）
 
 このファイルは、Codex をこのプロジェクトにおける自律型実行エンジンとして使うための正式テンプレートです。
 
@@ -58,6 +58,25 @@ Approval: プロファイルで制御
 - 70% → Improvement スキップ
 - 85% → Verify のみ
 - 95% → 即終了
+
+## Token フェーズ別配分（v6）
+
+| フェーズ | 配分 |
+|---|---|
+| Monitor | 10% |
+| Build | 40% |
+| Verify | 30% |
+| Improve | 20% |
+
+動的再配分: CI失敗時 Verify+20/Build-20、安定時 Improve+10/Build-10
+
+## 残時間管理
+
+state.json で残時間を自己管理:
+- < 30分: Improve スキップ
+- < 15分: Verify のみ
+- < 10分: 終了準備
+- < 5分: 即終了
 
 ## システム目的
 
@@ -149,4 +168,5 @@ Manager ディスカッション
 Small change         / Test everything
 Stable first         / Deploy safely
 Improve continuously / Stop at 5 hours safely
+Think within budget  / Use tokens wisely
 ```
