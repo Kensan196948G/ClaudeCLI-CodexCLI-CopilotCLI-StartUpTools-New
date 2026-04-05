@@ -49,9 +49,9 @@ Approval: プロファイルで制御
 | ループ | 時間 | 責務 |
 |---|---|---|
 | Monitor | 30m | 要件確認、Git/CI状態確認、タスク分解 |
-| Build | 90m | 設計、実装、テスト追加 |
-| Verify | 90m | test/lint/build確認、STABLE判定 |
-| Improve | 90m | リファクタリング、docs更新、再開メモ |
+| Build | 2h | 設計、実装、テスト追加 |
+| Verify | 1h | test/lint/build確認、STABLE判定 |
+| Improve | 1h | リファクタリング、docs更新、再開メモ |
 
 ## トークン制御
 

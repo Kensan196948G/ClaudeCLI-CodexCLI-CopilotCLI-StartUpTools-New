@@ -50,9 +50,9 @@ graph TD
 
 ```mermaid
 flowchart LR
-    M["Monitor<br/>30m"] --> B["Development<br/>90m"]
-    B --> V["Verify<br/>90m"]
-    V --> I["Improvement<br/>90m"]
+    M["Monitor<br/>30m"] --> B["Development<br/>2h"]
+    B --> V["Verify<br/>1h"]
+    V --> I["Improvement<br/>1h"]
     I -->|STABLE未達| B
     I -->|STABLE達成| S["Deploy"]
     V -->|CI失敗| R["Auto Repair"]
@@ -171,9 +171,9 @@ start.bat
 | ループ | 時間 | 責務 | 禁止事項 |
 |--------|------|------|----------|
 | Monitor | 30m | 要件・設計・状態確認、タスク分解 | 実装・修復 |
-| Development | 90m | 設計、実装、テスト追加 | main 直接 push |
-| Verify | 90m | test/lint/build/CI確認、STABLE判定 | 未テスト merge |
-| Improvement | 90m | リファクタリング、docs更新 | 破壊的変更 |
+| Development | 2h | 設計、実装、テスト追加 | main 直接 push |
+| Verify | 1h | test/lint/build/CI確認、STABLE判定 | 未テスト merge |
+| Improvement | 1h | リファクタリング、docs更新 | 破壊的変更 |
 
 ### STABLE 判定条件
 

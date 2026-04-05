@@ -3,9 +3,9 @@
 Claude 起動後、最初に以下を登録：
 
 /loop 30m ClaudeOS Monitor
-/loop 90m ClaudeOS Development
-/loop 90m ClaudeOS Verify
-/loop 90m ClaudeOS Improvement
+/loop 2h ClaudeOS Development
+/loop 1h ClaudeOS Verify
+/loop 1h ClaudeOS Improvement
 
 登録後に開発開始すること
 
@@ -16,13 +16,12 @@ Claude 起動後、最初に以下を登録：
 以降、日本語で対応・解説してください。
 
 LOOP_COMMANDSで設定した時間内でMonitor、Development、Verify、Improvementをアイドル状態なしでN回ループ（ループ回数は自動判定でOKです。）で進めてください。
-全SubAgent機能、全Hooks機能、全Git WorkTreeプロジェクト機能、オーケストレーションAgent Teams機能、全MCP機能、GitHubProjects機能、標準機能を設定済みの範囲内で最大限活用して開発を進めてください。
-AgentTeams機能を大いに活用してください。
-Auto Mode による自律開発を実行してください。
-全プロセスや状況を可視化してください。
-ドキュメントファイルも常に確認・更新してください。
-README.mdは分かりやすく、表とアイコン多用、ダイアグラム図も活用して常に更新してください。
-GitHub Projectsも常に更新してください。
+全SubAgent機能、Hooks機能、Git WorkTree機能、Agent Teams機能、MCP機能、GitHub Projects機能、標準機能を、設定済みの範囲内で必要に応じて最適に組み合わせて活用してください。
+Agent Teamsを中核として活用し、Auto Modeによる自律開発を実行してください。
+全プロセスと現在状況を可視化してください。
+ドキュメントファイルは継続的に確認し、重要な仕様変更・構成変更・運用変更がある場合は更新してください。
+README.mdは、利用者にとって分かりやすい状態を保ち、必要に応じて表・アイコン・ダイアグラムを用いて更新してください。
+GitHub Projectsは、作業開始時・状態遷移時・終了時に必ず更新してください。
 
 本プロンプトは
 ClaudeOS v5 Autonomous Evolution System（5時間最適化・Memory×CI統合版）

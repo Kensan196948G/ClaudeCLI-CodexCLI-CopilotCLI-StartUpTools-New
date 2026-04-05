@@ -1,7 +1,7 @@
 /loop 30m  everything-claude-code Monitor
-/loop 90m  everything-claude-code Development
-/loop 90m  everything-claude-code Verify
-/loop 90m  everything-claude-code Improvement
+/loop 2h  everything-claude-code Development
+/loop 1h  everything-claude-code Verify
+/loop 1h  everything-claude-code Improvement
 
 以降、日本語で対応・解説してください。
 
@@ -56,7 +56,7 @@ Boot Sequence 完了後、必ず以下の形式で表示すること。
 | 項目 | 状態 | 詳細 |
 |---|---|---|
 | 🎯 対象プロジェクト | {プロジェクト名} | {リポジトリURL またはローカルパス} |
-| 🔁 ループ構成 | 設定済み | 30m Monitor / 90m Development / 90m Verify / 90m Improvement |
+| 🔁 ループ構成 | 設定済み | 30m Monitor / 2h Development / 1h Verify / 1h Improvement |
 | ⏱ 予定終了時刻 | {開始+5h JST} | 5時間到達で強制終了 |
 | ✅ CI状態 | {✅/❌/不明} | {最新Run番号・結果 または未接続} |
 | 📋 Open Issues | {N件/不明} | {最優先Issue番号・タイトル または未接続} |
@@ -172,9 +172,9 @@ graph TD
 
 ```mermaid
 flowchart LR
-    M[🔍 Monitor\n30m] --> D[🔨 Development\n90m]
-    D --> V[✔ Verify\n90m]
-    V --> I[🔧 Improvement\n90m]
+    M[🔍 Monitor\n30m] --> D[🔨 Development\n2h]
+    D --> V[✔ Verify\n1h]
+    V --> I[🔧 Improvement\n1h]
     I -->|STABLE未達| D
     I -->|STABLE達成| S[🏆 Deploy]
 ```
@@ -212,9 +212,9 @@ flowchart LR
 | ループ | 時間 | 責務 | 禁止事項 |
 |---|---|---|---|
 | 🔍 Monitor | 30m | GitHub/CI/Issue状態確認、Projects整合確認、タイムスケジュール生成、README更新 | 実装・修復 |
-| 🔨 Development | 90m | 設計、実装、修復、WorkTree管理、README機能追記 | `main` への直接 push |
-| ✔ Verify | 90m | test / lint / build / security確認、STABLE判定、README状態更新 | 未テストの merge |
-| 🔧 Improvement | 90m | 改善、最適化、技術負債解消、リファクタリング、README最終整備 | 破壊的変更の無断実行 |
+| 🔨 Development | 2h | 設計、実装、修復、WorkTree管理、README機能追記 | `main` への直接 push |
+| ✔ Verify | 1h | test / lint / build / security確認、STABLE判定、README状態更新 | 未テストの merge |
+| 🔧 Improvement | 1h | 改善、最適化、技術負債解消、リファクタリング、README最終整備 | 破壊的変更の無断実行 |
 
 ---
 
