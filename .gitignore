@@ -44,6 +44,9 @@ DevTools-chrome-*
 .mcp.json.bak.*
 .mcp.json.backup.*
 
+# ClaudeOS ランタイム状態（セッション固有・コミット不要）
+state.json
+
 # Claude CLI ツール設定（API キーを含む可能性）
 Claude/settings.json
 Claude/settings.local.json

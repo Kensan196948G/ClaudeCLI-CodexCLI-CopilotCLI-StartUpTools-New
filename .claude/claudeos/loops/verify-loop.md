@@ -1,16 +1,62 @@
 # Verify Loop
 
-## 役割
+## Role
+品質検証とCI確認。
 
-test、lint、build、security 確認、STABLE 判定を行う。
+---
 
-## このループと判定する条件
+## Checks
 
-- test 実行が主作業
-- lint 実行が主作業
-- build 実行が主作業
-- GitHub Actions 結果確認が主作業
+- code review
+- unit tests
+- integration tests
+- lint
+- build
+- CI stability
 
-## 注意
+---
 
-改善目的で test を回していても、この間は Verify と判定する。
+## Trigger
+
+- Build後
+- 修正後
+
+---
+
+## Actions
+
+- テスト実行
+- CI確認
+- 品質評価
+
+---
+
+## Output
+
+`.loop-verify-report.md`
+
+---
+
+## Next
+
+- 成功 → Improve Loop
+- 失敗 → CI Manager / Auto Repair
+
+---
+
+## STABLE Check
+
+以下を評価：
+
+- test success
+- CI success
+- lint success
+- build success
+- error 0
+- security issue 0
+
+---
+
+## 5h Rule
+
+- 未完でも評価を残す

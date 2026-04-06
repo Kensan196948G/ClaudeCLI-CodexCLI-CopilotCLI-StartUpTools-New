@@ -1,12 +1,47 @@
-# Token Budget
+# Token Budget Manager
 
-## 役割
+Weekly token management.
 
-長時間セッションでの文脈消費と圧縮必要性を監視する。
+## Budget Zones
 
-## 状態
+| Zone   | Range    | Status                  |
+| ------ | -------- | ----------------------- |
+| Green  | 0–60%    | Normal development      |
+| Yellow | 60–75%   | Reduced build activity  |
+| Orange | 75–90%   | Monitor priority        |
+| Red    | 90–100%  | Development stopped     |
 
-- Green: 通常運用
-- Yellow: 圧縮候補を意識
-- Orange: 不要文脈を整理
-- Red: 圧縮または安全終了を検討
+
+# Token Budget Manager
+
+## Role
+トークン使用量制御。
+
+---
+
+## Zones
+
+（既存でOK）
+
+---
+
+## Actions
+
+- 使用量監視
+- 制限適用
+
+---
+
+## Behavior
+
+- Green → 通常
+- Yellow → 軽量化
+- Orange → Monitor優先
+- Red → 開発停止
+
+---
+
+## Integration
+
+- Orchestratorと連携
+- Loop制御に反映

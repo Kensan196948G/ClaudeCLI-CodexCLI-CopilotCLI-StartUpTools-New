@@ -1,11 +1,48 @@
 # Architecture Check Loop
 
-## 役割
+## Role
+構造の健全性を保証。
 
-ループ横断で構造の劣化を点検する。
+---
 
-## 確認項目
+## Checks
 
-- 密結合
-- 循環依存
-- モジュール責務の肥大化
+- dependency structure
+- module boundaries
+- architecture rules
+- layering consistency
+
+---
+
+## Trigger
+
+- PR前
+- STABLE判定前
+- CI failure多発
+
+---
+
+## Actions
+
+- 構造チェック
+- 違反検出
+- 改善提案
+
+---
+
+## Output
+
+- architecture report
+
+---
+
+## Next
+
+- OK → STABLE判定へ
+- NG → Improve Loopへ
+
+---
+
+## 5h Rule
+
+- 結果を必ず残す
