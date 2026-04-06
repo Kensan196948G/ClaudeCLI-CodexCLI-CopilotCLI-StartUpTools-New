@@ -15,7 +15,7 @@ Claude 起動後、最初に以下を登録：
 
 以降、日本語で対応・解説してください。
 
-LOOP_COMMANDSで設定した時間内で、Monitor、Development、Verify、ImprovementをN回ループ（ループ回数は自動判定）で進めてください。
+LOOP_COMMANDSで設定した時間内でMonitor、Development、Verify、ImprovementをN回ループ（ループ回数は自動判定でOKです。）で進めてください。
 
 全SubAgent機能、Hooks機能、Git WorkTree機能、Agent Teams機能、MCP機能、GitHub Projects機能、標準機能を、設定済みの範囲内で必要に応じて最適に組み合わせて活用してください。
 

@@ -1,15 +1,48 @@
 # Improve Loop
 
-## 役割
+## Role
+品質改善・最適化。
 
-命名改善、技術的負債解消、リファクタリング、文書整備を行う。
+---
 
-## このループと判定する条件
+## Targets
 
-- 実装完了後の整理が主作業
-- README や運用文書更新が主作業
-- 振る舞いを変えない保守性改善が主作業
+- refactoring
+- documentation
+- naming
+- error handling
+- performance
 
-## 禁止
+---
 
-- 無断の破壊的変更
+## Trigger
+
+- Verify成功後
+- STABLE前
+
+---
+
+## Actions
+
+- リファクタリング
+- ドキュメント更新
+- テスト改善
+
+---
+
+## Output
+
+- improved code
+- docs
+
+---
+
+## Next
+
+- Monitor Loopへ戻る
+
+---
+
+## 5h Rule
+
+- 改善内容を記録

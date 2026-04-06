@@ -1,14 +1,56 @@
 # Build Loop
 
-## 役割
+## Role
+設計・実装を行う開発フェーズ。
 
-設計、実装、修復、WorkTree 管理を行う。
+---
 
-## このループと判定する条件
+## Steps
 
-- コード変更や設定変更が主作業
-- 修正のために実際にファイルを編集している
+1. Design
+2. Foundation
+3. Core Implementation
+4. Integration
+5. Tests
 
-## 禁止
+---
 
-- main への直接 push
+## Rules
+
+- 各ステップでcommit
+- WorkTreeで作業
+- mainへ直接push禁止
+
+---
+
+## Trigger
+
+- Monitor正常時
+- Verify OK後
+
+---
+
+## Actions
+
+- 実装
+- 修正
+- テスト追加
+
+---
+
+## Output
+
+- code changes
+- commits
+
+---
+
+## Next
+
+- Verify Loopへ
+
+---
+
+## 5h Rule
+
+- 未完でもcommitを残す

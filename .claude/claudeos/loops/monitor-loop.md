@@ -1,16 +1,51 @@
 # Monitor Loop
 
-## 役割
+## Role
+システム状態と品質の監視。
 
-現状確認、接続状況確認、タスク整理、タイムスケジュール生成を行う。
+---
 
-## このループと判定する条件
+## Checks
 
-- 状態確認が主作業
-- 実装や修復をまだしていない
-- Projects、Issue、CI の把握が主目的
+- CI status
+- test results
+- lint
+- typecheck
+- security warnings
+- token usage
+- retry count
 
-## 禁止
+---
 
-- 実装
-- 修復
+## Trigger
+
+- ループ開始時
+- 各フェーズ終了後
+- CI実行後
+
+---
+
+## Actions
+
+- 状態収集
+- 異常検知
+- リスク判定
+
+---
+
+## Output
+
+`.loop-monitor-report.md`
+
+---
+
+## Next
+
+- 異常あり → Verify Loop
+- 正常 → Build Loop
+
+---
+
+## 5h Rule
+
+- 状態ログを必ず保存
