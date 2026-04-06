@@ -4,7 +4,7 @@
 # ============================================================
 
 BeforeAll {
-    Import-Module "$PSScriptRoot\..\scripts\lib\SSHHelper.psm1" -Force
+    Import-Module "$PSScriptRoot\..\scripts\lib\SSHHelper.psm1" -Force -DisableNameChecking
 }
 
 Describe 'Escape-SSHArgument' {
