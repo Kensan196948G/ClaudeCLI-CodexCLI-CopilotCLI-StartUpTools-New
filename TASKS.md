@@ -11,8 +11,5 @@
 
 ## Auto Extracted From Agent Teams Matrix
 
-1. [Priority:P1][Owner:Architect][Source:AgentTeamsMatrix] 実際の Agent Teams ランタイム起動
-2. [Priority:P1][Owner:Architect][Source:AgentTeamsMatrix] ClaudeOS の multi-agent 自動割当
-3. [Priority:P1][Owner:Ops][Source:AgentTeamsMatrix] MCP サーバーの起動・接続・ヘルスチェック統合
-4. [Priority:P2][Owner:Ops][Source:AgentTeamsMatrix] worktree ベースの並列ブランチ運用
-5. [Priority:P2][Owner:ScrumMaster][Source:AgentTeamsMatrix] issue / backlog 自動生成
+1. worktree ベースの並列ブランチ運用
+2. issue / backlog 自動生成

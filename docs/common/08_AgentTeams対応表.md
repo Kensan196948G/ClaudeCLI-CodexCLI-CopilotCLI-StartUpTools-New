@@ -29,8 +29,8 @@
 | Monitor Loop | `scripts/test/Test-AllTools.ps1`、`test-drive-mapping.ps1` | 部分対応 | 3 |
 | Verify Loop | `Invoke-Pester .\tests`、GitHub Actions CI | 部分対応 | 3 |
 | CI Manager | `.github/workflows/ci.yml` | 部分対応 | 3 |
-| Agent Teams 会話可視化 | 実ランタイムなし。作業時の role 分解ログと startup dashboard で代替 | 代替対応 | 1 |
-| MCP サーバー連携 | `Test-AllTools.ps1` で設定検出と command 可用性のみ診断 | 部分対応 | 2 |
+| Agent Teams 会話可視化 | `AgentTeams.psm1` でランタイムTeam構成・可視化。37 Agent定義読込、17パターン自動割当 | 実運用可能 | 3 |
+| MCP サーバー連携 | `McpHealthCheck.psm1` でモジュール化。Start-Menu統合、Text/JSON出力、ヘルスチェック実行 | ほぼ対応 | 4 |
 | Worktree Manager | 現行ランチャーには未実装 | 未対応 | 0 |
 | Backlog Manager | `TASKS.md` と CI の同期確認まで対応 | 部分対応 | 2 |
 
@@ -44,12 +44,12 @@
 - CI による Pester 実行と設定検証
 - 共通コア文書とツール別テンプレートの分離
 - Claude 用 Agent Teams、Codex 用 manager-worker、Copilot 用 custom agents + fleet という翻訳方針
+- MCP ヘルスチェックモジュール (`McpHealthCheck.psm1`) と Start-Menu 統合
+- Agent Teams ランタイムエンジン (`AgentTeams.psm1`): 37 Agent 定義読込、17 パターン自動分類、Team 構成生成
+- multi-agent 自動割当: backlog-rules.json 連携による優先度・オーナー自動判定
 
 ## 未実装機能
 
-- 実際の Agent Teams ランタイム起動
-- ClaudeOS の multi-agent 自動割当
-- MCP サーバーの起動・接続・ヘルスチェック統合
 - worktree ベースの並列ブランチ運用
 - issue / backlog 自動生成
 
