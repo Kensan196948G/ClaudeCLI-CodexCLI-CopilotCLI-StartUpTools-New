@@ -133,3 +133,75 @@ Describe 'Remove-Worktree safety' {
         }
     }
 }
+
+Describe 'Invoke-WorktreeCleanup' {
+
+    BeforeAll {
+        $script:CleanupRepo = Join-Path $TestDrive 'cleanup-repo'
+        git init -b main $script:CleanupRepo 2>$null | Out-Null
+        Push-Location $script:CleanupRepo
+        git config user.email "test@test.com"
+        git config user.name "Test"
+        Set-Content -Path (Join-Path $script:CleanupRepo 'README.md') -Value '# Test'
+        git -C $script:CleanupRepo add .
+        git -C $script:CleanupRepo commit -m "init" 2>$null | Out-Null
+        Pop-Location
+    }
+
+    It 'DryRun returns empty when no worktrees to clean' {
+        $result = Invoke-WorktreeCleanup -RepoRoot $script:CleanupRepo -DryRun
+        $result.Count | Should -Be 0
+    }
+
+    It 'cleans up worktrees with merged branches' {
+        # Create a worktree with a new branch, commit changes
+        $wtBase = Get-WorktreeBasePath -RepoRoot $script:CleanupRepo
+        $wtPath = Join-Path $wtBase 'feat-cleanup-test'
+        git -C $script:CleanupRepo worktree add -b 'feat/cleanup-test' $wtPath 'main' 2>&1 | Out-Null
+        Set-Content -Path (Join-Path $wtPath 'test.txt') -Value 'test'
+        git -C $wtPath add .
+        git -C $wtPath commit -m "test change" 2>&1 | Out-Null
+
+        # Remove worktree temporarily to allow merge
+        git -C $script:CleanupRepo worktree remove $wtPath --force 2>&1 | Out-Null
+
+        # Merge into main
+        git -C $script:CleanupRepo merge 'feat/cleanup-test' --no-edit 2>&1 | Out-Null
+
+        # Re-add worktree to simulate stale merged worktree
+        git -C $script:CleanupRepo worktree add $wtPath 'feat/cleanup-test' 2>&1 | Out-Null
+
+        # Verify branch is listed as merged
+        $merged = git -C $script:CleanupRepo branch --merged main 2>&1
+        ($merged -join ' ') | Should -Match 'feat/cleanup-test'
+
+        # DryRun should find it
+        $dryResult = Invoke-WorktreeCleanup -RepoRoot $script:CleanupRepo -DryRun
+        $dryResult.Count | Should -Be 1
+
+        # Actual cleanup
+        $result = Invoke-WorktreeCleanup -RepoRoot $script:CleanupRepo
+        $result.Count | Should -Be 1
+
+        # Verify worktree is gone
+        $worktrees = @(Get-Worktree -RepoRoot $script:CleanupRepo)
+        $found = $worktrees | Where-Object { $_.Branch -eq 'feat/cleanup-test' }
+        $found | Should -BeNullOrEmpty
+    }
+
+    It 'does not remove unmerged worktrees' {
+        # Create worktree with unmerged branch
+        $wt = New-Worktree -BranchName 'feat/unmerged-test' -BaseBranch 'main' -RepoRoot $script:CleanupRepo
+        Set-Content -Path (Join-Path $wt.Path 'unmerged.txt') -Value 'unmerged'
+        git -C $wt.Path add .
+        git -C $wt.Path commit -m "unmerged change" 2>$null | Out-Null
+
+        # Should NOT be in cleanup candidates
+        $result = Invoke-WorktreeCleanup -RepoRoot $script:CleanupRepo -DryRun
+        $found = $result.WouldRemove | Where-Object { $_.Branch -eq 'feat/unmerged-test' }
+        $found | Should -BeNullOrEmpty
+
+        # Cleanup
+        Remove-Worktree -BranchName 'feat/unmerged-test' -DeleteBranch -Force -RepoRoot $script:CleanupRepo
+    }
+}
