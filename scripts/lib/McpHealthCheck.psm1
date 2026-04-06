@@ -330,10 +330,110 @@ function Show-McpHealthReport {
     Write-Host ''
 }
 
+function Invoke-McpRuntimeProbe {
+    <#
+    .SYNOPSIS
+        Performs a runtime probe on all configured MCP servers.
+    .DESCRIPTION
+        Attempts to start each MCP server process and checks if it responds,
+        then cleanly shuts down. Returns detailed probe results.
+    .PARAMETER ProjectRoot
+        Project root directory containing .mcp.json.
+    .PARAMETER TimeoutSec
+        Timeout for each probe attempt. Default: 10.
+    #>
+    param(
+        [string]$ProjectRoot,
+        [int]$TimeoutSec = 10
+    )
+
+    $report = Get-McpHealthReport -ProjectRoot $ProjectRoot
+    if (-not $report.configured) {
+        return [pscustomobject]@{
+            Configured = $false
+            ProbeResults = @()
+            Summary = 'MCP not configured'
+        }
+    }
+
+    $probeResults = @()
+    foreach ($server in @($report.servers)) {
+        $probeResult = [ordered]@{
+            Name = $server.name
+            Command = $server.command
+            CommandAvailable = ($server.status -eq 'available')
+            RuntimeStatus = 'not_tested'
+            StartupTime = $null
+            Error = $null
+        }
+
+        if ($server.status -ne 'available') {
+            $probeResult.RuntimeStatus = 'command_unavailable'
+            $probeResults += [pscustomobject]$probeResult
+            continue
+        }
+
+        # Attempt runtime probe via process start
+        try {
+            $sw = [System.Diagnostics.Stopwatch]::StartNew()
+            $result = Invoke-McpProcessWithTimeout -Command $server.command -Arguments $server.startupCommand -TimeoutSec $TimeoutSec
+            $sw.Stop()
+            $probeResult.StartupTime = "$($sw.ElapsedMilliseconds)ms"
+
+            if ($null -ne $result -and $result.ExitCode -eq 0) {
+                $probeResult.RuntimeStatus = 'responsive'
+            }
+            elseif ($null -ne $result) {
+                $probeResult.RuntimeStatus = 'started_with_error'
+                $probeResult.Error = "Exit code: $($result.ExitCode)"
+            }
+            else {
+                $probeResult.RuntimeStatus = 'timeout'
+            }
+        }
+        catch {
+            $probeResult.RuntimeStatus = 'probe_failed'
+            $probeResult.Error = $_.Exception.Message
+        }
+
+        $probeResults += [pscustomobject]$probeResult
+    }
+
+    $responsive = @($probeResults | Where-Object { $_.RuntimeStatus -eq 'responsive' }).Count
+
+    return [pscustomobject]@{
+        Configured = $true
+        ProbeResults = $probeResults
+        Summary = "$responsive/$($probeResults.Count) servers probed successfully"
+    }
+}
+
+function Get-McpQuickStatus {
+    <#
+    .SYNOPSIS
+        Returns a one-line MCP status string for dashboard display.
+    #>
+    param([string]$ProjectRoot)
+
+    try {
+        $report = Get-McpHealthReport -ProjectRoot $ProjectRoot
+        if (-not $report.configured) { return 'MCP: not configured' }
+        $available = @($report.servers | Where-Object { $_.status -eq 'available' }).Count
+        $total = @($report.servers).Count
+        $icon = if ($available -eq $total) { 'OK' } else { 'WARN' }
+        return "MCP: [$icon] $available/$total servers"
+    }
+    catch {
+        return 'MCP: check failed'
+    }
+}
+
 Export-ModuleMember -Function @(
     'Get-McpServerHealth',
     'Get-McpHealthReport',
     'Show-McpHealthReport',
     'Test-McpCommandExists',
-    'Invoke-McpProcessWithTimeout'
+    'Invoke-McpProcessWithTimeout',
+    'Invoke-McpRuntimeProbe',
+    'Get-McpQuickStatus'
 )

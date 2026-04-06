@@ -18,6 +18,8 @@ $ErrorActionPreference = 'Stop'
 $ScriptRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Import-Module (Join-Path $ScriptRoot 'scripts\lib\LauncherCommon.psm1') -Force
 Import-Module (Join-Path $ScriptRoot 'scripts\lib\Config.psm1') -Force
+Import-Module (Join-Path $ScriptRoot 'scripts\lib\McpHealthCheck.psm1') -Force
+Import-Module (Join-Path $ScriptRoot 'scripts\lib\AgentTeams.psm1') -Force
 
 $ScriptRoot = Get-StartupRoot -PSScriptRootPath $PSScriptRoot
 $ConfigPath = Get-StartupConfigPath -StartupRoot $ScriptRoot
@@ -179,6 +181,48 @@ try {
         Set-Location $localProjectDir
         Set-LauncherEnvironment -EnvMap $toolConfig.env
 
+        # --- MCP Health Check (pre-launch) ---
+        Write-Host ''
+        Write-Host '=== Pre-Launch Diagnostics ===' -ForegroundColor Magenta
+        Write-Host ''
+        try {
+            $mcpReport = Get-McpHealthReport -ProjectRoot $localProjectDir
+            if ($mcpReport.configured) {
+                $mcpAvailable = @($mcpReport.servers | Where-Object { $_.status -eq 'available' }).Count
+                $mcpTotal = @($mcpReport.servers).Count
+                if ($mcpAvailable -eq $mcpTotal) {
+                    Write-Ok "MCP: $mcpAvailable/$mcpTotal servers available"
+                }
+                else {
+                    Write-Warn "MCP: $mcpAvailable/$mcpTotal servers available"
+                    foreach ($s in @($mcpReport.servers | Where-Object { $_.status -ne 'available' })) {
+                        Write-Warn "  - $($s.name): $($s.status)"
+                    }
+                }
+            }
+            else {
+                Write-Info 'MCP: 設定なし（.mcp.json 未検出）'
+            }
+        }
+        catch {
+            Write-Warn "MCP check skipped: $($_.Exception.Message)"
+        }
+
+        # --- Agent Teams Check (pre-launch) ---
+        try {
+            $agentReport = Get-AgentTeamReport -ProjectRoot $localProjectDir
+            if ($agentReport.agentsDirExists) {
+                Write-Ok "Agent Teams: $($agentReport.agentCount) agents loaded"
+            }
+            else {
+                Write-Info 'Agent Teams: agents ディレクトリ未検出'
+            }
+        }
+        catch {
+            Write-Warn "Agent Teams check skipped: $($_.Exception.Message)"
+        }
+        Write-Host ''
+
         Sync-LauncherClaudeGlobalConfig -StartupRoot $ScriptRoot -ProjectDir $localProjectDir
 
         $localPromptPath = Join-Path $ScriptRoot 'Claude\templates\claude\START_PROMPT.md'
@@ -214,6 +258,19 @@ try {
     $bridgeSource = Join-Path $ScriptRoot 'scripts\helpers\claude_pty_bridge.py'
 
     $promptSections = Get-StartPromptSections -PromptPath $templatePrompt
+
+    # --- Pre-Launch Diagnostics (SSH mode) ---
+    Write-Host ''
+    Write-Host '=== Pre-Launch Diagnostics (SSH) ===' -ForegroundColor Magenta
+    try {
+        $agentReport = Get-AgentTeamReport -ProjectRoot $ScriptRoot
+        if ($agentReport.agentsDirExists) {
+            Write-Ok "Agent Teams: $($agentReport.agentCount) agents loaded (template)"
+        }
+    }
+    catch {
+        Write-Warn "Agent Teams check skipped: $($_.Exception.Message)"
+    }
 
     Write-Host ""
     Write-Host "=== Claude 設定サマリー ===" -ForegroundColor Yellow
