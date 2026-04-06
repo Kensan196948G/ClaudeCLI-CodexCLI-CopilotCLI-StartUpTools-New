@@ -1,0 +1,49 @@
+name: Issue Sync
+
+on:
+  issues:
+    types: [opened, closed, reopened, edited, labeled, unlabeled, assigned, unassigned, deleted]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-issues-to-tasks:
+    runs-on: windows-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync GitHub Issues to TASKS.md
+        shell: pwsh
+        run: |
+          .\scripts\tools\Sync-Issues.ps1 -Action sync
+
+      - name: Validate TASKS.md format
+        shell: pwsh
+        run: |
+          .\scripts\tools\Sync-Issues.ps1 -Action check
+
+      - name: Commit and push if changed
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          $status = git status --porcelain TASKS.md
+          if ($status) {
+            git add TASKS.md
+            git commit -m "chore: auto-sync GitHub Issues to TASKS.md [skip ci]"
+            git push
+            Write-Host "TASKS.md updated and pushed." -ForegroundColor Green
+          }
+          else {
+            Write-Host "TASKS.md is already up to date." -ForegroundColor Green
+          }
