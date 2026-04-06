@@ -13,5 +13,5 @@
 
 ## Auto Extracted From Agent Teams Matrix
 
-1. worktree ベースの並列ブランチ運用
-2. issue / backlog 自動生成
+1. [Priority:P2][Owner:Ops][Source:AgentTeamsMatrix] worktree ベースの並列ブランチ運用
+2. [Priority:P2][Owner:ScrumMaster][Source:AgentTeamsMatrix] issue / backlog 自動生成
