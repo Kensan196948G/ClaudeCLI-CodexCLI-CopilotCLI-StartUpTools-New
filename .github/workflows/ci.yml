@@ -102,6 +102,11 @@ jobs:
           .\scripts\tools\Update-TASKS.ps1 -Action list | Out-Null
           .\scripts\tools\Sync-AgentTeamsBacklog.ps1 -Action check
 
+      - name: Validate TASKS.md Issue Sync Format
+        shell: pwsh
+        run: |
+          .\scripts\tools\Sync-Issues.ps1 -Action check
+
       - name: Check Legacy References
         shell: pwsh
         run: |
