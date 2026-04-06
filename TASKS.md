@@ -8,6 +8,8 @@
 ## Manual Backlog
 
 1. [Priority:P1][Owner:Ops][Source:CI] old task
+2. [DONE] [Priority:P1][Owner:Architect][Source:Manual] Agent Teams ランタイム起動・multi-agent 自動割当 (PR #30)
+3. [DONE] [Priority:P1][Owner:Ops][Source:Manual] MCP サーバーヘルスチェック統合 (PR #29)
 
 ## Auto Extracted From Agent Teams Matrix
 
