@@ -287,6 +287,82 @@ function Get-WorktreeSummary {
     return $summary
 }
 
+function Invoke-WorktreeCleanup {
+    <#
+    .SYNOPSIS
+        Removes worktrees whose branches have been merged into the base branch.
+    .PARAMETER BaseBranch
+        The branch to check merge status against. Default: 'main'.
+    .PARAMETER RepoRoot
+        Repository root path. Auto-detected if omitted.
+    .PARAMETER DryRun
+        If set, reports what would be cleaned up without making changes.
+    #>
+    param(
+        [string]$BaseBranch = 'main',
+        [string]$RepoRoot,
+        [switch]$DryRun
+    )
+
+    if (-not $RepoRoot) {
+        $RepoRoot = (git rev-parse --show-toplevel 2>$null)
+        if (-not $RepoRoot) {
+            throw "Not inside a Git repository."
+        }
+    }
+
+    # Get branches merged into base
+    $mergedRaw = git -C $RepoRoot branch --merged $BaseBranch 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to list merged branches: $mergedRaw"
+    }
+
+    $mergedBranches = @($mergedRaw | ForEach-Object { $_.Trim().TrimStart('* +') } | Where-Object { $_ -and $_ -ne $BaseBranch -and $_ -ne 'master' })
+
+    $worktrees = Get-Worktree -RepoRoot $RepoRoot
+    $candidates = @()
+
+    foreach ($wt in $worktrees) {
+        if ($wt.IsMain) { continue }
+        if (-not $wt.Branch) { continue }
+        if ($wt.Branch -in $mergedBranches) {
+            $candidates += $wt
+        }
+    }
+
+    if ($DryRun) {
+        return [pscustomobject]@{
+            WouldRemove = @($candidates | ForEach-Object { [pscustomobject]@{ Branch = $_.Branch; Path = $_.Path } })
+            Count       = $candidates.Count
+        }
+    }
+
+    $removed = @()
+    foreach ($wt in $candidates) {
+        try {
+            $result = Remove-Worktree -BranchName $wt.Branch -DeleteBranch -RepoRoot $RepoRoot
+            $removed += [pscustomobject]@{
+                Branch  = $wt.Branch
+                Path    = $wt.Path
+                Status  = 'removed'
+            }
+        }
+        catch {
+            $removed += [pscustomobject]@{
+                Branch  = $wt.Branch
+                Path    = $wt.Path
+                Status  = "failed: $($_.Exception.Message)"
+            }
+        }
+    }
+
+    return [pscustomobject]@{
+        Removed = $removed
+        Count   = @($removed | Where-Object { $_.Status -eq 'removed' }).Count
+        Total   = $removed.Count
+    }
+}
+
 Export-ModuleMember -Function @(
     'Get-Worktree'
     'New-Worktree'
@@ -294,4 +370,5 @@ Export-ModuleMember -Function @(
     'Remove-Worktree'
     'Get-WorktreeSummary'
     'Get-WorktreeBasePath'
+    'Invoke-WorktreeCleanup'
 )
