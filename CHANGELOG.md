@@ -1,5 +1,56 @@
 # CHANGELOG
 
+## [v2.7.1] - 2026-04-06
+
+### ClaudeOS v6 カーネル文書全面更新 (PR #36)
+- Token フェーズ別配分を全文書に反映 (Monitor 10% / Development 40% / Verify 30% / Improvement 20%)
+- 残時間管理 (state.json ベース) を各ループ・エグゼクティブ文書に統合
+- Agent Teams 運用方針追加 (可視化・責務分離・Token 不足時の CTO 判断)
+- CLAUDE.md をグローバル設定 (ベストプラクティス版) に改訂
+- state.json を .gitignore に追加
+
+### Worktree Manager 実装 (PR #37, Issue #32)
+- `scripts/lib/WorktreeManager.psm1` 新規作成
+- New/Get/Switch/Remove-Worktree, Get-WorktreeSummary
+- Windows パス正規化対応 (IsMain 判定)
+- `scripts/test/Test-WorktreeManager.ps1` Start-Menu 統合
+- `tests/WorktreeManager.Tests.ps1` Pester テスト 15 件
+
+### Issue/Backlog 自動生成 (PR #38, Issue #33)
+- `scripts/lib/IssueSyncManager.psm1` 新規作成
+- Sync-IssuesToTasks / Sync-TasksToIssues 双方向同期
+- Get-SyncStatus 差分検出
+- DryRun サポート
+- `tests/IssueSyncManager.Tests.ps1` Pester テスト 16 件
+
+### MCP Health Check・Agent Teams 機能強化 (PR #40)
+- `Start-ClaudeCode.ps1` に Pre-Launch Diagnostics 追加 (MCP + Agent Teams 自動チェック)
+- `McpHealthCheck.psm1` に Invoke-McpRuntimeProbe, Get-McpQuickStatus 追加
+- `AgentTeams.psm1` に Get-AgentCapabilityMatrix, Show-AgentCapabilityMatrix, Get-AgentQuickStatus 追加
+
+### Worktree 自動クリーンアップ (PR #41)
+- `Invoke-WorktreeCleanup`: マージ済みブランチの Worktree 自動削除
+- Git 2.38+ の `+` マーカー対応
+- Pester テスト 3 件追加
+
+### テスト・CI
+- テスト数: 129 (v2.5.1) → 228 (+99 件)
+- CI: 全 PR パス
+
+### 変更ファイル (主要)
+- `scripts/lib/WorktreeManager.psm1` (新規)
+- `scripts/lib/IssueSyncManager.psm1` (新規)
+- `scripts/lib/McpHealthCheck.psm1` (機能追加)
+- `scripts/lib/AgentTeams.psm1` (機能追加)
+- `scripts/main/Start-ClaudeCode.ps1` (Pre-Launch Diagnostics)
+- `scripts/main/Start-Menu.ps1` (メニュー項目追加)
+- `tests/WorktreeManager.Tests.ps1` (新規)
+- `tests/IssueSyncManager.Tests.ps1` (新規)
+- `.claude/claudeos/` 配下カーネル文書 18 ファイル
+- `CLAUDE.md`, `README.md` (全面更新)
+
+---
+
 ## [v2.7.0] - 2026-04-06
 
 ### MCP ヘルスチェックモジュール化 (PR #29)
