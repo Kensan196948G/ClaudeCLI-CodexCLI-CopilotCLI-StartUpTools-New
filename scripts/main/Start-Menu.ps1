@@ -211,6 +211,7 @@ function Show-Menu {
     Write-Host "    6.  ドライブマッピング診断" -ForegroundColor Magenta
     Write-Host "    7.  Windows Terminal セットアップ" -ForegroundColor Magenta
     Write-Host "    8.  MCP ヘルスチェック" -ForegroundColor Magenta
+    Write-Host "    9.  Agent Teams ランタイム" -ForegroundColor Magenta
     Write-Host ""
 
     Write-Host "    0.  終了" -ForegroundColor Gray
@@ -293,6 +294,7 @@ while ($true) {
         "6"  { Invoke-MenuScript -File "scripts\test\test-drive-mapping.ps1" }
         "7"  { Invoke-MenuScript -File "scripts\setup\setup-windows-terminal.ps1" }
         "8"  { Invoke-MenuScript -File "scripts\test\Test-McpHealth.ps1" }
+        "9"  { Invoke-MenuScript -File "scripts\test\Test-AgentTeams.ps1" }
         "0"  { exit 0 }
         default {
             Write-Host ""
