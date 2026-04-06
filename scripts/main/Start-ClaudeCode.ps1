@@ -16,10 +16,10 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $ScriptRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-Import-Module (Join-Path $ScriptRoot 'scripts\lib\LauncherCommon.psm1') -Force
-Import-Module (Join-Path $ScriptRoot 'scripts\lib\Config.psm1') -Force
-Import-Module (Join-Path $ScriptRoot 'scripts\lib\McpHealthCheck.psm1') -Force
-Import-Module (Join-Path $ScriptRoot 'scripts\lib\AgentTeams.psm1') -Force
+Import-Module (Join-Path $ScriptRoot 'scripts\lib\LauncherCommon.psm1') -Force -DisableNameChecking
+Import-Module (Join-Path $ScriptRoot 'scripts\lib\Config.psm1') -Force -DisableNameChecking
+Import-Module (Join-Path $ScriptRoot 'scripts\lib\McpHealthCheck.psm1') -Force -DisableNameChecking
+Import-Module (Join-Path $ScriptRoot 'scripts\lib\AgentTeams.psm1') -Force -DisableNameChecking
 
 $ScriptRoot = Get-StartupRoot -PSScriptRootPath $PSScriptRoot
 $ConfigPath = Get-StartupConfigPath -StartupRoot $ScriptRoot
