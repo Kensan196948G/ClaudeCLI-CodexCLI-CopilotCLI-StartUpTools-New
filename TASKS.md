@@ -14,7 +14,7 @@
 5. [DONE] [Priority:P1][Owner:Developer][Source:GitHub#33] Issue/Backlog 自動生成 (PR #38)
 6. [DONE] [Priority:P2][Owner:Developer][Source:Manual] MCP/AgentTeams 機能強化 (PR #40)
 7. [DONE] [Priority:P2][Owner:Developer][Source:Manual] Worktree 自動クリーンアップ (PR #41)
-8. [Priority:P2][Owner:DevOps][Source:Manual] Issue同期 CI/hooks 統合
+8. [DONE] [Priority:P2][Owner:DevOps][Source:Manual] Issue同期 CI/hooks 統合 (PR #45)
 
 ## Auto Extracted From Agent Teams Matrix
 

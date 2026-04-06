@@ -1,5 +1,34 @@
 # CHANGELOG
 
+## [v2.8.0] - 2026-04-06
+
+### Issue同期 CI/hooks 統合 (PR #45)
+- `scripts/tools/Sync-Issues.ps1` 新規作成 (status/check/sync/sync-to-github)
+- `.github/workflows/issue-sync.yml` 新規作成 (Issue イベントトリガー自動同期)
+- `ci.yml` に TASKS.md フォーマット検証ステップ追加
+- `tests/Sync-Issues.Tests.ps1` Pester テスト 9 件追加
+
+### START_PROMPT v6.3 更新 (PR #44)
+- ClaudeOS v6.3 Codex 統合版テンプレート反映
+- Codex Plugin 統合・review gate 運用ルール・Agent Teams 役割分担明確化
+
+### unapproved verbs 修正 (PR #43)
+- `Start-ClaudeCode.ps1` の `-DisableNameChecking` 追加
+
+### テスト・CI
+- テスト数: 228 (v2.7.1) → 237 (+9 件)
+- CI: 全 PR パス
+- Phase 2 完了率: 10/10 (100%)
+
+### 変更ファイル (主要)
+- `scripts/tools/Sync-Issues.ps1` (新規)
+- `.github/workflows/issue-sync.yml` (新規)
+- `.github/workflows/ci.yml` (検証ステップ追加)
+- `tests/Sync-Issues.Tests.ps1` (新規)
+- `Claude/templates/claude/START_PROMPT.md` (v6.3 更新)
+
+---
+
 ## [v2.7.1] - 2026-04-06
 
 ### ClaudeOS v6 カーネル文書全面更新 (PR #36)
