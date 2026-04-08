@@ -216,7 +216,7 @@ copy config\config.json.template config\config.json
 ```json
 {
   "projectsDir": "D:\\",
-  "sshProjectsDir": "Z:\\",
+  "sshProjectsDir": "auto",
   "linuxHost": "your-linux-host",
   "linuxBase": "/home/kensan/Projects",
   "tools": { "defaultTool": "claude" }
@@ -314,7 +314,7 @@ start.bat
 | キー | 説明 |
 |------|------|
 | `projectsDir` | ローカル参照用のプロジェクトルート |
-| `sshProjectsDir` | SSH 実行時に Windows 側で参照する共有ドライブ |
+| `sshProjectsDir` | SSH 実行時の共有ドライブ (`"auto"` で空きレター自動検出) |
 | `linuxHost` | SSH 接続先 |
 | `linuxBase` | Linux 側のプロジェクトルート |
 | `tools.defaultTool` | `Start-All.ps1` のデフォルトツール |

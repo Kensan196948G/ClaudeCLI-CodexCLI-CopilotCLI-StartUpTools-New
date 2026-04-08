@@ -33,6 +33,84 @@ function Import-LauncherConfig {
     return (Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json)
 }
 
+function Find-AvailableDriveLetter {
+    [CmdletBinding()]
+    param(
+        [string[]]$PreferredLetters = @('P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'Y'),
+        [string[]]$ExcludeLetters = @()
+    )
+
+    $usedLetters = @((Get-PSDrive -PSProvider FileSystem -ErrorAction SilentlyContinue).Name)
+
+    foreach ($letter in $PreferredLetters) {
+        if ($letter -notin $usedLetters -and $letter -notin $ExcludeLetters) {
+            return $letter
+        }
+    }
+
+    # Preferred list exhausted — scan Z down to D
+    for ($code = [int][char]'Z'; $code -ge [int][char]'D'; $code--) {
+        $letter = [char]$code
+        if ("$letter" -notin $usedLetters -and "$letter" -notin $ExcludeLetters) {
+            return "$letter"
+        }
+    }
+
+    return $null
+}
+
+function Resolve-SshProjectsDir {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [object]$Config
+    )
+
+    $sshDir = $Config.sshProjectsDir
+
+    if ([string]::IsNullOrWhiteSpace($sshDir) -or $sshDir -eq 'auto') {
+        # Auto-detect: check if already mapped to projectsDirUnc
+        $uncPath = $Config.projectsDirUnc
+        if (-not [string]::IsNullOrWhiteSpace($uncPath)) {
+            $existingDrive = Get-SmbMapping -ErrorAction SilentlyContinue |
+                Where-Object { $_.RemotePath -eq $uncPath -and $_.Status -eq 'OK' } |
+                Select-Object -First 1
+
+            if ($existingDrive) {
+                $letter = ($existingDrive.LocalPath -replace ':', '')
+                Write-Host "[INFO]  既存マッピング検出: ${letter}:\ -> $uncPath" -ForegroundColor Cyan
+                return "${letter}:\"
+            }
+        }
+
+        # No existing mapping — find available letter and map
+        $letter = Find-AvailableDriveLetter
+        if (-not $letter) {
+            throw "空きドライブレターが見つかりません。config.json の sshProjectsDir に明示的なドライブレターを指定してください。"
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($uncPath)) {
+            try {
+                $null = New-PSDrive -Name $letter -PSProvider FileSystem -Root $uncPath -Persist -Scope Global -ErrorAction Stop
+                Write-Host "[INFO]  ドライブ自動マッピング: ${letter}:\ -> $uncPath" -ForegroundColor Green
+            }
+            catch {
+                Write-Warning "ドライブ自動マッピングに失敗しました (${letter}: -> $uncPath): $_"
+                Write-Host "[INFO]  SSH 直接接続にフォールバックします。" -ForegroundColor Yellow
+                return "auto:unmapped"
+            }
+        }
+        else {
+            Write-Host "[INFO]  projectsDirUnc 未設定のため、SSH 直接接続を使用します。" -ForegroundColor Yellow
+            return "auto:unmapped"
+        }
+
+        return "${letter}:\"
+    }
+
+    return $sshDir
+}
+
 function Test-LauncherCommand {
     param(
         [Parameter(Mandatory)]
@@ -176,7 +254,7 @@ function Resolve-LauncherProject {
         return $Project
     }
 
-    $projectsRoot = if ($Local) { $Config.projectsDir } else { $Config.sshProjectsDir }
+    $projectsRoot = if ($Local) { $Config.projectsDir } else { Resolve-SshProjectsDir -Config $Config }
     $dirs = $null
 
     if (Test-Path $projectsRoot) {
@@ -186,8 +264,12 @@ function Resolve-LauncherProject {
         }
     }
     elseif (-not $Local -and $LinuxHost -and $Config.linuxBase) {
-        # Z: ドライブ等が未接続でも SSH 経由でリモートのプロジェクト一覧を取得
-        Write-Host "[INFO] $projectsRoot にアクセスできません。SSH 経由でプロジェクト一覧を取得します..." -ForegroundColor Cyan
+        # ドライブ未接続または auto:unmapped — SSH 経由でリモートのプロジェクト一覧を取得
+        if ($projectsRoot -eq 'auto:unmapped') {
+            Write-Host "[INFO] ドライブマッピングなし。SSH 経由でプロジェクト一覧を取得します..." -ForegroundColor Cyan
+        } else {
+            Write-Host "[INFO] $projectsRoot にアクセスできません。SSH 経由でプロジェクト一覧を取得します..." -ForegroundColor Cyan
+        }
         $sshCommand = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { "ssh" }
         $connectTimeout = if ($env:AI_STARTUP_SSH_CONNECT_TIMEOUT) { $env:AI_STARTUP_SSH_CONNECT_TIMEOUT } else { "10" }
         try {
@@ -1137,6 +1219,8 @@ function Get-LauncherRecentToolResults {
 Export-ModuleMember -Function Get-StartupRoot
 Export-ModuleMember -Function Get-StartupConfigPath
 Export-ModuleMember -Function Import-LauncherConfig
+Export-ModuleMember -Function Find-AvailableDriveLetter
+Export-ModuleMember -Function Resolve-SshProjectsDir
 Export-ModuleMember -Function Test-LauncherCommand
 Export-ModuleMember -Function Assert-LauncherToolAvailable
 Export-ModuleMember -Function Get-LauncherApiKeyValue

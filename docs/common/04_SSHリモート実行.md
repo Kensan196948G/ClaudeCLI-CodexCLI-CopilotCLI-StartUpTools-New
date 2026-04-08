@@ -74,11 +74,22 @@ Host mydev
 
 ## 共有ドライブ
 
-SSH 起動では、Windows 側で `sshProjectsDir` に共有ドライブが見えている前提です。たとえば:
+`sshProjectsDir` を `"auto"` にすると、空きドライブレターを自動検出して `projectsDirUnc` をマッピングします。
+重複を避けて P → Q → R → ... の順に探索し、すべて使用済みの場合は Z → D の逆順でフォールバックします。
+マッピングに失敗した場合は SSH 直接接続に自動フォールバックします。
 
 ```json
 {
-  "sshProjectsDir": "Z:\\",
+  "sshProjectsDir": "auto",
+  "projectsDirUnc": "\\\\192.168.0.185\\Projects"
+}
+```
+
+特定のドライブレターを使いたい場合は明示的に指定できます:
+
+```json
+{
+  "sshProjectsDir": "P:\\",
   "projectsDirUnc": "\\\\192.168.0.185\\Projects"
 }
 ```
