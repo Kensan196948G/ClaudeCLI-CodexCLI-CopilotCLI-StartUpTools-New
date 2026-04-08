@@ -113,13 +113,19 @@ function Invoke-ClaudeSshViaStdin {
     $sshCommand = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { 'ssh' }
     $connectTimeout = if ($env:AI_STARTUP_SSH_CONNECT_TIMEOUT) { $env:AI_STARTUP_SSH_CONNECT_TIMEOUT } else { '10' }
 
+    # SSH ControlMaster で多重接続時の TCP 競合を回避する。
+    # デプロイSSH（-T）と実行SSH（-tt）が同一ホストへ同時接続する際に
+    # 既存セッションを再利用することで MaxStartups 制限を避ける。
+    $controlPath = "/tmp/ssh_cm_%r@%h_%p"
+    $sshControlArgs = "-o ControlMaster=auto -o ControlPath=$controlPath -o ControlPersist=15"
+
     $psi = [System.Diagnostics.ProcessStartInfo]::new()
     $psi.FileName = $sshCommand
     $psi.UseShellExecute = $false
     $psi.RedirectStandardInput = $true
     $psi.RedirectStandardOutput = $false
     $psi.RedirectStandardError = $false
-    $psi.Arguments = ('-T -o ConnectTimeout={0} -o StrictHostKeyChecking=accept-new {1} "bash -s"' -f $connectTimeout, $LinuxHost)
+    $psi.Arguments = ('-T -o ConnectTimeout={0} -o StrictHostKeyChecking=accept-new {1} {2} "bash -s"' -f $connectTimeout, $sshControlArgs, $LinuxHost)
 
     $process = [System.Diagnostics.Process]::new()
     $process.StartInfo = $psi
