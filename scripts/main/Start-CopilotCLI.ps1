@@ -83,6 +83,9 @@ try {
             exit 0
         }
 
+        # 起動通知音
+        Invoke-LauncherNotificationSound -Tool 'copilot' -Config $config -Wait $false
+
         # Start-Process -NoNewWindow -Wait を使用してコンソール制御を正しく渡す
         # & $command @arguments では PowerShell の引数展開が問題を引き起こす場合がある
         $process = Start-Process -FilePath $command -ArgumentList $arguments `
@@ -105,6 +108,9 @@ try {
         $launchContext.Result = 'success'
         exit 0
     }
+
+    # SSH起動通知音
+    Invoke-LauncherNotificationSound -Tool 'copilot' -Config $config -Wait $false
 
     Write-Info "Connecting via SSH: $linuxHost"
     $sshExitCode = Invoke-LauncherSshScript -LinuxHost $linuxHost -RunScript $runScript -RemoteScriptName "run-copilot-$Project.sh"
@@ -134,4 +140,6 @@ finally {
     if ($null -ne $config) {
         Complete-LauncherExecutionContext -Context $launchContext -Config $config
     }
+    # 終了通知音
+    Invoke-LauncherNotificationSound -Tool 'copilot' -Config $config -Wait $true
 }

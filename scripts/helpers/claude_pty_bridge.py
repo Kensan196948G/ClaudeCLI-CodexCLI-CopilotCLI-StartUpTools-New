@@ -3,10 +3,10 @@ import errno
 import os
 import pty
 import select
+import shlex
 import signal
 import sys
 import termios
-import time
 import tty
 
 
@@ -29,9 +29,60 @@ def _write_all(fd: int, data: bytes, max_retries: int = 5) -> None:
             select.select([], [fd], [], 0.2)
 
 
+def _acquire_instance_lock(project: str) -> "tuple[int | None, str]":
+    """
+    /tmp/claude_pty_<project>.lock にロックファイルを作成し、
+    別インスタンスが stdin を rawモードで取り合うのを防ぐ。
+    返り値: (lock_fd, lock_path)  取得失敗時は (None, lock_path)
+    """
+    safe = "".join(c if c.isalnum() or c in "-_" else "_" for c in project)
+    lock_path = f"/tmp/claude_pty_{safe}.lock"
+    try:
+        fd = os.open(lock_path, os.O_CREAT | os.O_WRONLY | os.O_EXCL, 0o600)
+        os.write(fd, str(os.getpid()).encode())
+        return fd, lock_path
+    except FileExistsError:
+        # 既存ロックファイルのPIDが生きているか確認
+        try:
+            with open(lock_path, "r") as f:
+                pid = int(f.read().strip())
+            os.kill(pid, 0)  # プロセスが存在すれば例外なし
+            return None, lock_path
+        except (ValueError, OSError):
+            # 古いロック（プロセス死亡）なら強制削除して再取得
+            try:
+                os.unlink(lock_path)
+            except OSError:
+                pass
+            try:
+                fd = os.open(lock_path, os.O_CREAT | os.O_WRONLY | os.O_EXCL, 0o600)
+                os.write(fd, str(os.getpid()).encode())
+                return fd, lock_path
+            except OSError:
+                return None, lock_path
+
+
 def main() -> int:
-    startup_cmd = base64.b64decode(os.environ["STARTUP_CMD_B64"]).decode("utf-8")
+    startup_cmd_base = base64.b64decode(os.environ["STARTUP_CMD_B64"]).decode("utf-8")
     prompt_text = base64.b64decode(os.environ["PROMPT_B64"]).decode("utf-8")
+
+    # ローカルモードと同様に、プロンプトを CLI 引数として claude に渡す。
+    # ブラケットペースト注入はタイミング依存で不安定なため、この方式に統一する。
+    startup_cmd = startup_cmd_base + " " + shlex.quote(prompt_text)
+
+    # stdin が実際の TTY でない場合は PTY bridge が正しく動作しない。
+    # 同一プロジェクトで多重起動されると stdin を取り合いフリーズするため、
+    # プロジェクト名ベースのロックファイルで同時起動を1つに制限する。
+    project = os.environ.get("CLAUDE_PROJECT", "default")
+    lock_fd, lock_path = _acquire_instance_lock(project)
+    if lock_fd is None:
+        sys.stderr.write(
+            f"[pty-bridge] ERROR: プロジェクト '{project}' の PTY bridge は既に起動中です。\n"
+            f"[pty-bridge] 多重起動は stdin (fd 0) の rawモード競合によりフリーズします。\n"
+            f"[pty-bridge] ロックファイル: {lock_path}\n"
+        )
+        sys.stderr.flush()
+        return 1
 
     pid, master_fd = pty.fork()
     if pid == 0:
@@ -44,45 +95,6 @@ def main() -> int:
     os.set_blocking(stdin_fd, False)
     os.set_blocking(master_fd, False)
     os.set_blocking(stdout_fd, False)
-
-    buffer = b""
-    prompt_sent = False
-    deadline = time.time() + 8
-    activity_deadline = time.time() + 3
-
-    def send_initial_prompt() -> None:
-        nonlocal prompt_sent
-        if prompt_sent:
-            return
-
-        payload = prompt_text
-        if not payload.endswith("\n"):
-            payload += "\n"
-
-        # Send as bracketed paste so Claude treats the whole startup prompt
-        # as one pasted block, then submit with Enter after the paste closes.
-        os.write(master_fd, b"\x1b[200~")
-        os.write(master_fd, payload.encode("utf-8"))
-        os.write(master_fd, b"\x1b[201~")
-
-        # Wait for Claude Code TUI to finish rendering the pasted content.
-        # Large pastes (500+ lines) need more time to be processed by the TUI.
-        time.sleep(2.0)
-
-        # Drain any pending output from the TUI during processing.
-        for _ in range(5):
-            rr, _, _ = select.select([master_fd], [], [], 0.3)
-            if master_fd in rr:
-                try:
-                    chunk = os.read(master_fd, 16384)
-                    if chunk:
-                        _write_all(stdout_fd, chunk)
-                except (BlockingIOError, OSError):
-                    pass
-
-        # Send Enter to submit the pasted prompt.
-        os.write(master_fd, b"\r")
-        prompt_sent = True
 
     try:
         while True:
@@ -102,20 +114,7 @@ def main() -> int:
                     break
 
                 _write_all(stdout_fd, data)
-                buffer = (buffer + data)[-16384:]
-                activity_deadline = time.time() + 1.0
-                if (not prompt_sent) and (
-                    "❯".encode("utf-8") in buffer
-                    or b'Try "' in buffer
-                    or b"Resume this session with:" in buffer
-                    or b"SessionStart:startup says:" in buffer
-                    or time.time() >= deadline
-                ):
-                    send_initial_prompt()
                 continue
-
-            if (not prompt_sent) and (time.time() >= deadline or time.time() >= activity_deadline):
-                send_initial_prompt()
 
             if stdin_fd in rlist:
                 try:
@@ -132,6 +131,12 @@ def main() -> int:
             pass
     finally:
         termios.tcsetattr(stdin_fd, termios.TCSADRAIN, old_tty)
+        # インスタンスロック解放
+        try:
+            os.close(lock_fd)
+            os.unlink(lock_path)
+        except OSError:
+            pass
 
     return 0
 
