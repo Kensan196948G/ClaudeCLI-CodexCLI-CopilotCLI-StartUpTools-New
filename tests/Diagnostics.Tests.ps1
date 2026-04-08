@@ -234,7 +234,7 @@ echo OpenSSH_9
             sshProjectsDir = $script:ProjectsRoot
             projectsDirUnc = '\\server\share'
             linuxHost = 'host'
-            linuxBase = '/mnt/LinuxHDD'
+            linuxBase = '/home/kensan/Projects'
             localExcludes = @()
             tools = @{
                 defaultTool = 'claude'
@@ -541,7 +541,7 @@ Describe 'Start-Menu recent projects' {
             sshProjectsDir = 'Z:\'
             projectsDirUnc = '\\server\share'
             linuxHost = 'host'
-            linuxBase = '/mnt/LinuxHDD'
+            linuxBase = '/home/kensan/Projects'
             localExcludes = @()
             tools = @{
                 defaultTool = 'claude'

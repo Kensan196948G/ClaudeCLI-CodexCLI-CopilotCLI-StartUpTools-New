@@ -29,7 +29,7 @@ BeforeAll {
         projectsDirUnc = '\\test-host\projects'
         sshProjectsDir = $script:SshProjectsRoot
         linuxHost      = 'test-linux'
-        linuxBase      = '/mnt/LinuxHDD'
+        linuxBase      = '/home/kensan/Projects'
         localExcludes  = @()
         tools          = @{
             defaultTool = 'claude'
@@ -182,7 +182,7 @@ Describe 'Start-Menu helper flows' {
             sshProjectsDir = $script:SshProjectsRoot
             projectsDirUnc = '\\test-host\projects'
             linuxHost = 'test-linux'
-            linuxBase = '/mnt/LinuxHDD'
+            linuxBase = '/home/kensan/Projects'
             localExcludes = @()
             tools = @{
                 defaultTool = 'claude'

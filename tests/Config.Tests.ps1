@@ -18,7 +18,7 @@ Describe 'Import-StartupConfig' {
             $validJson = @{
                 version   = '2.0.0'
                 linuxHost = 'testhost'
-                linuxBase = '/mnt/LinuxHDD'
+                linuxBase = '/home/kensan/Projects'
                 tools     = @{
                     defaultTool = 'claude'
                     claude      = @{ enabled = $true; command = 'claude' }
@@ -39,7 +39,7 @@ Describe 'Import-StartupConfig' {
 
         It 'linuxBase フィールドが正しく読み込まれること' {
             $result = Import-StartupConfig -ConfigPath $script:ValidConfigPath
-            $result.linuxBase | Should -Be '/mnt/LinuxHDD'
+            $result.linuxBase | Should -Be '/home/kensan/Projects'
         }
 
         It 'tools.defaultTool が正しく読み込まれること' {
@@ -94,7 +94,7 @@ Describe 'Import-StartupConfig' {
             $validJson = @{
                 version   = '2.0.0'
                 linuxHost = 'alias-testhost'
-                linuxBase = '/mnt/LinuxHDD'
+                linuxBase = '/home/kensan/Projects'
                 tools     = @{ defaultTool = 'claude'; claude = @{ enabled = $true } }
             } | ConvertTo-Json -Depth 5
             Set-Content -Path $script:AliasConfigPath -Value $validJson -Encoding UTF8
@@ -147,7 +147,7 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
                 sshProjectsDir = 'Z:\'
                 projectsDirUnc = '\\server\share'
                 linuxHost      = 'host'
-                linuxBase      = '/mnt/LinuxHDD'
+                linuxBase      = '/home/kensan/Projects'
                 tools          = @{
                     defaultTool = 'claude'
                     claude      = @{
@@ -188,7 +188,7 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
                 sshProjectsDir = 'Z:\'
                 projectsDirUnc = '\\server\share'
                 linuxHost      = 'host'
-                linuxBase      = '/mnt/LinuxHDD'
+                linuxBase      = '/home/kensan/Projects'
                 tools          = @{
                     defaultTool = 'claude'
                     claude      = @{
@@ -241,7 +241,7 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
                 sshProjectsDir = 'Z:\'
                 projectsDirUnc = '\\server\share'
                 linuxHost      = 'host'
-                linuxBase      = '/mnt/LinuxHDD'
+                linuxBase      = '/home/kensan/Projects'
                 tools          = @{
                     defaultTool = 'invalid'
                     claude      = @{
@@ -286,7 +286,7 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
                 sshProjectsDir = 'Z:\'
                 projectsDirUnc = '\\server\share'
                 linuxHost      = 'host'
-                linuxBase      = '/mnt/LinuxHDD'
+                linuxBase      = '/home/kensan/Projects'
                 tools          = @{
                     defaultTool = 'claude'
                     claude      = @{
@@ -331,7 +331,7 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
                 sshProjectsDir = 'Z:\'
                 projectsDirUnc = '\\server\share'
                 linuxHost      = 'host'
-                linuxBase      = '/mnt/LinuxHDD'
+                linuxBase      = '/home/kensan/Projects'
                 tools          = @{
                     defaultTool = 'claude'
                     claude      = @{ enabled = $true; command = 'claude'; args = @(); installCommand = 'install-claude'; env = @{}; apiKeyEnvVar = 'ANTHROPIC_API_KEY' }
@@ -356,7 +356,7 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
                 sshProjectsDir = 'Z:\'
                 projectsDirUnc = '\\server\share'
                 linuxHost      = 'host'
-                linuxBase      = '/mnt/LinuxHDD'
+                linuxBase      = '/home/kensan/Projects'
                 tools          = @{
                     defaultTool = 'claude'
                     claude      = @{ enabled = $true; command = 'claude'; args = @(); installCommand = 'install-claude'; env = @{}; apiKeyEnvVar = 'ANTHROPIC_API_KEY' }

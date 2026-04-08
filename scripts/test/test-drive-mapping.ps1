@@ -22,7 +22,7 @@ function Get-DriveMappingConfig {
 
     if (-not (Test-Path $ConfigPath)) {
         return [pscustomobject]@{
-            sshProjectsDir = 'Z:\'
+            sshProjectsDir = 'auto'
             projectsDirUnc = $null
             linuxHost = $null
             configFound = $false
@@ -79,10 +79,29 @@ function Get-DriveMappingReport {
         [pscustomobject]$ConfigInfo
     )
 
-    $sshDir = if ($ConfigInfo.sshProjectsDir) { $ConfigInfo.sshProjectsDir } else { 'Z:\' }
-    $driveLetter = ($sshDir -replace '[:\\]', '').Trim()
-    if ([string]::IsNullOrWhiteSpace($driveLetter)) {
-        $driveLetter = 'Z'
+    $sshDir = if ($ConfigInfo.sshProjectsDir) { $ConfigInfo.sshProjectsDir } else { 'auto' }
+
+    if ($sshDir -eq 'auto') {
+        # Auto mode: detect existing mapping or find available letter
+        $driveLetter = $null
+        if ($ConfigInfo.projectsDirUnc) {
+            $existingSmb = Get-SmbMapping -ErrorAction SilentlyContinue |
+                Where-Object { $_.RemotePath -eq $ConfigInfo.projectsDirUnc -and $_.Status -eq 'OK' } |
+                Select-Object -First 1
+            if ($existingSmb) {
+                $driveLetter = ($existingSmb.LocalPath -replace ':', '')
+            }
+        }
+        if (-not $driveLetter) {
+            $driveLetter = (Find-AvailableDriveLetter)
+            if (-not $driveLetter) { $driveLetter = 'P' }
+        }
+    }
+    else {
+        $driveLetter = ($sshDir -replace '[:\\]', '').Trim()
+        if ([string]::IsNullOrWhiteSpace($driveLetter)) {
+            $driveLetter = 'P'
+        }
     }
 
     $drivePath = "${driveLetter}:\"

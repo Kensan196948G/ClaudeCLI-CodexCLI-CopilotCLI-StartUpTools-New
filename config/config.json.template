@@ -2,10 +2,10 @@
   "_comment": "AI CLI スタートアップツール設定テンプレート v2.0.0 - コピーしてconfig.jsonとして使用",
   "version": "2.0.0",
   "projectsDir": "X:\\",
-  "sshProjectsDir": "Z:\\",
-  "projectsDirUnc": "\\\\<your-linux-host>\\LinuxHDD",
+  "sshProjectsDir": "auto",
+  "projectsDirUnc": "\\\\<your-linux-host>\\Projects",
   "linuxHost": "<your-linux-host>",
-  "linuxBase": "/mnt/LinuxHDD",
+  "linuxBase": "/home/kensan/Projects",
   "localExcludes": [],
   "tools": {
     "defaultTool": "claude",
