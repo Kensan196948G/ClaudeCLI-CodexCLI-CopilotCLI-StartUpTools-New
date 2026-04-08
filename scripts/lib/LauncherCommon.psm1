@@ -746,7 +746,9 @@ function Invoke-LauncherSshScript {
     }
     $sshArgList = @("-tt",
         "-o", "ConnectTimeout=$connectTimeout",
-        "-o", "StrictHostKeyChecking=accept-new") +
+        "-o", "StrictHostKeyChecking=accept-new",
+        "-o", "ServerAliveInterval=60",
+        "-o", "ServerAliveCountMax=3") +
         $cmArgs +
         @($LinuxHost, $normalizedRunScript)
 
