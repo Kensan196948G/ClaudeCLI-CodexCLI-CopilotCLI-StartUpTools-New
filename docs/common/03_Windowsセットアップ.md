@@ -88,9 +88,9 @@ Copy-Item config\config.json.template config\config.json
   "version": "2.0.0",
   "projectsDir": "D:\\",
   "sshProjectsDir": "Z:\\",
-  "projectsDirUnc": "\\\\192.168.0.185\\LinuxHDD",
+  "projectsDirUnc": "\\\\192.168.0.185\\Projects",
   "linuxHost": "192.168.0.185",
-  "linuxBase": "/mnt/LinuxHDD",
+  "linuxBase": "/home/kensan/Projects",
   "tools": {
     "defaultTool": "claude"
   }

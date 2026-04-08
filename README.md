@@ -218,7 +218,7 @@ copy config\config.json.template config\config.json
   "projectsDir": "D:\\",
   "sshProjectsDir": "Z:\\",
   "linuxHost": "your-linux-host",
-  "linuxBase": "/mnt/LinuxHDD",
+  "linuxBase": "/home/kensan/Projects",
   "tools": { "defaultTool": "claude" }
 }
 ```

@@ -29,7 +29,7 @@ Windows
 └─ Start-CopilotCLI.ps1
        ↓ SSH
 Linux
-└─ /mnt/LinuxHDD/{project} で各 CLI を起動
+└─ /home/kensan/Projects/{project} で各 CLI を起動
 ```
 
 ---
@@ -66,7 +66,7 @@ Host mydev
 ```json
 {
   "linuxHost": "mydev",
-  "linuxBase": "/mnt/LinuxHDD"
+  "linuxBase": "/home/kensan/Projects"
 }
 ```
 
@@ -79,7 +79,7 @@ SSH 起動では、Windows 側で `sshProjectsDir` に共有ドライブが見�
 ```json
 {
   "sshProjectsDir": "Z:\\",
-  "projectsDirUnc": "\\\\192.168.0.185\\LinuxHDD"
+  "projectsDirUnc": "\\\\192.168.0.185\\Projects"
 }
 ```
 

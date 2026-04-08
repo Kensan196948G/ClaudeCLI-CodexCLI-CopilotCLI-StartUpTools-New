@@ -3,9 +3,9 @@
   "version": "2.0.0",
   "projectsDir": "X:\\",
   "sshProjectsDir": "Z:\\",
-  "projectsDirUnc": "\\\\<your-linux-host>\\LinuxHDD",
+  "projectsDirUnc": "\\\\<your-linux-host>\\Projects",
   "linuxHost": "<your-linux-host>",
-  "linuxBase": "/mnt/LinuxHDD",
+  "linuxBase": "/home/kensan/Projects",
   "localExcludes": [],
   "tools": {
     "defaultTool": "claude",

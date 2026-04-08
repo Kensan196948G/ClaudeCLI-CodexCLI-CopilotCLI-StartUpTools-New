@@ -60,7 +60,7 @@ jobs:
             sshProjectsDir = $projects
             projectsDirUnc = '\\server\share'
             linuxHost = 'host'
-            linuxBase = '/mnt/LinuxHDD'
+            linuxBase = '/home/kensan/Projects'
             localExcludes = @()
             tools = @{
               defaultTool = 'claude'
