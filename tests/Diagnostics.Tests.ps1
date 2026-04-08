@@ -565,6 +565,7 @@ Describe 'Start-Menu recent projects' {
         $env:AI_STARTUP_CONFIG_PATH = $script:MenuConfigPath
         $env:AI_STARTUP_MENU_TEST_EXPORT = '1'
         . (Join-Path $script:RepoRoot 'scripts\main\Start-Menu.ps1')
+        $Config = Import-LauncherConfig -ConfigPath $script:MenuConfigPath
     }
 
     BeforeEach {
