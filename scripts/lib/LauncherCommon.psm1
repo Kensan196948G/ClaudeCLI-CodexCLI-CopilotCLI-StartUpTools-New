@@ -735,22 +735,20 @@ function Invoke-LauncherSshScript {
     # Start-Process -NoNewWindow -Wait でコンソールを直接 SSH に渡す。
     Write-Host "[INFO] SSH 接続中: $LinuxHost ..." -ForegroundColor Cyan
 
-    # SSH ControlMaster で多重起動時の接続競合を軽減する。
-    # 同一ホストへの2本目以降の接続は既存の TCP セッションを再利用するため、
-    # MaxStartups 制限への到達を防ぎハンドシェイクのブロックを回避できる。
-    $controlPath = if ($IsWindows -or $env:OS -eq 'Windows_NT') {
-        # Windows では ControlPath が使えない SSH 実装が多い。無効化してフォールバック。
-        "none"
+    # Windows OpenSSH は ControlMaster のUnixソケットをサポートしないため無効化する。
+    # Linuxでのみ ControlMaster=auto を使用して多重接続時の TCP 競合を回避する。
+    $cmArgs = if ($IsWindows -or $env:OS -eq 'Windows_NT') {
+        @("-o", "ControlMaster=no")
     } else {
-        "/tmp/ssh_cm_%r@%h_%p"
+        @("-o", "ControlMaster=auto",
+          "-o", "ControlPath=/tmp/ssh_cm_%r@%h_%p",
+          "-o", "ControlPersist=15")
     }
     $sshArgList = @("-tt",
         "-o", "ConnectTimeout=$connectTimeout",
-        "-o", "StrictHostKeyChecking=accept-new",
-        "-o", "ControlMaster=auto",
-        "-o", "ControlPath=$controlPath",
-        "-o", "ControlPersist=15",
-        $LinuxHost, $normalizedRunScript)
+        "-o", "StrictHostKeyChecking=accept-new") +
+        $cmArgs +
+        @($LinuxHost, $normalizedRunScript)
 
     $process = Start-Process -FilePath $sshCommand -ArgumentList $sshArgList `
         -NoNewWindow -Wait -PassThru
