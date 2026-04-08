@@ -188,7 +188,7 @@ flowchart LR
 | レイヤー | ファイル | 状態 |
 |---|---|---|
 | Core | `everything-claude-code/system/orchestrator.md` | ✅/❌ |
-| Core | `everything-claude-code/system/projects-switch.md` | ✅/❌ |
+| Core | `everything-claude-code/system/project-switch.md` | ✅/❌ |
 | Core | `everything-claude-code/system/token-budget.md` | ✅/❌ |
 | Core | `everything-claude-code/system/loop-guard.md` | ✅/❌ |
 | Executive | `everything-claude-code/executive/ai-cto.md` | ✅/❌ |

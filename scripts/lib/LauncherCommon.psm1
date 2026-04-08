@@ -663,45 +663,6 @@ function Sync-LauncherCopilotGlobalConfig {
         -EnsureParentDirectory
 }
 
-function New-RemoteTemplateDeployScript {
-    param(
-        [Parameter(Mandatory)]
-        [string]$TemplatePath,
-        [Parameter(Mandatory)]
-        [string]$TargetPath,
-        [Parameter(Mandatory)]
-        [string]$Label,
-        [switch]$EnsureParentDirectory
-    )
-
-    if (-not (Test-Path $TemplatePath)) {
-        return ""
-    }
-
-    $content = Get-Content $TemplatePath -Raw -Encoding UTF8
-    $base64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($content))
-    $mkdir = ""
-    if ($EnsureParentDirectory) {
-        $parent = Split-Path -Parent $TargetPath
-        if ($parent) {
-            $mkdir = "mkdir -p ""$parent""`n"
-        }
-    }
-
-    return @"
-$mkdir
-TMP_FILE=`$(mktemp)
-printf '%s' '$base64' | base64 -d > "`$TMP_FILE"
-if [ ! -f "$TargetPath" ] || ! cmp -s "`$TMP_FILE" "$TargetPath"; then
-  mv "`$TMP_FILE" "$TargetPath"
-  echo "[OK] $Label を配置/更新しました: $TargetPath"
-else
-  rm -f "`$TMP_FILE"
-  echo "[INFO] $Label は最新です: $TargetPath"
-fi
-"@
-}
-
 function Invoke-LauncherSshScript {
     param(
         [Parameter(Mandatory)]

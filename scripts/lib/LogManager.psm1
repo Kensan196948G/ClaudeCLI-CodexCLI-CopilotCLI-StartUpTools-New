@@ -116,6 +116,9 @@ function Invoke-LogRotation {
     $now = Get-Date
     $prefix = if ($logConfig.logPrefix) { $logConfig.logPrefix } else { 'claude-devtools' }
 
+    $defaultKeepDays = 7
+
+    # Rotate prefixed logs (claude-devtools-*.log etc.)
     Get-ChildItem -Path $logDir -Filter "${prefix}-*.log" -File | ForEach-Object {
         $age = ($now - $_.LastWriteTime).Days
         $name = $_.Name
@@ -148,6 +151,22 @@ function Invoke-LogRotation {
                     Write-Verbose "ログローテーション: 削除 (LEGACY, ${age}日経過) $name"
                 } catch {
                     Write-Warning "ログ削除失敗: $name - $_"
+                }
+            }
+        }
+    }
+
+    # Rotate menu-error / menu-launch logs and launch-metadata JSONL
+    $extraPatterns = @('menu-error-*.log', 'menu-launch-*.log', 'launch-metadata-*.jsonl')
+    foreach ($pattern in $extraPatterns) {
+        Get-ChildItem -Path $logDir -Filter $pattern -File -ErrorAction SilentlyContinue | ForEach-Object {
+            $age = ($now - $_.LastWriteTime).Days
+            if ($age -gt $defaultKeepDays) {
+                try {
+                    Remove-Item -Path $_.FullName -Force -ErrorAction Stop
+                    Write-Verbose "ログローテーション: 削除 (${age}日経過) $($_.Name)"
+                } catch {
+                    Write-Warning "ログ削除失敗: $($_.Name) - $_"
                 }
             }
         }

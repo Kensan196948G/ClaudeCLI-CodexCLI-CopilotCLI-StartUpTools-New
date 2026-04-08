@@ -28,6 +28,19 @@ jobs:
         run: |
           Invoke-Pester .\tests -CI
 
+      - name: Report Test Count
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path testResults.xml) {
+            $xml = [xml](Get-Content testResults.xml)
+            $root = $xml.'test-results'
+            $total = [int]$root.total
+            $failed = [int]$root.failures + [int]$root.errors
+            $passed = $total - $failed
+            Write-Host "::notice::Pester Tests: $passed passed / $total total ($failed failed)"
+          }
+
       - name: Restore files modified by Pester
         shell: pwsh
         run: |
@@ -106,6 +119,21 @@ jobs:
         shell: pwsh
         run: |
           .\scripts\tools\Sync-Issues.ps1 -Action check
+
+      - name: Validate State Schema
+        shell: pwsh
+        run: |
+          $schema = Get-Content .\docs\common\schemas\state.schema.json -Raw | ConvertFrom-Json
+          if (-not $schema.'$schema') { throw "state.schema.json is missing \$schema field" }
+          $required = $schema.required
+          if ($required.Count -lt 5) { throw "state.schema.json has too few required fields: $($required.Count)" }
+          Write-Host "state.schema.json validated: $($required.Count) required top-level fields"
+
+      - name: Markdown Lint
+        shell: bash
+        run: |
+          npx --yes markdownlint-cli2 "docs/**/*.md" "README.md" "CHANGELOG.md" || echo "::warning::Markdown lint found issues (non-blocking)"
+        continue-on-error: true
 
       - name: Check Legacy References
         shell: pwsh

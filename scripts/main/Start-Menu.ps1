@@ -16,14 +16,16 @@ Import-Module (Join-Path $ProjectRoot "scripts\lib\LauncherCommon.psm1") -Force 
 Import-Module (Join-Path $ProjectRoot "scripts\lib\Config.psm1") -Force
 Import-Module (Join-Path $ProjectRoot "scripts\lib\MenuCommon.psm1") -Force -DisableNameChecking
 
-Set-Location $ProjectRoot
+if ($env:AI_STARTUP_MENU_TEST_EXPORT -ne '1') {
+    Set-Location $ProjectRoot
 
-$ConfigPath = Get-StartupConfigPath -StartupRoot $ProjectRoot
-$Config = Import-LauncherConfig -ConfigPath $ConfigPath
-$LinuxHost = if ($Config.linuxHost) { $Config.linuxHost } else { "未設定" }
-$LinuxBase = if ($Config.linuxBase) { $Config.linuxBase } else { "未設定" }
-$LocalDir  = if ($Config.projectsDir) { $Config.projectsDir } else { "未設定" }
-$ShellExe = Get-LauncherShell
+    $ConfigPath = Get-StartupConfigPath -StartupRoot $ProjectRoot
+    $Config = Import-LauncherConfig -ConfigPath $ConfigPath
+    $LinuxHost = if ($Config.linuxHost) { $Config.linuxHost } else { "未設定" }
+    $LinuxBase = if ($Config.linuxBase) { $Config.linuxBase } else { "未設定" }
+    $LocalDir  = if ($Config.projectsDir) { $Config.projectsDir } else { "未設定" }
+    $ShellExe = Get-LauncherShell
+}
 
 function Get-RecentProjectSortWeight {
     param([object]$Entry)
