@@ -132,7 +132,7 @@ function Invoke-ClaudeSshViaStdin {
     $psi.RedirectStandardInput = $true
     $psi.RedirectStandardOutput = $false
     $psi.RedirectStandardError = $false
-    $psi.Arguments = ('-T -o ConnectTimeout={0} -o StrictHostKeyChecking=accept-new {1} {2} "bash -s"' -f $connectTimeout, $sshControlArgs, $LinuxHost)
+    $psi.Arguments = ('-T -o ConnectTimeout={0} -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=60 -o ServerAliveCountMax=3 {1} {2} "bash -s"' -f $connectTimeout, $sshControlArgs, $LinuxHost)
 
     $process = [System.Diagnostics.Process]::new()
     $process.StartInfo = $psi
