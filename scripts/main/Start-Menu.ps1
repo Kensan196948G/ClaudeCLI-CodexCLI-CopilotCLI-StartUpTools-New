@@ -269,12 +269,35 @@ function Invoke-ToolFromMenu {
         [switch]$Local
     )
 
-    $args = @("-Tool", $Tool)
-    if ($Local) {
-        $args += "-Local"
+    $scriptFile = Join-Path $ProjectRoot "scripts\main\Start-All.ps1"
+    $scriptArgs = [System.Collections.Generic.List[string]]@("-Tool", $Tool)
+    if ($Local) { $scriptArgs.Add("-Local") }
+
+    $modeLabel = if ($Local) { "Local" } else { "SSH" }
+    $windowTitle = "Claude CLI - $Tool ($modeLabel)"
+
+    # AI ツールは新しいターミナルウィンドウで起動する。
+    # 同一コンソールで複数セッションを起動すると stdin / PTY bridge が
+    # 競合して片方がフリーズするため、各セッションを独立した Window に分離する。
+    $launchArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-NoExit", "-File", $scriptFile) + $scriptArgs.ToArray()
+
+    Write-Host ""
+    Write-Host "  [$windowTitle] を新しいウィンドウで起動します..." -ForegroundColor Cyan
+
+    $wtPath = Get-Command wt -ErrorAction SilentlyContinue
+    if ($wtPath) {
+        # Windows Terminal が使えれば新しいタブで起動
+        $wtArgs = @("--title", $windowTitle, "--", $ShellExe) + $launchArgs
+        Start-Process wt -ArgumentList $wtArgs -ErrorAction SilentlyContinue
+    } else {
+        # フォールバック: 通常の新しいウィンドウで起動
+        Start-Process -FilePath $ShellExe -ArgumentList $launchArgs -WindowStyle Normal
     }
 
-    Invoke-MenuScript -File "scripts\main\Start-All.ps1" -ScriptArgs $args
+    Write-Host "  起動しました。このメニューは引き続き使用できます。" -ForegroundColor Green
+    Write-Host "  ヒント: 別プロジェクトを起動するには再度メニューから選んでください。" -ForegroundColor DarkGray
+    Write-Host ""
+    Read-Host "  Enterキーでメニューに戻ります"
 }
 
 if ($env:AI_STARTUP_MENU_TEST_EXPORT -eq '1') {
