@@ -213,6 +213,7 @@ function Show-Menu {
     Write-Host "    8.  MCP ヘルスチェック" -ForegroundColor Magenta
     Write-Host "    9.  Agent Teams ランタイム" -ForegroundColor Magenta
     Write-Host "    10. Worktree Manager" -ForegroundColor Magenta
+    Write-Host "    11. Architecture Check" -ForegroundColor Magenta
     Write-Host ""
 
     Write-Host "    0.  終了" -ForegroundColor Gray
@@ -297,6 +298,7 @@ while ($true) {
         "8"  { Invoke-MenuScript -File "scripts\test\Test-McpHealth.ps1" }
         "9"  { Invoke-MenuScript -File "scripts\test\Test-AgentTeams.ps1" }
         "10" { Invoke-MenuScript -File "scripts\test\Test-WorktreeManager.ps1" }
+        "11" { Invoke-MenuScript -File "scripts\test\Test-ArchitectureCheck.ps1" }
         "0"  { exit 0 }
         default {
             Write-Host ""

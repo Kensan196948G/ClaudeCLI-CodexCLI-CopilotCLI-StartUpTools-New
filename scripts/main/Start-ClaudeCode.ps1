@@ -113,13 +113,22 @@ function Invoke-ClaudeSshViaStdin {
     $sshCommand = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { 'ssh' }
     $connectTimeout = if ($env:AI_STARTUP_SSH_CONNECT_TIMEOUT) { $env:AI_STARTUP_SSH_CONNECT_TIMEOUT } else { '10' }
 
+    # Windows OpenSSH は ControlMaster のUnixソケットをサポートしないため無効化する。
+    # Linuxでのみ ControlMaster=auto を使用して多重接続時の TCP 競合を回避する。
+    $sshControlArgs = if ($IsWindows -or $env:OS -eq 'Windows_NT') {
+        "-o ControlMaster=no"
+    } else {
+        $controlPath = "/tmp/ssh_cm_%r@%h_%p"
+        "-o ControlMaster=auto -o ControlPath=$controlPath -o ControlPersist=15"
+    }
+
     $psi = [System.Diagnostics.ProcessStartInfo]::new()
     $psi.FileName = $sshCommand
     $psi.UseShellExecute = $false
     $psi.RedirectStandardInput = $true
     $psi.RedirectStandardOutput = $false
     $psi.RedirectStandardError = $false
-    $psi.Arguments = ('-T -o ConnectTimeout={0} -o StrictHostKeyChecking=accept-new {1} "bash -s"' -f $connectTimeout, $LinuxHost)
+    $psi.Arguments = ('-T -o ConnectTimeout={0} -o StrictHostKeyChecking=accept-new {1} {2} "bash -s"' -f $connectTimeout, $sshControlArgs, $LinuxHost)
 
     $process = [System.Diagnostics.Process]::new()
     $process.StartInfo = $psi
@@ -138,6 +147,7 @@ function Invoke-ClaudeSshViaStdin {
 
 $launchContext = New-LauncherExecutionContext
 $Config = $null
+$instanceMutex = $null
 
 try {
     $Config = Import-LauncherConfig -ConfigPath $ConfigPath
@@ -174,6 +184,28 @@ try {
         Write-Info 'Cancelled.'
         $launchContext.Result = 'cancelled'
         exit 0
+    }
+
+    # --- Instance Lock: 同一プロジェクトの多重起動を防止 ---
+    # PTY bridge が stdin (fd 0) を同時にrawモードで取り合うと片方が永久にフリーズするため、
+    # Named Mutex で同一プロジェクトのインスタンスを1つに制限する。
+    $safeProjectName = $Project -replace '[^A-Za-z0-9_-]', '_'
+    $mutexName = "Global\ClaudeCode_$safeProjectName"
+    $instanceMutex = [System.Threading.Mutex]::new($false, $mutexName)
+    $acquiredLock = $false
+    try {
+        $acquiredLock = $instanceMutex.WaitOne(0)
+    }
+    catch [System.Threading.AbandonedMutexException] {
+        # 前回プロセスが異常終了してMutexが放棄された場合は取得済みとして扱う
+        $acquiredLock = $true
+    }
+    if (-not $acquiredLock) {
+        Write-Warn "プロジェクト '$Project' の Claude Code は既に起動中です。"
+        Write-Warn "同一プロジェクトへの多重起動は PTY bridge の stdin 競合によるフリーズを引き起こします。"
+        Write-Warn "別プロジェクトを起動する場合は -Project パラメータでプロジェクト名を指定してください。"
+        $launchContext.Result = 'cancelled'
+        exit 1
     }
 
     if ($Local) {
@@ -242,6 +274,9 @@ try {
             $launchContext.Result = 'success'
             exit 0
         }
+
+        # 起動通知音（ノンブロッキング）
+        Invoke-LauncherNotificationSound -Tool 'claude' -Config $Config -Wait $false
 
         & claude @claudeLocalArgs
         $launchContext.Result = if ($LASTEXITCODE -eq 0) { 'success' } else { 'failure' }
@@ -322,6 +357,7 @@ set -e
 cd $(ConvertTo-BashSingleQuoted -Value $linuxProject)
 export STARTUP_CMD_B64='${startupCmdB64}'
 export PROMPT_B64='${promptB64}'
+export CLAUDE_PROJECT='${Project}'
 exec python3 $(ConvertTo-BashSingleQuoted -Value $remoteBridgePath)
 EOF
 chmod +x $(ConvertTo-BashSingleQuoted -Value $remoteBootstrap)
@@ -345,6 +381,9 @@ chmod +x $(ConvertTo-BashSingleQuoted -Value $remoteBootstrap)
         $launchContext.Result = 'failure'
         exit $deployExitCode
     }
+
+    # SSH起動通知音（ノンブロッキング：デプロイ完了後、セッション開始前）
+    Invoke-LauncherNotificationSound -Tool 'claude' -Config $Config -Wait $false
 
     $runScript = "cd $(ConvertTo-BashSingleQuoted -Value $linuxProject) && exec bash $(ConvertTo-BashSingleQuoted -Value $remoteBootstrap)"
     $sshExitCode = Invoke-LauncherSshScript -LinuxHost $linuxHost -RunScript $runScript -RemoteScriptName "run-claude-$Project.sh"
@@ -373,5 +412,12 @@ catch {
 finally {
     if ($Config) {
         Complete-LauncherExecutionContext -Context $launchContext -Config $Config
+    }
+    # 終了通知音（同期再生：セッション終了を確実に通知）
+    Invoke-LauncherNotificationSound -Tool 'claude' -Config $Config -Wait $true
+    # インスタンスロック解放
+    if ($null -ne $instanceMutex) {
+        try { $instanceMutex.ReleaseMutex() } catch { }
+        $instanceMutex.Dispose()
     }
 }

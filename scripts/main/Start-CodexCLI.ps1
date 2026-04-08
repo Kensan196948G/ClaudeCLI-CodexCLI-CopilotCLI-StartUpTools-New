@@ -83,6 +83,9 @@ try {
             exit 0
         }
 
+        # 起動通知音
+        Invoke-LauncherNotificationSound -Tool 'codex' -Config $Config -Wait $false
+
         & codex @($toolConfig.args)
         $launchContext.Result = if ($LASTEXITCODE -eq 0) { 'success' } else { 'failure' }
         exit $LASTEXITCODE
@@ -101,6 +104,9 @@ try {
         $launchContext.Result = 'success'
         exit 0
     }
+
+    # SSH起動通知音
+    Invoke-LauncherNotificationSound -Tool 'codex' -Config $Config -Wait $false
 
     Write-Info "Connecting via SSH: $linuxHost"
     $sshExitCode = Invoke-LauncherSshScript -LinuxHost $linuxHost -RunScript $runScript -RemoteScriptName "run-codex-$Project.sh"
@@ -129,4 +135,6 @@ finally {
     if ($Config) {
         Complete-LauncherExecutionContext -Context $launchContext -Config $Config
     }
+    # 終了通知音
+    Invoke-LauncherNotificationSound -Tool 'codex' -Config $Config -Wait $true
 }
