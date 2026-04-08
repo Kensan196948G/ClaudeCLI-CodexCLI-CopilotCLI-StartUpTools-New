@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ClaudeOS Session State",
+  "description": "Schema for state.json — session runtime state management",
+  "type": "object",
+  "required": ["execution", "token", "stable", "session", "goal", "kpi", "automation"],
+  "properties": {
+    "execution": {
+      "type": "object",
+      "required": ["start_time", "max_duration_minutes", "elapsed_minutes", "remaining_minutes", "phase"],
+      "properties": {
+        "start_time": { "type": "string", "format": "date-time" },
+        "max_duration_minutes": { "type": "integer", "minimum": 1 },
+        "elapsed_minutes": { "type": "integer", "minimum": 0 },
+        "remaining_minutes": { "type": "integer", "minimum": 0 },
+        "phase": { "type": "string", "enum": ["Monitor", "Development", "Verify", "Improvement", "Debug", "Release"] },
+        "loop_number": { "type": "integer", "minimum": 1 },
+        "auto_stop_threshold": { "type": "integer", "minimum": 1 },
+        "graceful_shutdown": { "type": "boolean" }
+      }
+    },
+    "token": {
+      "type": "object",
+      "required": ["total_budget", "used", "remaining"],
+      "properties": {
+        "total_budget": { "type": "integer", "minimum": 1 },
+        "used": { "type": "integer", "minimum": 0 },
+        "remaining": { "type": "integer", "minimum": 0 },
+        "allocation": { "type": "object" },
+        "dynamic_mode": { "type": "boolean" },
+        "current_phase_budget": { "type": "integer", "minimum": 0 },
+        "current_phase_used": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "stable": {
+      "type": "object",
+      "required": ["consecutive_success", "target_n"],
+      "properties": {
+        "consecutive_success": { "type": "integer", "minimum": 0 },
+        "target_n": { "type": "integer", "minimum": 1 },
+        "last_check": { "type": "string" },
+        "test_passed": { "type": "integer", "minimum": 0 },
+        "test_failed": { "type": "integer", "minimum": 0 },
+        "ci_status": { "type": "string" }
+      }
+    },
+    "session": {
+      "type": "object",
+      "required": ["version"],
+      "properties": {
+        "version": { "type": "string" },
+        "issues_in_progress": { "type": "array", "items": { "type": "integer" } },
+        "blocked_issues": { "type": "array", "items": { "type": "integer" } },
+        "completed_this_session": { "type": "array", "items": { "type": "integer" } },
+        "pr_merged": { "type": "array", "items": { "type": "integer" } }
+      }
+    },
+    "goal": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": { "type": "string" },
+        "phase": { "type": "integer" },
+        "target_version": { "type": "string" }
+      }
+    },
+    "kpi": {
+      "type": "object",
+      "required": ["success_rate_target"],
+      "properties": {
+        "success_rate_target": { "type": "number", "minimum": 0, "maximum": 1 },
+        "test_count_target": { "type": "integer", "minimum": 0 },
+        "test_count_actual": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "automation": {
+      "type": "object",
+      "properties": {
+        "auto_issue_generation": { "type": "boolean" },
+        "self_evolution": { "type": "boolean" },
+        "architecture_check": { "type": "boolean" }
+      }
+    }
+  }
+}
