@@ -32,14 +32,13 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $xml = [xml](Get-Content testResults.xml -ErrorAction SilentlyContinue)
-          if ($xml) {
-            $total = $xml.'test-results'.total
-            $passed = $xml.'test-results'.passed
-            $failed = $xml.'test-results'.failures
+          if (Test-Path testResults.xml) {
+            $xml = [xml](Get-Content testResults.xml)
+            $root = $xml.'test-results'
+            $total = [int]$root.total
+            $failed = [int]$root.failures + [int]$root.errors
+            $passed = $total - $failed
             Write-Host "::notice::Pester Tests: $passed passed / $total total ($failed failed)"
-            echo "PESTER_TOTAL=$total" >> $env:GITHUB_ENV
-            echo "PESTER_PASSED=$passed" >> $env:GITHUB_ENV
           }
 
       - name: Restore files modified by Pester
@@ -131,12 +130,9 @@ jobs:
           Write-Host "state.schema.json validated: $($required.Count) required top-level fields"
 
       - name: Markdown Lint
-        shell: pwsh
+        shell: bash
         run: |
-          npx --yes markdownlint-cli2 "docs/**/*.md" "README.md" "CHANGELOG.md" 2>&1 | Tee-Object -Variable mdlintOutput
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "::warning::Markdown lint found issues (non-blocking)"
-          }
+          npx --yes markdownlint-cli2 "docs/**/*.md" "README.md" "CHANGELOG.md" || echo "::warning::Markdown lint found issues (non-blocking)"
         continue-on-error: true
 
       - name: Check Legacy References
