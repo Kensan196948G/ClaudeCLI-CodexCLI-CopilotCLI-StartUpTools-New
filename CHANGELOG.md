@@ -1,5 +1,48 @@
 # CHANGELOG
 
+## [v2.9.0-dev] - 2026-04-08
+
+### Phase 3: Self Evolution & Architecture Check (Issue #49, #50)
+
+#### 🧠 Self Evolution システム実装 (Issue #50)
+- `scripts/lib/SelfEvolution.psm1` 新規作成
+- `Invoke-SelfEvolutionCycle` — フェーズ別振り返り・改善提案・次アクション自動生成
+- `Save-EvolutionRecord / Get-EvolutionHistory` — セッション記録のJSON永続化
+- `Get-FrequentLessons` — 繰り返し学習事項のランキング集計
+- `Show-EvolutionSummary` — 過去N セッションの成功率・学習サマリー表示
+- `tests/SelfEvolution.Tests.ps1` Pester テスト 20件追加
+
+#### 🏗️ Architecture Check Loop実装 (Issue #49)
+- `scripts/lib/ArchitectureCheck.psm1` 新規作成
+- `Invoke-ArchitectureCheck` — ファイルスキャン + 禁止パターン検出 (5ルール)
+- `Get-ArchitectureViolations` — Severity別フィルタ取得
+- `Show-ArchitectureCheckReport` — 違反レポート可視化
+- `Test-ModuleDependencies` — モジュール間依存関係の定義検証
+- 検出ルール: DIRECT_PUSH_MAIN / HARDCODED_SECRET / MISSING_STRICT_MODE / CIRCULAR_IMPORT / MISSING_ERROR_HANDLING
+- `scripts/test/Test-ArchitectureCheck.ps1` スタンドアロン実行スクリプト追加
+- `tests/ArchitectureCheck.Tests.ps1` Pester テスト 15件追加
+- Start-Menu にメニュー項目「11. Architecture Check」追加
+
+#### 🔀 PR #48 マージ (SSH linuxBase修正)
+- `LauncherCommon.psm1`: ドライブレター自動検出・重複回避機能追加
+- `tests/LauncherCommon.Tests.ps1` 77件の新規テスト追加
+- 各種ドキュメント・設定テンプレート更新
+
+### テスト・CI
+- テスト数: 269 (v2.8.0) → 304 (+35件)
+- CI: 全テスト PASS
+
+### 変更ファイル (主要)
+- `scripts/lib/SelfEvolution.psm1` (新規)
+- `scripts/lib/ArchitectureCheck.psm1` (新規)
+- `scripts/test/Test-ArchitectureCheck.ps1` (新規)
+- `tests/SelfEvolution.Tests.ps1` (新規)
+- `tests/ArchitectureCheck.Tests.ps1` (新規)
+- `scripts/main/Start-Menu.ps1` (メニュー項目11追加)
+- `README.md` (Phase 3対応全面更新)
+
+---
+
 ## [v2.8.0] - 2026-04-06
 
 ### Issue同期 CI/hooks 統合 (PR #45)

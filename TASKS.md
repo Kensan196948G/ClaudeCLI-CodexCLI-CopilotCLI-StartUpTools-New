@@ -15,6 +15,11 @@
 6. [DONE] [Priority:P2][Owner:Developer][Source:Manual] MCP/AgentTeams 機能強化 (PR #40)
 7. [DONE] [Priority:P2][Owner:Developer][Source:Manual] Worktree 自動クリーンアップ (PR #41)
 8. [DONE] [Priority:P2][Owner:DevOps][Source:Manual] Issue同期 CI/hooks 統合 (PR #45)
+9. [DONE] [Priority:P2][Owner:Architect][Source:GitHub#49] Architecture Check Loop実装 (Phase 3)
+10. [DONE] [Priority:P2][Owner:Architect][Source:GitHub#50] Self Evolution システム実装 (Phase 3)
+11. [Priority:P3][Owner:Developer][Source:GitHub#34] 開発ダッシュボード UI (Phase 3)
+12. [Priority:P3][Owner:Ops][Source:GitHub#34] Memory MCP 永続化統合 (Phase 3)
+13. [Priority:P3][Owner:Ops][Source:GitHub#34] Boot Sequence 完全自動化 (Phase 3)
 
 ## Auto Extracted From Agent Teams Matrix
 
