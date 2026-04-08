@@ -272,6 +272,9 @@ try {
             exit 0
         }
 
+        # 起動通知音（ノンブロッキング）
+        Invoke-LauncherNotificationSound -Tool 'claude' -Config $Config -Wait $false
+
         & claude @claudeLocalArgs
         $launchContext.Result = if ($LASTEXITCODE -eq 0) { 'success' } else { 'failure' }
         exit $LASTEXITCODE
@@ -376,6 +379,9 @@ chmod +x $(ConvertTo-BashSingleQuoted -Value $remoteBootstrap)
         exit $deployExitCode
     }
 
+    # SSH起動通知音（ノンブロッキング：デプロイ完了後、セッション開始前）
+    Invoke-LauncherNotificationSound -Tool 'claude' -Config $Config -Wait $false
+
     $runScript = "cd $(ConvertTo-BashSingleQuoted -Value $linuxProject) && exec bash $(ConvertTo-BashSingleQuoted -Value $remoteBootstrap)"
     $sshExitCode = Invoke-LauncherSshScript -LinuxHost $linuxHost -RunScript $runScript -RemoteScriptName "run-claude-$Project.sh"
     if ($sshExitCode -eq 255) {
@@ -404,6 +410,8 @@ finally {
     if ($Config) {
         Complete-LauncherExecutionContext -Context $launchContext -Config $Config
     }
+    # 終了通知音（同期再生：セッション終了を確実に通知）
+    Invoke-LauncherNotificationSound -Tool 'claude' -Config $Config -Wait $true
     # インスタンスロック解放
     if ($null -ne $instanceMutex) {
         try { $instanceMutex.ReleaseMutex() } catch { }

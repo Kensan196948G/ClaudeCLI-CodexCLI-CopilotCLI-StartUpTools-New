@@ -1293,6 +1293,83 @@ Export-ModuleMember -Function Get-LauncherAgentLaneEvents
 Export-ModuleMember -Function Get-LauncherTokenBudgetStatus
 Export-ModuleMember -Function Get-LauncherBacklogSummary
 
+# WinMM type definition is loaded lazily inside Invoke-LauncherNotificationSound
+
+function Invoke-LauncherNotificationSound {
+    <#
+    .SYNOPSIS
+        通知音を再生する。MP3/WAV に対応し、ウィンドウを開かずバックグラウンドで再生する。
+    .PARAMETER Tool
+        ツール名 (claude / codex / copilot)。config.json の notifications.sounds からパスを取得。
+    .PARAMETER Config
+        Import-LauncherConfig で読み込んだ設定オブジェクト。
+    .PARAMETER Wait
+        $true の場合、音の再生が完了するまでブロックする（終了通知向け）。
+        $false の場合はノンブロッキング（起動通知向け）。デフォルト $false。
+    #>
+    param(
+        [string]$Tool = 'claude',
+        [object]$Config,
+        [bool]$Wait = $false
+    )
+
+    if ($null -eq $Config) { return }
+    # StrictMode 対応: PSObject.Properties 経由で安全にアクセス
+    $notifProp = $Config.PSObject.Properties['notifications']
+    if ($null -eq $notifProp) { return }
+    $notif = $notifProp.Value
+    if ($null -eq $notif -or -not $notif.soundEnabled) { return }
+
+    # ツール別サウンドパスを取得。個別設定がなければ共通パスにフォールバック。
+    $soundPath = $null
+    if ($notif.sounds -and $notif.sounds.PSObject.Properties[$Tool]) {
+        $soundPath = $notif.sounds.PSObject.Properties[$Tool].Value
+    }
+    if ([string]::IsNullOrWhiteSpace($soundPath)) { return }
+    $soundPath = [Environment]::ExpandEnvironmentVariables($soundPath)
+    if (-not (Test-Path $soundPath)) {
+        Write-Warning "[Sound] ファイルが見つかりません: $soundPath"
+        return
+    }
+
+    try {
+        # WinMM MCI API 型定義（初回呼び出し時のみ）
+        if (-not ([System.Management.Automation.PSTypeName]'LauncherWinMM').Type) {
+            Add-Type -TypeDefinition @'
+using System;
+using System.Text;
+using System.Runtime.InteropServices;
+public class LauncherWinMM {
+    [DllImport("winmm.dll", CharSet = CharSet.Auto)]
+    public static extern int mciSendString(string lpstrCommand, StringBuilder lpstrReturnString, int uReturnLength, IntPtr hwndCallback);
+}
+'@ -ErrorAction SilentlyContinue
+        }
+        if (-not ([System.Management.Automation.PSTypeName]'LauncherWinMM').Type) { return }
+
+        $alias = "launcher_notif_$([System.Guid]::NewGuid().ToString('N').Substring(0,8))"
+        $escaped = $soundPath -replace '"', ''
+
+        [void][LauncherWinMM]::mciSendString("open `"$escaped`" alias $alias", $null, 0, [IntPtr]::Zero)
+        if ($Wait) {
+            [void][LauncherWinMM]::mciSendString("play $alias wait", $null, 0, [IntPtr]::Zero)
+            [void][LauncherWinMM]::mciSendString("close $alias", $null, 0, [IntPtr]::Zero)
+        } else {
+            [void][LauncherWinMM]::mciSendString("play $alias", $null, 0, [IntPtr]::Zero)
+            # ノンブロッキングの場合、8秒後にバックグラウンドでクローズ
+            $localAlias = $alias
+            $null = [System.Threading.Tasks.Task]::Run([Action]{
+                Start-Sleep -Milliseconds 8000
+                try { [void][LauncherWinMM]::mciSendString("close $localAlias", $null, 0, [IntPtr]::Zero) } catch {}
+            })
+        }
+    }
+    catch {
+        # 音声再生の失敗はサイレントに無視（起動をブロックしない）
+    }
+}
+Export-ModuleMember -Function Invoke-LauncherNotificationSound
+
 function New-RemoteTemplateDeployScript {
     param(
         [Parameter(Mandatory)]

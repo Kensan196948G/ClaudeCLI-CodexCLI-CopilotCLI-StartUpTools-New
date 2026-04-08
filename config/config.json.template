@@ -93,5 +93,16 @@
     "enabled": true,
     "maxHistory": 10,
     "historyFile": "%USERPROFILE%\\.ai-startup\\recent-projects.json"
+  },
+  "notifications": {
+    "_comment": "Windows Terminal 通知音設定。soundEnabled:false で無効化できます。",
+    "soundEnabled": true,
+    "playOnStart": true,
+    "playOnExit": true,
+    "sounds": {
+      "claude":  "D:\\アラートサウンドデザイン＃01.mp3",
+      "codex":   "D:\\アラートサウンドデザイン＃01.mp3",
+      "copilot": "D:\\アラートサウンドデザイン＃01.mp3"
+    }
   }
 }
