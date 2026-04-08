@@ -27,7 +27,5 @@
 2. [Priority:P2][Owner:ScrumMaster][Source:AgentTeamsMatrix] issue / backlog 自動生成
 ## GitHub Issues Sync
 
-1. [Priority:P2][Owner:Unassigned][Source:GitHub#57] refactor: プロジェクト構造の全面改善（15項目）
-2. [Priority:P1][Owner:Unassigned][Source:GitHub#55] fix: StartScripts.Tests.ps1 の BeforeAll 失敗（Start-Menu.ps1 dot-source エラー）
-3. [Priority:P3][Owner:Unassigned][Source:GitHub#34] milestone: v3.0.0 リリース計画 (2026-10)
+1. [Priority:P3][Owner:Unassigned][Source:GitHub#34] milestone: v3.0.0 リリース計画 (2026-10)
 
