@@ -84,10 +84,14 @@ function Get-StartPromptSections {
         throw "START_PROMPT.md の形式が不正です。'## LOOP_COMMANDS' と '## PROMPT_BODY' が必要です。"
     }
 
+    # PromptBody を先頭に配置する。
+    # LoopCommands（/loop ...）が先頭だと Claude Code のスラッシュコマンド解析が
+    # 発火して PromptBody 全体が /loop スキルの引数として消費されるため、
+    # 通常テキスト（PromptBody）を先に送り、/loop 行は末尾で Claude に読ませる。
     return [pscustomobject]@{
         LoopCommands = ($loopMatch.Groups[1].Value.Trim())
         PromptBody   = ($bodyMatch.Groups[1].Value.Trim())
-        FullText     = (($loopMatch.Groups[1].Value.Trim()) + "`r`n`r`n" + ($bodyMatch.Groups[1].Value.Trim())).Trim()
+        FullText     = (($bodyMatch.Groups[1].Value.Trim()) + "`r`n`r`n" + ($loopMatch.Groups[1].Value.Trim())).Trim()
     }
 }
 
