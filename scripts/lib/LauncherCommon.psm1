@@ -735,9 +735,21 @@ function Invoke-LauncherSshScript {
     # Start-Process -NoNewWindow -Wait でコンソールを直接 SSH に渡す。
     Write-Host "[INFO] SSH 接続中: $LinuxHost ..." -ForegroundColor Cyan
 
+    # SSH ControlMaster で多重起動時の接続競合を軽減する。
+    # 同一ホストへの2本目以降の接続は既存の TCP セッションを再利用するため、
+    # MaxStartups 制限への到達を防ぎハンドシェイクのブロックを回避できる。
+    $controlPath = if ($IsWindows -or $env:OS -eq 'Windows_NT') {
+        # Windows では ControlPath が使えない SSH 実装が多い。無効化してフォールバック。
+        "none"
+    } else {
+        "/tmp/ssh_cm_%r@%h_%p"
+    }
     $sshArgList = @("-tt",
         "-o", "ConnectTimeout=$connectTimeout",
         "-o", "StrictHostKeyChecking=accept-new",
+        "-o", "ControlMaster=auto",
+        "-o", "ControlPath=$controlPath",
+        "-o", "ControlPersist=15",
         $LinuxHost, $normalizedRunScript)
 
     $process = Start-Process -FilePath $sshCommand -ArgumentList $sshArgList `
@@ -923,7 +935,31 @@ function Write-LauncherMetadataLog {
     }
 
     $line = $Entry | ConvertTo-Json -Compress -Depth 6
-    Add-Content -Path $logPath -Value $line -Encoding UTF8
+
+    # 複数インスタンスが同時に書き込むと IOException が発生する。
+    # 最大5回リトライして競合を回避する。
+    $maxRetries = 5
+    $retryDelay = 50  # ms
+    for ($i = 0; $i -lt $maxRetries; $i++) {
+        try {
+            $stream = [System.IO.File]::Open($logPath, [System.IO.FileMode]::Append, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+            try {
+                $writer = [System.IO.StreamWriter]::new($stream, [System.Text.Encoding]::UTF8)
+                $writer.WriteLine($line)
+                $writer.Flush()
+            }
+            finally {
+                $stream.Close()
+            }
+            break
+        }
+        catch [System.IO.IOException] {
+            if ($i -lt ($maxRetries - 1)) {
+                Start-Sleep -Milliseconds $retryDelay
+            }
+            # 最終リトライも失敗した場合はログ書き込みをスキップ（起動をブロックしない）
+        }
+    }
 }
 
 function New-LauncherExecutionContext {

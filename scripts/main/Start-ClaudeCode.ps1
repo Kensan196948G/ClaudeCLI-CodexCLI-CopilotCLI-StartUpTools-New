@@ -138,6 +138,7 @@ function Invoke-ClaudeSshViaStdin {
 
 $launchContext = New-LauncherExecutionContext
 $Config = $null
+$instanceMutex = $null
 
 try {
     $Config = Import-LauncherConfig -ConfigPath $ConfigPath
@@ -174,6 +175,28 @@ try {
         Write-Info 'Cancelled.'
         $launchContext.Result = 'cancelled'
         exit 0
+    }
+
+    # --- Instance Lock: 同一プロジェクトの多重起動を防止 ---
+    # PTY bridge が stdin (fd 0) を同時にrawモードで取り合うと片方が永久にフリーズするため、
+    # Named Mutex で同一プロジェクトのインスタンスを1つに制限する。
+    $safeProjectName = $Project -replace '[^A-Za-z0-9_-]', '_'
+    $mutexName = "Global\ClaudeCode_$safeProjectName"
+    $instanceMutex = [System.Threading.Mutex]::new($false, $mutexName)
+    $acquiredLock = $false
+    try {
+        $acquiredLock = $instanceMutex.WaitOne(0)
+    }
+    catch [System.Threading.AbandonedMutexException] {
+        # 前回プロセスが異常終了してMutexが放棄された場合は取得済みとして扱う
+        $acquiredLock = $true
+    }
+    if (-not $acquiredLock) {
+        Write-Warn "プロジェクト '$Project' の Claude Code は既に起動中です。"
+        Write-Warn "同一プロジェクトへの多重起動は PTY bridge の stdin 競合によるフリーズを引き起こします。"
+        Write-Warn "別プロジェクトを起動する場合は -Project パラメータでプロジェクト名を指定してください。"
+        $launchContext.Result = 'cancelled'
+        exit 1
     }
 
     if ($Local) {
@@ -322,6 +345,7 @@ set -e
 cd $(ConvertTo-BashSingleQuoted -Value $linuxProject)
 export STARTUP_CMD_B64='${startupCmdB64}'
 export PROMPT_B64='${promptB64}'
+export CLAUDE_PROJECT='${Project}'
 exec python3 $(ConvertTo-BashSingleQuoted -Value $remoteBridgePath)
 EOF
 chmod +x $(ConvertTo-BashSingleQuoted -Value $remoteBootstrap)
@@ -373,5 +397,10 @@ catch {
 finally {
     if ($Config) {
         Complete-LauncherExecutionContext -Context $launchContext -Config $Config
+    }
+    # インスタンスロック解放
+    if ($null -ne $instanceMutex) {
+        try { $instanceMutex.ReleaseMutex() } catch { }
+        $instanceMutex.Dispose()
     }
 }
