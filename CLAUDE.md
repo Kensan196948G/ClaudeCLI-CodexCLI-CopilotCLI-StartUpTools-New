@@ -1,4 +1,4 @@
-# ClaudeOS v7.1 — プロジェクト設定
+# ClaudeOS v7.4 — プロジェクト設定
 ## Autonomous Operations Edition
 
 このファイルはプロジェクト単位の Claude Code 運用ポリシーです。
