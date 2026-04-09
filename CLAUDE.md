@@ -40,7 +40,7 @@
 ### ステップ 3: 自律開発の開始
 
 
-設定された時間内でのMonitor、Development、Verify、ImprovementをN回ループ（ループ回数は自動判定でOKです。）で進めてください。
+設定された時間内でのMonitor、Development、Verify、ImprovementをN回ループ（ループ回数はCTO判断でOKです。）で進めてください。
 ループ回数は KPI 状態・CI 状態・進捗により動的に決定する
 AgentTeams機能を大いに活用してください。
 Auto Mode による自律開発を実行してください。
