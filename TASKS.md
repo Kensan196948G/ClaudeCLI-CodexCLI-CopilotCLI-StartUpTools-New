@@ -23,8 +23,8 @@
 
 ## Auto Extracted From Agent Teams Matrix
 
-1. [DONE] [Priority:P2][Owner:Ops][Source:AgentTeamsMatrix] worktree ベースの並列ブランチ運用 (WorktreeManager.psm1)
-2. [DONE] [Priority:P2][Owner:ScrumMaster][Source:AgentTeamsMatrix] issue / backlog 自動生成 (IssueSyncManager.psm1)
+1. [Priority:P2][Owner:Ops][Source:AgentTeamsMatrix] worktree ベースの並列ブランチ運用
+2. [Priority:P2][Owner:ScrumMaster][Source:AgentTeamsMatrix] issue / backlog 自動生成
 ## GitHub Issues Sync
 
 1. [Priority:P3][Owner:Unassigned][Source:GitHub#34] milestone: v3.0.0 リリース計画 (2026-10)
