@@ -191,21 +191,17 @@ function Show-Menu {
 
     Write-Host ""
     Write-Host $sep -ForegroundColor Cyan
-    Write-Host "   AI CLI ユニバーサルスタートアップツール v2.0" -ForegroundColor Cyan
-    Write-Host "   Claude Code / Codex CLI / GitHub Copilot CLI" -ForegroundColor DarkCyan
+    Write-Host "   AI CLI ユニバーサルスタートアップツール v3.0" -ForegroundColor Cyan
+    Write-Host "   Claude Code" -ForegroundColor DarkCyan
     Write-Host $sep -ForegroundColor Cyan
     Write-Host ""
 
     Write-Host "  -- SSH 接続 ($LinuxHost -> $LinuxBase) --" -ForegroundColor Yellow
     Write-Host "    S1. Claude Code を起動" -ForegroundColor Yellow
-    Write-Host "    S2. Codex CLI を起動" -ForegroundColor Yellow
-    Write-Host "    S3. GitHub Copilot CLI を起動" -ForegroundColor Yellow
     Write-Host ""
 
     Write-Host "  -- ローカル ($LocalDir) --" -ForegroundColor Green
     Write-Host "    L1. Claude Code を起動" -ForegroundColor Green
-    Write-Host "    L2. Codex CLI を起動" -ForegroundColor Green
-    Write-Host "    L3. GitHub Copilot CLI を起動" -ForegroundColor Green
     Write-Host ""
 
     Write-Host "  -- 診断・セットアップ --" -ForegroundColor Magenta
@@ -289,11 +285,7 @@ while ($true) {
 
     switch ($choice.ToUpper()) {
         "S1" { Invoke-ToolFromMenu -Tool "claude" }
-        "S2" { Invoke-ToolFromMenu -Tool "codex" }
-        "S3" { Invoke-ToolFromMenu -Tool "copilot" }
         "L1" { Invoke-ToolFromMenu -Tool "claude" -Local }
-        "L2" { Invoke-ToolFromMenu -Tool "codex" -Local }
-        "L3" { Invoke-ToolFromMenu -Tool "copilot" -Local }
         "5"  { Invoke-MenuScript -File "scripts\test\Test-AllTools.ps1" }
         "6"  { Invoke-MenuScript -File "scripts\test\test-drive-mapping.ps1" }
         "7"  { Invoke-MenuScript -File "scripts\setup\setup-windows-terminal.ps1" }
