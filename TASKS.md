@@ -7,7 +7,7 @@
 
 ## Manual Backlog
 
-1. [Priority:P1][Owner:Ops][Source:CI] old task
+1. [DONE] [Priority:P1][Owner:Ops][Source:CI] 初期 CI 構築・安定化 (obsolete — CI 安定稼働中)
 2. [DONE] [Priority:P1][Owner:Architect][Source:Manual] Agent Teams ランタイム起動・multi-agent 自動割当 (PR #30)
 3. [DONE] [Priority:P1][Owner:Ops][Source:Manual] MCP サーバーヘルスチェック統合 (PR #29)
 4. [DONE] [Priority:P1][Owner:Developer][Source:GitHub#32] Worktree Manager 実装 (PR #37)
@@ -23,8 +23,8 @@
 
 ## Auto Extracted From Agent Teams Matrix
 
-1. [Priority:P2][Owner:Ops][Source:AgentTeamsMatrix] worktree ベースの並列ブランチ運用
-2. [Priority:P2][Owner:ScrumMaster][Source:AgentTeamsMatrix] issue / backlog 自動生成
+1. [DONE] [Priority:P2][Owner:Ops][Source:AgentTeamsMatrix] worktree ベースの並列ブランチ運用 (WorktreeManager.psm1)
+2. [DONE] [Priority:P2][Owner:ScrumMaster][Source:AgentTeamsMatrix] issue / backlog 自動生成 (IssueSyncManager.psm1)
 ## GitHub Issues Sync
 
 1. [Priority:P3][Owner:Unassigned][Source:GitHub#34] milestone: v3.0.0 リリース計画 (2026-10)
