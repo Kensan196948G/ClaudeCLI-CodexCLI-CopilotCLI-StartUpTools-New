@@ -43,9 +43,9 @@ Review Gate はリリース直前のみ有効化
 
 ## 実行方針（NEW）
 
-設定された時間から5時間の作業を厳密に守ってください
+設定された時間から5時間作業を厳密に守ってください
 設定された時間を確認してください。
-設定された時間内でのMonitor、Development、Verify、ImprovementをN回ループ（ループ回数は自動判定でOKです。）で進めてください。
+設定された時間内でのMonitor、Development、Verify、ImprovementをN回ループ（ループ回数はCTO判断でOKです。）で進めてください。
 AgentTeams機能を大いに活用してください。
 Auto Mode による自律開発を実行してください。
 全プロセスや状況を可視化してください。
@@ -613,7 +613,7 @@ Release: 5%
 
 ## 実行方針（NEW）
 
-"LOOP_COMMANDS"で設定された時間内でのMonitor、Development、Verify、ImprovementをN回ループ（ループ回数は自動判定でOKです。）で進めてください。
+"LOOP_COMMANDS"で設定された時間内でのMonitor、Development、Verify、ImprovementをN回ループ（ループ回数はCTO判断でOKです。）で進めてください。
 ループ回数は KPI 状態・CI 状態・進捗により動的に決定する
 AgentTeams機能を大いに活用してください。
 Auto Mode による自律開発を実行してください。
