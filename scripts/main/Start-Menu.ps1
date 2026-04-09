@@ -191,7 +191,7 @@ function Show-Menu {
 
     Write-Host ""
     Write-Host $sep -ForegroundColor Cyan
-    Write-Host "   AI CLI ユニバーサルスタートアップツール v2.0" -ForegroundColor Cyan
+    Write-Host "   AI CLI ユニバーサルスタートアップツール v3.0" -ForegroundColor Cyan
     Write-Host "   Claude Code / Codex CLI / GitHub Copilot CLI" -ForegroundColor DarkCyan
     Write-Host $sep -ForegroundColor Cyan
     Write-Host ""
