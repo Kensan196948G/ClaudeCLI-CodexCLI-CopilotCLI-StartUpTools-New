@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD024 -->
+
 # Windows セットアップガイド
 
 Windows 上でこのリポジトリを使うための最小セットアップ手順です。

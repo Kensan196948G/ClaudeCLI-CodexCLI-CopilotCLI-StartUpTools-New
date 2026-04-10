@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD024 -->
+
 # CHANGELOG
 
 ## [v2.9.0-dev] - 2026-04-08
