@@ -72,15 +72,23 @@ function Invoke-StepEnvironmentCheck {
     Write-BootStep 1 'Environment Check'
     $required = @('git', 'node', 'pwsh')
     $status = @{}
+    $missing = @()
     foreach ($tool in $required) {
         $available = [bool](Get-Command $tool -ErrorAction SilentlyContinue)
         $status[$tool] = $available
+        if (-not $available) { $missing += $tool }
         $mark = if ($available) { '[OK]' } else { '[NG]' }
         $color = if ($available) { 'Green' } else { 'Red' }
         Write-Host ('  {0} {1}' -f $mark, $tool) -ForegroundColor $color
     }
     Write-Host ''
-    return @{ Step = 1; Name = 'Environment Check'; Status = 'OK'; Detail = $status }
+    $stepStatus = if ($missing.Count -eq 0) { 'OK' } else { 'FAIL' }
+    $detail = if ($missing.Count -eq 0) {
+        $status
+    } else {
+        @{ Tools = $status; Missing = $missing }
+    }
+    return @{ Step = 1; Name = 'Environment Check'; Status = $stepStatus; Detail = $detail }
 }
 
 function Invoke-StepProjectDetection {
