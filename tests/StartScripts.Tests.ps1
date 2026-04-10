@@ -170,6 +170,37 @@ Describe 'Start-*.ps1 dry-run flows' {
         (Get-Content (Join-Path $script:SshCaptureRoot 'script-name.txt') -Raw) | Should -Match 'run-copilot-demo\.sh'
         (Get-Content (Join-Path $script:SshCaptureRoot 'script.sh') -Raw) | Should -Match 'copilot'
     }
+
+    It 'Start-ClaudeOS.ps1 が正常終了してブートサマリーを出力すること' {
+        $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-ClaudeOS.ps1'
+        $output = & $script:PowerShellExe -NoProfile -File $scriptPath -NonInteractive 2>&1 | Out-String
+        $LASTEXITCODE | Should -Be 0
+        $output | Should -Match 'ClaudeOS Boot Sequence'
+        $output | Should -Match '\[Step 1\].*Environment Check'
+        $output | Should -Match '\[Step 2\].*Project Detection'
+        $output | Should -Match '\[Step 4\].*System Init'
+        $output | Should -Match '\[Step 9\].*Dashboard'
+        $output | Should -Match 'Boot Summary'
+        $output | Should -Match 'Boot sequence completed successfully'
+    }
+
+    It 'Start-ClaudeOS.ps1 が DryRun マーカーを表示すること' {
+        $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-ClaudeOS.ps1'
+        $output = & $script:PowerShellExe -NoProfile -File $scriptPath -NonInteractive -DryRun 2>&1 | Out-String
+        $LASTEXITCODE | Should -Be 0
+        $output | Should -Match '\[DRY RUN\] No side effects will be applied'
+    }
+
+    It 'Start-ClaudeOS.ps1 の Step 3/5/6/7/8 がプレースホルダー SKIP になること' {
+        $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-ClaudeOS.ps1'
+        $output = & $script:PowerShellExe -NoProfile -File $scriptPath -NonInteractive 2>&1 | Out-String
+        $LASTEXITCODE | Should -Be 0
+        $output | Should -Match '\[Step 3\].*Memory Restore.*SKIP'
+        $output | Should -Match '\[Step 5\].*Executive Init.*SKIP'
+        $output | Should -Match '\[Step 6\].*Management Init.*SKIP'
+        $output | Should -Match '\[Step 7\].*Agent Init.*SKIP'
+        $output | Should -Match '\[Step 8\].*Loop Engine Start.*SKIP'
+    }
 }
 
 Describe 'Start-Menu helper flows' {
