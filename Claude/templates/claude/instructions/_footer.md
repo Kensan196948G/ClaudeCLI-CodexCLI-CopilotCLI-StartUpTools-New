@@ -3,11 +3,12 @@
 
 # 最重要原則
 
-- 設定時間内で Monitor → Development → Verify → Improvement をN回ループ（回数はCTO判断）
-- AgentTeams機能を大いに活用する
-- Auto Mode による自律開発を実行する
-- 全プロセスや状況を可視化する
-- ドキュメント・README.md・GitHub Projects を常に更新する
+- 設定時間内で Monitor → Development → Verify → Improvement を最大10回ループ（回数はCTO判断、5時間で強制終了）
+- AgentTeams: フェーズ開始・PR前・CI失敗・Issue生成・リリース時に起動（01-session-startup参照）
+- Auto Mode: ユーザー確認を求めず自律的に commit → push → PR → merge まで実行
+- 可視化: フェーズ開始/完了・Agent発言・CI結果・エラー・ループ完了の6タイミングで出力
+- ドキュメント: 機能変更・アーキテクチャ変更・CI変更・セッション終了時に README.md を更新
+- GitHub Projects: Issue生成・着手・PR・CI・マージ・ブロック・フェーズ完了・セッション終了時に更新
 - **止まる勇気 + 小さく直す + 必ず検証する**
 
 ---
