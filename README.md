@@ -26,12 +26,14 @@
 | バージョン | v2.9.0 |
 | テスト | 307 Pester テスト (CI) |
 | CI | ✅ SUCCESS |
-| ClaudeOS | v7.4 (完全無人運用 + AI Dev Factory + Priority Intelligence + Boot Sequence MVP) |
+| ClaudeOS (Claude Code 専用) | v7.4 (完全無人運用 + AI Dev Factory + Priority Intelligence + Boot Sequence MVP) |
 | Agents | 37体の特化サブエージェント |
 | Skills | 64個のワークフロー定義 |
 | Boot Sequence | `Start-ClaudeOS.ps1` (MVP / Steps 1-2-4-9 実装) 🆕 |
 
-### Agent Teams 対応レベル
+### Agent Teams 対応レベル (Claude Code 専用)
+
+> Codex CLI / GitHub Copilot CLI には適用されません。
 
 | 機能 | レベル | 説明 |
 |------|--------|------|
@@ -189,26 +191,28 @@ flowchart TD
 
 ## 主な機能
 
-| 機能 | 説明 |
-|------|------|
-| 🖥️ 統一起動メニュー | `start.bat` から3ツールを対話的に選択 |
-| 🔀 ローカル/SSH切替 | Windows ローカルとLinux SSH の両対応 |
-| 📄 テンプレート自動配備 | `CLAUDE.md` / `AGENTS.md` / `copilot-instructions.md` を自動配置 |
-| 🧠 ClaudeOS カーネル | 37体のエージェント + 64スキル + 35コマンド + フック |
-| 🔌 MCP ヘルスチェック | `McpHealthCheck.psm1` で4サーバーの起動・接続・状態診断 |
-| 🤖 Agent Teams ランタイム | `AgentTeams.psm1` でタスク分析→Team自動構成→能力マトリクス→可視化 |
-| 🏁 Pre-Launch Diagnostics | Claude Code 起動前に MCP/Agent 状態を自動チェック |
-| 🌿 Worktree Manager | `WorktreeManager.psm1` でGit Worktreeの作成・切替・削除を自動管理 |
-| 🔄 Issue/Backlog 同期 | `IssueSyncManager.psm1` でGitHub Issues ↔ TASKS.md 双方向同期 |
-| 💰 Token Budget Manager | `TokenBudget.psm1` でフェーズ別トークン使用量の自動制御 |
-| 🧠 Self Evolution | `SelfEvolution.psm1` でセッション学習ループ・改善記録の自動化 🆕 |
-| 🏗️ Architecture Check | `ArchitectureCheck.psm1` でアーキテクチャ違反・禁止パターンの自動検出 🆕 |
-| 🚀 ClaudeOS Boot Sequence | `Start-ClaudeOS.ps1` で `.claude/claudeos/system/boot.md` 仕様の 9 ステップ初期化（MVP: Step 1/2/4/9 実装、Step 3/5/6/7/8 はプレースホルダー）🆕 |
-| 🔎 MCP ランタイムプローブ | `Invoke-McpRuntimeProbe` で MCP サーバーの起動テストを実行 |
-| 🐍 PTY Bridge | SSH経由のClaude Code操作を堅牢にサポート |
-| ⚙️ 一元設定 | `config/config.json` で全ツールを統一管理 |
-| 🩺 診断ツール | `Test-AllTools.ps1` で環境を一括チェック |
-| ⚡ CI/CD | GitHub Actions による自動テスト (Pester 307件) |
+> 凡例: ⭐ = Claude Code 専用 (ClaudeOS v7.4 拡張)、🔧 = 全対応ツール共通
+
+| 機能 | 区分 | 説明 |
+|------|------|------|
+| 🖥️ 起動メニュー | 🔧 共通 | `start.bat` から対応ツールを対話的に選択 |
+| 🔀 ローカル/SSH切替 | 🔧 共通 | Windows ローカルと Linux SSH の両対応 |
+| 📄 テンプレート自動配備 | 🔧 共通 | `CLAUDE.md` / `AGENTS.md` / `copilot-instructions.md` を自動配置 |
+| 🐍 PTY Bridge | 🔧 共通 | SSH経由の Claude Code 操作を堅牢にサポート |
+| ⚙️ 一元設定 | 🔧 共通 | `config/config.json` で対応ツールを一元管理 |
+| 🩺 診断ツール | 🔧 共通 | `Test-AllTools.ps1` で環境を一括チェック |
+| ⚡ CI/CD | 🔧 共通 | GitHub Actions による自動テスト (Pester 307件) |
+| 🧠 ClaudeOS カーネル | ⭐ Claude 専用 | 37体のエージェント + 64スキル + 35コマンド + フック |
+| 🔌 MCP ヘルスチェック | ⭐ Claude 専用 | `McpHealthCheck.psm1` で4サーバーの起動・接続・状態診断 |
+| 🤖 Agent Teams ランタイム | ⭐ Claude 専用 | `AgentTeams.psm1` でタスク分析→Team自動構成→能力マトリクス→可視化 |
+| 🏁 Pre-Launch Diagnostics | ⭐ Claude 専用 | Claude Code 起動前に MCP/Agent 状態を自動チェック |
+| 🌿 Worktree Manager | ⭐ Claude 専用 | `WorktreeManager.psm1` でGit Worktreeの作成・切替・削除を自動管理 |
+| 🔄 Issue/Backlog 同期 | ⭐ Claude 専用 | `IssueSyncManager.psm1` でGitHub Issues ↔ TASKS.md 双方向同期 |
+| 💰 Token Budget Manager | ⭐ Claude 専用 | `TokenBudget.psm1` でフェーズ別トークン使用量の自動制御 |
+| 🧠 Self Evolution | ⭐ Claude 専用 | `SelfEvolution.psm1` でセッション学習ループ・改善記録の自動化 🆕 |
+| 🏗️ Architecture Check | ⭐ Claude 専用 | `ArchitectureCheck.psm1` でアーキテクチャ違反・禁止パターンの自動検出 🆕 |
+| 🚀 ClaudeOS Boot Sequence | ⭐ Claude 専用 | `Start-ClaudeOS.ps1` で `.claude/claudeos/system/boot.md` 仕様の 9 ステップ初期化（MVP: Step 1/2/4/9 実装、Step 3/5/6/7/8 はプレースホルダー）🆕 |
+| 🔎 MCP ランタイムプローブ | ⭐ Claude 専用 | `Invoke-McpRuntimeProbe` で MCP サーバーの起動テストを実行 |
 
 ---
 
@@ -300,7 +304,9 @@ start.bat
 
 ---
 
-## ClaudeOS v7.4 完全無人運用システム
+## ClaudeOS v7.4 完全無人運用システム (Claude Code 専用)
+
+> **本セクションの全機能は Claude Code 上でのみ動作します。** Codex CLI / GitHub Copilot CLI には適用されません。`Start-ClaudeOS.ps1` および `.claude/claudeos/` 配下のカーネル文書群が前提です。
 
 ### v7.4 新機能
 
@@ -453,13 +459,15 @@ Invoke-Pester .\tests\
 
 ---
 
-## 開発ロードマップ (v3.0.0)
+## 開発ロードマップ (v3.0.0) — Claude Code 専用
+
+> Phase 2 以降のすべてのロードマップ項目は Claude Code / ClaudeOS スタック向けです。Codex CLI / GitHub Copilot CLI の機能拡張は本ロードマップに含まれません。
 
 | フェーズ | 状態 | 主な目標 |
 |----------|------|----------|
 | Phase 1 ✅ | 完了 (v2.7.0) | P1完了、モジュール基盤確立 |
 | Phase 2 ✅ | 完了 (v2.8.0) | Worktree並列開発、Issue自動生成、CI強化 |
-| Phase 3 ✅ | 完了 (v2.9.0) | Self Evolution、Architecture Check、SSH安定化 |
+| Phase 3 🚧 | 進行中 (v2.9.0 安定) | Self Evolution / Architecture Check 完了、Boot Sequence MVP 着手、Dashboard UI / Memory MCP は未着手 |
 | Phase 4 ⏸ | 未着手 (v3.0.0) | リリース準備、セキュリティ監査、GA |
 
 ### Phase 3 進捗 (v2.9.0)
