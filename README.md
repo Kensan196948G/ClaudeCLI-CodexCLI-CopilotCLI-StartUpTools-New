@@ -1,14 +1,21 @@
-# ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools
+# Claude Code Autonomous Development StartUp Tools
 
-Windows から `Claude Code`、`Codex CLI`、`GitHub Copilot CLI` を統一的に起動するためのスタートアップツールです。ローカル起動と SSH リモート起動の両方に対応し、設定・診断・ガイドをこのリポジトリに集約しています。
+> Windows から **Claude Code** を中心とした自律開発環境を立ち上げるためのスタートアップツールです。
+
+`ClaudeOS v7.4` (Agent Teams / Boot Sequence / Self Evolution / Architecture Check / Issue Factory) をカーネルに据え、ローカル起動・SSH リモート起動・診断・Pester テスト・GitHub Issues / Projects / Actions 連携を一括提供します。
+
+> **📌 リポジトリ名について**
+> リポジトリ名 `ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New` は当初の 3 ツール統合ランチャー構想に由来しますが、現在の開発投資・新機能 (ClaudeOS v7.4 / Phase 3) はすべて **Claude Code** 側に集中しています。Codex CLI / GitHub Copilot CLI の起動スクリプトもリポジトリ内に併設してありますが、ClaudeOS フレームワークと統合されているのは Claude Code のみです。
 
 ## 対応ツール
 
-| ツール | 提供元 | 主な用途 |
-|--------|--------|---------|
-| Claude Code | Anthropic | 大規模なコード修正、レビュー、実装支援 |
-| Codex CLI | OpenAI | ターミナル中心のコード生成、シェル支援 |
-| GitHub Copilot CLI | GitHub | `copilot --yolo` によるシェル・GitHub 操作支援 |
+| ツール | 提供元 | 位置付け | 主な用途 |
+|--------|--------|---------|---------|
+| 🌟 **Claude Code** | Anthropic | **主軸** — ClaudeOS v7.4 統合 / Agent Teams / Boot Sequence / 自律開発ループ | 大規模なコード修正、レビュー、自律開発、Issue/PR 自動化 |
+| Codex CLI | OpenAI | 併設 (基本起動のみ) | ターミナル中心のコード生成、シェル支援 |
+| GitHub Copilot CLI | GitHub | 併設 (基本起動のみ) | `copilot --yolo` によるシェル・GitHub 操作支援 |
+
+> Codex CLI / GitHub Copilot CLI は `Start-CodexCLI.ps1` / `Start-CopilotCLI.ps1` で起動可能ですが、Pre-Launch Diagnostics や AgentTeams ランタイムなどの ClaudeOS 拡張機能は Claude Code 専用です。
 
 ---
 
@@ -242,7 +249,10 @@ copy config\config.json.template config\config.json
 ツールインストール:
 
 ```powershell
+# 必須 (主軸)
 npm install -g @anthropic-ai/claude-code
+
+# 任意 (併設ランチャーを使う場合のみ)
 npm install -g @openai/codex
 npm install -g @githubnext/github-copilot-cli
 ```
