@@ -37,12 +37,73 @@
 
 - 設定された時間から5時間作業を厳密に守る
 - Monitor、Development、Verify、ImprovementをN回ループ（ループ回数はCTO判断）
-- AgentTeams機能を大いに活用する
-- Auto Mode による自律開発を実行する
-- 全プロセスや状況を可視化する
-- ドキュメントファイルも常に確認・更新する
-- README.mdは分かりやすく、表とアイコン多用、ダイアグラム図も活用して常に更新する
-- GitHub Projectsも常に更新する
+
+### 1. AgentTeams活用ルール
+
+Agent Teams は以下の場面で必ず起動すること：
+
+| 場面 | 起動するAgent |
+|---|---|
+| フェーズ開始時 | 04-agent-teams.md の起動順序に従う |
+| PR作成前 | Reviewer → Security |
+| CI失敗時 | Debugger → Developer → QA |
+| Issue生成時 | ProductManager → Analyst |
+| リリース判断時 | ReleaseManager → CTO |
+
+Agent Teams 不要の場面: 1ファイルの小修正、Lint修正のみ、ドキュメント更新のみ
+
+### 2. Auto Mode（自律開発）
+
+- ユーザーの入力を待たずに自律的に開発を進める
+- commit / push / PR作成 / merge はすべて自律的に実行する
+- 判断に迷った場合は state.json の priority.weights に基づいて決定する
+
+### 3. リアルタイム可視化ルール
+
+以下のタイミングで状態テーブルを出力すること：
+
+| タイミング | 出力内容 |
+|---|---|
+| フェーズ開始時 | フェーズ名、対象Issue、目標 |
+| フェーズ完了時 | 成果サマリー、CI結果、次フェーズ |
+| Agent発言時 | `[ロール名] 内容:` のログフォーマット |
+| CI結果判明時 | 成功/失敗テーブル |
+| エラー発生時 | エラー内容、原因分析、対応方針 |
+| ループ完了時 | ループ番号、KPI進捗、残時間、Token残量 |
+
+### 4. ドキュメント確認・更新ルール
+
+| タイミング | 対象ファイル | アクション |
+|---|---|---|
+| Monitor開始時 | README.md, CLAUDE.md | 差分確認（実態との乖離チェック） |
+| 機能追加・変更後 | README.md | セットアップ手順・機能一覧を更新 |
+| アーキテクチャ変更後 | README.md | アーキテクチャ図・フロー図を更新 |
+| CI構成変更後 | README.md | CI/CD構成セクションを更新 |
+| セッション終了時 | README.md, state.json | 終了時サマリー・状態を更新 |
+
+### 5. README.md更新ルール
+
+README.md は外部説明に耐える品質を維持する。以下を必ず含めること：
+
+- 表を多用（設定値、機能一覧等）
+- アイコンを活用（セクション見出し等）
+- Mermaid等のダイアグラム図（アーキテクチャ、処理フロー）
+- 初見でも理解可能な構成
+
+更新トリガー: 利用者が触る機能・セットアップ手順・アーキテクチャ・品質ゲートのいずれかが変わった時
+
+### 6. GitHub Projects更新ルール
+
+| タイミング | アクション |
+|---|---|
+| Issue生成時 | Projectに紐付け、Status=Backlog or Todo |
+| 開発着手時 | Status=In Progress |
+| PR作成時 | Status=Review |
+| CI確認中 | Status=Verify |
+| マージ完了時 | Status=Done |
+| ブロック時 | Status=Blocked |
+| フェーズ完了時 | 関連Issueのステータスを一括更新 |
+| セッション終了時 | 全Issueの最新ステータスを反映 |
 
 ## 自律継続ルール（最重要）
 
