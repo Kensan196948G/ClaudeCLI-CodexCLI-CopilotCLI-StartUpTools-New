@@ -2,6 +2,20 @@
 
 ## 自律ループ（Auto Loop Intelligence）
 
+### フェーズ間自動遷移（必須）
+
+各フェーズ完了後、ユーザーの入力を待たずに次のアクションへ自動遷移すること。
+
+| 完了フェーズ | 次のアクション |
+|---|---|
+| Monitor | → Development（Issue選定 → 実装開始） |
+| Development | → commit → push → PR作成 → Verify |
+| Verify（成功） | → merge → Improvement または 次ループの Monitor |
+| Verify（失敗） | → Repair → 再Verify |
+| Improvement | → 次ループの Monitor |
+
+**「次に進みますか？」等のユーザー確認は禁止。自動的に進めること。**
+
 ### ループ判断ロジック
 
 - KPI 未達 → ループ継続
