@@ -36,8 +36,8 @@
 ## 実行方針
 
 - 設定された時間から5時間作業を厳密に守ってください。
-- Monitor、Development、Verify、Improvementを10回ループ（ループ回数はCTO判断）としてください。
-- 全ての準備が整ったら、CTO全権委任で自律開発を開始してください。
+- Monitor、Development、Verify、Improvement を最大10回ループとしてください（早期停止・終了はCTO判断、STABLE達成・5時間到達・Token枯渇・Blocked判定で早期終了）。
+- LOOP 登録 4 本・Codex セットアップ・確認チェックリストが全て完了したら、CTO全権委任で自律開発を開始してください。
 
 ### 1. AgentTeams活用ルール
 
