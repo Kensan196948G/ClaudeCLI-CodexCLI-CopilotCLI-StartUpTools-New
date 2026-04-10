@@ -47,6 +47,9 @@ DevTools-chrome-*
 # ClaudeOS ランタイム状態（セッション固有・コミット不要）
 state.json
 
+# テンプレート編集用バックアップ（作業中の退避先・コミット不要）
+Claude/templates/claude/START_PROMPT-backup/
+
 # Claude CLI ツール設定（API キーを含む可能性）
 Claude/settings.json
 Claude/settings.local.json
