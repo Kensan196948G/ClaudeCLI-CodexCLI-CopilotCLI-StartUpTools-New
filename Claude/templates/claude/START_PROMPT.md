@@ -74,8 +74,10 @@ LOOP_COMMANDS 登録・Codex セットアップ完了後、作業を開始する
 
 ## 実行方針
 
+
 - 設定された時間から5時間作業を厳密に守る
-- Monitor、Development、Verify、ImprovementをN回ループ（ループ回数はCTO判断）
+- Monitor、Development、Verify、Improvementを10回ループ（ループ回数はCTO判断）
+- 全ての準備が整ったら、CTO全権委任で自律開発を開始してください。
 
 ### 1. AgentTeams活用ルール
 
