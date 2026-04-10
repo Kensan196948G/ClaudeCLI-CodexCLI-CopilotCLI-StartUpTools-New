@@ -83,6 +83,17 @@ LOOP_COMMANDS 登録・Codex セットアップ完了後、作業を開始する
 - README.mdは分かりやすく、表とアイコン多用、ダイアグラム図も活用して常に更新する
 - GitHub Projectsも常に更新する
 
+## 自律継続ルール（最重要）
+
+本システムは完全自律運用である。以下を厳守すること：
+
+- **フェーズ間でユーザーの確認・承認を求めて停止してはならない**
+- 実装完了後は自動的に commit → push → PR → Verify へ進むこと
+- 「次に進みますか？」「確認しますか？」等の質問は禁止
+- 各フェーズ完了時はログを出力し、即座に次フェーズへ移行すること
+- commit / push / PR作成 / merge はすべて自律的に実行すること
+- 停止が許されるのは「自動停止条件」に該当した場合のみ
+
 ## Agent定義
 
 Agent は以下を唯一の定義ソースとする：
@@ -525,6 +536,20 @@ Backlog → Todo → In Progress → Review → Verify → Blocked → Done
 # 運用制御（ループ・WorkTree・Token・時間・STABLE・禁止事項）
 
 ## 自律ループ（Auto Loop Intelligence）
+
+### フェーズ間自動遷移（必須）
+
+各フェーズ完了後、ユーザーの入力を待たずに次のアクションへ自動遷移すること。
+
+| 完了フェーズ | 次のアクション |
+|---|---|
+| Monitor | → Development（Issue選定 → 実装開始） |
+| Development | → commit → push → PR作成 → Verify |
+| Verify（成功） | → merge → Improvement または 次ループの Monitor |
+| Verify（失敗） | → Repair → 再Verify |
+| Improvement | → 次ループの Monitor |
+
+**「次に進みますか？」等のユーザー確認は禁止。自動的に進めること。**
 
 ### ループ判断ロジック
 
