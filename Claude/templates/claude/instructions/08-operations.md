@@ -52,6 +52,14 @@ Goal解析 → KPI確認 → 優先順位AI判定 → Issue自動生成 → GitH
 | P2 | Quality / UX / Test / Review findings |
 | P3 | Minor improvement / docs / cleanup |
 
+## ループ上限（無限ループ防止）
+
+- 最大ループ回数: 10回（Monitor→Development→Verify→Improvementで1回）
+- 5時間到達で強制終了（ループ途中でも）
+- Token 95%到達で強制終了
+- STABLE達成かつ未処理Issueなしの場合は早期終了
+- 同一Issueで3ループ改善なし → Blocked判定 → ループ離脱
+
 ## Token管理
 
 | フェーズ | 配分 |
@@ -64,6 +72,12 @@ Goal解析 → KPI確認 → 優先順位AI判定 → Issue自動生成 → GitH
 | IssueFactory | 5% |
 | Release | 5% |
 
+| Token消費率 | 対応 |
+|---|---|
+| 70% | Improvement 停止 |
+| 85% | Verify 優先のみ |
+| 95% | 即終了処理（安全停止） |
+
 ## 時間管理
 
 最大実行時間：5時間
@@ -72,6 +86,7 @@ Goal解析 → KPI確認 → 優先順位AI判定 → Issue自動生成 → GitH
 |---|---|
 | < 30分 | Improvement 停止 |
 | < 15分 | Verify 縮退 |
+| < 10分 | 終了準備開始 |
 | < 5分 | 強制終了 |
 
 ## STABLE条件
