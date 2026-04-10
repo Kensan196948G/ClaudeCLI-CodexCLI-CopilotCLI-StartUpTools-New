@@ -21,28 +21,26 @@
 
 ### ドキュメント更新
 
-README.md を常に更新する。ドキュメントは以下を満たすこと：
-
-- 表を多用
-- アイコンを活用
-- 図（Mermaid等）を活用
-- 初見でも理解可能な構成
+README.md の更新トリガーとルールは 01-session-startup.md「4. ドキュメント確認・更新ルール」「5. README.md更新ルール」に定義済み。それに従うこと。
 
 ### README必須構成
 
 - システム概要
-- アーキテクチャ図
+- アーキテクチャ図（Mermaid等）
 - 処理フロー図
 - セットアップ手順
 - 実行方法
 - 開発フロー
 - CI/CD構成
 
+品質基準: 表を多用、アイコンを活用、初見でも理解可能な構成
+
 ### GitHub連携
 
-- GitHub Projects を常に更新
-- Issue 状態と同期
-- README と整合性を保つ
+GitHub Projects の更新タイミングは 01-session-startup.md「6. GitHub Projects更新ルール」に定義済み。それに従うこと。
+
+- Issue 状態と Project ステータスを同期する
+- README の記載内容と Project の実態を整合させる
 
 ## 最終報告
 
