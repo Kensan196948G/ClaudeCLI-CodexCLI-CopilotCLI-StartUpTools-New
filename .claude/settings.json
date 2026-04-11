@@ -27,6 +27,20 @@
           }
         ]
       }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/claudeos/scripts/hooks/session-end.js\""
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/claudeos/scripts/hooks/evaluate-session.js\""
+          }
+        ]
+      }
     ]
   }
 }
