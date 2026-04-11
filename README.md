@@ -29,7 +29,18 @@
 | ClaudeOS (Claude Code 専用) | v7.4 (完全無人運用 + AI Dev Factory + Priority Intelligence + Boot Sequence MVP) |
 | Agents | 37体の特化サブエージェント |
 | Skills | 64個のワークフロー定義 |
-| Boot Sequence | `Start-ClaudeOS.ps1` (MVP / Steps 1-2-4-9 実装) 🆕 |
+| Boot Sequence | `Start-ClaudeOS.ps1` (Steps 1/2/4/**7**/9 実装 — PR-B Agent Init 追加) 🆕 |
+| 5h Time Anchor | **3 層防御** (SessionStart hook + self-discipline protocol + cron one-shot) 🆕 |
+| Evaluation Methodology | v1.0 + `fact-check.ps1` + `codex-smoke-test.ps1` 🆕 |
+
+### 🆕 直近の改善 (2026-04-11)
+
+| 改善 | 内容 | 関連ファイル |
+|---|---|---|
+| ⏱️ 5h 3 層防御 | ClaudeOS v7.4 の「5 時間厳守」が文書規約のみだった欠陥を是正。SessionStart hook / self-discipline protocol / cron one-shot の 3 層で相互補完 | `.claude/claudeos/system/time-anchor-protocol.md`, `.claude/claudeos/scripts/hooks/session-start.js`, `.claude/session-anchor.json` |
+| 📏 Evaluation Methodology v1.0 | 評価レポート作成の必須プロトコル (4 段階 runtime-assertion バッジ / Fact-Check Checklist / Challenge-the-Strength) | `.claude/claudeos/system/evaluation-methodology.md` |
+| 🔍 fact-check.ps1 | JSON claim list を読み込み file/dir 実在を検証する PowerShell harness。80% accuracy で既知誤認を自動検出 | `scripts/eval/fact-check.ps1` |
+| 🏗️ Boot Sequence PR-B | Step 7 Agent Init 実装 (37 agents 読込) + Pester テスト 12 件整備 | `scripts/main/Start-ClaudeOS.ps1`, `tests/Start-ClaudeOS.Tests.ps1` |
 
 ### Agent Teams 対応レベル (Claude Code 専用)
 
