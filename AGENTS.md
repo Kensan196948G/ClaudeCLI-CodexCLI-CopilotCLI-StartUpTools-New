@@ -169,4 +169,45 @@ Small change         / Test everything
 Stable first         / Deploy safely
 Improve continuously / Stop at 5 hours safely
 Think within budget  / Use tokens wisely
+Simplest first       / Complicate only where stuck
 ```
+
+## Codex コマンド使い分け表
+
+| コマンド | 用途 | 使うタイミング | 禁止 |
+|---|---|---|---|
+| `exec` | 新規実装・修正を Codex に委ねる | light モードの 1 ファイル修正, full モードの Developer 担当分 | Orchestrator 自身の分解作業 |
+| `review` | 差分レビュー | PR 作成前 / PR 更新時 (必須) | Claude 単独レビューで代替 |
+| `adversarial-review` | 対抗レビュー | 認証・権限・DB スキーマ・並列同期・リリース直前 | 軽微な差分への無条件起動 |
+| `rescue` | 原因調査・最小修正案 | CI 失敗 / test 失敗 / unknown / 3 ファイル以上の regressions | 深追い (1 rescue = 1 仮説) |
+| `resume` | 中断中の job 再開 | 前回セッションからの継続作業 | 結果未確認のまま再投入 |
+| `fork` | 並列な別仮説を試す | 同一問題への複数仮説検証 | 担当ファイル境界未宣言 |
+
+## 返却フォーマット (全サブエージェント共通・順序固定)
+
+自由記述禁止。以下4セクションを**固定順序**で返却する (全役割共通・Reviewer 含む):
+
+```markdown
+## Summary
+- 1〜3行の結論 (最も重要なリスクから書き始める。賞賛から始めない)
+
+## Risks
+- 未確認点・副作用候補 (空なら "none")
+- 重大度 (high / medium / low) を付与
+
+## Findings
+- 観測事実のみ (根拠ファイル:行番号)
+
+## Next Action
+- Orchestrator の次の1手候補
+```
+
+順序は **Summary → Risks → Findings → Next Action** 固定。
+Risks を Findings より前に配置するのは、重要な論点が埋もれないようにするため。
+Orchestrator はこの順序を満たさない返却を受領しない。
+
+## 関連ドキュメント
+
+- `.claude/claudeos/system/role-contracts.md` — 唯一の役割契約 (優先)
+- `.claude/claudeos/system/loop-guard.md` — 停止条件と拡張 state スキーマ
+- `CLAUDE.md` — プロジェクト運用規約

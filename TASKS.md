@@ -1,9 +1,21 @@
 # TASKS
 
+## ⚠️ 唯一の作業キュー宣言
+
+**このファイルは ClaudeOS における唯一の作業キュー (single truth source for work queue) です。**
+
+- 他の場所 (README, Issue コメント, state.json 等) に並行キューを作らないこと
+- Orchestrator は毎ループ冒頭でこのファイルの先頭タスクを参照すること
+- 状態遷移は最小限に固定: `pending → in_progress → DONE` (または `Blocked`)
+- 自動生成タスクは必ず triage (根拠ファイル + 再現条件を添付) を通してからこのキューに入れること
+- 自動生成の一回あたり上限は **3 件**
+
+## セクション構成
+
 このファイルは `手動管理セクション` と `自動抽出セクション` に分かれます。
 
 - 手動管理: 人が直接追加・編集する backlog
-- 自動抽出: `docs/common/08_AgentTeams対応表.md` の `未実装機能` から `Sync-AgentTeamsBacklog.ps1` が同期する項目
+- 自動抽出: `docs/common/08_AgentTeams対応表.md` の `未実装機能` から `Sync-AgentTeamsBacklog.ps1` が同期する項目 (**Auto Extracted セクションは手動変更禁止**)
 
 ## Manual Backlog
 
