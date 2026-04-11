@@ -139,6 +139,92 @@ function Invoke-StepPlaceholder {
     return @{ Step = $Number; Name = $Name; Status = 'SKIP'; Detail = $Reason }
 }
 
+function Invoke-StepManagementInit {
+    param([string]$Root)
+    Write-BootStep 6 'Management Init'
+    try {
+        $issueSyncModule = Join-Path $Root 'scripts\lib\IssueSyncManager.psm1'
+        $backlogRules    = Join-Path $Root 'config\agent-teams-backlog-rules.json'
+        $tasksPath       = Join-Path $Root 'TASKS.md'
+
+        if (-not (Test-Path $issueSyncModule)) {
+            Write-Host '  [SKIP] IssueSyncManager.psm1 not found' -ForegroundColor Yellow
+            Write-Host ''
+            return @{ Step = 6; Name = 'Management Init'; Status = 'SKIP'; Detail = 'IssueSyncManager module missing' }
+        }
+
+        Import-Module $issueSyncModule -Force -DisableNameChecking -Global
+        $exportCount = @(Get-Command -Module IssueSyncManager).Count
+
+        $hasRules = Test-Path $backlogRules
+        $hasTasks = Test-Path $tasksPath
+
+        Write-Host '  Backlog Module   : [OK] IssueSyncManager loaded' -ForegroundColor Green
+        Write-Host ('  Exports          : {0} functions' -f $exportCount) -ForegroundColor DarkGray
+        $rulesLabel = if ($hasRules) { '[OK] found' } else { '[WARN] missing' }
+        $rulesColor = if ($hasRules) { 'Green' } else { 'Yellow' }
+        Write-Host ('  Backlog Rules    : {0}' -f $rulesLabel) -ForegroundColor $rulesColor
+        $tasksLabel = if ($hasTasks) { '[OK] found' } else { '[WARN] missing' }
+        $tasksColor = if ($hasTasks) { 'Green' } else { 'Yellow' }
+        Write-Host ('  TASKS.md         : {0}' -f $tasksLabel) -ForegroundColor $tasksColor
+        Write-Host '  Note             : GitHub sync is on-demand via Sync-IssuesToTasks' -ForegroundColor DarkGray
+        Write-Host ''
+
+        return @{
+            Step = 6
+            Name = 'Management Init'
+            Status = 'OK'
+            Detail = @{
+                ModuleLoaded = $true
+                ExportCount  = $exportCount
+                HasRules     = $hasRules
+                HasTasks     = $hasTasks
+            }
+        }
+    }
+    catch {
+        Write-Host ('  [FAIL] Management Init failed: {0}' -f $_.Exception.Message) -ForegroundColor Red
+        Write-Host ''
+        return @{ Step = 6; Name = 'Management Init'; Status = 'FAIL'; Detail = $_.Exception.Message }
+    }
+}
+
+function Invoke-StepLoopEngineStart {
+    param([string]$Root)
+    Write-BootStep 8 'Loop Engine Start'
+    try {
+        $anchorPath = Join-Path $Root '.claude\session-anchor.json'
+        if (-not (Test-Path $anchorPath)) {
+            Write-Host '  [SKIP] session-anchor.json not found (SessionStart hook not fired)' -ForegroundColor Yellow
+            Write-Host '  [NOTE] Loop orchestration is handled by Claude Code /loop harness' -ForegroundColor DarkGray
+            Write-Host ''
+            return @{ Step = 8; Name = 'Loop Engine Start'; Status = 'SKIP'; Detail = 'session-anchor.json missing' }
+        }
+
+        $anchor = Get-Content $anchorPath -Raw | ConvertFrom-Json
+        Write-Host '  Loop Engine      : [OK] active session anchor detected' -ForegroundColor Green
+        Write-Host ('  Session ID       : {0}' -f $anchor.session_id) -ForegroundColor DarkGray
+        Write-Host ('  Session Started  : {0}' -f $anchor.wall_clock_start) -ForegroundColor DarkGray
+        Write-Host '  Note             : Loop cycles (Monitor/Dev/Verify/Improve) driven by /loop' -ForegroundColor DarkGray
+        Write-Host ''
+
+        return @{
+            Step = 8
+            Name = 'Loop Engine Start'
+            Status = 'OK'
+            Detail = @{
+                SessionId = $anchor.session_id
+                Started   = $anchor.wall_clock_start
+            }
+        }
+    }
+    catch {
+        Write-Host ('  [FAIL] Loop Engine probe failed: {0}' -f $_.Exception.Message) -ForegroundColor Red
+        Write-Host ''
+        return @{ Step = 8; Name = 'Loop Engine Start'; Status = 'FAIL'; Detail = $_.Exception.Message }
+    }
+}
+
 function Invoke-StepMemoryRestore {
     param([string]$Root)
     Write-BootStep 3 'Memory Restore'
@@ -278,12 +364,13 @@ $results += Invoke-StepMemoryRestore -Root $ScriptRoot
 $results += Invoke-StepSystemInit
 $results += Invoke-StepPlaceholder -Number 5 -Name 'Executive Init' `
     -Reason 'Runtime CTO / Strategy Engine is a conceptual layer (Claude itself)'
-$results += Invoke-StepPlaceholder -Number 6 -Name 'Management Init' `
-    -Reason 'Backlog / Scrum Master integration pending'
+$results += Invoke-StepManagementInit -Root $ScriptRoot
 $results += Invoke-StepAgentInit -Root $ScriptRoot
-$results += Invoke-StepPlaceholder -Number 8 -Name 'Loop Engine Start' `
-    -Reason 'Loop orchestration handled by Claude Code /loop harness'
+$results += Invoke-StepLoopEngineStart -Root $ScriptRoot
 
+# Step 9 Dashboard is the renderer itself; record it in results so the
+# Boot Summary math (OK + SKIP + FAIL == 9) reflects all 9 steps.
+$results += @{ Step = 9; Name = 'Dashboard'; Status = 'OK'; Detail = 'rendered' }
 $summary = Write-BootDashboard -Results $results
 
 if ($summary.FAIL -gt 0) {

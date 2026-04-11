@@ -76,8 +76,75 @@ Describe 'Start-ClaudeOS.ps1 — Step 7 Agent Init (PR-B)' {
     It 'Step 7 should report a non-zero agent count (proof of OK status)' {
         $output = & $script:BootScript -DryRun -NonInteractive 6>&1 | Out-String
         $output | Should -Match 'Agents Loaded\s*:\s*\d+'
-        # After PR-B + PR-C, Boot Summary reflects 5 OK steps: 1, 2, 3, 4, 7
-        $output | Should -Match 'OK\s*:\s*5'
+        # After PR-B + PR-C + PR-D, Boot Summary reflects 8 OK steps: 1, 2, 3, 4, 6, 7, 8, 9
+        $output | Should -Match 'OK\s*:\s*8'
+    }
+}
+
+Describe 'Start-ClaudeOS.ps1 — Step 6 Management Init (PR-D)' {
+    It 'IssueSyncManager.psm1 dependency should exist' {
+        $module = Join-Path $script:RepoRoot 'scripts\lib\IssueSyncManager.psm1'
+        Test-Path $module | Should -BeTrue
+    }
+
+    It 'config/agent-teams-backlog-rules.json should exist' {
+        $rules = Join-Path $script:RepoRoot 'config\agent-teams-backlog-rules.json'
+        Test-Path $rules | Should -BeTrue
+    }
+
+    It 'Step 6 should no longer emit the placeholder SKIP reason' {
+        $output = & $script:BootScript -DryRun -NonInteractive 6>&1 | Out-String
+        $output | Should -Not -Match 'Backlog / Scrum Master integration pending'
+    }
+
+    It 'Step 6 should report IssueSyncManager as loaded' {
+        $output = & $script:BootScript -DryRun -NonInteractive 6>&1 | Out-String
+        $output | Should -Match 'Backlog Module\s*:\s*\[OK\] IssueSyncManager loaded'
+    }
+}
+
+Describe 'Start-ClaudeOS.ps1 — Step 8 Loop Engine Start (PR-D)' {
+    It 'Step 8 should no longer emit the old placeholder reason' {
+        $output = & $script:BootScript -DryRun -NonInteractive 6>&1 | Out-String
+        $output | Should -Not -Match 'Loop orchestration handled by Claude Code /loop harness\s*\r?\n.*\[SKIP\]'
+    }
+
+    It 'Step 8 should detect the active session anchor' {
+        $output = & $script:BootScript -DryRun -NonInteractive 6>&1 | Out-String
+        $output | Should -Match 'Loop Engine\s*:\s*\[OK\] active session anchor detected'
+    }
+}
+
+Describe 'Start-ClaudeOS.ps1 — E2E integration (PR-D)' {
+    It 'all 9 step labels should appear in boot output (including OK and SKIP markers)' {
+        $output = & $script:BootScript -DryRun -NonInteractive 6>&1 | Out-String
+        $output | Should -Match '\[Step 1\].*Environment Check'
+        $output | Should -Match '\[Step 2\].*Project Detection'
+        $output | Should -Match '\[Step 3\].*Memory Restore'
+        $output | Should -Match '\[Step 4\].*System Init'
+        $output | Should -Match '\[Step 5\].*Executive Init'
+        $output | Should -Match '\[Step 6\].*Management Init'
+        $output | Should -Match '\[Step 7\].*Agent Init'
+        $output | Should -Match '\[Step 8\].*Loop Engine Start'
+        $output | Should -Match '\[Step 9\].*Dashboard'
+    }
+
+    It 'Boot Summary math should satisfy OK + SKIP + FAIL == 9' {
+        $output = & $script:BootScript -DryRun -NonInteractive 6>&1 | Out-String
+        if ($output -match 'OK\s*:\s*(\d+)\s*[\r\n]+\s*SKIP\s*:\s*(\d+)\s*[\r\n]+\s*FAIL\s*:\s*(\d+)') {
+            $ok   = [int]$Matches[1]
+            $skip = [int]$Matches[2]
+            $fail = [int]$Matches[3]
+            ($ok + $skip + $fail) | Should -Be 9
+        } else {
+            throw 'Boot Summary pattern not found in output'
+        }
+    }
+
+    It 'should complete with exit code 0 and success message' {
+        $output = & $script:BootScript -DryRun -NonInteractive 6>&1 | Out-String
+        $LASTEXITCODE | Should -Be 0
+        $output | Should -Match 'Boot sequence completed successfully'
     }
 }
 
