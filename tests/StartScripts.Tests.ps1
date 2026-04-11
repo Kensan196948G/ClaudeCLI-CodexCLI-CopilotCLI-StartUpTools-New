@@ -191,15 +191,22 @@ Describe 'Start-*.ps1 dry-run flows' {
         $output | Should -Match '\[DRY RUN\] No side effects will be applied'
     }
 
-    It 'Start-ClaudeOS.ps1 の Step 3/5/6/7/8 がプレースホルダー SKIP になること' {
+    It 'Start-ClaudeOS.ps1 の Step 3/5/6/8 がプレースホルダー SKIP になること (Step 7 は PR-B で実装済)' {
         $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-ClaudeOS.ps1'
         $output = & $script:PowerShellExe -NoProfile -File $scriptPath -NonInteractive 2>&1 | Out-String
         $LASTEXITCODE | Should -Be 0
         $output | Should -Match '\[Step 3\].*Memory Restore.*SKIP'
         $output | Should -Match '\[Step 5\].*Executive Init.*SKIP'
         $output | Should -Match '\[Step 6\].*Management Init.*SKIP'
-        $output | Should -Match '\[Step 7\].*Agent Init.*SKIP'
         $output | Should -Match '\[Step 8\].*Loop Engine Start.*SKIP'
+    }
+
+    It 'Start-ClaudeOS.ps1 の Step 7 Agent Init が PR-B 以降で実装され agents を読み込むこと' {
+        $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-ClaudeOS.ps1'
+        $output = & $script:PowerShellExe -NoProfile -File $scriptPath -NonInteractive 2>&1 | Out-String
+        $LASTEXITCODE | Should -Be 0
+        $output | Should -Not -Match '\[Step 7\].*Agent Init.*SKIP'
+        $output | Should -Match 'Agents Loaded\s*:\s*\d+'
     }
 }
 
