@@ -29,7 +29,10 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $ProjectDir = Resolve-Path (Join-Path $PSScriptRoot '..')
-$GlobalDir  = Join-Path $HOME '.claude\claudeos'
+# Build global path with platform-neutral separators so the script also works
+# under Linux/macOS pwsh (where '.claude\claudeos' would be treated as a
+# single directory name because backslash is not a path separator).
+$GlobalDir  = Join-Path (Join-Path $HOME '.claude') 'claudeos'
 
 # Only role-contracts.md is kept byte-identical across both locations.
 # The other files (orchestrator, loop-guard, token-budget, loops/*) are
