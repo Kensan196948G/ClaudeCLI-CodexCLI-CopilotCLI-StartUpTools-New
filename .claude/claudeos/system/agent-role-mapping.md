@@ -174,23 +174,78 @@ DevOps                              → ops, release-manager
 
 ---
 
-## 5. AgentTeams.psm1 との差分
+## 5. Classification ⊥ Activation — 2 次元モデル
 
-`scripts/lib/AgentTeams.psm1` の `$script:CoreRoles` 現状（2026-04-11 現在）:
+本 mapping 策定の過程で、`scripts/lib/AgentTeams.psm1` の既存設計を精読した結果、
+**「分類 (classification)」と「発動 (activation)」は独立した直交軸** であることが判明した。
+この区別は本 mapping の読み方を左右するため、本節で明示的に定義する。
 
-| Role | psm1 の agents | 本 mapping の追加 | 差分 |
-|---|---|---|---|
-| CTO | loop-operator, planner | + orchestrator, chief-of-staff | **+2** |
-| Architect | architect, api-designer | (変更なし) | 0 |
-| Developer | (空) | + dev-api, dev-ui | **+2** |
-| Reviewer | code-reviewer | + cpp-/database-/go-/java-/kotlin-/python-/rust-/typescript-reviewer | **+8** |
-| QA | qa, tdd-guide, e2e-runner | + tester, harness-optimizer | **+2** |
-| Security | security, security-reviewer | (変更なし) | 0 |
-| DevOps | ops, release-manager | (変更なし) | 0 |
-| **Debugger** | (未定義) | + 8 agents (build-resolvers + incident-triager) | **+8** |
-| **Support** | (未定義) | + 3 agents (doc-updater, docs-lookup, refactor-cleaner) | **+3** |
+### 5.1 二軸の定義
 
-**結論**: 現状 psm1 は 12/37 agents しか mapping を持っていない。本 mapping が採用されれば 37/37 が明示マップされる。これは **次期 commit** で `AgentTeams.psm1` の `$script:CoreRoles` を本表に追従させることで実装する（スコープ分離のため別 PR）。
+| 軸 | 質問 | 担当 |
+|---|---|---|
+| **Classification** | この agent は何を専門とするのか？ | 本 `agent-role-mapping.md` が決定する |
+| **Activation** | いつこの agent が team に参加するのか？ | `AgentTeams.psm1` の runtime ロジックが決定する |
+
+### 5.2 Activation の 2 種類
+
+`AgentTeams.psm1 New-AgentTeam` は team を 2 つの集合に分割する:
+
+| 集合 | 発動条件 | 実装箇所 |
+|---|---|---|
+| **coreTeam (always-on)** | `$script:CoreRoles` に列挙された agent は常に参加 | `AgentTeams.psm1:188-202` |
+| **specialists (task-driven)** | `Get-TaskTypeAnalysis` が task description にマッチした場合のみ参加 | `AgentTeams.psm1:204-219` |
+
+### 5.3 なぜ Developer 役が「空」で Reviewer が code-reviewer のみなのか
+
+現状 `$script:CoreRoles` の一見「不完全」な内容は、実は意図的な設計である:
+
+```powershell
+[pscustomobject]@{ role = 'Developer'; emoji = '👨‍💻'; agents = @() }
+[pscustomobject]@{ role = 'Reviewer';  emoji = '🔎'; agents = @('code-reviewer') }
+```
+
+**理由**: 技術別の dev / reviewer / build-resolver は **specialists** として、task 内容（API / UI / C++ / Rust / Django 等）に応じて動的に召集される設計。`tests/AgentTeams.Tests.ps1:242-245` の「`dev-api が specialist に含まれること`」という assert がこれを直接実証している。
+
+もし本 mapping 上の classification をそのまま `$script:CoreRoles` に転写すると、以下が起きる:
+
+1. すべての language reviewer が always-on となり、どんな task でも 9 人の reviewer が並列起動する → 無駄
+2. `specialists` が常に空となり、task-type による動的チーム編成が機能しなくなる
+3. `dev-api が specialist に含まれること` テストが失敗する
+
+### 5.4 正しい同期方針
+
+| アプローチ | 判定 | 備考 |
+|---|---|---|
+| **A: CoreRoles に全 37 を詰め込む** | ❌ 却下 | 5.3 の問題で specialists が死ぬ |
+| **B: mapping doc を 2 層化し psm1 は現状維持** | ✅ 採用 | 本節がこれ |
+| **C: psm1 に小幅追加（CTO + chief-of-staff 等の本当の always-on のみ）** | 🟡 今後検討 | 別 PR で必要性評価 |
+
+### 5.5 Classification / Activation の対応表
+
+§2 で定義した 9 Core Roles は **Classification 軸** 専用。Activation 軸との対応は以下:
+
+| Classification (本 doc) | 既定の Activation (psm1) | 備考 |
+|---|---|---|
+| CTO (4 agents) | coreTeam (2 agents: loop-operator, planner) | 残 2 (orchestrator, chief-of-staff) は現状 activation 非対象 |
+| Architect (2) | coreTeam (2: architect, api-designer) | 完全一致 |
+| Developer (2) | specialists (dev-api, dev-ui は task-type "api" / "ui" で発動) | 空 coreTeam は意図的 |
+| Reviewer (9) | coreTeam (1: code-reviewer), specialists (8 language reviewers) | code-reviewer は汎用 always-on |
+| Debugger (8) | specialists のみ (build-resolvers は task-type "ci" / "build" で発動) | psm1 に Debugger role は未定義だが実質機能している |
+| QA (5) | coreTeam (3: qa, tdd-guide, e2e-runner), specialists (tester, harness-optimizer) | 混在 |
+| Security (2) | coreTeam (2) | 完全一致 |
+| DevOps (2) | coreTeam (2: ops, release-manager) | 完全一致 |
+| Support (3) | 現状どちらでもない (future work) | Improvement phase で活用予定 |
+
+### 5.6 psm1 sync の scope 再定義
+
+本 mapping 採択後の `AgentTeams.psm1` への修正は、以下 **小幅** に限定する:
+
+1. `$script:CoreRoles` への `Debugger` role 追加（agents: `incident-triager` のみ。build-resolvers は specialists に留める）
+2. CTO role への `orchestrator` / `chief-of-staff` 追加検討（要 A/B 評価）
+3. `QA` role への `tester` 追加検討（要 A/B 評価）
+
+上記はいずれも **本 session スコープ外** とし、別 PR で慎重に評価する。**既存の specialist ロジックと既存テストを壊さない** ことを最優先とする。
 
 ---
 
