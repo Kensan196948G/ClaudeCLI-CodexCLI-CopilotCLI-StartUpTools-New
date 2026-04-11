@@ -11,6 +11,33 @@ BeforeAll {
     $script:BootScript = Join-Path $RepoRoot 'scripts\main\Start-ClaudeOS.ps1'
     $script:AgentsDir  = Join-Path $RepoRoot '.claude\claudeos\agents'
     $script:AgentTeamsModule = Join-Path $RepoRoot 'scripts\lib\AgentTeams.psm1'
+
+    # Fixture: ensure .claude/session-anchor.json exists for Step 8 Loop Engine
+    # probe. CI has no running Claude Code session and session-anchor.json is
+    # gitignored, so create a synthetic anchor and clean it up in AfterAll.
+    $script:AnchorPath = Join-Path $script:RepoRoot '.claude\session-anchor.json'
+    $script:AnchorWasMissing = -not (Test-Path $script:AnchorPath)
+    if ($script:AnchorWasMissing) {
+        $anchorDir = Split-Path $script:AnchorPath -Parent
+        if (-not (Test-Path $anchorDir)) {
+            New-Item -ItemType Directory -Path $anchorDir -Force | Out-Null
+        }
+        $fixtureContent = @{
+            session_id          = 'pester-fixture'
+            source              = 'Pester-BeforeAll'
+            wall_clock_start    = (Get-Date).ToString('yyyy-MM-ddTHH:mm:sszzz')
+            wall_clock_deadline = (Get-Date).AddHours(5).ToString('yyyy-MM-ddTHH:mm:sszzz')
+            max_duration_minutes = 300
+        } | ConvertTo-Json
+        Set-Content -Path $script:AnchorPath -Value $fixtureContent -Encoding UTF8
+    }
+}
+
+AfterAll {
+    # Clean up fixture anchor only if BeforeAll created it
+    if ($script:AnchorWasMissing -and (Test-Path $script:AnchorPath)) {
+        Remove-Item $script:AnchorPath -Force -ErrorAction SilentlyContinue
+    }
 }
 
 Describe 'Start-ClaudeOS.ps1 — Existence and Syntax' {

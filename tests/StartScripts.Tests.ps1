@@ -4,6 +4,27 @@ BeforeAll {
     $script:OriginalPath = $env:PATH
     $script:OriginalConfigOverride = $env:AI_STARTUP_CONFIG_PATH
 
+    # Fixture: ensure .claude/session-anchor.json exists for Start-ClaudeOS.ps1
+    # Step 8 Loop Engine Start probe. CI environments do not have a running
+    # Claude Code session so SessionStart hook never fires. Create a synthetic
+    # anchor if one is not present, and clean it up in AfterAll.
+    $script:AnchorPath = Join-Path $script:RepoRoot '.claude\session-anchor.json'
+    $script:AnchorWasMissing = -not (Test-Path $script:AnchorPath)
+    if ($script:AnchorWasMissing) {
+        $anchorDir = Split-Path $script:AnchorPath -Parent
+        if (-not (Test-Path $anchorDir)) {
+            New-Item -ItemType Directory -Path $anchorDir -Force | Out-Null
+        }
+        $fixtureContent = @{
+            session_id          = 'pester-fixture'
+            source              = 'Pester-BeforeAll'
+            wall_clock_start    = (Get-Date).ToString('yyyy-MM-ddTHH:mm:sszzz')
+            wall_clock_deadline = (Get-Date).AddHours(5).ToString('yyyy-MM-ddTHH:mm:sszzz')
+            max_duration_minutes = 300
+        } | ConvertTo-Json
+        Set-Content -Path $script:AnchorPath -Value $fixtureContent -Encoding UTF8
+    }
+
     $script:ProjectsRoot = Join-Path $TestDrive 'projects'
     $script:SshProjectsRoot = Join-Path $TestDrive 'ssh-projects'
     $script:BinRoot = Join-Path $TestDrive 'bin'
@@ -78,6 +99,11 @@ AfterAll {
     $env:PATH = $script:OriginalPath
     $env:AI_STARTUP_CONFIG_PATH = $script:OriginalConfigOverride
     Remove-Item Env:AI_STARTUP_SSH_CAPTURE_DIR -ErrorAction SilentlyContinue
+
+    # Clean up fixture anchor only if we created it
+    if ($script:AnchorWasMissing -and (Test-Path $script:AnchorPath)) {
+        Remove-Item $script:AnchorPath -Force -ErrorAction SilentlyContinue
+    }
 }
 
 Describe 'Start-*.ps1 dry-run flows' {
