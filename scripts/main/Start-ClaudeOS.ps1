@@ -139,6 +139,63 @@ function Invoke-StepPlaceholder {
     return @{ Step = $Number; Name = $Name; Status = 'SKIP'; Detail = $Reason }
 }
 
+function Invoke-StepMemoryRestore {
+    param([string]$Root)
+    Write-BootStep 3 'Memory Restore'
+    try {
+        $mcpJsonPath = Join-Path $Root '.mcp.json'
+        if (-not (Test-Path $mcpJsonPath)) {
+            Write-Host '  [SKIP] .mcp.json not found' -ForegroundColor Yellow
+            Write-Host ''
+            return @{ Step = 3; Name = 'Memory Restore'; Status = 'SKIP'; Detail = '.mcp.json missing' }
+        }
+
+        $mcpConfig = Get-Content $mcpJsonPath -Raw | ConvertFrom-Json
+        if (-not $mcpConfig.mcpServers) {
+            Write-Host '  [SKIP] .mcp.json has no mcpServers section' -ForegroundColor Yellow
+            Write-Host ''
+            return @{ Step = 3; Name = 'Memory Restore'; Status = 'SKIP'; Detail = 'no mcpServers in .mcp.json' }
+        }
+
+        $serverNames = @($mcpConfig.mcpServers.PSObject.Properties.Name)
+        $hasMemory = $serverNames -contains 'memory'
+        if (-not $hasMemory) {
+            Write-Host '  [SKIP] memory MCP server not configured in .mcp.json' -ForegroundColor Yellow
+            Write-Host ''
+            return @{ Step = 3; Name = 'Memory Restore'; Status = 'SKIP'; Detail = 'memory server not in mcpServers' }
+        }
+
+        $memoryServer = $mcpConfig.mcpServers.memory
+        $envVarName = 'CLAUDE_MEMORY_FILE_PATH'
+        $envVarValue = [Environment]::GetEnvironmentVariable($envVarName)
+        $envOk = -not [string]::IsNullOrEmpty($envVarValue)
+
+        Write-Host '  Memory MCP       : configured' -ForegroundColor Green
+        Write-Host ('  Command          : {0}' -f $memoryServer.command) -ForegroundColor DarkGray
+        $envLabel = if ($envOk) { '[OK] set' } else { '[WARN] not set (optional)' }
+        $envColor = if ($envOk) { 'Green' } else { 'Yellow' }
+        Write-Host ('  {0,-17}: {1}' -f $envVarName, $envLabel) -ForegroundColor $envColor
+        Write-Host '  Note             : Runtime connection deferred to Issue #70' -ForegroundColor DarkGray
+        Write-Host ''
+
+        return @{
+            Step = 3
+            Name = 'Memory Restore'
+            Status = 'OK'
+            Detail = @{
+                Configured = $true
+                HasEnvVar  = $envOk
+                Command    = $memoryServer.command
+            }
+        }
+    }
+    catch {
+        Write-Host ('  [FAIL] Memory Restore probe failed: {0}' -f $_.Exception.Message) -ForegroundColor Red
+        Write-Host ''
+        return @{ Step = 3; Name = 'Memory Restore'; Status = 'FAIL'; Detail = $_.Exception.Message }
+    }
+}
+
 function Invoke-StepAgentInit {
     param([string]$Root)
     Write-BootStep 7 'Agent Init'
@@ -217,8 +274,7 @@ Write-BootBanner
 $results = @()
 $results += Invoke-StepEnvironmentCheck
 $results += Invoke-StepProjectDetection -Root $ScriptRoot
-$results += Invoke-StepPlaceholder -Number 3 -Name 'Memory Restore' `
-    -Reason 'Memory MCP persistence not yet integrated'
+$results += Invoke-StepMemoryRestore -Root $ScriptRoot
 $results += Invoke-StepSystemInit
 $results += Invoke-StepPlaceholder -Number 5 -Name 'Executive Init' `
     -Reason 'Runtime CTO / Strategy Engine is a conceptual layer (Claude itself)'

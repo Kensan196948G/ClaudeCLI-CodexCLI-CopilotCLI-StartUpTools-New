@@ -76,8 +76,32 @@ Describe 'Start-ClaudeOS.ps1 — Step 7 Agent Init (PR-B)' {
     It 'Step 7 should report a non-zero agent count (proof of OK status)' {
         $output = & $script:BootScript -DryRun -NonInteractive 6>&1 | Out-String
         $output | Should -Match 'Agents Loaded\s*:\s*\d+'
-        # Boot Summary must reflect Step 7 as OK (4 OK steps: 1, 2, 4, 7)
-        $output | Should -Match 'OK\s*:\s*4'
+        # After PR-B + PR-C, Boot Summary reflects 5 OK steps: 1, 2, 3, 4, 7
+        $output | Should -Match 'OK\s*:\s*5'
+    }
+}
+
+Describe 'Start-ClaudeOS.ps1 — Step 3 Memory Restore (PR-C)' {
+    It '.mcp.json dependency should exist' {
+        $mcpJson = Join-Path $script:RepoRoot '.mcp.json'
+        Test-Path $mcpJson | Should -BeTrue
+    }
+
+    It '.mcp.json should contain memory MCP server entry' {
+        $mcpJson = Join-Path $script:RepoRoot '.mcp.json'
+        $config = Get-Content $mcpJson -Raw | ConvertFrom-Json
+        $serverNames = @($config.mcpServers.PSObject.Properties.Name)
+        $serverNames | Should -Contain 'memory'
+    }
+
+    It 'Step 3 should no longer emit the placeholder SKIP reason' {
+        $output = & $script:BootScript -DryRun -NonInteractive 6>&1 | Out-String
+        $output | Should -Not -Match 'Memory MCP persistence not yet integrated'
+    }
+
+    It 'Step 3 should report Memory MCP as configured' {
+        $output = & $script:BootScript -DryRun -NonInteractive 6>&1 | Out-String
+        $output | Should -Match 'Memory MCP\s*:\s*configured'
     }
 }
 
