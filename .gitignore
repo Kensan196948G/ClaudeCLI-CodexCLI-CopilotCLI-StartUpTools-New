@@ -51,6 +51,10 @@ state.json
 .claude/session-history.jsonl
 .claude/session-evaluation.json
 
+# fact-check.ps1 / codex-smoke-test.ps1 のランタイム出力（サンプル出力もコミット対象外）
+scripts/eval/*-report.json
+.claude/claudeos/system/codex-availability.json
+
 # テンプレート編集用バックアップ（作業中の退避先・コミット不要）
 Claude/templates/claude/START_PROMPT-backup/
 

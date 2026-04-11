@@ -29,18 +29,20 @@
 | ClaudeOS (Claude Code 専用) | v7.4 (完全無人運用 + AI Dev Factory + Priority Intelligence + Boot Sequence MVP) |
 | Agents | 37体の特化サブエージェント |
 | Skills | 64個のワークフロー定義 |
-| Boot Sequence | `Start-ClaudeOS.ps1` (Steps 1/2/4/**7**/9 実装 — PR-B Agent Init 追加) 🆕 |
-| 5h Time Anchor | **3 層防御** (SessionStart hook + self-discipline protocol + cron one-shot) 🆕 |
+| Boot Sequence | `Start-ClaudeOS.ps1` (Steps 1/2/**3**/4/**6**/**7**/**8**/9 実装 — Step 5 のみ概念層 SKIP) 🆕 |
+| 5h Time Anchor | **5 層防御** (SessionStart / self-discipline / cron / SessionEnd / PreToolUse opt-in) 🆕 |
 | Evaluation Methodology | v1.0 + `fact-check.ps1` + `codex-smoke-test.ps1` 🆕 |
+| Agent Role Mapping | 37 agents ↔ 9 roles (Classification ⊥ Activation 二層モデル) 🆕 |
 
 ### 🆕 直近の改善 (2026-04-11)
 
 | 改善 | 内容 | 関連ファイル |
 |---|---|---|
-| ⏱️ 5h 3 層防御 | ClaudeOS v7.4 の「5 時間厳守」が文書規約のみだった欠陥を是正。SessionStart hook / self-discipline protocol / cron one-shot の 3 層で相互補完 | `.claude/claudeos/system/time-anchor-protocol.md`, `.claude/claudeos/scripts/hooks/session-start.js`, `.claude/session-anchor.json` |
+| ⏱️ 5h **5 層防御** | ClaudeOS v7.4 の「5 時間厳守」を 5 層の相互補完で実装 — SessionStart hook / self-discipline protocol / cron one-shot / SessionEnd 永続化 / PreToolUse deadline check (opt-in) | `.claude/claudeos/system/time-anchor-protocol.md` (v1.1), `.claude/claudeos/scripts/hooks/{session-start,session-end,evaluate-session,pretool-deadline-check}.js` |
 | 📏 Evaluation Methodology v1.0 | 評価レポート作成の必須プロトコル (4 段階 runtime-assertion バッジ / Fact-Check Checklist / Challenge-the-Strength) | `.claude/claudeos/system/evaluation-methodology.md` |
 | 🔍 fact-check.ps1 | JSON claim list を読み込み file/dir 実在を検証する PowerShell harness。80% accuracy で既知誤認を自動検出 | `scripts/eval/fact-check.ps1` |
-| 🏗️ Boot Sequence PR-B | Step 7 Agent Init 実装 (37 agents 読込) + Pester テスト 12 件整備 | `scripts/main/Start-ClaudeOS.ps1`, `tests/Start-ClaudeOS.Tests.ps1` |
+| 🏗️ Boot Sequence PR-B/C/D | Steps 3 (Memory Restore) / 6 (Management Init) / 7 (Agent Init, 37 agents) / 8 (Loop Engine) を probe 化 + Pester 29 件追加 | `scripts/main/Start-ClaudeOS.ps1`, `tests/Start-ClaudeOS.Tests.ps1` |
+| 🗺️ Agent Role Mapping v1.0 | 37 agents ↔ 9 roles の完全分類 + Classification ⊥ Activation 二層モデルで psm1 設計との整合を取る | `.claude/claudeos/system/agent-role-mapping.md` |
 
 ### Agent Teams 対応レベル (Claude Code 専用)
 
