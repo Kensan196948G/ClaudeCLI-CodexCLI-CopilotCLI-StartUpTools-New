@@ -139,6 +139,60 @@ function Invoke-StepPlaceholder {
     return @{ Step = $Number; Name = $Name; Status = 'SKIP'; Detail = $Reason }
 }
 
+function Invoke-StepAgentInit {
+    param([string]$Root)
+    Write-BootStep 7 'Agent Init'
+    try {
+        $agentsDir = Join-Path $Root '.claude\claudeos\agents'
+        if (-not (Test-Path $agentsDir)) {
+            Write-Host ('  [SKIP] Agents directory not found: {0}' -f $agentsDir) -ForegroundColor Yellow
+            Write-Host ''
+            return @{ Step = 7; Name = 'Agent Init'; Status = 'SKIP'; Detail = 'agents directory missing' }
+        }
+
+        $agentTeamsModule = Join-Path $Root 'scripts\lib\AgentTeams.psm1'
+        if (-not (Test-Path $agentTeamsModule)) {
+            Write-Host ('  [SKIP] AgentTeams.psm1 not found: {0}' -f $agentTeamsModule) -ForegroundColor Yellow
+            Write-Host ''
+            return @{ Step = 7; Name = 'Agent Init'; Status = 'SKIP'; Detail = 'AgentTeams module missing' }
+        }
+
+        Import-Module $agentTeamsModule -Force -DisableNameChecking -Global
+
+        $agents = @(Import-AgentDefinitions -AgentsDir $agentsDir)
+        $count = $agents.Count
+
+        if ($count -eq 0) {
+            Write-Host '  [FAIL] No agents loaded' -ForegroundColor Red
+            Write-Host ''
+            return @{ Step = 7; Name = 'Agent Init'; Status = 'FAIL'; Detail = 'zero agents loaded' }
+        }
+
+        Write-Host ('  Agents Loaded    : {0}' -f $count) -ForegroundColor Green
+        $sample = @($agents | Select-Object -First 5 | ForEach-Object { $_.id })
+        Write-Host ('  Sample           : {0}' -f ($sample -join ', ')) -ForegroundColor DarkGray
+        if ($count -gt 5) {
+            Write-Host ('  ... and {0} more agents' -f ($count - 5)) -ForegroundColor DarkGray
+        }
+        Write-Host ''
+
+        return @{
+            Step = 7
+            Name = 'Agent Init'
+            Status = 'OK'
+            Detail = @{
+                Count  = $count
+                Sample = $sample
+            }
+        }
+    }
+    catch {
+        Write-Host ('  [FAIL] Agent Init failed: {0}' -f $_.Exception.Message) -ForegroundColor Red
+        Write-Host ''
+        return @{ Step = 7; Name = 'Agent Init'; Status = 'FAIL'; Detail = $_.Exception.Message }
+    }
+}
+
 function Write-BootDashboard {
     param([array]$Results)
     Write-BootStep 9 'Dashboard'
@@ -170,8 +224,7 @@ $results += Invoke-StepPlaceholder -Number 5 -Name 'Executive Init' `
     -Reason 'Runtime CTO / Strategy Engine is a conceptual layer (Claude itself)'
 $results += Invoke-StepPlaceholder -Number 6 -Name 'Management Init' `
     -Reason 'Backlog / Scrum Master integration pending'
-$results += Invoke-StepPlaceholder -Number 7 -Name 'Agent Init' `
-    -Reason 'AgentTeams runtime wiring pending (PR-B)'
+$results += Invoke-StepAgentInit -Root $ScriptRoot
 $results += Invoke-StepPlaceholder -Number 8 -Name 'Loop Engine Start' `
     -Reason 'Loop orchestration handled by Claude Code /loop harness'
 
