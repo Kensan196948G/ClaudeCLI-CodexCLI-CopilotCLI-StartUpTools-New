@@ -1,0 +1,12 @@
+[
+  { "type": "file", "path": ".claude/claudeos/system/orchestrator.md" },
+  { "type": "file", "path": ".claude/claudeos/system/v8-delta.md" },
+  { "type": "file", "path": ".claude/claudeos/system/evaluation-methodology.md" },
+  { "type": "file", "path": "config/agent-teams-backlog-rules.json" },
+  { "type": "dir",  "path": "mcp-configs/" },
+  { "type": "dir",  "path": ".claude/claudeos/agents/" },
+  { "type": "dir",  "path": ".claude/claudeos/skills/" },
+  { "type": "file", "path": ".github/workflows/ci.yml" },
+  { "type": "file_with_content", "path": ".github/workflows/ci.yml", "must_contain": "Pester" },
+  { "type": "file_with_content", "path": ".github/workflows/ci.yml", "must_contain": "npm ci" }
+]
