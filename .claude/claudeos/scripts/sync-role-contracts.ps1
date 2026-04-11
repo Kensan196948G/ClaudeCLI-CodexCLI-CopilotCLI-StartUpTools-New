@@ -38,8 +38,11 @@ $GlobalDir  = Join-Path (Join-Path $HOME '.claude') 'claudeos'
 # The other files (orchestrator, loop-guard, token-budget, loops/*) are
 # intentionally divergent: global holds a minimal baseline, project holds
 # an expanded operational version. Do NOT add them to this list.
+#
+# Use Join-Path to build each relative path with the platform-native
+# separator (backslash on Windows, forward slash on Linux/macOS).
 $FilesToSync = @(
-    'system\role-contracts.md'
+    (Join-Path 'system' 'role-contracts.md')
 )
 
 if ($Reverse) {
