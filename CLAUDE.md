@@ -453,6 +453,8 @@ Document always      / README keeps truth
 
 | レイヤー | ファイル |
 |---|---|
+| **v8 差分仕様書** | **`.claude/claudeos/system/v8-delta.md`** (Event Driven Layer の追加定義、本文と共存) |
+| **Bare /loop default** | **`.claude/loop.md`** (公式仕様準拠の idle maintenance prompt) |
 | Core | `claudeos/system/orchestrator.md` |
 | Core | `claudeos/system/token-budget.md` |
 | Core | `claudeos/system/loop-guard.md` |
@@ -463,3 +465,7 @@ Document always      / README keeps truth
 | CI | `claudeos/ci/ci-manager.md` |
 | Evolution | `claudeos/evolution/self-evolution.md` |
 | グローバル設定 | `~/.claude/CLAUDE.md` |
+
+### v8.0-β Addendum について
+
+本ファイル (v7.4) は ClaudeOS の **運用規約** として引き続き有効です。`.claude/claudeos/system/v8-delta.md` は v7.4 への **加算的な差分仕様書** であり、Event Driven Layer (dynamic /loop + Monitor tool + Channels の三層監視) を定義します。矛盾が生じた場合は **v7.4 本文 (本ファイル) を正** とします。
