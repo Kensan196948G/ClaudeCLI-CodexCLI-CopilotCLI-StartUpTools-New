@@ -24,7 +24,14 @@
         "phase": { "type": "string", "enum": ["Monitor", "Development", "Verify", "Improvement", "Debug", "Release", "STABLE"] },
         "loop_number": { "type": "integer", "minimum": 1 },
         "auto_stop_threshold": { "type": "integer", "minimum": 1 },
-        "graceful_shutdown": { "type": "boolean" }
+        "graceful_shutdown": { "type": "boolean" },
+        "mode": { "type": "string", "enum": ["light", "full"], "description": "role-contracts.md §1 の運用モード (既定 light)" },
+        "retry_count_by_cause": { "type": "object", "description": "Loop Guard: 原因別リトライ回数" },
+        "no_progress_streak": { "type": "integer", "minimum": 0, "description": "Loop Guard: 連続進展なし回数 (閾値 2 で停止)" },
+        "same_diff_streak": { "type": "integer", "minimum": 0, "description": "Loop Guard: 同一差分再生成回数 (閾値 2 で停止)" },
+        "last_stop_reason": { "type": "string", "description": "Loop Guard: 直近の停止理由 (handoff レポート生成に使用)" },
+        "pending": { "type": "array", "items": { "type": "object" }, "description": "Build Loop が記録する未完了項目。Loop Guard が handoff レポート合成時に読む" },
+        "pending_verify": { "type": "array", "items": { "type": "object" }, "description": "Verify Loop が記録する未判定項目。Loop Guard が handoff レポート合成時に読む" }
       }
     },
     "token": {
