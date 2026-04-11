@@ -19,6 +19,17 @@ _ClaudeOS v7.4 時間管理の 3 層防御アーキテクチャと self-discipli
 本ドキュメントは **レイヤー 2** を正式化する。レイヤー 1 と 3 は実装済だが、それらを活用するための
 Claude 側のルーチンが無ければ 3 層防御は成立しないため、以下の手順を規約として定める。
 
+## 追補: Layer 4 + Layer 5 (2026-04-11 拡張)
+
+2026-04-11 の作業で、SessionEnd と PreToolUse の両端点にも防御層を追加した:
+
+| # | レイヤー | 実装 | 責務 |
+|---|---|---|---|
+| 4 | **SessionEnd 永続化** | `session-end.js` + `evaluate-session.js` + settings.json 登録 | セッション終了時に summary / history / evaluation JSON を生成、state.json を最終化 |
+| 5 | **PreToolUse deadline check** (opt-in) | `pretool-deadline-check.js` (未登録) | 全ツール呼び出し前に anchor から remaining を計算し、`<= 0` で exit 2 ブロック |
+
+**合計 5 層防御** で 5 時間厳守を実現する。Layer 5 は opt-in で、リスク評価後に settings.json へ登録する。
+
 ---
 
 ## 1. セッション開始時のプロトコル
@@ -178,8 +189,82 @@ Claude の self-discipline 層が抜けると、0 < remaining_min < 30 の段階
 
 ---
 
+## 8. Layer 5 — PreToolUse Deadline Check (opt-in)
+
+### 8.1 目的
+
+Layer 2 (Claude self-discipline) と Layer 3 (cron one-shot) はそれぞれ限界を持つ:
+
+- **Layer 2** は Claude が anchor を読まなかった場合に無効化される
+- **Layer 3** は cron 発火タイミングが粗く (分単位)、かつ recurring ではないため外乱に弱い
+
+両者の狭間を埋めるのが Layer 5。`.claude/claudeos/scripts/hooks/pretool-deadline-check.js` を
+PreToolUse hook として登録すると、**すべてのツール呼び出し前** に anchor を読み elapsed を計算し、
+`remaining_minutes <= 0` の場合に exit code 2 でツール実行をブロックする。
+
+### 8.2 状態機械
+
+| remaining | アクション | 出力 | exit |
+|---|---|---|---|
+| `> 5` | allow (silent) | なし | 0 |
+| `1 ≤ 5` | allow + WARN | stderr 警告 | 0 |
+| `≤ 0` | **BLOCK** | stderr ブロック理由 | **2** |
+| anchor 欠損 / parse 失敗 / その他例外 | **fail-open** | stderr 理由 | 0 |
+
+### 8.3 Fail-open 設計原則
+
+Layer 5 は **hook のバグでユーザーセッションをブリック化しない** ことを最優先とする。
+anchor が無い、JSON が壊れている、タイムゾーン計算でエラー — これら全てのケースで **exit 0**
+(allow) を返す。`remaining <= 0` の明確な判定ができたときにのみ block する。
+
+### 8.4 登録手順 (opt-in)
+
+本 Layer は opt-in (既定無効)。有効化するには `.claude/settings.json` の `hooks` に追記:
+
+```json
+"PreToolUse": [
+  {
+    "hooks": [
+      {
+        "type": "command",
+        "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/claudeos/scripts/hooks/pretool-deadline-check.js\""
+      }
+    ]
+  }
+]
+```
+
+登録前に **必ず** 以下を確認する:
+
+1. `.claude/session-anchor.json` が現在時刻 ± 5h 以内の値であること
+2. smoke test (本プロトコル §8.5) が 5 シナリオ全てで期待通り動作すること
+3. 緊急時の無効化手順 — settings.json の PreToolUse ブロックを削除
+
+### 8.5 Smoke test (5 シナリオ)
+
+2026-04-11 に実施した検証手順:
+
+```bash
+TMP=$(mktemp -d); mkdir -p "$TMP/.claude"
+HOOK=".claude/claudeos/scripts/hooks/pretool-deadline-check.js"
+
+# 1. normal (remaining=240) → exit 0 silent
+cat > "$TMP/.claude/session-anchor.json" <<EOF
+{"wall_clock_start":"$(date -u -d '60 minutes ago' '+%Y-%m-%dT%H:%M:%S+00:00')","max_duration_minutes":300}
+EOF
+CLAUDE_PROJECT_DIR="$TMP" node "$HOOK" < /dev/null   # expect exit=0
+
+# 2. warn (remaining=3)     → exit 0 with stderr WARN
+# 3. block (remaining=-10)  → exit 2 with stderr BLOCK
+# 4. no anchor              → exit 0 fail-open
+# 5. invalid JSON           → exit 0 fail-open
+```
+
+全 5 scenarios で期待通り動作することを local で確認済 (runtime-verified)。
+
 ## Revision History
 
 | version | date | change |
 |---|---|---|
 | v1.0 | 2026-04-11 | 初版。5h Sign-Flip Incident を受けてレイヤー 2 を正式化 |
+| v1.1 | 2026-04-11 | Layer 4 (SessionEnd hooks) + Layer 5 (PreToolUse, opt-in) を追補 |
