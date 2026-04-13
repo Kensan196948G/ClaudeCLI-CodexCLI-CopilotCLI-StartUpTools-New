@@ -1,5 +1,41 @@
 {
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/claudeos/scripts/hooks/session-start.js\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/claudeos/scripts/hooks/pretool-deadline-check.js\""
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/claudeos/scripts/hooks/session-end.js\""
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/claudeos/scripts/hooks/evaluate-session.js\""
+          }
+        ]
+      }
+    ]
   }
 }

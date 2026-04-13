@@ -46,20 +46,22 @@ GitHub Projects の更新タイミングは 01-session-startup.md「6. GitHub Pr
 
 - 開発内容
 - CI 結果
-- review 結果
+- Codex review 結果
+- CodeRabbit review 結果
 - rescue 結果
 - 自動生成 Issue 一覧
 - Project 更新内容
 - 残課題
 - 次アクション
 
-## v7.4の本質
+## v7.5の本質
 
 - AI が Issue を自動生成する
 - AI が GitHub Projects を統制する
 - AI が state.json を基に優先順位判断する
 - AI が CI を監視し、限定的に自己修復する
 - AI が失敗と成功を学習する
+- CodeRabbit + Codex のデュアルレビューで品質を担保する
 
 ## 最重要思想
 

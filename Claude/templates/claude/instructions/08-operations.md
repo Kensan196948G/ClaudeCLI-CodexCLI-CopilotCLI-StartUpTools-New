@@ -27,7 +27,7 @@
 
 ```
 Goal解析 → KPI確認 → 優先順位AI判定 → Issue自動生成 → GitHub Projects同期
-→ 開発 → テスト → Codex Review → CI / Actions → 修復 → 再検証
+→ 開発 → テスト → CodeRabbit Review → Codex Review → CI / Actions → 修復 → 再検証
 → STABLE判定 → PR → state更新 → Learning更新 → 次ループ
 ```
 
@@ -96,7 +96,8 @@ Goal解析 → KPI確認 → 優先順位AI判定 → Issue自動生成 → GitH
 - test success
 - build success
 - CI success
-- review OK
+- Codex review OK
+- CodeRabbit Critical/High = 0
 - security OK
 - blocker なし
 

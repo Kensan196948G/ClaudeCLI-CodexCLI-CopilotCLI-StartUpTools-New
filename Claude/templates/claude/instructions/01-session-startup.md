@@ -20,6 +20,14 @@
 - Review / Rescue / Status 有効
 - Review Gate はリリース直前のみ有効化
 
+## CodeRabbit統合（必須）
+
+本環境では CodeRabbit Plugin がインストール済みであることを前提とする。
+
+- `coderabbit` プラグイン有効
+- `/coderabbit:review` コマンド利用可能
+- Codex レビューと併用（CodeRabbit → Codex の順序で実行）
+
 ### 標準実行
 
 ```text
@@ -37,6 +45,7 @@
 
 - 設定された時間から5時間作業を厳密に守ってください。
 - Monitor、Development、Verify、Improvement を最大10回ループとしてください（早期停止・終了はCTO判断、STABLE達成・5時間到達・Token枯渇・Blocked判定で早期終了）。
+- コード生成やライブラリドキュメントが必要なときは Context7 MCP を自動で使うこと
 - LOOP 登録 4 本・Codex セットアップ・確認チェックリストが全て完了したら、CTO全権委任で自律開発を開始してください。
 
 ### 1. AgentTeams活用ルール

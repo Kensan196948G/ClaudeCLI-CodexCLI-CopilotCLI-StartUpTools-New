@@ -8,7 +8,7 @@
 | ProductManager   | Issue生成 / Projects同期 |
 | Architect        | 設計                   |
 | Developer        | 実装                   |
-| Reviewer         | Codexレビュー            |
+| Reviewer         | Codex / CodeRabbitレビュー |
 | Debugger         | 原因分析                 |
 | QA               | テスト                  |
 | Security         | リスク評価                |
@@ -36,6 +36,7 @@
 [Architect] 設計:
 [Developer] 実装:
 [Reviewer] 指摘:
+[CodeRabbit] レビュー結果:
 [Debugger] 原因:
 [QA] 検証:
 [Security] リスク:

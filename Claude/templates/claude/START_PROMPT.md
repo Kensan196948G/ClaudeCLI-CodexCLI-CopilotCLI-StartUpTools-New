@@ -1,4 +1,4 @@
-# ClaudeOS v7.4 セッション開始
+# ClaudeOS v7.5 セッション開始（CodeRabbit Review Integration）
 
 ## LOOP_COMMANDS
 
@@ -11,21 +11,22 @@
 
 ## PROMPT_BODY
 
-# ClaudeOS v7.4 完全無人運用版
+# ClaudeOS v7.5 完全無人運用版
 
-## Autonomous Operations Edition + AI Dev Factory + Priority Intelligence + Full CI Automation + Auto Loop Intelligence
+## Autonomous Operations Edition + AI Dev Factory + CodeRabbit Review Loop + Full CI Automation + Auto Loop Intelligence
 
 ## 指示確認プロトコル（必須）
 
 LOOP_COMMANDS 登録・Codex セットアップ完了後、作業を開始する前に、以下の確認チェックリストを出力してください。
 
 ```
-=== ClaudeOS v7.4 指示確認 ===
+=== ClaudeOS v7.5 指示確認 ===
 [✅/❌] 01 セッション開始・Codex設定・実行方針
 [✅/❌] 02 コア構造・マルチプロジェクト・Goal Driven
 [✅/❌] 03 state.json スキーマ・優先順位AI
 [✅/❌] 04 Agent Teams 定義・起動順序
 [✅/❌] 05 Codex統合・Debug原則
+[✅/❌] 05.5 CodeRabbit統合・レビュー連携
 [✅/❌] 06 CI Manager・GitHub Actions
 [✅/❌] 07 AI Dev Factory・GitHub Projects連携
 [✅/❌] 08 ループ制御・WorkTree・Token・時間・STABLE・禁止事項
@@ -339,7 +340,7 @@ Agent は以下を唯一の定義ソースとする：
 | ProductManager   | Issue生成 / Projects同期 |
 | Architect        | 設計                   |
 | Developer        | 実装                   |
-| Reviewer         | Codexレビュー            |
+| Reviewer         | Codex / CodeRabbitレビュー |
 | Debugger         | 原因分析                 |
 | QA               | テスト                  |
 | Security         | リスク評価                |
@@ -407,6 +408,53 @@ Agent は以下を唯一の定義ソースとする：
 - 深追い禁止
 - 同一原因 3 回まで
 - 原因不明時は推測修正を禁止
+
+---
+
+# CodeRabbit統合・レビュー連携
+
+## 概要
+
+CodeRabbit CLI プラグインを Verify / Review の補助ツールとして使用する。
+Codex レビューの代替ではなく、静的解析（40+ 解析器）による補完として位置づける。
+
+## 実行コマンド
+
+| タイミング | コマンド | 目的 |
+|---|---|---|
+| PR 作成前（推奨） | `/coderabbit:review committed --base main` | コミット済み差分の事前品質チェック |
+| Verify フェーズ | `/coderabbit:review all --base main` | 全変更の包括レビュー |
+| 修正後の再確認 | `/coderabbit:review uncommitted` | 未コミット修正の即時確認 |
+
+## Codex との統合順序
+
+```
+1. /coderabbit:review committed --base main   ← 静的解析 + AI（高速・広範）
+2. /codex:review --base main --background     ← 設計・ロジックの深いレビュー
+3. 両方の指摘を統合して修正
+```
+
+## 指摘対応ルール
+
+| 重大度 | 対応 |
+|---|---|
+| Critical / High | 必須修正。未修正で merge 禁止 |
+| Medium | 原則修正。技術的理由があれば理由を記録してスキップ可 |
+| Low | 任意。時間・Token 残量に応じて対応 |
+
+## 対応上限（無限ループ防止）
+
+- 同一ファイルへの CodeRabbit 指摘修正: 最大 3 ラウンド
+- 全体の CodeRabbit レビューループ: 最大 5 ラウンド
+- 上限到達時: 残指摘を Issue に起票して次フェーズへ進む
+- **指摘ゼロを終了条件としない**（Low/Medium は残存許容）
+
+## Agent ログフォーマット
+
+```
+[CodeRabbit] レビュー結果: Critical=0 High=1 Medium=3 Low=5
+[CodeRabbit] 修正対象: High=1 Medium=2（残 Medium=1 は Issue #XX へ）
+```
 
 ---
 
@@ -625,7 +673,7 @@ Backlog → Todo → In Progress → Review → Verify → Blocked → Done
 
 ```
 Goal解析 → KPI確認 → 優先順位AI判定 → Issue自動生成 → GitHub Projects同期
-→ 開発 → テスト → Codex Review → CI / Actions → 修復 → 再検証
+→ 開発 → テスト → CodeRabbit Review → Codex Review → CI / Actions → 修復 → 再検証
 → STABLE判定 → PR → state更新 → Learning更新 → 次ループ
 ```
 
@@ -694,7 +742,8 @@ Goal解析 → KPI確認 → 優先順位AI判定 → Issue自動生成 → GitH
 - test success
 - build success
 - CI success
-- review OK
+- Codex review OK
+- CodeRabbit Critical/High = 0
 - security OK
 - blocker なし
 
@@ -782,20 +831,22 @@ GitHub Projects の更新タイミングは 01-session-startup.md「6. GitHub Pr
 
 - 開発内容
 - CI 結果
-- review 結果
+- Codex review 結果
+- CodeRabbit review 結果
 - rescue 結果
 - 自動生成 Issue 一覧
 - Project 更新内容
 - 残課題
 - 次アクション
 
-## v7.4の本質
+## v7.5の本質
 
 - AI が Issue を自動生成する
 - AI が GitHub Projects を統制する
 - AI が state.json を基に優先順位判断する
 - AI が CI を監視し、限定的に自己修復する
 - AI が失敗と成功を学習する
+- CodeRabbit + Codex のデュアルレビューで品質を担保する
 
 ## 最重要思想
 
@@ -818,5 +869,5 @@ GitHub Projects の更新タイミングは 01-session-startup.md「6. GitHub Pr
 
 ---
 
-ClaudeOS v7.4 は、AI Dev Factory・優先順位AI・GitHub Projects連携・GitHub Actions CI Manager に加え、Auto Loop Intelligence・可視化・ドキュメント自動更新を統合した、完全自律 AI 開発運用基盤である。
+ClaudeOS v7.5 は、AI Dev Factory・優先順位AI・GitHub Projects連携・GitHub Actions CI Manager・CodeRabbit デュアルレビューに加え、Auto Loop Intelligence・可視化・ドキュメント自動更新を統合した、完全自律 AI 開発運用基盤である。
 

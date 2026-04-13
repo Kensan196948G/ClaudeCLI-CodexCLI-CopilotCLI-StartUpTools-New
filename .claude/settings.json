@@ -28,6 +28,16 @@
         ]
       }
     ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/claudeos/scripts/hooks/pretool-deadline-check.js\""
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "hooks": [

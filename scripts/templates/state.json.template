@@ -1,0 +1,107 @@
+{
+  "version": "v7.5",
+  "etag": "pending-first-write",
+  "project": {
+    "name": "",
+    "mode": "autonomous"
+  },
+  "goal": {
+    "title": "自律開発最適化",
+    "description": "",
+    "phase": 1,
+    "target_version": ""
+  },
+  "execution": {
+    "platform": "local",
+    "start_time": "",
+    "end_time": "",
+    "max_duration_minutes": 300,
+    "elapsed_minutes": 0,
+    "remaining_minutes": 300,
+    "phase": "Monitor",
+    "loop_number": 0,
+    "auto_stop_threshold": 5,
+    "graceful_shutdown": true
+  },
+  "token": {
+    "total_budget": 100,
+    "used": 0,
+    "remaining": 100,
+    "allocation": {
+      "monitor": 10,
+      "development": 35,
+      "verify": 20,
+      "improvement": 10,
+      "debug": 15,
+      "issue_factory": 5,
+      "release": 5
+    },
+    "dynamic_mode": true,
+    "current_phase_budget": 0,
+    "current_phase_used": 0
+  },
+  "kpi": {
+    "success_rate_target": 0.9,
+    "test_pass_rate_target": 0.95,
+    "review_blocker_target": 0,
+    "security_blocker_target": 0,
+    "ci_stability_target": 0.95
+  },
+  "stable": {
+    "consecutive_success": 0,
+    "target_n": 3,
+    "last_check": "",
+    "ci_status": "UNKNOWN"
+  },
+  "codex": {
+    "setup_checked": false,
+    "review_gate": "off",
+    "last_review_status": "none",
+    "last_review_type": "none",
+    "last_review_job_id": "",
+    "last_review_summary": "",
+    "blocking_issues": [],
+    "severity": "none"
+  },
+  "coderabbit": {
+    "last_review_status": "none",
+    "critical_count": 0,
+    "high_count": 0,
+    "medium_count": 0,
+    "low_count": 0,
+    "review_rounds": 0,
+    "max_review_rounds": 5
+  },
+  "debug": {
+    "last_failure_category": "none",
+    "failure_count_by_category": {},
+    "same_error_retry_count": 0,
+    "rescue_retry_count": 0,
+    "last_root_cause": "",
+    "last_fix_scope": "none",
+    "last_fix_strategy": "none",
+    "flaky_suspected": false,
+    "debug_mode": "normal"
+  },
+  "automation": {
+    "auto_issue_generation": true,
+    "auto_project_sync": true,
+    "self_evolution": true,
+    "auto_priority_scoring": true,
+    "auto_repair": true
+  },
+  "github": {
+    "default_branch": "main",
+    "require_pr": true,
+    "require_codex_review": true,
+    "require_actions_success": true,
+    "project_sync_enabled": true
+  },
+  "status": {
+    "stable": false,
+    "blocked": false,
+    "current_phase": "monitor",
+    "last_updated": "",
+    "session_ended_at": null
+  }
+}

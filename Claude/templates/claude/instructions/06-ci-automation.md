@@ -15,10 +15,11 @@
 3. Test 実行
 4. Lint / Format / Static Check
 5. Security Check
-6. Codex review 結果確認
-7. 失敗時は Issue 自動生成
-8. 修復可能なら限定回数で再試行
-9. 成功時は STABLE 判定候補へ進行
+6. CodeRabbit review 結果確認
+7. Codex review 結果確認
+8. 失敗時は Issue 自動生成
+9. 修復可能なら限定回数で再試行
+10. 成功時は STABLE 判定候補へ進行
 
 ## GitHub Actions 実装テンプレート
 

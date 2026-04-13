@@ -52,10 +52,20 @@
     "blocked_patterns": [],
     "preferred_fix_order": ["security", "ci", "test", "review", "refactor"]
   },
+  "coderabbit": {
+    "last_review_status": "none",
+    "critical_count": 0,
+    "high_count": 0,
+    "medium_count": 0,
+    "low_count": 0,
+    "review_rounds": 0,
+    "max_review_rounds": 5
+  },
   "github": {
     "default_branch": "main",
     "require_pr": true,
     "require_codex_review": true,
+    "require_coderabbit_review": true,
     "require_actions_success": true,
     "project_sync_enabled": true
   },

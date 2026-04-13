@@ -594,7 +594,7 @@ function Sync-LauncherClaudeGlobalConfig {
         -Label '.claude/claudeos'
 
     $settingsTemplatePath = Join-Path $StartupRoot 'scripts\templates\claude-settings.json'
-    Seed-ProjectTemplate `
+    Sync-ProjectTemplate `
         -TemplatePath $settingsTemplatePath `
         -TargetPath (Join-Path $ProjectDir '.claude\settings.json') `
         -Label '.claude/settings.json' `
@@ -610,6 +610,11 @@ function Sync-LauncherClaudeGlobalConfig {
         -TargetPath (Join-Path $ProjectDir '.claude\statusline.py') `
         -Label '.claude/statusline.py' `
         -EnsureParentDirectory
+
+    Seed-ProjectTemplate `
+        -TemplatePath (Join-Path $StartupRoot 'scripts\templates\state.json.template') `
+        -TargetPath (Join-Path $ProjectDir 'state.json') `
+        -Label 'state.json (5h session template)'
 }
 
 function Sync-LauncherCodexGlobalConfig {

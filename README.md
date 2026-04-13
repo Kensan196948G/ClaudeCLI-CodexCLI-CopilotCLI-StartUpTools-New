@@ -2,16 +2,16 @@
 
 > Windows から **Claude Code** を中心とした自律開発環境を立ち上げるためのスタートアップツールです。
 
-`ClaudeOS v7.4` (Agent Teams / Boot Sequence / Self Evolution / Architecture Check / Issue Factory) をカーネルに据え、ローカル起動・SSH リモート起動・診断・Pester テスト・GitHub Issues / Projects / Actions 連携を一括提供します。
+`ClaudeOS v7.5` (Agent Teams / Boot Sequence / Self Evolution / Architecture Check / Issue Factory / **CodeRabbit Review Integration**) をカーネルに据え、ローカル起動・SSH リモート起動・診断・Pester テスト・GitHub Issues / Projects / Actions 連携を一括提供します。
 
 > **📌 リポジトリ名について**
-> リポジトリ名 `ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New` は当初の 3 ツール統合ランチャー構想に由来しますが、現在の開発投資・新機能 (ClaudeOS v7.4 / Phase 3) はすべて **Claude Code** 側に集中しています。Codex CLI / GitHub Copilot CLI の起動スクリプトもリポジトリ内に併設してありますが、ClaudeOS フレームワークと統合されているのは Claude Code のみです。
+> リポジトリ名 `ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New` は当初の 3 ツール統合ランチャー構想に由来しますが、現在の開発投資・新機能 (ClaudeOS v7.5 / Phase 3) はすべて **Claude Code** 側に集中しています。Codex CLI / GitHub Copilot CLI の起動スクリプトもリポジトリ内に併設してありますが、ClaudeOS フレームワークと統合されているのは Claude Code のみです。
 
 ## 対応ツール
 
 | ツール | 提供元 | 位置付け | 主な用途 |
 |--------|--------|---------|---------|
-| 🌟 **Claude Code** | Anthropic | **主軸** — ClaudeOS v7.4 統合 / Agent Teams / Boot Sequence / 自律開発ループ | 大規模なコード修正、レビュー、自律開発、Issue/PR 自動化 |
+| 🌟 **Claude Code** | Anthropic | **主軸** — ClaudeOS v7.5 統合 / Agent Teams / Boot Sequence / 自律開発ループ | 大規模なコード修正、レビュー、自律開発、Issue/PR 自動化 |
 | Codex CLI | OpenAI | 併設 (基本起動のみ) | ターミナル中心のコード生成、シェル支援 |
 | GitHub Copilot CLI | GitHub | 併設 (基本起動のみ) | `copilot --yolo` によるシェル・GitHub 操作支援 |
 
@@ -26,23 +26,37 @@
 | バージョン | v2.9.0 |
 | テスト | 307 Pester テスト (CI) |
 | CI | ✅ SUCCESS |
-| ClaudeOS (Claude Code 専用) | v7.4 (完全無人運用 + AI Dev Factory + Priority Intelligence + Boot Sequence MVP) |
+| ClaudeOS (Claude Code 専用) | v7.5 (完全無人運用 + AI Dev Factory + Priority Intelligence + Boot Sequence MVP + **CodeRabbit 統合**) |
 | Agents | 37体の特化サブエージェント |
 | Skills | 64個のワークフロー定義 |
-| Boot Sequence | `Start-ClaudeOS.ps1` (Steps 1/2/**3**/4/**6**/**7**/**8**/9 実装 — Step 5 のみ概念層 SKIP) 🆕 |
-| 5h Time Anchor | **5 層防御** (SessionStart / self-discipline / cron / SessionEnd / PreToolUse opt-in) 🆕 |
-| Evaluation Methodology | v1.0 + `fact-check.ps1` + `codex-smoke-test.ps1` 🆕 |
-| Agent Role Mapping | 37 agents ↔ 9 roles (Classification ⊥ Activation 二層モデル) 🆕 |
+| Boot Sequence | `Start-ClaudeOS.ps1` (Steps 1/2/**3**/4/**6**/**7**/**8**/9 実装 — Step 5 のみ概念層 SKIP) |
+| 5h Time Anchor | **5 層防御** (SessionStart / self-discipline / cron / SessionEnd / **PreToolUse 有効化済**) ✅ |
+| CodeRabbit Review | v7.5 統合 — Codex と並列実行、静的解析 40+ 解析器 🆕 |
+| Evaluation Methodology | v1.0 + `fact-check.ps1` + `codex-smoke-test.ps1` |
+| Agent Role Mapping | 37 agents ↔ 9 roles (Classification ⊥ Activation 二層モデル) |
 
-### 🆕 直近の改善 (2026-04-11)
+### 🆕 直近の改善 (2026-04-13)
 
 | 改善 | 内容 | 関連ファイル |
 |---|---|---|
-| ⏱️ 5h **5 層防御** | ClaudeOS v7.4 の「5 時間厳守」を 5 層の相互補完で実装 — SessionStart hook / self-discipline protocol / cron one-shot / SessionEnd 永続化 / PreToolUse deadline check (opt-in) | `.claude/claudeos/system/time-anchor-protocol.md` (v1.1), `.claude/claudeos/scripts/hooks/{session-start,session-end,evaluate-session,pretool-deadline-check}.js` |
+| 🐰 **CodeRabbit 統合 (v7.5)** | Codex レビューと並列実行する静的解析レビュー基盤。40+ 解析器、重大度別対応ルール、無限ループ防止上限付き | `CLAUDE.md` §8.5, `Claude/templates/claude/instructions/05.5-coderabbit.md` |
+| ⏱️ **PreToolUse 有効化** | 5 層防御の最終レイヤー (Layer 5) を opt-in → 有効化。毎ツール実行前にデッドラインチェック | `.claude/settings.json`, `.claude/claudeos/scripts/hooks/pretool-deadline-check.js` |
+| 🎛️ Agent Teams Light Mode | 小規模タスク向けの 3 ロール軽量召集パターン (CTO/Developer/QA) を追加 | `.claude/claudeos/system/agent-teams-light-mode.md` |
+| 🔒 Security Scan Workflow | GitHub Actions による依存関係・コードセキュリティスキャン | `.github/workflows/security-scan.yml` |
+| 📄 テンプレート v7.5 同期 | CLAUDE.md / START_PROMPT.md / 全 instructions を v7.5 仕様に一括更新 | `Claude/templates/claude/` (13 files) |
+
+<details>
+<summary>📋 過去の改善 (2026-04-11)</summary>
+
+| 改善 | 内容 | 関連ファイル |
+|---|---|---|
+| ⏱️ 5h **5 層防御** | ClaudeOS v7.4 の「5 時間厳守」を 5 層の相互補完で実装 — SessionStart hook / self-discipline protocol / cron one-shot / SessionEnd 永続化 / PreToolUse deadline check | `.claude/claudeos/system/time-anchor-protocol.md` (v1.1), `.claude/claudeos/scripts/hooks/*.js` |
 | 📏 Evaluation Methodology v1.0 | 評価レポート作成の必須プロトコル (4 段階 runtime-assertion バッジ / Fact-Check Checklist / Challenge-the-Strength) | `.claude/claudeos/system/evaluation-methodology.md` |
-| 🔍 fact-check.ps1 | JSON claim list を読み込み file/dir 実在を検証する PowerShell harness。80% accuracy で既知誤認を自動検出 | `scripts/eval/fact-check.ps1` |
-| 🏗️ Boot Sequence PR-B/C/D | Steps 3 (Memory Restore) / 6 (Management Init) / 7 (Agent Init, 37 agents) / 8 (Loop Engine) を probe 化 + Pester 29 件追加 | `scripts/main/Start-ClaudeOS.ps1`, `tests/Start-ClaudeOS.Tests.ps1` |
-| 🗺️ Agent Role Mapping v1.0 | 37 agents ↔ 9 roles の完全分類 + Classification ⊥ Activation 二層モデルで psm1 設計との整合を取る | `.claude/claudeos/system/agent-role-mapping.md` |
+| 🔍 fact-check.ps1 | JSON claim list を読み込み file/dir 実在を検証する PowerShell harness | `scripts/eval/fact-check.ps1` |
+| 🏗️ Boot Sequence PR-B/C/D | Steps 3/6/7/8 を probe 化 + Pester 29 件追加 | `scripts/main/Start-ClaudeOS.ps1`, `tests/Start-ClaudeOS.Tests.ps1` |
+| 🗺️ Agent Role Mapping v1.0 | 37 agents ↔ 9 roles の完全分類 | `.claude/claudeos/system/agent-role-mapping.md` |
+
+</details>
 
 ### Agent Teams 対応レベル (Claude Code 専用)
 
@@ -317,14 +331,17 @@ start.bat
 
 ---
 
-## ClaudeOS v7.4 完全無人運用システム (Claude Code 専用)
+## ClaudeOS v7.5 完全無人運用システム (Claude Code 専用)
 
 > **本セクションの全機能は Claude Code 上でのみ動作します。** Codex CLI / GitHub Copilot CLI には適用されません。`Start-ClaudeOS.ps1` および `.claude/claudeos/` 配下のカーネル文書群が前提です。
 
-### v7.4 新機能
+### v7.5 新機能
 
 | 機能 | 説明 |
 |------|------|
+| 🐰 **CodeRabbit 統合** | Codex レビューと並列実行する静的解析レビュー。40+ 解析器で広く浅くカバー |
+| ⏱️ **PreToolUse 強制** | 5h デッドラインを毎ツール実行前にチェック。残 0 分で自動ブロック |
+| 🎛️ Light Mode | 小規模タスク向け 3 ロール軽量 Agent Teams (CTO/Developer/QA) |
 | 🏭 AI Dev Factory | CI/Review/KPI結果から Issue を自動生成し GitHub Projects へ反映 |
 | 🧮 Priority Intelligence | `state.json` のウェイトベースで優先順位をスコア計算 |
 | 🧭 Auto Loop Intelligence | KPI/CI 状態に基づく動的ループ回数制御 |
@@ -361,8 +378,21 @@ flowchart LR
 | build | SUCCESS |
 | CI | SUCCESS |
 | Codex Review | OK |
+| CodeRabbit Critical/High | 0 |
 | error count | 0 |
 | security issue | 0 |
+
+### マルチレビュー統合フロー (v7.5)
+
+```mermaid
+flowchart LR
+    PR["📝 PR / 変更"] --> CR["🐰 CodeRabbit<br/>静的解析 40+<br/>広く浅く"]
+    PR --> CX["🔍 Codex Review<br/>設計・ロジック<br/>深く狭く"]
+    CR --> Merge["🔀 指摘統合"]
+    CX --> Merge
+    Merge --> Fix["🔧 修正"]
+    Fix --> Stable["✅ STABLE 判定"]
+```
 
 ### Agent Teams（12ロール）
 
@@ -480,7 +510,7 @@ Invoke-Pester .\tests\
 |----------|------|----------|
 | Phase 1 ✅ | 完了 (v2.7.0) | P1完了、モジュール基盤確立 |
 | Phase 2 ✅ | 完了 (v2.8.0) | Worktree並列開発、Issue自動生成、CI強化 |
-| Phase 3 🚧 | 進行中 (v2.9.0 安定) | Self Evolution / Architecture Check 完了、Boot Sequence MVP 着手、Dashboard UI / Memory MCP は未着手 |
+| Phase 3 🚧 | 進行中 (v2.9.0 安定) | Self Evolution / Architecture Check 完了、Boot Sequence MVP 着手、CodeRabbit 統合完了、Dashboard UI / Memory MCP は未着手 |
 | Phase 4 ⏸ | 未着手 (v3.0.0) | リリース準備、セキュリティ監査、GA |
 
 ### Phase 3 進捗 (v2.9.0)
@@ -499,6 +529,7 @@ Invoke-Pester .\tests\
 
 | PR | 内容 | 日付 |
 |----|------|------|
+| #72 | chore+docs: Improvement phase — .gitignore cleanup + README 反映 | 2026-04-11 |
 | #69 | feat(boot): ClaudeOS Boot Sequence scaffold (MVP / PR-A) | 2026-04-10 |
 | #67 | fix: markdownlint MD024 を file-scoped inline disable 化 | 2026-04-10 |
 | #66 | fix: START_PROMPT テンプレを最大10回ループ + CTO全権委任に明確化 | 2026-04-10 |

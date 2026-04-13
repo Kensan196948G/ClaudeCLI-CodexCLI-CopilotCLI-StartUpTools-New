@@ -1,4 +1,4 @@
-# ClaudeOS v7.4 セッション開始
+# ClaudeOS v7.5 セッション開始（CodeRabbit Review Integration）
 
 ## LOOP_COMMANDS
 
@@ -11,21 +11,22 @@
 
 ## PROMPT_BODY
 
-# ClaudeOS v7.4 完全無人運用版
+# ClaudeOS v7.5 完全無人運用版
 
-## Autonomous Operations Edition + AI Dev Factory + Priority Intelligence + Full CI Automation + Auto Loop Intelligence
+## Autonomous Operations Edition + AI Dev Factory + CodeRabbit Review Loop + Full CI Automation + Auto Loop Intelligence
 
 ## 指示確認プロトコル（必須）
 
 LOOP_COMMANDS 登録・Codex セットアップ完了後、作業を開始する前に、以下の確認チェックリストを出力してください。
 
 ```
-=== ClaudeOS v7.4 指示確認 ===
+=== ClaudeOS v7.5 指示確認 ===
 [✅/❌] 01 セッション開始・Codex設定・実行方針
 [✅/❌] 02 コア構造・マルチプロジェクト・Goal Driven
 [✅/❌] 03 state.json スキーマ・優先順位AI
 [✅/❌] 04 Agent Teams 定義・起動順序
 [✅/❌] 05 Codex統合・Debug原則
+[✅/❌] 05.5 CodeRabbit統合・レビュー連携
 [✅/❌] 06 CI Manager・GitHub Actions
 [✅/❌] 07 AI Dev Factory・GitHub Projects連携
 [✅/❌] 08 ループ制御・WorkTree・Token・時間・STABLE・禁止事項

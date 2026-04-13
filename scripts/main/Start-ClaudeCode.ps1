@@ -354,6 +354,13 @@ try {
         (New-RemoteTemplateDeployScript -TemplatePath $templatePrompt -TargetPath "$linuxProject/.claude/START_PROMPT.md" -Label '.claude/START_PROMPT.md' -EnsureParentDirectory)
         (New-RemoteTemplateDeployScript -TemplatePath $bridgeSource -TargetPath $remoteBridgePath -Label '.claude/claude_pty_bridge.py' -EnsureParentDirectory)
         (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'scripts\templates\claude-statusline.py') -TargetPath "$linuxProject/.claude/statusline.py" -Label '.claude/statusline.py' -EnsureParentDirectory)
+        # 5h session enforcement hooks
+        (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'scripts\templates\claudeos\scripts\hooks\session-start.js') -TargetPath "$linuxProject/.claude/claudeos/scripts/hooks/session-start.js" -Label 'hooks/session-start.js' -EnsureParentDirectory)
+        (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'scripts\templates\claudeos\scripts\hooks\session-end.js') -TargetPath "$linuxProject/.claude/claudeos/scripts/hooks/session-end.js" -Label 'hooks/session-end.js' -EnsureParentDirectory)
+        (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'scripts\templates\claudeos\scripts\hooks\evaluate-session.js') -TargetPath "$linuxProject/.claude/claudeos/scripts/hooks/evaluate-session.js" -Label 'hooks/evaluate-session.js' -EnsureParentDirectory)
+        (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'scripts\templates\claudeos\scripts\hooks\pretool-deadline-check.js') -TargetPath "$linuxProject/.claude/claudeos/scripts/hooks/pretool-deadline-check.js" -Label 'hooks/pretool-deadline-check.js' -EnsureParentDirectory)
+        # state.json template (seed only — skip if exists on remote)
+        (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'scripts\templates\state.json.template') -TargetPath "$linuxProject/state.json" -Label 'state.json' -EnsureParentDirectory)
 @"
 cat > $(ConvertTo-BashSingleQuoted -Value $remoteBootstrap) <<'EOF'
 #!/usr/bin/env bash
