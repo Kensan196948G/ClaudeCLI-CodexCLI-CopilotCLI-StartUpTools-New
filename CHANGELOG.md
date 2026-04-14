@@ -6,6 +6,20 @@
 
 ### 🎯 コードネーム: Autonomous Runtime
 
+### Phase 4 進行中の変更
+
+#### 🧭 ClaudeOS v8 — Weekly Optimized Loops (2026-04-14)
+
+- ループ構成を週次 MAX 20x 運用に最適化 (合計 5 時間維持)
+  - Monitor: `30m` → `30min` (表記統一)
+  - Development: `60m` → `2h`
+  - Verify: `45m` → `1h15m`
+  - Improvement: `45m` → `1h15m`
+- Token 配分を再調整 (Verify 20% → 25% / Improvement 10% → 15%)
+  - 品質ゲートと負債返済に +10% を確保
+- 行動原則に `One tab, one project / Rest on Sunday` を追加
+- 対象ファイル: `CLAUDE.md`, `~/.claude/CLAUDE.md`, `Claude/templates/claude/**`, `.claude/claudeos/commands/team-onboarding.md`, `README.md`
+
 ### Phase 4 残タスク (GA リリース前提条件)
 
 - [ ] **セキュリティ監査** (P1) — secrets 管理・権限設定の最終確認

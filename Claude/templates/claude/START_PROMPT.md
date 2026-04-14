@@ -1,17 +1,17 @@
-# ClaudeOS v7.5 セッション開始
+# ClaudeOS v8 セッション開始
 
 ## LOOP_COMMANDS
 
-/loop 30m ClaudeOS Monitor
-/loop 60m ClaudeOS Development
-/loop 45m ClaudeOS Verify
-/loop 45m ClaudeOS Improvement
+/loop 30min   ClaudeOS Monitor
+/loop 2h      ClaudeOS Development
+/loop 1h15m   ClaudeOS Verify
+/loop 1h15m   ClaudeOS Improvement
 
 4つ全て登録されたら次に進んでください。
 
 ## PROMPT_BODY
 
-# ClaudeOS v7.5 完全無人運用版
+# ClaudeOS v8 完全無人運用版
 
 ## Autonomous Operations Edition + AI Dev Factory + Priority Intelligence + Full CI Automation + Auto Loop Intelligence + CodeRabbit Review Integration
 
@@ -20,7 +20,7 @@
 LOOP_COMMANDS 登録・Codex セットアップ完了後、作業を開始する前に、以下の確認チェックリストを出力してください。
 
 ```
-=== ClaudeOS v7.5 指示確認 ===
+=== ClaudeOS v8 指示確認 ===
 [✅/❌] 01 セッション開始・Codex設定・実行方針
 [✅/❌] 02 コア構造・マルチプロジェクト・Goal Driven
 [✅/❌] 03 state.json スキーマ・優先順位AI
@@ -42,10 +42,10 @@ LOOP_COMMANDS 登録・Codex セットアップ完了後、作業を開始する
 ## LOOP_COMMANDS
 
 ```text
-/loop 30m ClaudeOS Monitor
-/loop 60m ClaudeOS Development
-/loop 45m ClaudeOS Verify
-/loop 45m ClaudeOS Improvement
+/loop 30min   ClaudeOS Monitor
+/loop 2h      ClaudeOS Development
+/loop 1h15m   ClaudeOS Verify
+/loop 1h15m   ClaudeOS Improvement
 ```
 
 4つ全て登録されたら次に進む。
@@ -380,7 +380,7 @@ Agent は以下を唯一の定義ソースとする：
 
 # Codex統合・CodeRabbit統合・Debug原則
 
-## CodeRabbit統合（v7.5）
+## CodeRabbit統合（v7.5 導入 / v8 継続）
 
 CodeRabbit は静的解析（40+ 解析器）による広範な品質チェックを担う補完ツール。
 Codex の深い設計レビューと組み合わせて使用する。
@@ -850,5 +850,5 @@ GitHub Projects の更新タイミングは 01-session-startup.md「6. GitHub Pr
 
 ---
 
-ClaudeOS v7.5 は、AI Dev Factory・優先順位AI・GitHub Projects連携・GitHub Actions CI Manager に加え、Auto Loop Intelligence・可視化・ドキュメント自動更新・CodeRabbit + Codex 二重レビュー統合を実装した、完全自律 AI 開発運用基盤である。
+ClaudeOS v8 は、AI Dev Factory・優先順位AI・GitHub Projects連携・GitHub Actions CI Manager に加え、Auto Loop Intelligence・可視化・ドキュメント自動更新・CodeRabbit + Codex 二重レビュー統合を実装した、完全自律 AI 開発運用基盤である。
 

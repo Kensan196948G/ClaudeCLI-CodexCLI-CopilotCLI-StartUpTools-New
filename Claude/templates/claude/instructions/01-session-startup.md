@@ -3,10 +3,10 @@
 ## LOOP_COMMANDS
 
 ```text
-/loop 30m ClaudeOS Monitor
-/loop 60m ClaudeOS Development
-/loop 45m ClaudeOS Verify
-/loop 45m ClaudeOS Improvement
+/loop 30min   ClaudeOS Monitor
+/loop 2h      ClaudeOS Development
+/loop 1h15m   ClaudeOS Verify
+/loop 1h15m   ClaudeOS Improvement
 ```
 
 4つ全て登録されたら次に進む。
