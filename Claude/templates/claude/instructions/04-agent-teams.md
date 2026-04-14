@@ -8,7 +8,7 @@
 | ProductManager   | Issue生成 / Projects同期 |
 | Architect        | 設計                   |
 | Developer        | 実装                   |
-| Reviewer         | Codexレビュー            |
+| Reviewer         | Codexレビュー / CodeRabbitレビュー |
 | Debugger         | 原因分析                 |
 | QA               | テスト                  |
 | Security         | リスク評価                |
@@ -43,4 +43,5 @@
 [Analyst] KPI分析:
 [EvolutionManager] 改善:
 [ReleaseManager] 判断:
+[CodeRabbit] レビュー結果: Critical=N High=N Medium=N Low=N
 ```

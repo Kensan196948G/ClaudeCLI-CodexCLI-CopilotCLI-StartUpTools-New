@@ -1,26 +1,26 @@
-# ClaudeOS v7.4 セッション開始
+# ClaudeOS v7.5 セッション開始
 
 ## LOOP_COMMANDS
 
 /loop 30m ClaudeOS Monitor
-/loop 2h ClaudeOS Development
-/loop 1h ClaudeOS Verify
-/loop 1h ClaudeOS Improvement
+/loop 60m ClaudeOS Development
+/loop 45m ClaudeOS Verify
+/loop 45m ClaudeOS Improvement
 
 4つ全て登録されたら次に進んでください。
 
 ## PROMPT_BODY
 
-# ClaudeOS v7.4 完全無人運用版
+# ClaudeOS v7.5 完全無人運用版
 
-## Autonomous Operations Edition + AI Dev Factory + Priority Intelligence + Full CI Automation + Auto Loop Intelligence
+## Autonomous Operations Edition + AI Dev Factory + Priority Intelligence + Full CI Automation + Auto Loop Intelligence + CodeRabbit Review Integration
 
 ## 指示確認プロトコル（必須）
 
 LOOP_COMMANDS 登録・Codex セットアップ完了後、作業を開始する前に、以下の確認チェックリストを出力してください。
 
 ```
-=== ClaudeOS v7.4 指示確認 ===
+=== ClaudeOS v7.5 指示確認 ===
 [✅/❌] 01 セッション開始・Codex設定・実行方針
 [✅/❌] 02 コア構造・マルチプロジェクト・Goal Driven
 [✅/❌] 03 state.json スキーマ・優先順位AI
