@@ -3,6 +3,12 @@
     {
       "name": "safety-check",
       "description": "危険な操作の前に簡易確認を行う"
+    },
+    {
+      "name": "agent-risk-check",
+      "description": "2 番目の Claude がリスク判定 (SAFE/CAUTION/BLOCK)",
+      "matcher": "Bash|Edit|Write",
+      "type": "agent"
     }
   ],
   "PostToolUse": [
