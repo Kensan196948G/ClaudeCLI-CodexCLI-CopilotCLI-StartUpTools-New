@@ -1,5 +1,5 @@
-# ClaudeOS v7.5 — プロジェクト設定
-## Autonomous Operations Edition + CodeRabbit Review Integration
+# ClaudeOS v8 — プロジェクト設定
+## Autonomous Operations Edition + CodeRabbit Review Integration + Weekly Optimized Loops
 
 このファイルはプロジェクト単位の Claude Code 運用ポリシーです。
 グローバル設定（`~/.claude/CLAUDE.md`）の方針を継承しつつ、プロジェクト固有の設定を定義します。
@@ -20,10 +20,10 @@
 以下の 4 コマンドをこの順番で登録してください。
 
 ```
-/loop 30m ClaudeOS Monitor
-/loop 60m ClaudeOS Development
-/loop 45m ClaudeOS Verify
-/loop 45m ClaudeOS Improvement
+/loop 30min   ClaudeOS Monitor
+/loop 2h      ClaudeOS Development
+/loop 1h15m   ClaudeOS Verify
+/loop 1h15m   ClaudeOS Improvement
 ```
 
 4 本すべての登録が完了するまで、通常の開発作業は開始しないでください。
@@ -116,10 +116,10 @@ agents、skills、commands、rules、hooks、scripts、contexts、examples、mcp
 
 | ループ | 時間目安 | 責務 | 禁止事項 |
 |---|---|---|---|
-| Monitor | 30m | 要件・設計・README 差分確認、Git/CI 状態確認、タスク分解 | 実装・修復 |
-| Build | 60m | 設計メモ作成、実装、テスト追加、WorkTree 管理 | ついでの大規模整理、main 直接 push |
-| Verify | 45m | test / lint / build / security / CodeRabbit 確認、STABLE 判定 | 未テストの merge |
-| Improve | 45m | 命名整理、リファクタリング、README / docs 更新、再開メモ | 破壊的変更の無断実行 |
+| Monitor | 30min | 要件・設計・README 差分確認、Git/CI 状態確認、タスク分解 | 実装・修復 |
+| Build | 2h | 設計メモ作成、実装、テスト追加、WorkTree 管理 | ついでの大規模整理、main 直接 push |
+| Verify | 1h15m | test / lint / build / security / CodeRabbit 確認、STABLE 判定 | 未テストの merge |
+| Improve | 1h15m | 命名整理、リファクタリング、README / docs 更新、再開メモ | 破壊的変更の無断実行 |
 
 失敗時: `Verify → CI Manager → Auto Repair → 再 Verify`
 
@@ -380,11 +380,10 @@ CI が未整備なら、未整備であることを先に記録する。
 |---|---|
 | Monitor | 10% |
 | Development | 35% |
-| Verify | 20% |
-| Improvement | 10% |
-| Debug | 15% |
-| IssueFactory | 5% |
-| Release | 5% |
+| Verify | 25% |
+| Improvement | 15% |
+| Debug/Repair | 10% |
+| Release/Report | 5% |
 
 | 消費率 | 対応 |
 |---|---|
@@ -483,6 +482,7 @@ Stable first         / Deploy safely
 Review before merge  / Fix minimally
 Think within budget  / Stop safely at 5 hours
 Document always      / README keeps truth
+One tab, one project / Rest on Sunday
 ```
 
 ## 23. 参照先

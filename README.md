@@ -2,16 +2,16 @@
 
 > Windows から **Claude Code** を中心とした自律開発環境を立ち上げるためのスタートアップツールです。
 
-`ClaudeOS v7.5` (Agent Teams / Boot Sequence / Self Evolution / Architecture Check / Issue Factory / CodeRabbit Review) をカーネルに据え、ローカル起動・SSH リモート起動・診断・Pester テスト・GitHub Issues / Projects / Actions 連携を一括提供します。
+`ClaudeOS v8` (Agent Teams / Boot Sequence / Self Evolution / Architecture Check / Issue Factory / CodeRabbit Review / Weekly Optimized Loops) をカーネルに据え、ローカル起動・SSH リモート起動・診断・Pester テスト・GitHub Issues / Projects / Actions 連携を一括提供します。
 
 > **📌 リポジトリ名について**
-> リポジトリ名 `ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New` は当初の 3 ツール統合ランチャー構想に由来しますが、現在の開発投資・新機能 (ClaudeOS v7.5 / Phase 3 完了) はすべて **Claude Code** 側に集中しています。Codex CLI / GitHub Copilot CLI の起動スクリプトもリポジトリ内に併設してありますが、ClaudeOS フレームワークと統合されているのは Claude Code のみです。
+> リポジトリ名 `ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New` は当初の 3 ツール統合ランチャー構想に由来しますが、現在の開発投資・新機能 (ClaudeOS v8 / Phase 3 完了) はすべて **Claude Code** 側に集中しています。Codex CLI / GitHub Copilot CLI の起動スクリプトもリポジトリ内に併設してありますが、ClaudeOS フレームワークと統合されているのは Claude Code のみです。
 
 ## 対応ツール
 
 | ツール | 提供元 | 位置付け | 主な用途 |
 |--------|--------|---------|---------|
-| 🌟 **Claude Code** | Anthropic | **主軸** — ClaudeOS v7.5 統合 / Agent Teams / Boot Sequence / 自律開発ループ | 大規模なコード修正、レビュー、自律開発、Issue/PR 自動化 |
+| 🌟 **Claude Code** | Anthropic | **主軸** — ClaudeOS v8 統合 / Agent Teams / Boot Sequence / 自律開発ループ | 大規模なコード修正、レビュー、自律開発、Issue/PR 自動化 |
 | Codex CLI | OpenAI | 併設 (基本起動のみ) | ターミナル中心のコード生成、シェル支援 |
 | GitHub Copilot CLI | GitHub | 併設 (基本起動のみ) | `copilot --yolo` によるシェル・GitHub 操作支援 |
 
@@ -26,7 +26,7 @@
 | バージョン | v2.9.0 |
 | テスト | 311 Pester テスト (CI) |
 | CI | ✅ SUCCESS |
-| ClaudeOS (Claude Code 専用) | v7.5 (完全無人運用 + Boot Sequence 完全実装 + CodeRabbit 統合 + Memory MCP + Dashboard) |
+| ClaudeOS (Claude Code 専用) | v8 (5時間最適化ループ 30min/2h/1h15m/1h15m + 完全無人運用 + Boot Sequence 完全実装 + CodeRabbit 統合 + Memory MCP + Dashboard) |
 | Agents | 37体の特化サブエージェント |
 | Skills | 64個のワークフロー定義 |
 | Boot Sequence | `Start-ClaudeOS.ps1` (Step 3 Memory/Step 7 Agent Init/Step 9 Dashboard 実装完了) ✅ |
@@ -306,7 +306,7 @@ start.bat
 
 ---
 
-## ClaudeOS v7.5 完全無人運用システム (Claude Code 専用)
+## ClaudeOS v8 完全無人運用システム (Claude Code 専用)
 
 > **本セクションの全機能は Claude Code 上でのみ動作します。** Codex CLI / GitHub Copilot CLI には適用されません。`Start-ClaudeOS.ps1` および `.claude/claudeos/` 配下のカーネル文書群が前提です。
 
