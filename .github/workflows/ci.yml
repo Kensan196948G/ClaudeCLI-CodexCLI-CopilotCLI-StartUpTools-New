@@ -159,3 +159,49 @@ jobs:
               throw "旧構成の参照が残っています: $pattern"
             }
           }
+
+  lint-powershell:
+    name: PSScriptAnalyzer
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module PSScriptAnalyzer -Force -SkipPublisherCheck -Scope CurrentUser
+
+      - name: Run PSScriptAnalyzer (Error severity only)
+        shell: pwsh
+        run: |
+          $results = Invoke-ScriptAnalyzer `
+            -Path . `
+            -Recurse `
+            -Severity Error `
+            -ExcludeRule PSAvoidUsingWriteHost,PSUseDeclaredVarsMoreThanAssignments `
+            -ErrorAction SilentlyContinue
+          if ($results) {
+            $results | Format-Table -AutoSize | Out-String | Write-Host
+            Write-Host "::error::PSScriptAnalyzer found $($results.Count) error-level issue(s)"
+            exit 1
+          }
+          Write-Host "::notice::PSScriptAnalyzer: no error-level issues found"
+
+      - name: Run PSScriptAnalyzer (Warning summary, non-blocking)
+        if: always()
+        shell: pwsh
+        run: |
+          $warnings = Invoke-ScriptAnalyzer `
+            -Path . `
+            -Recurse `
+            -Severity Warning `
+            -ExcludeRule PSAvoidUsingWriteHost,PSUseDeclaredVarsMoreThanAssignments `
+            -ErrorAction SilentlyContinue
+          if ($warnings) {
+            Write-Host "::notice::PSScriptAnalyzer warnings (non-blocking): $($warnings.Count) issue(s)"
+            $warnings | Group-Object RuleName | Sort-Object Count -Descending | Select-Object Count, Name | Format-Table -AutoSize | Out-String | Write-Host
+          } else {
+            Write-Host "::notice::PSScriptAnalyzer: no warning-level issues"
+          }
