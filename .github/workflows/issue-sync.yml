@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   sync-issues-to-tasks:
@@ -32,18 +33,40 @@ jobs:
         run: |
           .\scripts\tools\Sync-Issues.ps1 -Action check
 
-      - name: Commit and push if changed
+      - name: Commit and open PR if changed
         shell: pwsh
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           $status = git status --porcelain TASKS.md
-          if ($status) {
-            git add TASKS.md
-            git commit -m "chore: auto-sync GitHub Issues to TASKS.md [skip ci]"
-            git push
-            Write-Host "TASKS.md updated and pushed." -ForegroundColor Green
-          }
-          else {
+          if (-not $status) {
             Write-Host "TASKS.md is already up to date." -ForegroundColor Green
+            exit 0
           }
+
+          # Create a unique branch for this sync update
+          $sha = (git rev-parse --short HEAD)
+          $branch = "auto/tasks-sync-$sha"
+
+          # Skip if a PR branch for this commit already exists
+          $existing = gh pr list --head $branch --state open --json number | ConvertFrom-Json
+          if ($existing.Count -gt 0) {
+            Write-Host "PR already exists for branch $branch, skipping." -ForegroundColor Yellow
+            exit 0
+          }
+
+          git checkout -b $branch
+          git add TASKS.md
+          git commit -m "chore: auto-sync GitHub Issues to TASKS.md [skip ci]"
+          git push origin $branch
+
+          gh pr create `
+            --title "chore: auto-sync GitHub Issues to TASKS.md" `
+            --body "Automated TASKS.md sync triggered by issue event. Merges automatically after CI passes." `
+            --base main `
+            --head $branch
+
+          # Enable auto-merge so the PR merges once branch protection is satisfied
+          gh pr merge --auto --squash $branch
+
+          Write-Host "TASKS.md sync PR created and auto-merge enabled." -ForegroundColor Green
