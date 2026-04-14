@@ -15,21 +15,32 @@
 このファイルを読んだ時点で、以下を即座に実行してください。
 ユーザーの最初のメッセージ内容に関わらず、このセクションを最優先で処理します。
 
-### ステップ 1: モデル設定 + ループコマンド登録
+### ステップ 1: ループコマンド登録
 
-最初にモデルを設定し、続けて 4 コマンドをこの順番で登録してください。
+以下の 4 コマンドをこの順番で登録してください。
 
 ```
-/model opusplan
 /loop 30m ClaudeOS Monitor
 /loop 2h ClaudeOS Development
-/loop 90m ClaudeOS Verify
-/loop 90m ClaudeOS Improvement
+/loop 1h ClaudeOS Verify
+/loop 1h ClaudeOS Improvement
 ```
 
-モデル設定 + 4 本すべての登録が完了するまで、通常の開発作業は開始しないでください。
+4 本すべての登録が完了するまで、通常の開発作業は開始しないでください。
 
-> **モデルポリシー**: `opusplan` モードにより、Plan フェーズは Opus 4.6、実装・ツール実行は Sonnet 4.6 を使用。週次 Opus 制限の節約と高品質な設計判断を両立する。
+### ステップ 1.5: フェーズ別モデル制御（Max 20x 最適化）
+
+各フェーズ開始時に以下のモデルを設定してください：
+
+| フェーズ | モデル | 理由 |
+|---|---|---|
+| Monitor | `/model sonnet` | 状態確認・軽量判断はSonnetで十分 |
+| **Development** | **`/model opusplan`** | **設計・アーキテクチャ判断にOpusを使用** |
+| Verify | `/model sonnet` | CI確認・テスト検証はSonnetで十分 |
+| Improvement | `/model sonnet` | リファクタリング実行はSonnetで十分 |
+
+> **モデルポリシー**: Development フェーズのみ opusplan（Plan=Opus 4.6、実行=Sonnet 4.6）。  
+> Max (20x) 週次 Opus 制限を Development 設計判断に集中投入する。
 
 ### ステップ 2: Codex セットアップ
 

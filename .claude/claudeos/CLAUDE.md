@@ -3,6 +3,17 @@
 /loop 1h  everything-claude-code Verify
 /loop 1h  everything-claude-code Improvement
 
+## フェーズ別モデル制御（Max 20x 最適化）
+
+各フェーズ開始時に以下のモデルを設定してください：
+
+| フェーズ | モデル指示 |
+|---|---|
+| Monitor | `/model sonnet` を実行してから開始 |
+| **Development** | **`/model opusplan` を実行してから開始** |
+| Verify | `/model sonnet` を実行してから開始 |
+| Improvement | `/model sonnet` を実行してから開始 |
+
 以降、日本語で対応・解説してください。
 
 5時間の時間内で Monitor、Development、Verify、Improvement をアイドル状態なしで N 回ループで進めてください。
