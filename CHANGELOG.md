@@ -2,7 +2,71 @@
 
 # CHANGELOG
 
-## [v2.9.0-dev] - 2026-04-08
+## [v3.0.0] - Unreleased (Phase 4: v3.0.0 GA Release 準備中)
+
+### 🎯 コードネーム: Autonomous Runtime
+
+### Phase 4 残タスク (GA リリース前提条件)
+
+- [ ] **セキュリティ監査** (P1) — secrets 管理・権限設定の最終確認
+- [ ] **E2E テスト整備** (P2) — 全 Pester テスト + シナリオ E2E 検証
+- [ ] **v3.0.0 リリースノート最終版** (P2) — 本 CHANGELOG エントリの完成
+- [ ] **`v3.0.0` GitHub Release タグ作成** (P2) — バイナリ配布
+
+### Go/No-Go 基準
+
+以下をすべて満たすこと:
+
+- [x] 全 Pester テスト SUCCESS (311 件)
+- [x] CI 全ステップ SUCCESS
+- [x] README / docs 最新状態 (ClaudeOS v7.5)
+- [x] P1 Open Issue = 0
+- [ ] セキュリティ監査 合格
+- [ ] 対応レベル目標の 80% 以上達成
+
+---
+
+## [v2.9.0] - 2026-04-14 (STABLE)
+
+### ClaudeOS v7.5 — Boot Sequence 完全自動化 + CodeRabbit 統合
+
+#### 🚀 Boot Sequence Step 3/7/9 完全実装 (Issue #68, #70, #71)
+
+- **Step 3 Memory Restore** (PR #81): `McpHealthCheck.psm1` の `Get-McpHealthReport` でワイヤリング完了
+- **Step 7 Agent Init** (PR #80): `AgentTeams.psm1` の `Get-AgentTeamReport` でワイヤリング完了
+- **Step 9 Dashboard** (PR #82): `state.json` KPI / フェーズ統合 Dashboard 実装完了
+- MVP プレースホルダー状態 (Step 1/2/4/9) → 完全実装 (Step 1/2/3/4/7/9)
+
+#### 🐰 CodeRabbit Review 統合 (PR #83, v7.5 追加)
+
+- `/coderabbit:review` コマンド統合
+- 静的解析 (40+ 解析器) による Verify 補助
+- Codex レビューの代替ではなく、網羅性と深度の両立
+- STABLE 判定条件に CodeRabbit Critical/High = 0 を追加
+
+#### 👥 /team-onboarding コマンド (PR #88, v7.5 追加)
+
+- Agent Teams 新規メンバー向け自動オンボーディング
+- プロジェクト構造・運用ルール・ループ設計を段階的に案内
+
+#### ⏱ ループ時間最適化 (PR #88)
+
+- Development: 2h → 60m
+- Verify: 1h → 45m
+- Improve: 1h → 45m
+- Max 20x 週次制限下での効率最大化
+
+#### 🛡️ Issue Sync ワークフロー修正 (Issue #85, PRs #86 #87)
+
+- `issues` イベント自動トリガーを無効化し branch protection 競合を解消
+- push から PR 自動作成方式へ変更
+
+#### 🔧 その他改善 (PRs #77, #79, #84, #89)
+
+- PR #77: gitleaks workflow + Agent Teams Light mode
+- PR #79: フェーズ別モデル制御設定 (opusplan for Development)
+- PR #84: `.gitignore` に claude-mem 自動生成 `CLAUDE.md` を追加
+- PR #89: README + v3ロードマップ Phase 3 完了・Phase 4 着手反映
 
 ### Phase 3: Self Evolution & Architecture Check (Issue #49, #50)
 
@@ -31,8 +95,9 @@
 - 各種ドキュメント・設定テンプレート更新
 
 ### テスト・CI
-- テスト数: 269 (v2.8.0) → 304 (+35件)
-- CI: 全テスト PASS
+- テスト数: 269 (v2.8.0) → 311 (+42件)
+- CI: 全テスト PASS (14/14 SUCCESS)
+- CodeRabbit: 統合済み (Critical/High = 0)
 
 ### 変更ファイル (主要)
 - `scripts/lib/SelfEvolution.psm1` (新規)
