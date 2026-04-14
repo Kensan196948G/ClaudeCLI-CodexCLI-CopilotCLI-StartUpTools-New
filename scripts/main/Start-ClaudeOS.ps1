@@ -38,6 +38,7 @@ $ErrorActionPreference = 'Stop'
 $ScriptRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Import-Module (Join-Path $ScriptRoot 'scripts\lib\LauncherCommon.psm1') -Force -DisableNameChecking
 Import-Module (Join-Path $ScriptRoot 'scripts\lib\Config.psm1') -Force
+Import-Module (Join-Path $ScriptRoot 'scripts\lib\AgentTeams.psm1') -Force
 
 function Write-BootStep {
     param(
@@ -139,6 +140,32 @@ function Invoke-StepPlaceholder {
     return @{ Step = $Number; Name = $Name; Status = 'SKIP'; Detail = $Reason }
 }
 
+function Invoke-StepAgentInit {
+    param([string]$Root)
+    Write-BootStep 7 'Agent Init'
+    try {
+        $report = Get-AgentTeamReport -ProjectRoot $Root
+        if ($report.agentsDirExists) {
+            Write-Host ('  [OK] Agent definitions: {0} agents loaded' -f $report.agentCount) -ForegroundColor Green
+            Write-Host ('       Path: {0}' -f $report.agentsDir) -ForegroundColor DarkGray
+        }
+        else {
+            Write-Host ('  [WARN] Agent definitions directory not found: {0}' -f $report.agentsDir) -ForegroundColor Yellow
+        }
+        $rulesLabel = if ($report.rulesExist) { '[OK] found' } else { '[WARN] not found' }
+        $rulesColor = if ($report.rulesExist) { 'Green' } else { 'Yellow' }
+        Write-Host ('  Backlog rules : {0}' -f $rulesLabel) -ForegroundColor $rulesColor
+        Write-Host ''
+        $stepStatus = if ($report.agentsDirExists) { 'OK' } else { 'SKIP' }
+        return @{ Step = 7; Name = 'Agent Init'; Status = $stepStatus; Detail = $report }
+    }
+    catch {
+        Write-Host ('  [FAIL] Agent Init failed: {0}' -f $_.Exception.Message) -ForegroundColor Red
+        Write-Host ''
+        return @{ Step = 7; Name = 'Agent Init'; Status = 'FAIL'; Detail = $_.Exception.Message }
+    }
+}
+
 function Write-BootDashboard {
     param([array]$Results)
     Write-BootStep 9 'Dashboard'
@@ -170,8 +197,7 @@ $results += Invoke-StepPlaceholder -Number 5 -Name 'Executive Init' `
     -Reason 'Runtime CTO / Strategy Engine is a conceptual layer (Claude itself)'
 $results += Invoke-StepPlaceholder -Number 6 -Name 'Management Init' `
     -Reason 'Backlog / Scrum Master integration pending'
-$results += Invoke-StepPlaceholder -Number 7 -Name 'Agent Init' `
-    -Reason 'AgentTeams runtime wiring pending (PR-B)'
+$results += Invoke-StepAgentInit -Root $ScriptRoot
 $results += Invoke-StepPlaceholder -Number 8 -Name 'Loop Engine Start' `
     -Reason 'Loop orchestration handled by Claude Code /loop harness'
 
