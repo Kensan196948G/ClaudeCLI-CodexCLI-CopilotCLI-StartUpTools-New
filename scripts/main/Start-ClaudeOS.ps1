@@ -39,6 +39,7 @@ $ScriptRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Import-Module (Join-Path $ScriptRoot 'scripts\lib\LauncherCommon.psm1') -Force -DisableNameChecking
 Import-Module (Join-Path $ScriptRoot 'scripts\lib\Config.psm1') -Force
 Import-Module (Join-Path $ScriptRoot 'scripts\lib\AgentTeams.psm1') -Force
+Import-Module (Join-Path $ScriptRoot 'scripts\lib\McpHealthCheck.psm1') -Force
 
 function Write-BootStep {
     param(
@@ -132,6 +133,60 @@ function Invoke-StepSystemInit {
     }
 }
 
+function Invoke-StepMemoryRestore {
+    param([string]$Root)
+    Write-BootStep 3 'Memory Restore'
+    try {
+        $report = Get-McpHealthReport -ProjectRoot $Root
+        if (-not $report.configured) {
+            Write-Host '  [SKIP] .mcp.json not found' -ForegroundColor DarkGray
+            Write-Host ''
+            return @{ Step = 3; Name = 'Memory Restore'; Status = 'SKIP'; Detail = 'no mcp config' }
+        }
+
+        $memoryConn = @($report.connections | Where-Object { $_.kind -eq 'memory' }) | Select-Object -First 1
+        if (-not $memoryConn) {
+            Write-Host '  [SKIP] memory server not configured in .mcp.json' -ForegroundColor DarkGray
+            Write-Host ''
+            return @{ Step = 3; Name = 'Memory Restore'; Status = 'SKIP'; Detail = 'no memory server' }
+        }
+
+        $filePath = $env:CLAUDE_MEMORY_FILE_PATH
+        $entryCount = 0
+        if ($filePath -and (Test-Path $filePath)) {
+            try {
+                $data = Get-Content $filePath -Raw -Encoding UTF8 | ConvertFrom-Json -ErrorAction Stop
+                $entryCount = if ($data.entities) { @($data.entities).Count } else { 0 }
+            }
+            catch { $entryCount = 0 }
+        }
+
+        $fileLabel = if ($filePath -and (Test-Path $filePath)) {
+            'found ({0} entries)' -f $entryCount
+        }
+        elseif ($filePath) {
+            'configured (file not yet created)'
+        }
+        else {
+            'CLAUDE_MEMORY_FILE_PATH not set'
+        }
+        Write-Host ('  [OK] Memory MCP : configured' ) -ForegroundColor Green
+        Write-Host ('  Memory file      : {0}' -f $fileLabel) -ForegroundColor Cyan
+        Write-Host ''
+        return @{
+            Step   = 3
+            Name   = 'Memory Restore'
+            Status = 'OK'
+            Detail = @{ entryCount = $entryCount; filePath = $filePath; configured = $true }
+        }
+    }
+    catch {
+        Write-Host ('  [FAIL] Memory Restore: {0}' -f $_.Exception.Message) -ForegroundColor Red
+        Write-Host ''
+        return @{ Step = 3; Name = 'Memory Restore'; Status = 'FAIL'; Detail = $_.Exception.Message }
+    }
+}
+
 function Invoke-StepPlaceholder {
     param([int]$Number, [string]$Name, [string]$Reason)
     Write-BootStep $Number $Name 'SKIP'
@@ -190,8 +245,7 @@ Write-BootBanner
 $results = @()
 $results += Invoke-StepEnvironmentCheck
 $results += Invoke-StepProjectDetection -Root $ScriptRoot
-$results += Invoke-StepPlaceholder -Number 3 -Name 'Memory Restore' `
-    -Reason 'Memory MCP persistence not yet integrated'
+$results += Invoke-StepMemoryRestore -Root $ScriptRoot
 $results += Invoke-StepSystemInit
 $results += Invoke-StepPlaceholder -Number 5 -Name 'Executive Init' `
     -Reason 'Runtime CTO / Strategy Engine is a conceptual layer (Claude itself)'

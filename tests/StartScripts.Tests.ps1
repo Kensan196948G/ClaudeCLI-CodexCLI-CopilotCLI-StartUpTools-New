@@ -191,14 +191,21 @@ Describe 'Start-*.ps1 dry-run flows' {
         $output | Should -Match '\[DRY RUN\] No side effects will be applied'
     }
 
-    It 'Start-ClaudeOS.ps1 の Step 3/5/6/8 がプレースホルダー SKIP になること' {
+    It 'Start-ClaudeOS.ps1 の Step 5/6/8 がプレースホルダー SKIP になること' {
         $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-ClaudeOS.ps1'
         $output = & $script:PowerShellExe -NoProfile -File $scriptPath -NonInteractive 2>&1 | Out-String
         $LASTEXITCODE | Should -Be 0
-        $output | Should -Match '\[Step 3\].*Memory Restore.*SKIP'
         $output | Should -Match '\[Step 5\].*Executive Init.*SKIP'
         $output | Should -Match '\[Step 6\].*Management Init.*SKIP'
         $output | Should -Match '\[Step 8\].*Loop Engine Start.*SKIP'
+    }
+
+    It 'Start-ClaudeOS.ps1 の Step 3 が Memory Restore として実行されること (Issue #70)' {
+        $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-ClaudeOS.ps1'
+        $output = & $script:PowerShellExe -NoProfile -File $scriptPath -NonInteractive 2>&1 | Out-String
+        $LASTEXITCODE | Should -Be 0
+        $output | Should -Match '\[Step 3\].*Memory Restore'
+        $output | Should -Not -Match '\[Step 3\].*Memory Restore.*SKIP'
     }
 
     It 'Start-ClaudeOS.ps1 の Step 7 が Agent Init として実行されること (PR-B)' {
