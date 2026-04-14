@@ -136,4 +136,6 @@ tests/CLAUDE.md
 Claude/templates/claude/instructions/CLAUDE.md
 .claude/claudeos/commands/CLAUDE.md
 docs/common/CLAUDE.md
+.github/CLAUDE.md
+docs/CLAUDE.md
 Claude/templates/claude/Claude/
