@@ -15,6 +15,11 @@
     {
       "name": "capture-result",
       "description": "主要ツール結果を次の判断に使える形へ整理する"
+    },
+    {
+      "name": "usage-history-recorder",
+      "description": "Agent / Skill / Command / Hook の呼び出しを state.json.learning.usage_history に記録",
+      "matcher": "Agent|Skill|Task"
     }
   ],
   "Stop": [

@@ -114,12 +114,34 @@ agents、skills、commands、rules、hooks、scripts、contexts、examples、mcp
     "stop_doing_review_interval_days": 90,
     "stop_doing_last_run": null,
     "stop_doing_candidates_found": 0
+  },
+  "learning": {
+    "usage_history": {
+      "agents": {},
+      "skills": {},
+      "commands": {},
+      "hooks": {}
+    },
+    "dead_weight": {
+      "stale_threshold_days": 90,
+      "grace_period_days": 30,
+      "last_detection_run": null,
+      "candidates_pending_issue": []
+    }
   }
 }
 ```
 
 `improvement.stop_doing_review_date` は次回の Stop-Doing 点検期日（ISO 8601 日付）。
 `interval_days` は四半期点検を想定した 90 日。Improve ループが期日到来を検出すると点検が発火する。
+
+`learning.usage_history` は各カテゴリ別（Agent / Skill / Command / Hook）の使用履歴辞書。
+キーは項目名、値は `{ "last_invoked": ISO8601, "total_count": N, "seasonal": bool }` 形式。
+PostToolUse の `usage-history-recorder` フックがこのブロックを更新する。
+
+`learning.dead_weight` は Dead-Weight 検出の設定。`stale_threshold_days` を超えて
+未呼び出しの項目が検出対象。`grace_period_days` は新規追加項目の猶予期間。
+`candidates_pending_issue` は次回 Issue 化待ちの候補リスト。
 
 ## 5. 運用ループ
 
