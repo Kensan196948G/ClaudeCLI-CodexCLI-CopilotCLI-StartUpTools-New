@@ -153,9 +153,9 @@ graph LR
 
 ```mermaid
 flowchart LR
-    M["🔍 Monitor<br/>30m"] --> B["🛠 Development<br/>2h"]
-    B --> V["✅ Verify<br/>1h"]
-    V --> I["🚀 Improvement<br/>1h"]
+    M["🔍 Monitor<br/>30m"] --> B["🛠 Development<br/>60m"]
+    B --> V["✅ Verify<br/>45m"]
+    V --> I["🚀 Improvement<br/>45m"]
     I -->|STABLE未達| B
     I -->|STABLE達成| S["📦 Deploy"]
     V -->|CI失敗| R["🔧 Auto Repair"]
@@ -201,7 +201,7 @@ flowchart TD
 | 🐍 PTY Bridge | 🔧 共通 | SSH経由の Claude Code 操作を堅牢にサポート |
 | ⚙️ 一元設定 | 🔧 共通 | `config/config.json` で対応ツールを一元管理 |
 | 🩺 診断ツール | 🔧 共通 | `Test-AllTools.ps1` で環境を一括チェック |
-| ⚡ CI/CD | 🔧 共通 | GitHub Actions による自動テスト (Pester 307件) |
+| ⚡ CI/CD | 🔧 共通 | GitHub Actions による自動テスト (Pester 311件) |
 | 🧠 ClaudeOS カーネル | ⭐ Claude 専用 | 37体のエージェント + 64スキル + 35コマンド + フック |
 | 🔌 MCP ヘルスチェック | ⭐ Claude 専用 | `McpHealthCheck.psm1` で4サーバーの起動・接続・状態診断 |
 | 🤖 Agent Teams ランタイム | ⭐ Claude 専用 | `AgentTeams.psm1` でタスク分析→Team自動構成→能力マトリクス→可視化 |
@@ -211,7 +211,9 @@ flowchart TD
 | 💰 Token Budget Manager | ⭐ Claude 専用 | `TokenBudget.psm1` でフェーズ別トークン使用量の自動制御 |
 | 🧠 Self Evolution | ⭐ Claude 専用 | `SelfEvolution.psm1` でセッション学習ループ・改善記録の自動化 🆕 |
 | 🏗️ Architecture Check | ⭐ Claude 専用 | `ArchitectureCheck.psm1` でアーキテクチャ違反・禁止パターンの自動検出 🆕 |
-| 🚀 ClaudeOS Boot Sequence | ⭐ Claude 専用 | `Start-ClaudeOS.ps1` で `.claude/claudeos/system/boot.md` 仕様の 9 ステップ初期化（MVP: Step 1/2/4/9 実装、Step 3/5/6/7/8 はプレースホルダー）🆕 |
+| 🚀 ClaudeOS Boot Sequence | ⭐ Claude 専用 | `Start-ClaudeOS.ps1` で `.claude/claudeos/system/boot.md` 仕様の 9 ステップ初期化（Step 1/2/3/4/7/9 完全実装済み・Step 3=Memory MCP/Step 7=Agent Init/Step 9=Dashboard）🆕 |
+| 🐰 CodeRabbit Review | ⭐ Claude 専用 | `/coderabbit:review` コマンドで 40+ 解析器による静的解析レビュー（Verify フェーズ補完）🆕 |
+| 👥 /team-onboarding | ⭐ Claude 専用 | 新メンバー向けオンボーディングガイドの自動生成・出力コマンド 🆕 |
 | 🔎 MCP ランタイムプローブ | ⭐ Claude 専用 | `Invoke-McpRuntimeProbe` で MCP サーバーの起動テストを実行 |
 
 ---
@@ -304,11 +306,11 @@ start.bat
 
 ---
 
-## ClaudeOS v7.4 完全無人運用システム (Claude Code 専用)
+## ClaudeOS v7.5 完全無人運用システム (Claude Code 専用)
 
 > **本セクションの全機能は Claude Code 上でのみ動作します。** Codex CLI / GitHub Copilot CLI には適用されません。`Start-ClaudeOS.ps1` および `.claude/claudeos/` 配下のカーネル文書群が前提です。
 
-### v7.4 新機能
+### v7.5 新機能
 
 | 機能 | 説明 |
 |------|------|
@@ -317,14 +319,17 @@ start.bat
 | 🧭 Auto Loop Intelligence | KPI/CI 状態に基づく動的ループ回数制御 |
 | 📊 全プロセス可視化 | Agent Teams ログ・フェーズ遷移・KPI を常時表示 |
 | 🔗 GitHub Projects 連携 | Issue 状態と Project ステータスの自動同期 |
+| 🐰 CodeRabbit 統合 | 40+ 解析器による静的解析レビュー（Verify フェーズ補完） |
+| 👥 /team-onboarding | 新メンバー向けオンボーディングガイド自動生成コマンド |
+| ⏱ ループ最適化 | Dev=60m/Verify=45m/Improve=45m (Max 20x 週次制限対策) |
 
 ### 自律ループ構成
 
 ```mermaid
 flowchart LR
-    M["🔍 Monitor<br/>30m"] --> B["🛠 Development<br/>2h"]
-    B --> V["✅ Verify<br/>1h"]
-    V --> I["🚀 Improvement<br/>1h"]
+    M["🔍 Monitor<br/>30m"] --> B["🛠 Development<br/>60m"]
+    B --> V["✅ Verify<br/>45m"]
+    V --> I["🚀 Improvement<br/>45m"]
     I -->|KPI未達| M
     I -->|STABLE達成| S["📦 Deploy"]
     V -->|CI失敗| R["🔧 Auto Repair"]
@@ -334,9 +339,9 @@ flowchart LR
 | ループ | 時間 | 責務 | 禁止事項 |
 |--------|------|------|----------|
 | Monitor | 30m | 要件・設計・状態確認、タスク分解 | 実装・修復 |
-| Development | 2h | 設計、実装、テスト追加 | main 直接 push |
-| Verify | 1h | test/lint/build/CI確認、STABLE判定 | 未テスト merge |
-| Improvement | 1h | リファクタリング、docs更新 | 破壊的変更 |
+| Development | 60m | 設計、実装、テスト追加 | main 直接 push |
+| Verify | 45m | test/lint/build/CI/CodeRabbit確認、STABLE判定 | 未テスト merge |
+| Improvement | 45m | リファクタリング、docs更新 | 破壊的変更 |
 
 ### STABLE 判定条件
 
@@ -348,6 +353,7 @@ flowchart LR
 | build | SUCCESS |
 | CI | SUCCESS |
 | Codex Review | OK |
+| CodeRabbit | Critical/High = 0 |
 | error count | 0 |
 | security issue | 0 |
 
@@ -442,7 +448,7 @@ Codex/               Codex AGENTS.md
 .\scripts\test\Test-AgentTeams.ps1 -OutputFormat Json -Task "Fix CI build"
 .\scripts\test\Test-ArchitectureCheck.ps1 -OutputFormat Json
 
-# Pester テスト (307件)
+# Pester テスト (311件)
 Invoke-Pester .\tests\
 ```
 
@@ -467,35 +473,45 @@ Invoke-Pester .\tests\
 |----------|------|----------|
 | Phase 1 ✅ | 完了 (v2.7.0) | P1完了、モジュール基盤確立 |
 | Phase 2 ✅ | 完了 (v2.8.0) | Worktree並列開発、Issue自動生成、CI強化 |
-| Phase 3 🚧 | 進行中 (v2.9.0 安定) | Self Evolution / Architecture Check 完了、Boot Sequence MVP 着手、Dashboard UI / Memory MCP は未着手 |
-| Phase 4 ⏸ | 未着手 (v3.0.0) | リリース準備、セキュリティ監査、GA |
+| Phase 3 ✅ | 完了 (v2.9.0) | Self Evolution / Architecture Check / Boot Sequence 完全実装 / Dashboard UI / Memory MCP 統合 / CodeRabbit 統合 |
+| Phase 4 🚧 | 着手中 (v3.0.0 準備) | リリースノート作成、E2E テスト整備、GitHub Release タグ作成、Issue Sync 修正 |
 
-### Phase 3 進捗 (v2.9.0)
+### Phase 3 進捗 (v2.9.0) — 完了
 
-| タスク | 担当 | 状態 |
-|--------|------|------|
-| 🧠 Self Evolution システム | Architect | ✅ 完了 (#50) |
-| 🏗️ Architecture Check Loop | Architect | ✅ 完了 (#49) |
-| 📊 開発ダッシュボード UI | Developer | ⏸ Planned |
-| 💾 Memory MCP 永続化統合 | Ops | ⏸ Planned |
-| 🔧 Boot Sequence 完全自動化 | Ops | 🚧 進行中 — MVP PR-A 実装済み (#69, Issue #68) |
+| タスク | 担当 | 状態 | PR |
+|--------|------|------|-----|
+| 🧠 Self Evolution システム | Architect | ✅ 完了 | #51 |
+| 🏗️ Architecture Check Loop | Architect | ✅ 完了 | #49 |
+| 📊 開発ダッシュボード UI (state.json KPI統合) | Developer | ✅ 完了 | #82 |
+| 💾 Memory MCP 永続化統合 (Boot Step 3) | Ops | ✅ 完了 | #81 |
+| 🔧 Boot Sequence 完全自動化 (Step 7 Agent Init) | Ops | ✅ 完了 | #80 |
 
-**Phase 3 完了率: 2/5 (40%) + Boot Sequence MVP 着手**
+**Phase 3 完了率: 5/5 (100%) 🏆 COMPLETE**
+
+### Phase 4 計画 (v3.0.0 GA リリース準備)
+
+| タスク | 優先度 | 状態 |
+|--------|--------|------|
+| 📋 Issue Sync ワークフロー修正 | P3 | 🚧 Issue #85 追跡中 |
+| 📝 v3.0.0 リリースノート作成 | P2 | ⏸ 計画中 |
+| 🧪 E2E テスト整備 | P2 | ⏸ 計画中 |
+| 🏷 GitHub Release タグ作成 `v3.0.0` | P2 | ⏸ 計画中 |
 
 ### 最近のマージ履歴
 
 | PR | 内容 | 日付 |
 |----|------|------|
+| #88 | feat(templates): ClaudeOS v7.5 テンプレート更新・ループ短縮・CodeRabbit 統合・/team-onboarding 実装 | 2026-04-14 |
+| #84 | chore: .gitignore に claude-mem 自動生成 CLAUDE.md を追加 | 2026-04-14 |
+| #83 | chore(claudeos): v7.5 — CodeRabbit 統合ポリシー + README Phase 3 完了反映 | 2026-04-14 |
+| #82 | feat(dashboard): Issue #71 — Step 9 Dashboard に state.json KPI/フェーズ統合 | 2026-04-14 |
+| #81 | feat(boot): Issue #70 — Step 3 Memory Restore を McpHealthCheck.psm1 でワイヤリング | 2026-04-14 |
+| #80 | feat(boot): Issue #68 PR-B — Step 7 Agent Init を AgentTeams.psm1 でワイヤリング | 2026-04-14 |
+| #79 | chore: フェーズ別モデル制御設定を追加 | 2026-04-14 |
+| #77 | chore: gitleaks workflow + Agent Teams Light mode | 2026-04-14 |
 | #69 | feat(boot): ClaudeOS Boot Sequence scaffold (MVP / PR-A) | 2026-04-10 |
 | #67 | fix: markdownlint MD024 を file-scoped inline disable 化 | 2026-04-10 |
 | #66 | fix: START_PROMPT テンプレを最大10回ループ + CTO全権委任に明確化 | 2026-04-10 |
-| #65 | fix: 残りの曖昧文言を具体的トリガー条件に置換 | 2026-04-10 |
-| #64 | fix: 6つの実行指示を具体的トリガー条件付きに明確化 | 2026-04-10 |
-| #63 | fix: ループ上限・Token閾値を明示化 — 無限ループ防止強化 | 2026-04-10 |
-| #62 | fix: 自律継続ルール追加 — フェーズ間のユーザー確認停止を禁止 | 2026-04-10 |
-| #61 | refactor: START_PROMPT.md を分割ファイル化 + ビルドスクリプト | 2026-04-09 |
-| #58 | プロジェクト構造の全面改善（15項目） | 2026-04-09 |
-| #54 | SSH 20分フリーズ防止（ServerAliveInterval 追加） | 2026-04-08 |
 | #51 | Phase 3 — Self Evolution + Architecture Check Loop | 2026-04-08 |
 
 ---
