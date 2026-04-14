@@ -108,9 +108,18 @@ agents、skills、commands、rules、hooks、scripts、contexts、examples、mcp
   "automation": {
     "auto_issue_generation": true,
     "self_evolution": true
+  },
+  "improvement": {
+    "stop_doing_review_date": "2026-07-14",
+    "stop_doing_review_interval_days": 90,
+    "stop_doing_last_run": null,
+    "stop_doing_candidates_found": 0
   }
 }
 ```
+
+`improvement.stop_doing_review_date` は次回の Stop-Doing 点検期日（ISO 8601 日付）。
+`interval_days` は四半期点検を想定した 90 日。Improve ループが期日到来を検出すると点検が発火する。
 
 ## 5. 運用ループ
 
@@ -121,7 +130,7 @@ agents、skills、commands、rules、hooks、scripts、contexts、examples、mcp
 | Monitor | 30min | 要件・設計・README 差分確認、Git/CI 状態確認、タスク分解 | 実装・修復 |
 | Build | 2h | 設計メモ作成、実装、テスト追加、WorkTree 管理 | ついでの大規模整理、main 直接 push |
 | Verify | 1h15m | test / lint / build / security / CodeRabbit 確認、STABLE 判定 | 未テストの merge |
-| Improve | 1h15m | 命名整理、リファクタリング、README / docs 更新、再開メモ | 破壊的変更の無断実行 |
+| Improve | 1h15m | 命名整理、リファクタリング、README / docs 更新、再開メモ、**Stop-Doing 点検（期日到来時のみ）** | 破壊的変更の無断実行 |
 
 失敗時: `Verify → CI Manager → Auto Repair → 再 Verify`
 
@@ -143,6 +152,17 @@ agents、skills、commands、rules、hooks、scripts、contexts、examples、mcp
 - 厳密な時間切替より、フェーズ完了時の切替を優先
 - 小変更なら `Monitor → Build → Verify` だけでもよい
 - 大変更のときだけ `Improve` と Agent Teams を厚く使う
+
+### Improve ループの Stop-Doing 点検（四半期）
+
+Improve ループ実行時に `state.json.improvement.stop_doing_review_date` を確認し、
+期日到来時のみ **Stop-Doing 点検** を自動実行する。これは「モデル進化で不要になった
+ルール・フック・スクリプト」を定期棚卸しして削減候補 Issue を起票する仕組み。
+
+発火条件と手順は `.claude/claudeos/loops/improve-loop.md` の「Stop-Doing Check」
+セクションを参照。期日未到来時は通常の Improve 作業のみ実施し、点検はスキップする。
+
+参考: Anthropic「Harnessing Claude's Intelligence」パターン 2 "Ask what you can stop doing"。
 
 ### 完全無人ループフロー
 
