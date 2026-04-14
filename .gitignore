@@ -135,4 +135,5 @@ scripts/main/CLAUDE.md
 tests/CLAUDE.md
 Claude/templates/claude/instructions/CLAUDE.md
 .claude/claudeos/commands/CLAUDE.md
+docs/common/CLAUDE.md
 Claude/templates/claude/Claude/
