@@ -1,8 +1,8 @@
 name: Issue Sync
 
 on:
-  issues:
-    types: [opened, closed, reopened, edited, labeled, unlabeled, assigned, unassigned, deleted]
+  # Auto-trigger on issue events disabled: GitHub Actions cannot create or approve PRs in this repo.
+  # Issues are tracked directly in GitHub Issues. Run manually via workflow_dispatch only if needed.
   workflow_dispatch:
 
 permissions:
