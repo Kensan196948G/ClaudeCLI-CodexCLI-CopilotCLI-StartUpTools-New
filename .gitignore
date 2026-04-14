@@ -124,3 +124,12 @@ Sample/
 
 # バックアッププロンプト
 Claude/templates/claude/START_PROMPT-backup*.md
+
+# claude-mem MCP が自動生成するコンテキストファイル（コミット不要・各ディレクトリに散在）
+# NOTE: CLAUDE.md at repo root and Claude/templates/ are intentional — only sub-directory auto-generated ones
+.github/issues/CLAUDE.md
+.github/workflows/CLAUDE.md
+.claude/claudeos/system/CLAUDE.md
+scripts/lib/CLAUDE.md
+scripts/main/CLAUDE.md
+tests/CLAUDE.md
