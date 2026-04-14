@@ -122,3 +122,109 @@ state.json が存在しない場合、または `improvement` ブロックが欠
 - 関連 Issue: #108 (Dead weight 自動検出) — `learning.usage_history` の書き込み側を担当
 - 関連 Issue: #105 (カスタム Agent / Skill 棚卸し) — 初回の手動プロトタイプ
 - 関連 Issue: #109 (Frontier-Test 月次ループ) — より広範なモデル能力再評価の発展形
+
+---
+
+## Dead-Weight Detection（日次・軽量）
+
+Stop-Doing Check が四半期の広範棚卸しなのに対し、Dead-Weight Detection は
+**毎 Improve ループでの軽量スキャン**。`learning.usage_history` を読んで
+未使用項目を自動抽出し、閾値到達で Issue 化する。
+
+### 前提データ
+
+`.claude/claudeos/hooks/usage-history-recorder.md` の PostToolUse フックが
+稼働していることが前提。このフックは Agent / Skill / Task 呼び出しのたびに
+`state.json.learning.usage_history` を更新する。
+
+フックが未稼働 / state.json が欠損している場合、**Dead-Weight Detection は
+スキップ**（無害化）。
+
+### 発火条件
+
+以下をすべて満たした場合に実行:
+
+1. `state.json.learning.usage_history` が存在し、少なくとも 1 カテゴリに 30 日以上
+   のデータが蓄積されている
+2. `state.json.learning.dead_weight.last_detection_run` が現在時刻 - 24 時間 より古い
+   （1 日 1 回まで）
+3. Improve ループの持ち時間に 10 分以上の余裕がある
+
+いずれかを満たさない場合はスキップ。
+
+### 実行手順
+
+1. **候補抽出**（並列可）:
+   ```
+   Read("./state.json")
+   Glob(".claude/claudeos/agents/**/*.md")
+   Glob(".claude/claudeos/skills/**/*.md")
+   Glob(".claude/claudeos/commands/*.md")
+   Glob(".claude/claudeos/hooks/*.md")
+   ```
+
+2. **判定ロジック**:
+   ```
+   stale_threshold = state.json.learning.dead_weight.stale_threshold_days (既定 90)
+   grace_period = state.json.learning.dead_weight.grace_period_days (既定 30)
+
+   for each file in Glob 結果:
+     name = ファイル名から拡張子を除いたもの
+     category = ファイルが属するディレクトリ（agents/skills/commands/hooks）
+     entry = state.json.learning.usage_history[category][name]
+
+     if entry is None:
+       # 記録なし → 2 パターン考えられる
+       if ファイルの git log 追加日時 < now - grace_period:
+         → 候補（"記録なし + 猶予期間外"）
+       else:
+         → 除外（"猶予期間内の新規項目"）
+
+     elif entry.seasonal == True:
+       → 除外（seasonal フラグ付き）
+
+     elif entry.last_invoked < now - stale_threshold:
+       → 候補（"閾値超過未使用"）
+
+     else:
+       → 除外（活性項目）
+   ```
+
+3. **Issue 起票前のフィルタ**:
+   - 既に `stale-candidate` ラベル付きの open Issue が該当項目に対して存在するなら除外
+   - `candidates_pending_issue` 配列に既に登録済みのものは除外
+   - 検出件数が 50 件超過なら上位 10 件のみ起票、残りは `candidates_pending_issue` に
+     繰越
+
+4. **Issue 起票**（最大 10 件）:
+   各候補について以下を含む Issue を 1 件起票:
+   - ラベル: `stale-candidate`
+   - タイトル: `chore: Dead-Weight 候補: {category}/{name} の存廃検討`
+   - 本文: 追加日、最終使用、total_count、grace period 適用状況、判定根拠
+
+5. **state.json 更新**:
+   ```
+   state.json.learning.dead_weight.last_detection_run = now
+   state.json.learning.dead_weight.candidates_pending_issue = 繰越リスト
+   ```
+
+### 誤検出防止
+
+- 判定は read-only ツール（Read / Glob / Grep）の使用状況は考慮しない
+- `learning.usage_history` の記録が 30 日未満しかない場合は実行しない（データ不足）
+- Frontier-Test（Issue #109）のような将来ループで「自動発火だが手動承認待ち」状態に
+  するため、Issue はあくまで候補であり自動削除は行わない
+
+### Stop-Doing Check との役割分担
+
+| 項目 | Stop-Doing Check | Dead-Weight Detection |
+|---|---|---|
+| 発火頻度 | 四半期 (90 日) | 日次（Improve ループごと） |
+| 粒度 | 広範棚卸し（A/B/C/D 4 分類） | 使用実態のみ（閾値超過 or 記録なし） |
+| データ源 | git log / 手動判定 + usage_history | usage_history 専用 |
+| 判定コスト | 高（Claude 自己評価を含む） | 低（期日と閾値のみ） |
+| 誤検出リスク | 中（Claude 判定が入る） | 低（数値比較のみ） |
+
+両者は共存する。Stop-Doing Check は「モデル進化で不要になったもの」を広く拾う
+網であり、Dead-Weight Detection は「日々の使用状況から機械的に拾える低コスト網」。
+片方で漏れたものを他方で拾える設計。
