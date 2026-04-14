@@ -254,58 +254,76 @@ function Write-BootDashboard {
     # state.json integration (Issue #71)
     $state = if ($Root) { Get-StateJsonDashboard -Root $Root } else { $null }
     if ($state) {
-        Write-Host '  ── Goal & KPI ──────────────────────────────' -ForegroundColor Magenta
-        if ($state.goal -and $state.goal.title) {
-            Write-Host ('    Goal  : {0}' -f $state.goal.title) -ForegroundColor White
-        }
-        if ($state.kpi) {
-            $kpi = $state.kpi
-            $successTarget  = if ($null -ne $kpi.success_rate_target)  { '{0:P0}' -f $kpi.success_rate_target } else { 'n/a' }
-            $ciTarget       = if ($null -ne $kpi.ci_pass_rate)         { '{0:P0}' -f $kpi.ci_pass_rate }       else { 'n/a' }
-            $openP1         = if ($null -ne $kpi.open_p1_issues)       { $kpi.open_p1_issues }                 else { 'n/a' }
-            Write-Host ("    KPI   : success≥{0}  CI≥{1}  P1-issues={2}" -f $successTarget, $ciTarget, $openP1) -ForegroundColor Cyan
-        }
+        try {
+            $stateProps = $state.PSObject.Properties.Name
 
-        if ($state.execution) {
-            $exec = $state.execution
-            $phase     = if ($exec.phase)              { $exec.phase }              else { 'unknown' }
-            $remaining = if ($null -ne $exec.remaining_minutes) { "$($exec.remaining_minutes)min" } else { 'n/a' }
-            $elapsed   = if ($null -ne $exec.elapsed_minutes)   { "$($exec.elapsed_minutes)min" }   else { 'n/a' }
-            Write-Host ''
-            Write-Host '  ── Execution Status ────────────────────────' -ForegroundColor Magenta
-            Write-Host ("    Phase     : {0}" -f $phase)     -ForegroundColor White
-            Write-Host ("    Elapsed   : {0} / Remaining: {1}" -f $elapsed, $remaining) -ForegroundColor White
-        }
-
-        if ($state.token) {
-            $tok = $state.token
-            $used      = if ($null -ne $tok.used)      { $tok.used }      else { '?' }
-            $remaining = if ($null -ne $tok.remaining)  { $tok.remaining }  else { '?' }
-            $total     = if ($null -ne $tok.total_budget) { $tok.total_budget } else { '?' }
-            Write-Host ''
-            Write-Host '  ── Token Budget ────────────────────────────' -ForegroundColor Magenta
-            Write-Host ("    Used/Total: {0}/{1}  Remaining: {2}%" -f $used, $total, $remaining) -ForegroundColor White
-        }
-
-        if ($state.current_work) {
-            $work = $state.current_work
-            Write-Host ''
-            Write-Host '  ── Current Work ────────────────────────────' -ForegroundColor Magenta
-            if ($work.issue) {
-                Write-Host ("    Issue #{0}: {1}" -f $work.issue, $work.title) -ForegroundColor White
+            Write-Host '  ── Goal & KPI ──────────────────────────────' -ForegroundColor Magenta
+            if (($stateProps -contains 'goal') -and $state.goal -and $state.goal.title) {
+                Write-Host ('    Goal  : {0}' -f $state.goal.title) -ForegroundColor White
             }
-            if ($work.pr) {
-                Write-Host ("    PR    #{0} [{1}]" -f $work.pr, $work.branch) -ForegroundColor Cyan
+            if (($stateProps -contains 'kpi') -and $state.kpi) {
+                $kpi        = $state.kpi
+                $kpiProps   = $kpi.PSObject.Properties.Name
+                $successTarget = if ($kpiProps -contains 'success_rate_target') { '{0:P0}' -f $kpi.success_rate_target } else { 'n/a' }
+                $ciTarget      = if ($kpiProps -contains 'ci_pass_rate')        { '{0:P0}' -f $kpi.ci_pass_rate }        else { 'n/a' }
+                $openP1        = if ($kpiProps -contains 'open_p1_issues')      { $kpi.open_p1_issues }                  else { 'n/a' }
+                Write-Host ("    KPI   : success>={0}  CI>={1}  P1-issues={2}" -f $successTarget, $ciTarget, $openP1) -ForegroundColor Cyan
             }
-        }
 
-        if ($state.loop_history -and @($state.loop_history).Count -gt 0) {
-            $lastLoop = @($state.loop_history)[-1]
+            if (($stateProps -contains 'execution') -and $state.execution) {
+                $exec       = $state.execution
+                $execProps  = $exec.PSObject.Properties.Name
+                $phase     = if ($execProps -contains 'phase')              { $exec.phase }              else { 'unknown' }
+                $remaining = if ($execProps -contains 'remaining_minutes')  { "$($exec.remaining_minutes)min" } else { 'n/a' }
+                $elapsed   = if ($execProps -contains 'elapsed_minutes')    { "$($exec.elapsed_minutes)min" }   else { 'n/a' }
+                Write-Host ''
+                Write-Host '  ── Execution Status ────────────────────────' -ForegroundColor Magenta
+                Write-Host ("    Phase     : {0}" -f $phase)     -ForegroundColor White
+                Write-Host ("    Elapsed   : {0} / Remaining: {1}" -f $elapsed, $remaining) -ForegroundColor White
+            }
+
+            if (($stateProps -contains 'token') -and $state.token) {
+                $tok       = $state.token
+                $tokProps  = $tok.PSObject.Properties.Name
+                $used      = if ($tokProps -contains 'used')         { $tok.used }         else { '?' }
+                $remaining = if ($tokProps -contains 'remaining')    { $tok.remaining }    else { '?' }
+                $total     = if ($tokProps -contains 'total_budget') { $tok.total_budget } else { '?' }
+                Write-Host ''
+                Write-Host '  ── Token Budget ────────────────────────────' -ForegroundColor Magenta
+                Write-Host ("    Used/Total: {0}/{1}  Remaining: {2}%" -f $used, $total, $remaining) -ForegroundColor White
+            }
+
+            if (($stateProps -contains 'current_work') -and $state.current_work) {
+                $work      = $state.current_work
+                $workProps = $work.PSObject.Properties.Name
+                Write-Host ''
+                Write-Host '  ── Current Work ────────────────────────────' -ForegroundColor Magenta
+                if ($workProps -contains 'issue') {
+                    $issueTitle = if ($workProps -contains 'title') { $work.title } else { '' }
+                    Write-Host ("    Issue #{0}: {1}" -f $work.issue, $issueTitle) -ForegroundColor White
+                }
+                if ($workProps -contains 'pr') {
+                    $branch = if ($workProps -contains 'branch') { $work.branch } else { '' }
+                    Write-Host ("    PR    #{0} [{1}]" -f $work.pr, $branch) -ForegroundColor Cyan
+                }
+            }
+
+            if (($stateProps -contains 'loop_history') -and $state.loop_history -and @($state.loop_history).Count -gt 0) {
+                $lastLoop      = @($state.loop_history)[-1]
+                $loopProps     = $lastLoop.PSObject.Properties.Name
+                $loopNum       = if ($loopProps -contains 'loop')    { $lastLoop.loop }    else { '?' }
+                $loopPhase     = if ($loopProps -contains 'phase')   { $lastLoop.phase }   else { '?' }
+                $loopOutcome   = if ($loopProps -contains 'outcome') { $lastLoop.outcome } else { '' }
+                Write-Host ''
+                Write-Host '  ── Last Loop ───────────────────────────────' -ForegroundColor Magenta
+                Write-Host ("    Loop {0} [{1}]: {2}" -f $loopNum, $loopPhase, $loopOutcome) -ForegroundColor DarkGray
+            }
             Write-Host ''
-            Write-Host '  ── Last Loop ───────────────────────────────' -ForegroundColor Magenta
-            Write-Host ("    Loop {0} [{1}]: {2}" -f $lastLoop.loop, $lastLoop.phase, $lastLoop.outcome) -ForegroundColor DarkGray
         }
-        Write-Host ''
+        catch {
+            Write-Host ('  [WARN] Dashboard state.json read error: {0}' -f $_.Exception.Message) -ForegroundColor Yellow
+            Write-Host ''
+        }
     }
 
     return @{ OK = $ok; SKIP = $skip; FAIL = $fail }

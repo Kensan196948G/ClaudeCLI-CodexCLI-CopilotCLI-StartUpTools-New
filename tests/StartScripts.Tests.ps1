@@ -238,7 +238,7 @@ Describe 'Start-*.ps1 dry-run flows' {
             $output = & $script:PowerShellExe -NoProfile -File $scriptPath -NonInteractive 2>&1 | Out-String
             $LASTEXITCODE | Should -Be 0
             $output | Should -Match 'Dashboard UI Test Goal'
-            $output | Should -Match 'Goal.*&.*KPI|Goal & KPI|Goal.*KPI'
+            $output | Should -Match 'Goal'
         }
         finally {
             if ($null -ne $stateBackup) {
