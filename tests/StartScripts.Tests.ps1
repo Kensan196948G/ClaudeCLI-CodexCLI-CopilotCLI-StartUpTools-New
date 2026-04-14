@@ -215,6 +215,40 @@ Describe 'Start-*.ps1 dry-run flows' {
         $output | Should -Match '\[Step 7\].*Agent Init'
         $output | Should -Not -Match '\[Step 7\].*Agent Init.*SKIP'
     }
+
+    It 'Start-ClaudeOS.ps1 の Step 9 Dashboard が state.json なしでも正常終了すること (Issue #71)' {
+        $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-ClaudeOS.ps1'
+        $output = & $script:PowerShellExe -NoProfile -File $scriptPath -NonInteractive 2>&1 | Out-String
+        $LASTEXITCODE | Should -Be 0
+        $output | Should -Match '\[Step 9\].*Dashboard'
+        $output | Should -Match 'Boot Summary'
+    }
+
+    It 'Start-ClaudeOS.ps1 の Step 9 Dashboard が state.json の Goal を表示すること (Issue #71)' {
+        $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-ClaudeOS.ps1'
+        $statePath = Join-Path $script:RepoRoot 'state.json'
+        $stateBackup = if (Test-Path $statePath) { Get-Content $statePath -Raw -Encoding UTF8 } else { $null }
+        try {
+            @{
+                goal      = @{ title = 'Dashboard UI Test Goal' }
+                kpi       = @{ success_rate_target = 0.9; ci_pass_rate = 1.0; open_p1_issues = 0 }
+                execution = @{ phase = 'Verify'; elapsed_minutes = 10; remaining_minutes = 290 }
+                token     = @{ used = 5; total_budget = 100; remaining = 95 }
+            } | ConvertTo-Json -Depth 5 | Set-Content -Path $statePath -Encoding UTF8
+            $output = & $script:PowerShellExe -NoProfile -File $scriptPath -NonInteractive 2>&1 | Out-String
+            $LASTEXITCODE | Should -Be 0
+            $output | Should -Match 'Dashboard UI Test Goal'
+            $output | Should -Match 'Goal.*&.*KPI|Goal & KPI|Goal.*KPI'
+        }
+        finally {
+            if ($null -ne $stateBackup) {
+                Set-Content -Path $statePath -Value $stateBackup -Encoding UTF8
+            }
+            else {
+                Remove-Item $statePath -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
 }
 
 Describe 'Start-Menu helper flows' {
