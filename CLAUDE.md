@@ -15,18 +15,21 @@
 このファイルを読んだ時点で、以下を即座に実行してください。
 ユーザーの最初のメッセージ内容に関わらず、このセクションを最優先で処理します。
 
-### ステップ 1: ループコマンド登録
+### ステップ 1: モデル設定 + ループコマンド登録
 
-以下の 4 コマンドをこの順番で登録してください。
+最初にモデルを設定し、続けて 4 コマンドをこの順番で登録してください。
 
 ```
+/model opusplan
 /loop 30m ClaudeOS Monitor
 /loop 2h ClaudeOS Development
-/loop 1h ClaudeOS Verify
-/loop 1h ClaudeOS Improvement
+/loop 90m ClaudeOS Verify
+/loop 90m ClaudeOS Improvement
 ```
 
-4 本すべての登録が完了するまで、通常の開発作業は開始しないでください。
+モデル設定 + 4 本すべての登録が完了するまで、通常の開発作業は開始しないでください。
+
+> **モデルポリシー**: `opusplan` モードにより、Plan フェーズは Opus 4.6、実装・ツール実行は Sonnet 4.6 を使用。週次 Opus 制限の節約と高品質な設計判断を両立する。
 
 ### ステップ 2: Codex セットアップ
 
