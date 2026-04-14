@@ -133,3 +133,6 @@ Claude/templates/claude/START_PROMPT-backup*.md
 scripts/lib/CLAUDE.md
 scripts/main/CLAUDE.md
 tests/CLAUDE.md
+Claude/templates/claude/instructions/CLAUDE.md
+.claude/claudeos/commands/CLAUDE.md
+Claude/templates/claude/Claude/
