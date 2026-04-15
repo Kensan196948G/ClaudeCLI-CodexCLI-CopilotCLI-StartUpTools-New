@@ -84,11 +84,12 @@ Handles simple tasks.
     }
 
     Context '実際の claudeos agents を読み込む場合' {
-        It '30 個以上の Agent を読み込めること' {
+        It '15 個以上の Agent を読み込めること' {
+            # 棚卸し 2026Q2 (Issue #117-#120) でカテゴリ A+D 計 55 件を削除。残存 17 件以上を確認。
             $agentsDir = Join-Path $script:RepoRoot '.claude\claudeos\agents'
             if (Test-Path $agentsDir) {
                 $result = Import-AgentDefinitions -AgentsDir $agentsDir
-                @($result).Count | Should -BeGreaterOrEqual 30
+                @($result).Count | Should -BeGreaterOrEqual 15
             }
         }
     }
@@ -305,7 +306,7 @@ Describe 'Get-AgentTeamReport' {
         It 'agent 定義を読み込めること' {
             $report = Get-AgentTeamReport -ProjectRoot $script:RepoRoot
             $report.agentsDirExists | Should -Be $true
-            $report.agentCount | Should -BeGreaterOrEqual 30
+            $report.agentCount | Should -BeGreaterOrEqual 15  # 棚卸し 2026Q2 後の最小値 (実態: 17)
         }
 
         It 'rules ファイルが存在すること' {
