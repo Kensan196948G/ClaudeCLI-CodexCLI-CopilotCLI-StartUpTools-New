@@ -271,12 +271,12 @@ function Invoke-ToolFromMenu {
         [switch]$Local
     )
 
-    $args = @("-Tool", $Tool)
+    $scriptArgs = @("-Tool", $Tool)
     if ($Local) {
-        $args += "-Local"
+        $scriptArgs += "-Local"
     }
 
-    Invoke-MenuScript -File "scripts\main\Start-All.ps1" -ScriptArgs $args
+    Invoke-MenuScript -File "scripts\main\Start-All.ps1" -ScriptArgs $scriptArgs
 }
 
 if ($env:AI_STARTUP_MENU_TEST_EXPORT -eq '1') {

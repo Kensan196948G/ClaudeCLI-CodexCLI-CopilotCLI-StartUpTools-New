@@ -105,7 +105,7 @@ function New-TerminalProfileObject {
         [string]$ProfileColorScheme = $SchemeName
     )
 
-    $profile = [pscustomobject]@{
+    $terminalProfile = [pscustomobject]@{
         name = $Name
         guid = $Guid
         commandline = 'powershell.exe -NoExit'
@@ -130,12 +130,12 @@ function New-TerminalProfileObject {
     }
 
     if (-not [string]::IsNullOrWhiteSpace($ProfileBackgroundImage)) {
-        $profile | Add-Member -NotePropertyName backgroundImage -NotePropertyValue $ProfileBackgroundImage -Force
-        $profile | Add-Member -NotePropertyName backgroundImageOpacity -NotePropertyValue 0.15 -Force
-        $profile | Add-Member -NotePropertyName backgroundImageStretchMode -NotePropertyValue 'uniformToFill' -Force
+        $terminalProfile | Add-Member -NotePropertyName backgroundImage -NotePropertyValue $ProfileBackgroundImage -Force
+        $terminalProfile | Add-Member -NotePropertyName backgroundImageOpacity -NotePropertyValue 0.15 -Force
+        $terminalProfile | Add-Member -NotePropertyName backgroundImageStretchMode -NotePropertyValue 'uniformToFill' -Force
     }
 
-    return $profile
+    return $terminalProfile
 }
 
 function Upsert-TerminalProfile {
@@ -155,19 +155,19 @@ function Upsert-TerminalProfile {
     $existing = @($Settings.profiles.list | Where-Object { $_.name -eq $Name } | Select-Object -First 1)
     $current = if ($existing.Count -gt 0) { $existing[0] } else { $null }
     $guid = if ($null -ne $current -and $current.guid) { "$($current.guid)" } else { "{0}" -f ('{' + [guid]::NewGuid().ToString() + '}') }
-    $profile = New-TerminalProfileObject -Name $Name -Guid $guid -SchemeName $SchemeName -ProfileStartingDirectory $ProfileStartingDirectory -ProfileIcon $ProfileIcon -ProfileBackgroundImage $ProfileBackgroundImage -ProfileFontFace $ProfileFontFace -ProfileFontSize $ProfileFontSize -ProfileOpacity $ProfileOpacity -ProfileColorScheme $ProfileColorScheme
+    $terminalProfile = New-TerminalProfileObject -Name $Name -Guid $guid -SchemeName $SchemeName -ProfileStartingDirectory $ProfileStartingDirectory -ProfileIcon $ProfileIcon -ProfileBackgroundImage $ProfileBackgroundImage -ProfileFontFace $ProfileFontFace -ProfileFontSize $ProfileFontSize -ProfileOpacity $ProfileOpacity -ProfileColorScheme $ProfileColorScheme
 
     if ($null -ne $current) {
         $index = [array]::IndexOf($Settings.profiles.list, $current)
         if ($index -ge 0) {
-            $Settings.profiles.list[$index] = $profile
+            $Settings.profiles.list[$index] = $terminalProfile
         }
     }
     else {
-        $Settings.profiles.list += $profile
+        $Settings.profiles.list += $terminalProfile
     }
 
-    return $profile
+    return $terminalProfile
 }
 
 if ($StartingDirectory -and

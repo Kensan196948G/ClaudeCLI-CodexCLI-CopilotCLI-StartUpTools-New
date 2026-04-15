@@ -43,13 +43,13 @@ function Get-GitHubIssues {
         [string]$State = 'open'
     )
 
-    $args = @('issue', 'list', '--repo', "$Owner/$Repo", '--state', $State, '--json', 'number,title,labels,state,assignees,body', '--limit', '100')
+    $ghArgs = @('issue', 'list', '--repo', "$Owner/$Repo", '--state', $State, '--json', 'number,title,labels,state,assignees,body', '--limit', '100')
     if ($Labels.Count -gt 0) {
-        $args += '--label'
-        $args += ($Labels -join ',')
+        $ghArgs += '--label'
+        $ghArgs += ($Labels -join ',')
     }
 
-    $raw = & gh @args 2>&1
+    $raw = & gh @ghArgs 2>&1
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to fetch issues: $raw"
     }

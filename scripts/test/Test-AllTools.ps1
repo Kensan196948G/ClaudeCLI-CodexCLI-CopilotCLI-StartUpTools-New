@@ -30,11 +30,11 @@ function Test-CommandExists {
 function Get-CommandVersionLine {
     param(
         [string]$Command,
-        [string[]]$Args = @()
+        [string[]]$CmdArgs = @()
     )
 
     try {
-        $output = & $Command @Args 2>&1 | Select-Object -First 1
+        $output = & $Command @CmdArgs 2>&1 | Select-Object -First 1
         if ($null -ne $output) {
             return "$output".Trim()
         }
@@ -194,7 +194,7 @@ function Get-AllToolsDiagnostics {
             name = $entry.name
             label = $entry.label
             exists = $exists
-            version = if ($exists) { Get-CommandVersionLine -Command $entry.name -Args $entry.args } else { $null }
+            version = if ($exists) { Get-CommandVersionLine -Command $entry.name -CmdArgs $entry.args } else { $null }
             install = $entry.install
         }
     }
@@ -236,7 +236,7 @@ function Get-AllToolsDiagnostics {
                 label = $tool.label
                 command = $tool.command
                 exists = $exists
-                version = if ($exists) { Get-CommandVersionLine -Command $tool.command -Args $tool.versionArgs } else { $null }
+                version = if ($exists) { Get-CommandVersionLine -Command $tool.command -CmdArgs $tool.versionArgs } else { $null }
                 install = $tool.install
                 authEnv = $tool.authEnv
                 authConfigured = [bool]$secret
@@ -247,7 +247,7 @@ function Get-AllToolsDiagnostics {
 
         $copilotCommand = if ($config.tools.copilot.command) { "$($config.tools.copilot.command)" } else { 'copilot' }
         $copilotVersionArgs = if ($config.tools.copilot.checkCommand -and $config.tools.copilot.checkCommand -match '--version') { @('--version') } else { @('--version') }
-        $copilotVersion = if (Test-CommandExists -Command $copilotCommand) { Get-CommandVersionLine -Command $copilotCommand -Args $copilotVersionArgs } else { $null }
+        $copilotVersion = if (Test-CommandExists -Command $copilotCommand) { Get-CommandVersionLine -Command $copilotCommand -CmdArgs $copilotVersionArgs } else { $null }
         if (-not $copilotVersion) {
             $report.summary.ok = $false
         }
@@ -368,7 +368,7 @@ function Show-AllToolsDiagnostics {
     if ($Report.configExists) { Write-Ok 'config.json exists' } else { Write-Fail 'config.json missing' }
     if ($Report.configValid) { Write-Ok 'config.json parse ok' }
     if ($Report.schemaValid) { Write-Ok 'config.json schema ok' }
-    foreach ($error in @($Report.errors)) { Write-Fail $error }
+    foreach ($errItem in @($Report.errors)) { Write-Fail $errItem }
     Write-Host ''
 
     Write-Host '--- Common ---' -ForegroundColor Yellow

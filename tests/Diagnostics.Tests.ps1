@@ -386,14 +386,14 @@ Describe 'setup-windows-terminal.ps1 non-interactive' {
         $LASTEXITCODE | Should -Be 0
 
         $settings = Get-Content $settingsPath -Raw -Encoding UTF8 | ConvertFrom-Json
-        $profile = $settings.profiles.list | Where-Object name -eq 'AI CLI Startup'
-        $profile.startingDirectory | Should -Be 'D:\Work'
-        $profile.colorScheme | Should -Be 'Campbell'
-        $profile.font.face | Should -Be 'Fira Code'
-        $profile.font.size | Should -Be 20
-        $profile.opacity | Should -Be 90
-        $profile.useAcrylic | Should -BeFalse
-        $settings.defaultProfile | Should -Be $profile.guid
+        $terminalProfile = $settings.profiles.list | Where-Object name -eq 'AI CLI Startup'
+        $terminalProfile.startingDirectory | Should -Be 'D:\Work'
+        $terminalProfile.colorScheme | Should -Be 'Campbell'
+        $terminalProfile.font.face | Should -Be 'Fira Code'
+        $terminalProfile.font.size | Should -Be 20
+        $terminalProfile.opacity | Should -Be 90
+        $terminalProfile.useAcrylic | Should -BeFalse
+        $settings.defaultProfile | Should -Be $terminalProfile.guid
     }
 
     It '既存プロファイルを上書き更新できること' {
@@ -422,14 +422,14 @@ Describe 'setup-windows-terminal.ps1 non-interactive' {
         $LASTEXITCODE | Should -Be 0
 
         $settings = Get-Content $settingsPath -Raw -Encoding UTF8 | ConvertFrom-Json
-        $profile = $settings.profiles.list | Where-Object name -eq 'AI CLI Startup'
-        $profile.guid | Should -Be '{11111111-1111-1111-1111-111111111111}'
-        $profile.startingDirectory | Should -Be 'D:\New'
-        $profile.colorScheme | Should -Be 'One Half Dark'
-        $profile.font.face | Should -Be 'Cascadia Mono'
-        $profile.font.size | Should -Be 16
-        $profile.opacity | Should -Be 88
-        $profile.useAcrylic | Should -BeTrue
+        $terminalProfile = $settings.profiles.list | Where-Object name -eq 'AI CLI Startup'
+        $terminalProfile.guid | Should -Be '{11111111-1111-1111-1111-111111111111}'
+        $terminalProfile.startingDirectory | Should -Be 'D:\New'
+        $terminalProfile.colorScheme | Should -Be 'One Half Dark'
+        $terminalProfile.font.face | Should -Be 'Cascadia Mono'
+        $terminalProfile.font.size | Should -Be 16
+        $terminalProfile.opacity | Should -Be 88
+        $terminalProfile.useAcrylic | Should -BeTrue
     }
 
     It '外部テーマ JSON を読み込めること' {
@@ -449,8 +449,8 @@ Describe 'setup-windows-terminal.ps1 non-interactive' {
         $LASTEXITCODE | Should -Be 0
 
         $settings = Get-Content $settingsPath -Raw -Encoding UTF8 | ConvertFrom-Json
-        $profile = $settings.profiles.list | Where-Object name -eq 'AI CLI Startup'
-        $profile.colorScheme | Should -Be 'Custom Daylight'
+        $terminalProfile = $settings.profiles.list | Where-Object name -eq 'AI CLI Startup'
+        $terminalProfile.colorScheme | Should -Be 'Custom Daylight'
         ($settings.schemes | Where-Object name -eq 'Custom Daylight') | Should -Not -BeNullOrEmpty
     }
 
@@ -503,11 +503,11 @@ Describe 'setup-windows-terminal.ps1 non-interactive' {
         $LASTEXITCODE | Should -Be 0
 
         $settings = Get-Content $settingsPath -Raw -Encoding UTF8 | ConvertFrom-Json
-        $profile = ($settings.profiles.list | Where-Object name -eq 'AI CLI Main')
-        $profile.icon | Should -Be 'D:\Icons\main.ico'
-        $profile.font.face | Should -Be 'Fira Code'
-        $profile.font.size | Should -Be 21
-        $profile.opacity | Should -Be 87
+        $terminalProfile = ($settings.profiles.list | Where-Object name -eq 'AI CLI Main')
+        $terminalProfile.icon | Should -Be 'D:\Icons\main.ico'
+        $terminalProfile.font.face | Should -Be 'Fira Code'
+        $terminalProfile.font.size | Should -Be 21
+        $terminalProfile.opacity | Should -Be 87
     }
 
     It 'profile ごとの background image / color scheme を上書きできること' {
@@ -525,9 +525,9 @@ Describe 'setup-windows-terminal.ps1 non-interactive' {
         $LASTEXITCODE | Should -Be 0
 
         $settings = Get-Content $settingsPath -Raw -Encoding UTF8 | ConvertFrom-Json
-        $profile = ($settings.profiles.list | Where-Object name -eq 'AI CLI Main')
-        $profile.colorScheme | Should -Be 'Campbell'
-        $profile.backgroundImage | Should -Be 'D:\Walls\ops.png'
+        $terminalProfile = ($settings.profiles.list | Where-Object name -eq 'AI CLI Main')
+        $terminalProfile.colorScheme | Should -Be 'Campbell'
+        $terminalProfile.backgroundImage | Should -Be 'D:\Walls\ops.png'
     }
 }
 
