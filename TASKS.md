@@ -30,22 +30,5 @@
 2. [Priority:P2][Owner:ScrumMaster][Source:AgentTeamsMatrix] issue / backlog 自動生成
 ## GitHub Issues Sync
 
-1. [Priority:P3][Owner:Unassigned][Source:GitHub#71] Phase 3: 開発ダッシュボード UI
-2. [Priority:P3][Owner:Unassigned][Source:GitHub#70] Phase 3: Memory MCP 永続化統合
-3. [Priority:P3][Owner:Unassigned][Source:GitHub#68] Phase 3: Boot Sequence 完全自動化 (Start-ClaudeOS.ps1 実装)
-4. [Priority:P3][Owner:Unassigned][Source:GitHub#34] milestone: v3.0.0 リリース計画 (2026-10)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+1. [Priority:P1][Owner:Unassigned][Source:GitHub#136] fix: PS1 ファイルの UTF-8 BOM なし問題（Windows PowerShell 5.1 ParseException）
 

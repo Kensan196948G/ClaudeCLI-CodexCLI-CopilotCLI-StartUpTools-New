@@ -43,13 +43,24 @@ function Get-GitHubIssues {
         [string]$State = 'open'
     )
 
-    $ghArgs = @('issue', 'list', '--repo', "$Owner/$Repo", '--state', $State, '--json', 'number,title,labels,state,assignees,body', '--limit', '100')
+    # Exclude 'body' field: not needed for TASKS.md sync and may contain
+    # multi-line Japanese text that causes ConvertFrom-Json failures on
+    # PowerShell 5.1 / CP932 console environments.
+    $ghArgs = @('issue', 'list', '--repo', "$Owner/$Repo", '--state', $State, '--json', 'number,title,labels,state,assignees', '--limit', '100')
     if ($Labels.Count -gt 0) {
         $ghArgs += '--label'
         $ghArgs += ($Labels -join ',')
     }
 
-    $raw = & gh @ghArgs 2>&1
+    # Ensure gh UTF-8 output is captured correctly on PowerShell 5.1 (CP932 default).
+    $prevEncoding = [Console]::OutputEncoding
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    try {
+        $raw = & gh @ghArgs 2>&1
+    }
+    finally {
+        [Console]::OutputEncoding = $prevEncoding
+    }
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to fetch issues: $raw"
     }
