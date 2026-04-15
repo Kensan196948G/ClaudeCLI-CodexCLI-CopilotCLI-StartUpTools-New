@@ -40,6 +40,7 @@ function Get-CommandVersionLine {
         }
     }
     catch {
+        Write-Debug "Version detection failed for '$Command': $_"
     }
 
     return $null
