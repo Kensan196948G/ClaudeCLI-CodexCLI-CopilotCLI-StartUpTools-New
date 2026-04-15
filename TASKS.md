@@ -30,5 +30,5 @@
 2. [Priority:P2][Owner:ScrumMaster][Source:AgentTeamsMatrix] issue / backlog 自動生成
 ## GitHub Issues Sync
 
-1. [Priority:P1][Owner:Unassigned][Source:GitHub#136] fix: PS1 ファイルの UTF-8 BOM なし問題（Windows PowerShell 5.1 ParseException）
+(No open issues)
 
