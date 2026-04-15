@@ -76,7 +76,7 @@ function Stop-SessionLog {
     }
 
     # Transcript 停止
-    try { Stop-Transcript -ErrorAction SilentlyContinue } catch { }
+    try { Stop-Transcript -ErrorAction SilentlyContinue } catch { Write-Debug "Stop-Transcript skipped (no active transcript): $_" }
 
     $script:LoggingActive = $false
 

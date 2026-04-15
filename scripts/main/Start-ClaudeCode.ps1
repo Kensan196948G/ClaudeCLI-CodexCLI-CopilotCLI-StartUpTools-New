@@ -421,7 +421,7 @@ finally {
     Invoke-LauncherNotificationSound -Tool 'claude' -Config $Config -Wait $true
     # インスタンスロック解放
     if ($null -ne $instanceMutex) {
-        try { $instanceMutex.ReleaseMutex() } catch { }
+        try { $instanceMutex.ReleaseMutex() } catch { Write-Debug "ReleaseMutex failed (mutex may already be released): $_" }
         $instanceMutex.Dispose()
     }
 }

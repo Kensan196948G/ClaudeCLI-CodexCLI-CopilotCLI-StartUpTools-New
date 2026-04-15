@@ -152,7 +152,7 @@ function Get-BacklogRuleMatch {
         }
     }
     catch {
-        # rules file parse error - use defaults
+        Write-Debug "Agent rules file parse error (using defaults): $_"
     }
 
     return $result

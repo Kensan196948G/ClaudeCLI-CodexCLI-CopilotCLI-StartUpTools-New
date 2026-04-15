@@ -821,6 +821,7 @@ function Get-LauncherMetadataEntries {
                 $entries.Add(($line | ConvertFrom-Json))
             }
             catch {
+                Write-Debug "Skipping malformed JSON history entry: $_"
             }
             if ($entries.Count -ge $MaxCount) {
                 break
@@ -1321,12 +1322,13 @@ public class LauncherWinMM {
             $localAlias = $alias
             $null = [System.Threading.Tasks.Task]::Run([Action]{
                 Start-Sleep -Milliseconds 8000
-                try { [void][LauncherWinMM]::mciSendString("close $localAlias", $null, 0, [IntPtr]::Zero) } catch {}
+                try { [void][LauncherWinMM]::mciSendString("close $localAlias", $null, 0, [IntPtr]::Zero) } catch { Write-Debug "Audio close failed for '$localAlias': $_" }
             })
         }
     }
     catch {
         # 音声再生の失敗はサイレントに無視（起動をブロックしない）
+        Write-Debug "Audio playback failed (suppressed to avoid blocking startup): $_"
     }
 }
 Export-ModuleMember -Function Invoke-LauncherNotificationSound
