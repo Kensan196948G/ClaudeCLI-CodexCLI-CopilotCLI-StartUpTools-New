@@ -76,13 +76,13 @@ function Test-SSHConnection {
         else {
             Write-Warning "❌ SSH接続失敗: $Host (終了コード: $LASTEXITCODE)"
             Write-Warning "   出力: $result"
-            _Show-SSHDiagnostics -Host $Host
+            _Show-SSHDiagnostics -HostName $Host
             return $false
         }
     }
     catch {
         Write-Warning "❌ SSH接続中に例外が発生しました: $_"
-        _Show-SSHDiagnostics -Host $Host
+        _Show-SSHDiagnostics -HostName $Host
         return $false
     }
 }
@@ -92,13 +92,13 @@ function Test-SSHConnection {
     SSH診断メッセージを表示（内部ヘルパー）
 #>
 function _Show-SSHDiagnostics {
-    param([string]$Host)
+    param([string]$HostName)
 
     Write-Host "`n💡 SSH接続診断:" -ForegroundColor Yellow
     Write-Host "   1. SSH鍵の権限を確認: icacls `"$env:USERPROFILE\.ssh\id_ed25519`"" -ForegroundColor White
     Write-Host "   2. ~/.ssh/config の設定を確認" -ForegroundColor White
-    Write-Host "   3. ホストへの疎通確認: ping $Host" -ForegroundColor White
-    Write-Host "   4. 詳細ログ確認: ssh -vvv $Host" -ForegroundColor White
+    Write-Host "   3. ホストへの疎通確認: ping $HostName" -ForegroundColor White
+    Write-Host "   4. 詳細ログ確認: ssh -vvv $HostName" -ForegroundColor White
     Write-Host ""
 }
 
