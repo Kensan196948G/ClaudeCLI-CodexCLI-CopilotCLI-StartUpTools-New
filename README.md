@@ -202,8 +202,8 @@ flowchart TD
 | 🐍 PTY Bridge | 🔧 共通 | SSH経由の Claude Code 操作を堅牢にサポート |
 | ⚙️ 一元設定 | 🔧 共通 | `config/config.json` で対応ツールを一元管理 |
 | 🩺 診断ツール | 🔧 共通 | `Test-AllTools.ps1` で環境を一括チェック |
-| ⚡ CI/CD | 🔧 共通 | GitHub Actions による自動テスト (Pester 311件) |
-| 🧠 ClaudeOS カーネル | ⭐ Claude 専用 | 37体のエージェント + 64スキル + 35コマンド + フック |
+| ⚡ CI/CD | 🔧 共通 | GitHub Actions による自動テスト (Pester 433件 — Unit:311 / E2E:122) |
+| 🧠 ClaudeOS カーネル | ⭐ Claude 専用 | 17体のエージェント + 4フック + 35コマンド (2026Q2 棚卸し済み) |
 | 🔌 MCP ヘルスチェック | ⭐ Claude 専用 | `McpHealthCheck.psm1` で4サーバーの起動・接続・状態診断 |
 | 🤖 Agent Teams ランタイム | ⭐ Claude 専用 | `AgentTeams.psm1` でタスク分析→Team自動構成→能力マトリクス→可視化 |
 | 🏁 Pre-Launch Diagnostics | ⭐ Claude 専用 | Claude Code 起動前に MCP/Agent 状態を自動チェック |
@@ -449,7 +449,7 @@ Codex/               Codex AGENTS.md
 .\scripts\test\Test-AgentTeams.ps1 -OutputFormat Json -Task "Fix CI build"
 .\scripts\test\Test-ArchitectureCheck.ps1 -OutputFormat Json
 
-# Pester テスト (311件)
+# Pester テスト (433件 — Unit:311 / E2E:122)
 Invoke-Pester .\tests\
 ```
 
