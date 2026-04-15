@@ -367,6 +367,56 @@ STABLE 未達は merge / deploy 禁止。
 
 CI が未整備なら、未整備であることを先に記録する。
 
+## 11.5 フロントエンド E2E 検証（Playwright MCP + ChromeDevTools）
+
+Verify フェーズにおけるフロントエンド・E2E 検証は **Playwright MCP** を標準ツールとして使用する。
+ChromeDevTools Protocol (CDP) は `browser_evaluate` 経由でアクセス可能。テストコードの記述は不要。
+
+### Verify フェーズ標準手順（フロントエンドあり）
+
+```
+1. npm run build          # ビルド確認
+2. npm run dev            # ローカルサーバー起動
+3. browser_navigate       # 対象 URL を開く
+4. browser_snapshot       # アクセシビリティ構造・要素の存在確認
+5. browser_console_messages  # コンソールエラー・警告を収集
+6. browser_network_requests  # API 疎通・レスポンスコード確認
+7. browser_evaluate       # DOM 状態・JS エラー・パフォーマンス取得（CDP）
+8. browser_take_screenshot   # ビジュアル記録（PR に添付）
+```
+
+### Playwright MCP 用途別ツール
+
+| 用途 | ツール |
+|---|---|
+| ページ遷移・SPA ルーティング確認 | `browser_navigate` |
+| UI 構造・要素存在確認 | `browser_snapshot` |
+| ボタン・リンク操作テスト | `browser_click` |
+| フォーム入力・送信テスト | `browser_type` / `browser_fill_form` |
+| コンソールエラー検出 | `browser_console_messages` |
+| API 疎通・ステータス確認 | `browser_network_requests` |
+| CDP 詳細調査（DOM / メモリ / JS） | `browser_evaluate` |
+| ビジュアル記録・Before/After | `browser_take_screenshot` |
+| レスポンシブ確認 | `browser_resize` |
+| 認証・ログインフロー | `browser_fill_form` + `browser_click` |
+
+### npx playwright test との使い分け
+
+| 観点 | Playwright MCP（Claude 自律） | npx playwright test（CI 自動） |
+|---|---|---|
+| テストコード | 不要（Claude が自律判断） | 必要（`.spec.ts` 作成） |
+| 探索的・目視確認 | 得意 | 苦手 |
+| 回帰テスト（CI 組み込み） | 補助的 | 主役 |
+| エラー詳細調査（CDP） | 得意 | 限定的 |
+
+**推奨構成:** `npx playwright test` で回帰テストを CI に組み込み、Playwright MCP で Claude が探索的・目視確認を担う二層構造。
+
+### 設定
+
+- Playwright MCP は `~/.claude/settings.json` でグローバル有効（全プロジェクト共通）
+- プロジェクト側の設定変更は不要
+- 無効化が必要な場合のみ `.claude/settings.json` に `"playwright@claude-plugins-official": false` を追加
+
 ## 12. Auto Repair 制御（CI Manager）
 
 - 最大 15 回リトライ
