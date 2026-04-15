@@ -20,6 +20,11 @@
       "name": "usage-history-recorder",
       "description": "Agent / Skill / Command / Hook の呼び出しを state.json.learning.usage_history に記録",
       "matcher": "Agent|Skill|Task"
+    },
+    {
+      "name": "onboarding-refresh-on-stable",
+      "description": "STABLE 判定成立時に /team-onboarding を再実行し ONBOARDING.md を更新（1 時間レート制限 + セッションロック）",
+      "matcher": "Bash"
     }
   ],
   "Stop": [
