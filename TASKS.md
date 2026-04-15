@@ -17,9 +17,12 @@
 8. [DONE] [Priority:P2][Owner:DevOps][Source:Manual] Issue同期 CI/hooks 統合 (PR #45)
 9. [DONE] [Priority:P2][Owner:Architect][Source:GitHub#49] Architecture Check Loop実装 (Phase 3)
 10. [DONE] [Priority:P2][Owner:Architect][Source:GitHub#50] Self Evolution システム実装 (Phase 3)
-11. [Priority:P3][Owner:Developer][Source:GitHub#34] 開発ダッシュボード UI (Phase 3)
-12. [Priority:P3][Owner:Ops][Source:GitHub#34] Memory MCP 永続化統合 (Phase 3)
-13. [Priority:P3][Owner:Ops][Source:GitHub#34] Boot Sequence 完全自動化 (Phase 3)
+11. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#128] PSAvoidAssignmentToAutomaticVariable 15件修正 (PR #129)
+12. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#130] PSAvoidUsingEmptyCatchBlock 7件修正 (PR #131)
+13. [Priority:P3][Owner:Developer][Source:GitHub#127] Message Bus Phase 1 実装 (state.json message_bus セクション)
+14. [Priority:P3][Owner:Developer][Source:GitHub#34] 開発ダッシュボード UI (Phase 3)
+15. [Priority:P3][Owner:Ops][Source:GitHub#34] Memory MCP 永続化統合 (Phase 3)
+16. [Priority:P3][Owner:Ops][Source:GitHub#34] Boot Sequence 完全自動化 (Phase 3)
 
 ## Auto Extracted From Agent Teams Matrix
 
@@ -31,10 +34,6 @@
 2. [Priority:P3][Owner:Unassigned][Source:GitHub#70] Phase 3: Memory MCP 永続化統合
 3. [Priority:P3][Owner:Unassigned][Source:GitHub#68] Phase 3: Boot Sequence 完全自動化 (Start-ClaudeOS.ps1 実装)
 4. [Priority:P3][Owner:Unassigned][Source:GitHub#34] milestone: v3.0.0 リリース計画 (2026-10)
-
-
-
-
 
 
 

@@ -24,7 +24,7 @@
 | 項目 | 状態 |
 |------|------|
 | バージョン | **v3.0.0** (Phase 4 完了 / Release タグ準備中) |
-| テスト | **433件** — Unit: 311 / E2E: 122 (Pester, CI) |
+| テスト | **449件** — Unit: 311 / E2E: 138 (Pester, CI) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Harness Evolution / Progressive Disclosure / Frontier-Test / Dead-Weight 自動検出 / Stop-Doing 点検 / CodeRabbit 統合) |
 | Agents | **17体** の特化サブエージェント (2026Q2 棚卸しで最適化済み) |
@@ -202,7 +202,7 @@ flowchart TD
 | 🐍 PTY Bridge | 🔧 共通 | SSH経由の Claude Code 操作を堅牢にサポート |
 | ⚙️ 一元設定 | 🔧 共通 | `config/config.json` で対応ツールを一元管理 |
 | 🩺 診断ツール | 🔧 共通 | `Test-AllTools.ps1` で環境を一括チェック |
-| ⚡ CI/CD | 🔧 共通 | GitHub Actions による自動テスト (Pester 433件 — Unit:311 / E2E:122) |
+| ⚡ CI/CD | 🔧 共通 | GitHub Actions による自動テスト (Pester 449件 — Unit:311 / E2E:138) |
 | 🧠 ClaudeOS カーネル | ⭐ Claude 専用 | 17体のエージェント + 4フック + 35コマンド (2026Q2 棚卸し済み) |
 | 🔌 MCP ヘルスチェック | ⭐ Claude 専用 | `McpHealthCheck.psm1` で4サーバーの起動・接続・状態診断 |
 | 🤖 Agent Teams ランタイム | ⭐ Claude 専用 | `AgentTeams.psm1` でタスク分析→Team自動構成→能力マトリクス→可視化 |
