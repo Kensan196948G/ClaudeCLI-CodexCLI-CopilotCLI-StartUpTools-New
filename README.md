@@ -23,12 +23,13 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | v2.9.0 |
-| テスト | 311 Pester テスト (CI) |
+| バージョン | **v3.0.0** (Phase 4 完了 / Release タグ準備中) |
+| テスト | **433件** — Unit: 311 / E2E: 122 (Pester, CI) |
 | CI | ✅ SUCCESS |
-| ClaudeOS (Claude Code 専用) | v8 (5時間最適化ループ 30min/2h/1h15m/1h15m + 完全無人運用 + Boot Sequence 完全実装 + CodeRabbit 統合 + Memory MCP + Dashboard) |
-| Agents | 37体の特化サブエージェント |
-| Skills | 64個のワークフロー定義 |
+| ClaudeOS (Claude Code 専用) | v8 (Harness Evolution / Progressive Disclosure / Frontier-Test / Dead-Weight 自動検出 / Stop-Doing 点検 / CodeRabbit 統合) |
+| Agents | **17体** の特化サブエージェント (2026Q2 棚卸しで最適化済み) |
+| Skills | **0個** — Claude Opus 4.6 内包能力で代替可能な汎用スキルを棚卸しで全削除 |
+| Hooks | **4個** — agent-risk-check / capture-result / onboarding-refresh / usage-history-recorder |
 | Boot Sequence | `Start-ClaudeOS.ps1` (Step 3 Memory/Step 7 Agent Init/Step 9 Dashboard 実装完了) ✅ |
 
 ### Agent Teams 対応レベル (Claude Code 専用)
@@ -49,31 +50,31 @@
 | Self Evolution | 3 | SelfEvolution.psm1 セッション学習ループ実装済み |
 | Architecture Check | 3 | ArchitectureCheck.psm1 違反自動検出実装済み |
 
-### ClaudeOS エージェント構成
+### ClaudeOS エージェント構成 (2026Q2 棚卸し後)
+
+> 2026Q2 棚卸し (PR #122) にて「Claude Opus 4.6 で代替可能」または「冗長」と判定された 38体を削除。
+> 残存 17体はドメイン固有知識を持つ高価値エージェントのみ。
 
 | ドメイン | Agent数 | 主なエージェント |
 |----------|---------|-----------------|
-| Core Team | 5 | planner, architect, orchestrator, loop-operator, chief-of-staff |
-| Quality | 8 | code-reviewer, security-reviewer, tdd-guide, qa, e2e-runner |
-| Language | 7 | typescript, python, go, java, kotlin, rust, cpp reviewer |
-| Build | 7 | build-error-resolver, go/java/kotlin/rust/cpp/pytorch resolver |
-| Infrastructure | 7 | ops, release-manager, security, database-reviewer, dev-api/ui |
-| Documentation | 3 | doc-updater, docs-lookup, incident-triager |
+| Quality | 2 | security-reviewer, e2e-runner |
+| Language Reviewer | 7 | typescript, python, go, java, kotlin, rust, cpp reviewer |
+| Build Resolver | 7 | build-error-resolver, go/java/kotlin/rust/cpp/pytorch resolver |
+| Infrastructure | 1 | database-reviewer |
 
-### Skills 構成 (64個)
+### Hooks 構成 (4個)
 
-| カテゴリ | 数 | 例 |
-|----------|------|-----|
-| コーディング規約 | 5 | coding-standards, java/cpp-coding-standards |
-| 言語パターン | 12 | golang, python, perl, springboot, django, laravel patterns |
-| テスト | 8 | tdd-workflow, e2e-testing, golang/python/cpp/perl testing |
-| セキュリティ | 5 | security-review, security-scan, django/laravel/springboot security |
-| インフラ | 4 | deployment-patterns, docker-patterns, database-migrations, postgres |
-| ビジネス | 5 | article-writing, content-engine, market-research, investor-* |
-| AI/ML | 3 | cost-aware-llm-pipeline, content-hash-cache, regex-vs-llm |
-| Apple/Swift | 4 | liquid-glass-design, foundation-models, swift-concurrency/actor/di |
-| 学習/改善 | 6 | continuous-learning v1/v2, autonomous-loops, verification-loop |
-| その他 | 12 | videodb, clickhouse-io, api-design, search-first 等 |
+| Hook | 種別 | 機能 |
+|------|------|------|
+| `agent-risk-check` | PreToolUse | Bash/Edit/Write 操作前に第 2 の Claude が SAFE/CAUTION/BLOCK 判定 |
+| `capture-result` | PostToolUse | 主要ツール結果を後続フック向けに正規化 |
+| `usage-history-recorder` | PostToolUse | Agent/Skill/Command/Hook 呼び出し履歴を state.json に記録 |
+| `onboarding-refresh-on-stable` | PostToolUse | STABLE 判定到達時に ONBOARDING.md を自動更新 |
+
+### Skills 構成
+
+> 2026Q2 棚卸しにて、Claude Opus 4.6 の内包能力で代替可能な汎用スキル 36個を全削除。
+> 高コスト・低価値なスキル定義の維持を排除し、モデル能力に委譲する設計に移行。
 
 ---
 

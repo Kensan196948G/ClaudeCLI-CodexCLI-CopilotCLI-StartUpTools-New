@@ -32,3 +32,6 @@
 3. [Priority:P3][Owner:Unassigned][Source:GitHub#68] Phase 3: Boot Sequence 完全自動化 (Start-ClaudeOS.ps1 実装)
 4. [Priority:P3][Owner:Unassigned][Source:GitHub#34] milestone: v3.0.0 リリース計画 (2026-10)
 
+
+
+
