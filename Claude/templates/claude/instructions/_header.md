@@ -1,11 +1,10 @@
 # ClaudeOS v8 セッション開始
 
 ## LOOP_COMMANDS
-
-/loop 30min   ClaudeOS Monitor
-/loop 2h      ClaudeOS Development
-/loop 1h15m   ClaudeOS Verify
-/loop 1h15m   ClaudeOS Improvement
+/loop 30m    ClaudeOS Monitor
+/loop 120m   ClaudeOS Development
+/loop 60m　  ClaudeOS Verify
+/loop 60m　  ClaudeOS Improvement
 
 4つ全て登録されたら次に進んでください。
 

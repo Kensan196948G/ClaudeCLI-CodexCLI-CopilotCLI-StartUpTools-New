@@ -20,13 +20,11 @@
 以下の 4 コマンドをこの順番で登録してください。
 
 ```
-/loop 30min   ClaudeOS Monitor
-/loop 2h      ClaudeOS Development
-/loop 1h15m   ClaudeOS Verify
-/loop 1h15m   ClaudeOS Improvement
+/loop 30m   ClaudeOS Monitor
+/loop 2h    ClaudeOS Development
+/loop 1h　  ClaudeOS Verify
+/loop 1h   ClaudeOS Improvement
 ```
-
-合計 5時間（300分）。フェーズ配分: Monitor 10% / Development 40% / Verify 25% / Improvement 25%。
 
 4 本すべての登録が完了するまで、通常の開発作業は開始しないでください。
 
@@ -42,8 +40,9 @@
 ### ステップ 3: 自律開発の開始
 
 
-設定された時間内でのMonitor、Development、Verify、ImprovementをN回ループ（ループ回数はCTO判断でOKです。）で進めてください。
+設定された時間内でのMonitor、Development、Verify、Improvementをループ（ループ回数はCTO判断でOKです。）で進めてください。
 ループ回数は KPI 状態・CI 状態・進捗により動的に決定する
+以降は全てCTO全権委任で自律開発を開始してください。
 AgentTeams機能を大いに活用してください。
 Auto Mode による自律開発を実行してください。
 全プロセスや状況を可視化してください。
@@ -108,40 +107,9 @@ agents、skills、commands、rules、hooks、scripts、contexts、examples、mcp
   "automation": {
     "auto_issue_generation": true,
     "self_evolution": true
-  },
-  "improvement": {
-    "stop_doing_review_date": "2026-07-14",
-    "stop_doing_review_interval_days": 90,
-    "stop_doing_last_run": null,
-    "stop_doing_candidates_found": 0
-  },
-  "learning": {
-    "usage_history": {
-      "agents": {},
-      "skills": {},
-      "commands": {},
-      "hooks": {}
-    },
-    "dead_weight": {
-      "stale_threshold_days": 90,
-      "grace_period_days": 30,
-      "last_detection_run": null,
-      "candidates_pending_issue": []
-    }
   }
 }
 ```
-
-`improvement.stop_doing_review_date` は次回の Stop-Doing 点検期日（ISO 8601 日付）。
-`interval_days` は四半期点検を想定した 90 日。Improve ループが期日到来を検出すると点検が発火する。
-
-`learning.usage_history` は各カテゴリ別（Agent / Skill / Command / Hook）の使用履歴辞書。
-キーは項目名、値は `{ "last_invoked": ISO8601, "total_count": N, "seasonal": bool }` 形式。
-PostToolUse の `usage-history-recorder` フックがこのブロックを更新する。
-
-`learning.dead_weight` は Dead-Weight 検出の設定。`stale_threshold_days` を超えて
-未呼び出しの項目が検出対象。`grace_period_days` は新規追加項目の猶予期間。
-`candidates_pending_issue` は次回 Issue 化待ちの候補リスト。
 
 ## 5. 運用ループ
 
@@ -152,7 +120,7 @@ PostToolUse の `usage-history-recorder` フックがこのブロックを更新
 | Monitor | 30min | 要件・設計・README 差分確認、Git/CI 状態確認、タスク分解 | 実装・修復 |
 | Build | 2h | 設計メモ作成、実装、テスト追加、WorkTree 管理 | ついでの大規模整理、main 直接 push |
 | Verify | 1h15m | test / lint / build / security / CodeRabbit 確認、STABLE 判定 | 未テストの merge |
-| Improve | 1h15m | 命名整理、リファクタリング、README / docs 更新、再開メモ、**Stop-Doing 点検（期日到来時のみ）** | 破壊的変更の無断実行 |
+| Improve | 1h15m | 命名整理、リファクタリング、README / docs 更新、再開メモ | 破壊的変更の無断実行 |
 
 失敗時: `Verify → CI Manager → Auto Repair → 再 Verify`
 
@@ -174,17 +142,6 @@ PostToolUse の `usage-history-recorder` フックがこのブロックを更新
 - 厳密な時間切替より、フェーズ完了時の切替を優先
 - 小変更なら `Monitor → Build → Verify` だけでもよい
 - 大変更のときだけ `Improve` と Agent Teams を厚く使う
-
-### Improve ループの Stop-Doing 点検（四半期）
-
-Improve ループ実行時に `state.json.improvement.stop_doing_review_date` を確認し、
-期日到来時のみ **Stop-Doing 点検** を自動実行する。これは「モデル進化で不要になった
-ルール・フック・スクリプト」を定期棚卸しして削減候補 Issue を起票する仕組み。
-
-発火条件と手順は `.claude/claudeos/loops/improve-loop.md` の「Stop-Doing Check」
-セクションを参照。期日未到来時は通常の Improve 作業のみ実施し、点検はスキップする。
-
-参考: Anthropic「Harnessing Claude's Intelligence」パターン 2 "Ask what you can stop doing"。
 
 ### 完全無人ループフロー
 

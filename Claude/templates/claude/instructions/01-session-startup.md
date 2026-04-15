@@ -3,10 +3,10 @@
 ## LOOP_COMMANDS
 
 ```text
-/loop 30min   ClaudeOS Monitor
-/loop 2h      ClaudeOS Development
-/loop 1h15m   ClaudeOS Verify
-/loop 1h15m   ClaudeOS Improvement
+/loop 30m    ClaudeOS Monitor
+/loop 120m   ClaudeOS Development
+/loop 60m　  ClaudeOS Verify
+/loop 60m　  ClaudeOS Improvement
 ```
 
 4つ全て登録されたら次に進む。
@@ -37,7 +37,7 @@
 
 - 設定された時間から5時間作業を厳密に守ってください。
 - Monitor、Development、Verify、Improvement を最大10回ループとしてください（早期停止・終了はCTO判断、STABLE達成・5時間到達・Token枯渇・Blocked判定で早期終了）。
-- LOOP 登録 4 本・Codex セットアップ・確認チェックリストが全て完了したら、CTO全権委任で自律開発を開始してください。
+- LOOP 登録 4 本の完了したら次にCodex セットアップ・確認チェックリストを実行、全て完了したら以降は全てCTO全権委任で自律開発を開始してください。
 
 ### 1. AgentTeams活用ルール
 

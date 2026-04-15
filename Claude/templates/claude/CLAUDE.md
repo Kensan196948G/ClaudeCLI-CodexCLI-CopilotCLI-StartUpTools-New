@@ -20,10 +20,10 @@
 以下の 4 コマンドをこの順番で登録してください。
 
 ```
-/loop 30min   ClaudeOS Monitor
-/loop 2h      ClaudeOS Development
-/loop 1h15m   ClaudeOS Verify
-/loop 1h15m   ClaudeOS Improvement
+/loop 30m   ClaudeOS Monitor
+/loop 2h    ClaudeOS Development
+/loop 1h　  ClaudeOS Verify
+/loop 1h   ClaudeOS Improvement
 ```
 
 4 本すべての登録が完了するまで、通常の開発作業は開始しないでください。
@@ -40,8 +40,9 @@
 ### ステップ 3: 自律開発の開始
 
 
-設定された時間内でのMonitor、Development、Verify、ImprovementをN回ループ（ループ回数はCTO判断でOKです。）で進めてください。
+設定された時間内でのMonitor、Development、Verify、Improvementをループ（ループ回数はCTO判断でOKです。）で進めてください。
 ループ回数は KPI 状態・CI 状態・進捗により動的に決定する
+以降は全てCTO全権委任で自律開発を開始してください。
 AgentTeams機能を大いに活用してください。
 Auto Mode による自律開発を実行してください。
 全プロセスや状況を可視化してください。
