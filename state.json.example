@@ -1,0 +1,103 @@
+{
+  "goal": {
+    "title": "ClaudeOS v8 自律開発最適化"
+  },
+  "kpi": {
+    "success_rate_target": 0.9
+  },
+  "execution": {
+    "start_time": null,
+    "max_duration_minutes": 300,
+    "elapsed_minutes": 0,
+    "remaining_minutes": 300,
+    "phase": "Monitor",
+    "auto_stop_threshold": 5,
+    "graceful_shutdown": true
+  },
+  "session": {
+    "context_load_tier": "standard",
+    "_comment": "minimal=フロントマターのみ / standard=H1/H2見出し構造 / full=全文(従来の挙動)"
+  },
+  "stable": {
+    "consecutive_success": 0,
+    "target_n": 3,
+    "last_verified_at": null
+  },
+  "onboarding": {
+    "last_refresh": null,
+    "refresh_count": 0
+  },
+  "automation": {
+    "auto_issue_generation": true,
+    "self_evolution": true
+  },
+  "improvement": {
+    "stop_doing_review_date": "2026-07-15",
+    "stop_doing_review_interval_days": 90,
+    "stop_doing_last_run": null,
+    "stop_doing_candidates_found": 0
+  },
+  "learning": {
+    "usage_history": {
+      "agents": {},
+      "skills": {},
+      "commands": {},
+      "hooks": {}
+    },
+    "dead_weight": {
+      "stale_threshold_days": 90,
+      "grace_period_days": 30,
+      "last_detection_run": null,
+      "candidates_pending_issue": []
+    }
+  },
+  "frontier": {
+    "last_test_date": null,
+    "test_count": 0,
+    "last_deprecation_candidates": [],
+    "last_low_usage_items": []
+  },
+  "codex": {
+    "setup_checked": false,
+    "review_gate": "off",
+    "last_review_status": "none",
+    "last_review_type": "none",
+    "last_review_job_id": "",
+    "last_review_summary": "",
+    "last_adversarial_status": "none",
+    "last_adversarial_job_id": "",
+    "last_adversarial_summary": "",
+    "last_rescue_status": "none",
+    "last_rescue_job_id": "",
+    "last_rescue_summary": "",
+    "blocking_issues": [],
+    "severity": "none"
+  },
+  "debug": {
+    "last_failure_category": "none",
+    "failure_count_by_category": {},
+    "same_error_retry_count": 0,
+    "rescue_retry_count": 0,
+    "last_root_cause": "",
+    "last_fix_scope": "none",
+    "last_fix_strategy": "none",
+    "flaky_suspected": false,
+    "debug_mode": "normal"
+  },
+  "token": {
+    "total_budget": 100,
+    "used": 0,
+    "remaining": 100,
+    "allocation": {
+      "monitor": 10,
+      "development": 35,
+      "verify": 25,
+      "improvement": 15,
+      "debug": 10,
+      "release": 5
+    },
+    "dynamic_mode": true,
+    "current_phase_budget": 0,
+    "current_phase_used": 0
+  }
+}
