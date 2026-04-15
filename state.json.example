@@ -51,6 +51,12 @@
       "candidates_pending_issue": []
     }
   },
+  "frontier": {
+    "last_test_date": null,
+    "test_count": 0,
+    "last_deprecation_candidates": [],
+    "last_low_usage_items": []
+  },
   "codex": {
     "setup_checked": false,
     "review_gate": "off",
