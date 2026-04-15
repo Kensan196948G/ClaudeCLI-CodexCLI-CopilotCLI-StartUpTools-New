@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Diagnostics script for AI CLI startup tools.
 .DESCRIPTION

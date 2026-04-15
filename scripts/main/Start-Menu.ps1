@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # Start-Menu.ps1 - AI CLI 統合メニュー
 # ClaudeOS Agent Teams 対応: Agent Orchestrator / Scrum Master の操作入口
 # docs/common/08_AgentTeams対応表.md を参照

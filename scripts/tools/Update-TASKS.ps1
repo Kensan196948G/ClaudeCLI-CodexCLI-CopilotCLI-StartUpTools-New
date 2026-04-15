@@ -1,4 +1,4 @@
-param(
+﻿param(
     [ValidateSet('list', 'add', 'complete', 'edit', 'reopen', 'assign', 'reprioritize')]
     [string]$Action = 'list',
     [string]$Text = '',
