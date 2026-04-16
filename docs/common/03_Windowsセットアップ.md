@@ -37,19 +37,7 @@ npm install -g @anthropic-ai/claude-code
 claude --version
 ```
 
-### Codex CLI
-
-```powershell
-npm install -g @openai/codex
-codex --version
-```
-
-### GitHub Copilot CLI
-
-```powershell
-gh extension install github/gh-copilot
-copilot --version
-```
+> **v3.1.0 で削除**: Codex CLI / GitHub Copilot CLI の起動メニューは廃止されました。これらのインストールは不要です (旧バージョンを使う場合のみ参照)。
 
 ---
 
@@ -60,19 +48,7 @@ copilot --version
 ```powershell
 claude
 # 起動後に /login
-```
-
-### Codex CLI
-
-```powershell
-codex --login
-```
-
-### GitHub Copilot CLI
-
-```powershell
-gh auth login
-gh auth status
+# または環境変数 ANTHROPIC_API_KEY を設定
 ```
 
 ---
@@ -83,21 +59,41 @@ gh auth status
 Copy-Item config\config.json.template config\config.json
 ```
 
-最小例:
+最小例 (v3.1.0):
 
 ```json
 {
-  "version": "2.0.0",
+  "version": "3.1.0",
   "projectsDir": "D:\\",
   "sshProjectsDir": "auto",
   "projectsDirUnc": "\\\\192.168.0.185\\Projects",
   "linuxHost": "192.168.0.185",
   "linuxBase": "/home/kensan/Projects",
   "tools": {
-    "defaultTool": "claude"
+    "defaultTool": "claude",
+    "claude": { "enabled": true },
+    "codex":   { "enabled": false },
+    "copilot": { "enabled": false }
+  },
+  "cron": {
+    "enabled": true,
+    "defaultDurationMinutes": 300,
+    "launcherPath": "/home/kensan/.claudeos/cron-launcher.sh"
+  },
+  "sessionTabs": {
+    "enabled": true,
+    "title": "Claude Session Info",
+    "pollIntervalSeconds": 1
+  },
+  "statusline": {
+    "enabled": true,
+    "sourceSettingsPath": "%USERPROFILE%\\.claude\\settings.json",
+    "backupBeforeApply": true
   }
 }
 ```
+
+完全な雛形は `config/config.json.template` を参照。
 
 ---
 

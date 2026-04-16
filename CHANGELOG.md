@@ -2,6 +2,58 @@
 
 # CHANGELOG
 
+## [v3.1.0] - 2026-04-16 — Cron / Session Info Tab / Statusline 全適用
+
+### 🎯 コードネーム: Claude-Only Launcher
+
+ランチャーを **Claude Code 専用** に整理し、Linux crontab 連携・Session Info タブ・Statusline グローバル適用・Slash commands を新設。
+
+### 🚀 新機能
+
+- **メニュー 12: Cron 登録・編集・削除** — Linux crontab に `# CLAUDEOS:<uuid>` アンカ付きで週次自動起動を登録。auto mode で `timeout 5h claude` を実行。他の cron エントリを破壊せず安全に Add / Remove / List 可能。
+- **メニュー 13: Statusline 設定** — Windows 側 `~/.claude/settings.json` の `statusLine` を Linux 側へ一括適用 (Python merge + バックアップ)。
+- **Windows Terminal 2 タブ構成** — S1 / L1 / Cron 起動時にメインタブに加えて「Claude Session Info」タブを自動生成。`session.json` を 1 秒間隔で poll し、開始時刻 / 終了予定 / 残り時間を秒単位カウントダウン表示。
+- **Slash commands 6 本** (`.claude/commands/` に自動 deploy):
+  - `/cron-register` `/cron-cancel` `/cron-list`
+  - `/work-time-set` `/work-time-reset` `/session-info`
+- **Linux 側 cron-launcher.sh** — `/home/kensan/.claudeos/cron-launcher.sh` に配置され、`timeout` + `session.json` 更新 (jq / sed fallback) で安全に auto mode 実行。
+
+### 🗑️ 削除
+
+- メニュー `S2` (Codex CLI SSH 起動) / `S3` (GitHub Copilot CLI SSH 起動) / `L2` / `L3` を削除。
+- リポジトリは **Claude Code 専用ランチャー** として位置づけを明確化。
+- `Start-CodexCLI.ps1` / `Start-CopilotCLI.ps1` ファイル自体は残置 (`config.json` の `tools.codex.enabled = false` / `tools.copilot.enabled = false` で無効化)。
+
+### 🆕 追加ファイル (15 件)
+
+| カテゴリ | ファイル |
+|---|---|
+| Lib | `scripts/lib/CronManager.psm1`, `scripts/lib/SessionTabManager.psm1`, `scripts/lib/StatuslineManager.psm1` |
+| Main | `scripts/main/New-CronSchedule.ps1`, `scripts/main/Set-Statusline.ps1`, `scripts/main/Show-SessionInfoTab.ps1` |
+| Tools | `scripts/tools/Watch-SessionInfo.ps1` |
+| Test | `scripts/test/Test-CronAndSession.ps1` |
+| Templates | `Claude/templates/linux/cron-launcher.sh`, `Claude/templates/claudeos/commands/{cron-register,cron-cancel,cron-list,work-time-set,work-time-reset,session-info}.md` |
+
+### 🔧 修正ファイル (4 件)
+
+- `scripts/main/Start-Menu.ps1` — S2/S3/L2/L3 削除、メニュー 12/13 追加
+- `scripts/main/Start-ClaudeCode.ps1` — session.json 生成 + 情報タブ自動起動 + commands/ と cron-launcher.sh の SSH 配布
+- `config/config.json.template` — `cron` / `sessionTabs` / `statusline` セクション新設、`codex.enabled=false` / `copilot.enabled=false`
+- `README.md` — v3.1.0 新機能のドキュメント化、アーキテクチャ図更新
+
+### ✅ 検証
+
+- `Test-CronAndSession.ps1`: **19 / 19 PASS** (CronManager 純粋関数 + SessionTabManager ローカル CRUD)
+- 9 本の PowerShell ファイル構文チェック (Parser.ParseFile) 全緑
+- CI 全 4 件 SUCCESS (test-and-validate / Secrets scan (gitleaks) / PSScriptAnalyzer / CodeRabbit)
+
+### 関連
+
+- PR: [#140](https://github.com/Kensan196948G/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/pull/140)
+- Squash commit: `153d0d8`
+
+---
+
 ## [v3.0.0] - Unreleased (Phase 4: v3.0.0 GA Release 準備中)
 
 ### 🎯 コードネーム: Autonomous Runtime

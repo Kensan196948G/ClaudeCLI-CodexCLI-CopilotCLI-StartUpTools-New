@@ -23,6 +23,7 @@
 14. [Priority:P3][Owner:Developer][Source:GitHub#34] 開発ダッシュボード UI (Phase 3)
 15. [Priority:P3][Owner:Ops][Source:GitHub#34] Memory MCP 永続化統合 (Phase 3)
 16. [Priority:P3][Owner:Ops][Source:GitHub#34] Boot Sequence 完全自動化 (Phase 3)
+17. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.1.0 メニュー整理 (S2/S3/L2/L3 削除) + Cron 週次自動起動 + Session Info タブ + Statusline 全適用 + Slash commands 6 本 (PR #140)
 
 ## Auto Extracted From Agent Teams Matrix
 

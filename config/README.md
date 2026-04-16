@@ -4,7 +4,7 @@
 
 ## 基本ルール
 
-- `config/config.json.template`: リポジトリで共有する基準設定
+- `config/config.json.template`: リポジトリで共有する基準設定 (現行: **v3.1.0**)
 - `config/config.json`: 各端末で使う実設定
 - `config/agent-teams-backlog-rules.json`: Agent Teams backlog 同期時の metadata 推定ルール
 - 新しい設定キーを追加したら、先に template を更新する
@@ -12,9 +12,56 @@
 
 ツール固有の振る舞いは設定 JSON だけでなく、テンプレート文書でも管理します。
 
-- Claude Code: `scripts/templates/CLAUDE.md`
-- Codex CLI: `scripts/templates/AGENTS.md`
-- GitHub Copilot CLI: `scripts/templates/copilot-instructions.md`
+- Claude Code: `scripts/templates/CLAUDE.md` (現行の主軸)
+- Codex CLI: `scripts/templates/AGENTS.md` (v3.1.0 で起動メニュー廃止、ファイルは残置)
+- GitHub Copilot CLI: `scripts/templates/copilot-instructions.md` (v3.1.0 で起動メニュー廃止、ファイルは残置)
+
+## v3.1.0 で追加された設定セクション
+
+```json
+{
+  "cron": {
+    "enabled": true,
+    "defaultDurationMinutes": 300,
+    "launcherPath": "/home/kensan/.claudeos/cron-launcher.sh",
+    "sessionsDir": "/home/kensan/.claudeos/sessions",
+    "logsDir": "/home/kensan/.claudeos/logs",
+    "entryPrefix": "CLAUDEOS"
+  },
+  "sessionTabs": {
+    "enabled": true,
+    "title": "Claude Session Info",
+    "pollIntervalSeconds": 1,
+    "autoCloseAfterExitSeconds": 10,
+    "localSessionsDir": "%USERPROFILE%\\.claudeos\\sessions"
+  },
+  "statusline": {
+    "enabled": true,
+    "sourceSettingsPath": "%USERPROFILE%\\.claude\\settings.json",
+    "remoteSettingsPath": "~/.claude/settings.json",
+    "backupBeforeApply": true
+  }
+}
+```
+
+| セクション | 用途 |
+|---|---|
+| `cron` | メニュー 12 (Cron 登録・編集・削除) と Linux 側 cron-launcher.sh の動作設定 |
+| `sessionTabs` | Windows Terminal の Session Info タブ動作 (poll 間隔、タイトル、自動 close 秒数) |
+| `statusline` | メニュー 13 (Statusline グローバル適用) のソース・転送先・バックアップ設定 |
+
+## v3.1.0 で `false` 化された設定
+
+```json
+{
+  "tools": {
+    "codex":   { "enabled": false },
+    "copilot": { "enabled": false }
+  }
+}
+```
+
+起動メニュー S2/S3/L2/L3 廃止に伴い無効化。フィールド自体は将来復活の保険として残しています。
 
 ## 初期作成
 
