@@ -46,6 +46,11 @@ SSH で Linux ホストに接続後、`~/.bashrc` の **末尾** に以下を追
 # ----- ClaudeOS v3.2.0 SMTP credentials -----
 export CLAUDEOS_SMTP_USER="kensan1969@gmail.com"
 export CLAUDEOS_SMTP_PASS="abcdefghijklmnop"   # 手順 1 で取得した 16 桁(スペース除去)
+# 送信先・送信元の既定 (省略時 CLAUDEOS_SMTP_USER と同じになる)
+export CLAUDEOS_DEFAULT_TO="kensan1969@gmail.com"
+export CLAUDEOS_DEFAULT_FROM="kensan1969@gmail.com"
+# ★ メール送信トグル (1 で有効、未設定または 0 で無効) — 誤送信防止のため明示的 opt-in
+export CLAUDEOS_EMAIL_ENABLED=1
 ```
 
 権限を絞ります(他ユーザーから読めないように):
@@ -63,16 +68,23 @@ crontab -e
 # 先頭に以下を追記
 # CLAUDEOS_SMTP_USER=kensan1969@gmail.com
 # CLAUDEOS_SMTP_PASS=abcdefghijklmnop
+# CLAUDEOS_EMAIL_ENABLED=1
+# CLAUDEOS_DEFAULT_TO=kensan1969@gmail.com
 
 # 方式 B: cron-launcher.sh の冒頭で source ~/.env-claudeos
 mkdir -p ~ && cat > ~/.env-claudeos <<'EOF'
 export CLAUDEOS_SMTP_USER="kensan1969@gmail.com"
 export CLAUDEOS_SMTP_PASS="abcdefghijklmnop"
+export CLAUDEOS_DEFAULT_TO="kensan1969@gmail.com"
+export CLAUDEOS_DEFAULT_FROM="kensan1969@gmail.com"
+export CLAUDEOS_EMAIL_ENABLED=1
 EOF
 chmod 600 ~/.env-claudeos
 # その後、cron-launcher.sh の冒頭に以下を追記:
 #   [[ -f ~/.env-claudeos ]] && source ~/.env-claudeos
 ```
+
+> ⚠️ **`CLAUDEOS_EMAIL_ENABLED=1` を設定しないとメール送信は実行されません**(誤送信防止のため既定 off)。dry-run と実機テスト送信は `--dry-run` および直接 `python3 report-and-mail.py` 実行で動作するため、cron 経由の送信を有効化する場合のみ必要です。
 
 > ⚠️ **重要**: cron は対話シェルではないため `~/.bashrc` を **読みません**。方式 A(crontab 内 export)または方式 B(env ファイル source)を必ず使用してください。
 

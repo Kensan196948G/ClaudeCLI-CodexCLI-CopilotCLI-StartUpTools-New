@@ -94,8 +94,13 @@ finalize() {
 
   echo "[cron-launcher] session finished status=$final_status exit=$exit_code at $now" >> "$LOG_FILE"
 
-  # --- v3.2.0: HTML レポートメール送信 (best-effort、失敗しても全体は成功扱い) ---
-  if command -v python3 >/dev/null 2>&1 && [[ -f "$REPORT_SCRIPT" ]]; then
+  # --- v3.2.0: HTML レポートメール送信 ---
+  # 明示的トグル CLAUDEOS_EMAIL_ENABLED=1 が必要。誤送信防止のため既定 off。
+  # 加えて python3 とスクリプトの存在も確認 (best-effort、失敗しても全体は成功扱い)。
+  local email_enabled="${CLAUDEOS_EMAIL_ENABLED:-0}"
+  if [[ "$email_enabled" != "1" ]]; then
+    echo "[cron-launcher] HTML mail report skip (CLAUDEOS_EMAIL_ENABLED!=1)" >> "$LOG_FILE"
+  elif command -v python3 >/dev/null 2>&1 && [[ -f "$REPORT_SCRIPT" ]]; then
     python3 "$REPORT_SCRIPT" \
       --session "$SESSION_ID" \
       --log "$LOG_FILE" \

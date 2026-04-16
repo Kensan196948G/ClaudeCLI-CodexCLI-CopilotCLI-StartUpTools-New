@@ -44,8 +44,20 @@ from typing import Any
 
 DEFAULT_SMTP_HOST = "smtp.gmail.com"
 DEFAULT_SMTP_PORT = 587
-DEFAULT_TO = "kensan1969@gmail.com"
-DEFAULT_FROM = "kensan1969@gmail.com"
+# 配布テンプレートとして実在アドレスをハードコードしない。
+# 1) --to-addr / --from-addr で明示指定、または
+# 2) 環境変数 CLAUDEOS_DEFAULT_TO / CLAUDEOS_DEFAULT_FROM で上書き、
+# 3) 最後の fallback として CLAUDEOS_SMTP_USER (= 認証アカウント) を使う。
+DEFAULT_TO = (
+    os.environ.get("CLAUDEOS_DEFAULT_TO")
+    or os.environ.get("CLAUDEOS_SMTP_USER")
+    or ""
+)
+DEFAULT_FROM = (
+    os.environ.get("CLAUDEOS_DEFAULT_FROM")
+    or os.environ.get("CLAUDEOS_SMTP_USER")
+    or ""
+)
 DEFAULT_SUBJECT_PREFIX = "[ClaudeOS]"
 
 ICON = {
@@ -177,10 +189,24 @@ def parse_iso(value: str) -> dt.datetime | None:
         return None
 
 
+def _normalize_tz(value: dt.datetime | None) -> dt.datetime | None:
+    """tzinfo の有無を揃えて aware/naive 混在による TypeError を防ぐ。"""
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        # naive はローカル TZ として解釈する
+        return value.astimezone()
+    return value
+
+
 def format_duration(start: dt.datetime | None, end: dt.datetime | None) -> str:
     if not start or not end:
         return "(計測不能)"
-    delta = end - start
+    s = _normalize_tz(start)
+    e = _normalize_tz(end)
+    if s is None or e is None:
+        return "(計測不能)"
+    delta = e - s
     total_sec = int(delta.total_seconds())
     if total_sec < 0:
         return "(時刻順不整合)"
@@ -213,6 +239,7 @@ def render_html(ctx: dict[str, Any]) -> str:
         ("開始", f"{ICON['calendar']} {html_escape(ctx['start_str'])}"),
         ("終了", f"{ICON['finish']} {html_escape(ctx['end_str'])}"),
         ("総作業時間", f"{ICON['clock']} <strong>{html_escape(ctx['duration_str'])}</strong>"),
+        ("予定時間", f"{ICON['clock']} {ctx['duration_min']} 分"),
         ("ログファイル", f"{ICON['log']} <code>{html_escape(ctx['log_path'])}</code>"),
     ]
 
@@ -433,6 +460,13 @@ def main() -> int:
         )
         return 0
 
+    if not args.dry_run and (not args.to_addr or not args.from_addr):
+        sys.stderr.write(
+            "[report-and-mail] WARN: --to-addr / --from-addr 未指定 "
+            "(CLAUDEOS_DEFAULT_TO / CLAUDEOS_DEFAULT_FROM / CLAUDEOS_SMTP_USER のいずれかで設定)。\n"
+        )
+        return 0
+
     log_path = Path(args.log)
     parsed = parse_log(log_path)
     sess_meta = load_session_json(Path(args.sessions_dir), args.session)
@@ -450,6 +484,7 @@ def main() -> int:
         "start_str": fmt_dt(start_dt),
         "end_str": fmt_dt(end_dt),
         "duration_str": format_duration(start_dt, end_dt),
+        "duration_min": args.duration_min,
         "log_path": str(log_path),
         "parsed": parsed,
         "next_phase": next_phase,
