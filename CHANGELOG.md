@@ -2,6 +2,51 @@
 
 # CHANGELOG
 
+## [v3.2.0] - 2026-04-17 — Cron HTML Mail Report
+
+### 🎯 コードネーム: Visual Recap Mail
+
+Cron で起動された ClaudeCode セッションの完了時に、**HTML 形式のレポートメール** を Gmail SMTP 経由で送信する機能を追加。アイコン + 色付き表組み + 実行サマリ + 次フェーズ提案まで含む。
+
+### 🚀 新機能
+
+- **`Claude/templates/linux/report-and-mail.py`** — Python 3 標準ライブラリのみの HTML メール送信スクリプト。
+  - ステータス判定: 🟢 completed / 🔴 failed / 🟡 timeout / 🔵 running
+  - 実行サマリ: Monitor / Development / Verify / Improvement の出現回数集計、エラー検出数、STABLE 達成判定
+  - 次フェーズ提案: ステータス + ログ集計から自動生成 (Repair / Release / Debug / Monitor 再開)
+  - インライン CSS で Gmail 表示崩れを回避
+  - SMTP 送信失敗時も `cron-launcher.sh` 全体を失敗にしない fail-soft 設計
+  - `--dry-run` で送信せず HTML プレビューを stdout 出力 (UTF-8 buffer 経由で Windows cp932 でも動作)
+- **`Claude/templates/linux/cron-launcher.sh` 改修** — `finalize` トラップ末尾で `report-and-mail.py` を best-effort 呼び出し。timeout 終了 (exit 124) を `timeout` ステータスとして区別。
+- **`config/config.json.template` 拡張** — `email` セクション追加。SMTP 認証情報は **環境変数経由** (`CLAUDEOS_SMTP_USER` / `CLAUDEOS_SMTP_PASS`)、config.json には絶対に書かない設計。
+- **`docs/common/16_HTMLメールレポート設定.md`** — Gmail アプリパスワード取得 → `~/.bashrc` または crontab 内 export での配置 → スクリプト配置 → `--dry-run` 検証 → 実機テスト送信までの完全手順ドキュメント。
+
+### 🛡️ セキュリティ設計
+
+- アプリパスワードは **config.json に書かない**(git commit リスク回避)
+- Linux 環境変数 `CLAUDEOS_SMTP_USER` / `CLAUDEOS_SMTP_PASS` で管理
+- `~/.env-claudeos` は `chmod 600` 必須
+- cron は `~/.bashrc` を読まないため、crontab 内 export または env ファイル source 方式を docs で明示
+
+### 📂 メール内容
+
+| セクション | 内容 |
+|---|---|
+| ヘッダ | プロジェクト名 + ステータスアイコン + 件名 |
+| メタ情報表 | ステータス / プロジェクト / セッション ID / ホスト / 開始 / 終了 / 総時間 / ログパス |
+| 実行サマリ表 | 4 フェーズの出現回数 + エラー数 + ログ行数 + STABLE 達成 |
+| ログ末尾 | 最後の 15 行 (ダーク背景・等幅) |
+| 次フェーズ提案 | ステータス連動の自動提案文 |
+
+### ✅ 検証
+
+- Python 3.14 syntax check pass
+- bash -n syntax check pass
+- JSON template valid
+- dry-run HTML 生成: 6505 bytes、9 項目内容検証 PASS (STABLE/時間/アイコン/フェーズ/プロジェクト名)
+
+---
+
 ## [v3.1.0] - 2026-04-16 — Cron / Session Info Tab / Statusline 全適用
 
 ### 🎯 コードネーム: Claude-Only Launcher
