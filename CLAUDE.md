@@ -123,7 +123,13 @@ agents、skills、commands、rules、hooks、scripts、contexts、examples、mcp
 - KPI 達成 → 改善縮退
 - Goal 未定義 → 大型変更禁止
 
-### state.json 構造（v8.2 追加項目あり）
+### state.json 構造（v8.2 追加項目あり / 最小例）
+
+以下は v8.2 で必須となるブロックを抜粋した **最小例** です。実プロジェクトでは
+`session.context_load_tier`、`stable.consecutive_success`、`learning.usage_history`
+など追加の必須フィールドが state.json 本体に存在します。新規セットアップ時は
+state.json 本体（`.gitignore` 対象）を直接参照するか、必要に応じて
+`state.json.example` / `state.schema.json` をプロジェクト直下に配置してください。
 
 ```json
 {
@@ -135,11 +141,11 @@ agents、skills、commands、rules、hooks、scripts、contexts、examples、mcp
     "total_budget": 100,
     "tokenizer_calibration": "opus-4-7",
     "calibration_factor": 1.35,
-    "allocation": { ... }
+    "allocation": { "monitor": 10, "development": 35, "verify": 25, "improvement": 15, "debug": 10, "release": 5 }
   },
   "task_budget": { "enabled": true, "total_tokens": 128000 },
-  "compact": { "trigger_at_pct": 70, "phase_transition": true },
-  "notification": { "stable": true, "blocked": true },
+  "compact": { "trigger_at_pct": 70, "phase_transition": true, "snapshot_dir": ".claude/claudeos/snapshots" },
+  "notification": { "stable": true, "blocked": true, "critical_review": true },
   "effort_strategy": { "default": "xhigh", "concurrent_worktrees_threshold": 2 }
 }
 ```
@@ -499,11 +505,15 @@ CI が未整備なら、未整備であることを先に記録する。
 
 `.claude/settings.json` の `hooks.PreCompact` で以下を自動退避する。
 
-- state.json を `claudeos/snapshots/` 配下にタイムスタンプ付きで複製
-- Memory MCP に「直近の重要決定 3 件」を保存
+- state.json を `.claude/claudeos/snapshots/` 配下にタイムスタンプ付きで複製
+  （直近 20 件のみ保持、それ以前は自動削除）
 - 退避完了をログ出力 (`[PreCompact] state snapshot saved: ...`)
+- state.json の `compact.last_pre_compact_at` を更新
 
 退避失敗時は `/compact` をブロック (`exitCode 2`) し、ユーザー確認を待つ。
+
+> Memory MCP への「直近の重要決定 3 件」自動保存は v8.3 で追加予定（state snapshot
+> のみで暫定運用）。
 
 ## 13. Token 制御（Opus 4.7 新 tokenizer 1.35x 補正）
 
@@ -695,7 +705,10 @@ state.json:
 }
 ```
 
-通知発火は `claudeos/scripts/hooks/notify-stable.js` に集約する。
+通知発火は `.claude/claudeos/scripts/hooks/notify-stable.js` に集約する。
+このモジュールは Stop hook の race condition を避けるため、独立した hook では
+登録せず、`session-end.js` から `require()` で **同期実行** される。`execFileSync`
+を用いてシェル解釈を回避し、Windows / Linux で安全に動作する。
 
 ## 20. 終了処理
 
@@ -729,19 +742,19 @@ Agent Teams は並列で spawn する  / 単独集約しない
 
 | レイヤー | ファイル |
 |---|---|
-| Core | `claudeos/system/orchestrator.md` |
-| Core | `claudeos/system/token-budget.md` |
-| Core | `claudeos/system/loop-guard.md` |
-| Loops | `claudeos/loops/monitor-loop.md` |
-| Loops | `claudeos/loops/build-loop.md` |
-| Loops | `claudeos/loops/verify-loop.md` |
-| Loops | `claudeos/loops/improve-loop.md` |
-| CI | `claudeos/ci/ci-manager.md` |
-| Evolution | `claudeos/evolution/self-evolution.md` |
-| Hooks | `claudeos/scripts/hooks/pre-compact.js`（v8.2 で実装） |
-| Hooks | `claudeos/scripts/hooks/session-start.js`（v8.2 で実装） |
-| Hooks | `claudeos/scripts/hooks/session-end.js`（v8.2 で実装） |
-| Hooks | `claudeos/scripts/hooks/notify-stable.js`（v8.2 で新規作成） |
+| Core | `.claude/claudeos/system/orchestrator.md` |
+| Core | `.claude/claudeos/system/token-budget.md` |
+| Core | `.claude/claudeos/system/loop-guard.md` |
+| Loops | `.claude/claudeos/loops/monitor-loop.md` |
+| Loops | `.claude/claudeos/loops/build-loop.md` |
+| Loops | `.claude/claudeos/loops/verify-loop.md` |
+| Loops | `.claude/claudeos/loops/improve-loop.md` |
+| CI | `.claude/claudeos/ci/ci-manager.md` |
+| Evolution | `.claude/claudeos/evolution/self-evolution.md` |
+| Hooks | `.claude/claudeos/scripts/hooks/pre-compact.js`（v8.2 で実装） |
+| Hooks | `.claude/claudeos/scripts/hooks/session-start.js`（v8.2 で実装） |
+| Hooks | `.claude/claudeos/scripts/hooks/session-end.js`（v8.2 で実装、notify-stable を内部呼出） |
+| Hooks | `.claude/claudeos/scripts/hooks/notify-stable.js`（v8.2 で新規、session-end から require） |
 | グローバル設定 | `~/.claude/CLAUDE.md` |
 
 ## 24. Opus 4.7 適用ルール（v8.2 追加・Anthropic 公式準拠）

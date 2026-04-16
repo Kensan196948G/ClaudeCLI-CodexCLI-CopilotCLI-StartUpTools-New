@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Stop hook (ClaudeOS v8.2)
-// セッション終了時に state.json を最終更新する。
-// notify-stable.js とは別 hook として並列実行される。
+// セッション終了時に state.json を最終更新し、続けて notify-stable を同期実行する。
+// 並列実行による state.json への race condition を避けるため、両者は単一 hook エントリに統合する。
 
 const fs = require("fs");
 const path = require("path");
@@ -21,14 +21,23 @@ function writeJson(file, data) {
 }
 
 const state = readJson(STATE_FILE);
-if (!state) {
+if (state) {
+  state.execution = state.execution || {};
+  state.execution.last_stop_at = new Date().toISOString();
+  writeJson(STATE_FILE, state);
+  console.log("[SessionEnd] state.json updated (last_stop_at recorded)");
+} else {
   console.log("[SessionEnd] state.json not found — skip");
-  process.exit(0);
 }
 
-state.execution = state.execution || {};
-state.execution.last_stop_at = new Date().toISOString();
+// 続けて notify-stable を同期実行する。失敗しても Stop hook をブロックしない。
+try {
+  const notify = require("./notify-stable.js");
+  if (notify && typeof notify.run === "function") {
+    notify.run();
+  }
+} catch (err) {
+  console.error(`[SessionEnd] notify-stable failed: ${err.message}`);
+}
 
-writeJson(STATE_FILE, state);
-console.log("[SessionEnd] state.json updated (last_stop_at recorded)");
 process.exit(0);

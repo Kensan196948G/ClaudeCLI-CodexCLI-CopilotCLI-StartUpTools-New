@@ -5,7 +5,7 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "50",
     "CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION": "true",
-    "ENABLE_PROMPT_CACHING_1H": "true"
+    "ENABLE_PROMPT_CACHING_1H": "1"
   },
   "includeCoAuthoredBy": true,
   "outputStyle": "Explanatory",
@@ -48,10 +48,6 @@
           {
             "type": "command",
             "command": "node .claude/claudeos/scripts/hooks/session-end.js"
-          },
-          {
-            "type": "command",
-            "command": "node .claude/claudeos/scripts/hooks/notify-stable.js"
           }
         ]
       }
