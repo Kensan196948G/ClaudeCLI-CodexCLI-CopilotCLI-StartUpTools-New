@@ -93,6 +93,10 @@ test-results/
 coverage/
 *.test.log
 
+# Playwright MCP テスト成果物（再生成可能・コミット不要）
+.playwright-mcp/
+playwright-test*.png
+
 # 一時ファイル
 tmp/
 temp/
