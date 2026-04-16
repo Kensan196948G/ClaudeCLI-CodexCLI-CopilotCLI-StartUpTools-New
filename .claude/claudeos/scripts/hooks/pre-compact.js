@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // PreCompact hook (ClaudeOS v8.2)
-// 1M context rot 対策として、/compact 実行前に state.json と重要文脈を退避する。
+// 1M context rot 対策として、/compact 実行前に state.json を退避する。
 // 退避失敗時は exitCode 2 を返して /compact をブロックする。
+// state.json の更新は atomic write (temp + rename) で並列読み書き競合を回避する。
 
 const fs = require("fs");
 const path = require("path");
@@ -33,18 +34,25 @@ function readJson(file) {
   }
 }
 
-function writeJson(file, data) {
-  fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\n", "utf8");
+function writeJsonAtomic(file, data) {
+  const tmp = `${file}.tmp.${process.pid}`;
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2) + "\n", "utf8");
+  fs.renameSync(tmp, file);
 }
 
 function snapshotState() {
-  if (!fs.existsSync(STATE_FILE)) {
-    return { skipped: true, reason: "state.json not found" };
-  }
+  // copyFileSync を直接 try で囲み、TOCTOU リスクを回避する。
   ensureDir(SNAPSHOT_DIR);
   const dest = path.join(SNAPSHOT_DIR, `state.${timestamp()}.json`);
-  fs.copyFileSync(STATE_FILE, dest);
-  return { snapshotPath: dest };
+  try {
+    fs.copyFileSync(STATE_FILE, dest);
+    return { snapshotPath: dest };
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      return { skipped: true, reason: "state.json not found" };
+    }
+    throw err;
+  }
 }
 
 function recordCompactTimestamp() {
@@ -52,7 +60,7 @@ function recordCompactTimestamp() {
   if (!state) return;
   state.compact = state.compact || {};
   state.compact.last_pre_compact_at = new Date().toISOString();
-  writeJson(STATE_FILE, state);
+  writeJsonAtomic(STATE_FILE, state);
 }
 
 function pruneOldSnapshots(keep = 20) {
