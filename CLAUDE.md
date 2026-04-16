@@ -76,18 +76,25 @@ Memory MCP に記録された内容があれば確認し、前回の作業を引
 
 ### ステップ 4.5: Session Recap 実行（v8.2 追加）
 
-前回セッションの引継ぎを補強するため、以下を必ず実行してください。
+前回セッションの引継ぎを補強するため、`/recap` の **利用可否を判定し、利用可能なら実行** する。
 
 ```
 /recap
 ```
 
 `/recap` は Claude Code v2.1.108 以降の組み込み機能で、前回セッションの要約を
-自動生成します。生成された要約は state.json `execution.last_session_summary`
+自動生成する。生成された要約は state.json `execution.last_session_summary`
 と突き合わせて差分を確認し、矛盾がある場合は state.json を真正値とする。
 
-`/recap` が利用できない環境では、state.json `execution.last_session_summary`
-を読み上げて代替し、その旨を最初のレスポンスに明記する。
+`/recap` が利用できない環境（古い CLI / Skill 未登録）では `session-start.js`
+hook が自動的に state.json から `execution.last_session_summary`、
+`stable.consecutive_success`、`token.used`、`compact.last_pre_compact_at` を
+出力する（`.claude/claudeos/scripts/hooks/session-start.js` を参照）。
+この場合、Claude は自動出力された情報をそのまま再開コンテキストとして利用し、
+「`/recap` 未対応環境のため session-start hook 出力を採用」と最初のレスポンスに明記する。
+
+つまり、`/recap` は **必須実行** ではなく **必須判定** であり、利用できない環境でも
+自動 fallback により再開コンテキストが確保される。
 
 ## 1. 適用範囲
 
@@ -769,28 +776,21 @@ Agent Teams は並列で spawn する  / 単独集約しない
 
 ### 24.2 禁止事項
 
-Opus 4.7 は以下のパラメータを **拒否** する (400 エラーを返す)。サンプル例として
-明示的に「悪い例 ❌」「推奨例 ✅」を併記する。
+Opus 4.7 は以下のパラメータを **拒否** する (400 エラーを返す)。すべて文章＋
+インラインコードで列挙し、実行可能なコードブロックは置かない（誤コピー防止）。
 
-- ❌ Extended thinking (旧仕様):
+| 区分 | 旧仕様 (Opus 4.6 以前) | Opus 4.7 で必要な代替 |
+|---|---|---|
+| Extended thinking | `thinking.type = "enabled"` + `budget_tokens` | `thinking.type = "adaptive"` + `output_config.effort` (`xhigh` / `high` / `medium` / `low`) |
+| Sampling | `temperature` / `top_p` / `top_k` の非既定値 | これらを **省略** し、プロンプトで動作を制御する |
+| Prefill | Assistant role のメッセージを事前注入 | structured outputs / system prompt / `output_config.format` を使う |
 
-  ```python
-  # NG (400 error on Opus 4.7)
-  thinking={"type": "enabled", "budget_tokens": 32000}
-  ```
+旧仕様パラメータを送信した場合は API が 400 エラーを返す。マイグレーション時は
+[Anthropic Migration Guide](https://platform.claude.com/docs/en/about-claude/models/migration-guide) を併用する。
 
-  ✅ 代替: adaptive thinking + effort
-
-  ```python
-  thinking={"type": "adaptive"}
-  output_config={"effort": "xhigh"}
-  ```
-
-- ❌ Sampling parameters: `temperature` / `top_p` / `top_k` の非既定値指定 (400 エラー)
-  ✅ 代替: プロンプト側で動作を制御する。temperature は省略する。
-
-- ❌ Assistant message の prefill (400 エラー)
-  ✅ 代替: structured outputs / system prompt instructions / `output_config.format` を使う。
+> 上表は仕様の対比表であり、実行コード例ではない。実装サンプルは公式 SDK の
+> Migration Guide を直接参照すること（本ファイル内に Python / TypeScript の
+> 実行コードを置かないのは、誤って旧仕様コードがコピーされるのを防ぐため）。
 
 ### 24.3 推奨事項
 
