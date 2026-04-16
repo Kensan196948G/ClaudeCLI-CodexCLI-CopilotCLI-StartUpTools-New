@@ -26,7 +26,7 @@
 | バージョン | **v3.0.0** (Phase 4 完了 / Release タグ準備中) |
 | テスト | **477件** — (Pester, CI) |
 | CI | ✅ SUCCESS |
-| ClaudeOS (Claude Code 専用) | v8 (Harness Evolution / Progressive Disclosure / Frontier-Test / Dead-Weight 自動検出 / Stop-Doing 点検 / CodeRabbit 統合) |
+| ClaudeOS (Claude Code 専用) | v8.1 (Harness Evolution / Progressive Disclosure / Frontier-Test / Dead-Weight 自動検出 / Stop-Doing 点検 / CodeRabbit 統合 / **Phase Compaction (`/compact` 標準化)**) |
 | Agents | **17体** の特化サブエージェント (2026Q2 棚卸しで最適化済み) |
 | Skills | **0個** — Claude Opus 4.6 内包能力で代替可能な汎用スキルを棚卸しで全削除 |
 | Hooks | **4個** — agent-risk-check / capture-result / onboarding-refresh / usage-history-recorder |
@@ -324,18 +324,32 @@ start.bat
 | 👥 /team-onboarding | 新メンバー向けオンボーディングガイド自動生成コマンド |
 | ⏱ ループ最適化 | Dev=60m/Verify=45m/Improve=45m (Max 20x 週次制限対策) |
 
+### v8.1 新機能 🆕
+
+| 機能 | 説明 |
+|------|------|
+| 🗜 Phase Compaction | フェーズ遷移時に `/compact [hint]` を標準化し、Context Rot（文脈劣化）を防止 |
+| 🎯 Compaction Hints | Monitor↔Development↔Verify↔Improvement の各遷移に最適なヒント例を CLAUDE.md に明文化 |
+| 🚦 適用基準 | 3,000行超出力 / rescue 2回以上 / PR 3件以上 / フェーズ60分超 のいずれかで必須適用 |
+| ⚠️ Context Rot 警告サイン | 同一指摘の繰り返し / フェーズ判定ミス / ツール選択精度低下 を検知時に即圧縮 |
+
+> 出典: Anthropic 公式ブログ [Using Claude Code: Session Management and 1M Context](https://claude.com/blog/using-claude-code-session-management-and-1m-context)
+> 詳細仕様は [`CLAUDE.md` Section 5](./CLAUDE.md#5-運用ループ) 参照
+
 ### 自律ループ構成
 
 ```mermaid
 flowchart LR
-    M["🔍 Monitor<br/>30m"] --> B["🛠 Development<br/>60m"]
-    B --> V["✅ Verify<br/>45m"]
-    V --> I["🚀 Improvement<br/>45m"]
-    I -->|KPI未達| M
+    M["🔍 Monitor<br/>30m"] -->|"/compact development"| B["🛠 Development<br/>60m"]
+    B -->|"/compact verify"| V["✅ Verify<br/>45m"]
+    V -->|"/compact improvement"| I["🚀 Improvement<br/>45m"]
+    I -->|"KPI未達<br/>/compact monitor"| M
     I -->|STABLE達成| S["📦 Deploy"]
     V -->|CI失敗| R["🔧 Auto Repair"]
     R --> V
 ```
+
+> 🆕 **v8.1**: フェーズ遷移時の `/compact [hint]` 標準化により、Context Rot（文脈劣化）を防止しつつ長時間自律ループでも品質を維持します。
 
 | ループ | 時間 | 責務 | 禁止事項 |
 |--------|------|------|----------|
