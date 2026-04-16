@@ -116,6 +116,21 @@
     "logsDir": "/home/kensan/.claudeos/logs",
     "entryPrefix": "CLAUDEOS"
   },
+  "email": {
+    "_comment": "v3.2.0 新設。Cron セッション終了時に HTML レポートメールを送信。SMTP 認証情報は Linux 環境変数で管理 (CLAUDEOS_SMTP_USER / CLAUDEOS_SMTP_PASS) — config.json には書かない。詳細は docs/common/16_HTMLメールレポート設定.md を参照。",
+    "enabled": false,
+    "smtp": {
+      "host": "smtp.gmail.com",
+      "port": 587,
+      "useStartTls": true,
+      "userEnvVar": "CLAUDEOS_SMTP_USER",
+      "passEnvVar": "CLAUDEOS_SMTP_PASS"
+    },
+    "from": "kensan1969@gmail.com",
+    "to": "kensan1969@gmail.com",
+    "subjectPrefix": "[ClaudeOS]",
+    "scriptPath": "/home/kensan/.claudeos/report-and-mail.py"
+  },
   "sessionTabs": {
     "_comment": "v3.1.0 新設。Windows Terminal に情報タブを 1 枚追加し、開始/終了/残り時間をリアルタイム表示する。",
     "enabled": true,

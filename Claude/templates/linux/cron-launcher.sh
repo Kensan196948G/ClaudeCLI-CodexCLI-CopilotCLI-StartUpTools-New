@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # cron-launcher.sh - Linux 側で ClaudeCode を cron から起動するラッパ
-# ClaudeOS v3.1.0
+# ClaudeOS v3.2.0
 #
 # Usage: cron-launcher.sh <project> <duration-minutes>
 #
@@ -10,6 +10,7 @@
 #   - timeout <Ns> 付きで claude を起動（auto mode）
 #   - session.json の生成・更新（start/end/status）
 #   - ログを /home/kensan/.claudeos/logs/ へ
+#   - 終了時に HTML レポートメールを送信 (v3.2.0 追加)
 # ============================================================
 
 set -euo pipefail
@@ -28,6 +29,7 @@ SESSIONS_DIR="$CLAUDEOS_HOME/sessions"
 LOGS_DIR="$CLAUDEOS_HOME/logs"
 PROJECTS_BASE="${PROJECTS_BASE:-$HOME/Projects}"
 PROJECT_DIR="$PROJECTS_BASE/$PROJECT"
+REPORT_SCRIPT="${CLAUDEOS_REPORT_SCRIPT:-$CLAUDEOS_HOME/report-and-mail.py}"
 
 mkdir -p "$SESSIONS_DIR" "$LOGS_DIR"
 chmod 700 "$CLAUDEOS_HOME" "$SESSIONS_DIR" "$LOGS_DIR" 2>/dev/null || true
@@ -69,7 +71,7 @@ finalize() {
   local final_status="completed"
   if [[ $exit_code -eq 124 ]]; then
     # timeout による終了
-    final_status="completed"
+    final_status="timeout"
   elif [[ $exit_code -ne 0 ]]; then
     final_status="failed"
   fi
@@ -91,6 +93,22 @@ finalize() {
   fi
 
   echo "[cron-launcher] session finished status=$final_status exit=$exit_code at $now" >> "$LOG_FILE"
+
+  # --- v3.2.0: HTML レポートメール送信 (best-effort、失敗しても全体は成功扱い) ---
+  if command -v python3 >/dev/null 2>&1 && [[ -f "$REPORT_SCRIPT" ]]; then
+    python3 "$REPORT_SCRIPT" \
+      --session "$SESSION_ID" \
+      --log "$LOG_FILE" \
+      --status "$final_status" \
+      --start "$START_TIME" \
+      --end "$now" \
+      --duration-min "$DURATION_MIN" \
+      --project "$PROJECT" \
+      --sessions-dir "$SESSIONS_DIR" \
+      >> "$LOG_FILE" 2>&1 || true
+  else
+    echo "[cron-launcher] report-and-mail.py をスキップ (script=$REPORT_SCRIPT, python3=$(command -v python3 || echo 'none'))" >> "$LOG_FILE"
+  fi
 }
 trap finalize EXIT
 
