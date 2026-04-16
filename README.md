@@ -4,18 +4,16 @@
 
 `ClaudeOS v8` (Agent Teams / Boot Sequence / Self Evolution / Architecture Check / Issue Factory / CodeRabbit Review / Weekly Optimized Loops) をカーネルに据え、ローカル起動・SSH リモート起動・診断・Pester テスト・GitHub Issues / Projects / Actions 連携を一括提供します。
 
-> **📌 リポジトリ名について**
-> リポジトリ名 `ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New` は当初の 3 ツール統合ランチャー構想に由来しますが、現在の開発投資・新機能 (ClaudeOS v8 / Phase 3 完了) はすべて **Claude Code** 側に集中しています。Codex CLI / GitHub Copilot CLI の起動スクリプトもリポジトリ内に併設してありますが、ClaudeOS フレームワークと統合されているのは Claude Code のみです。
+> **📌 v3.1.0 で Claude Code 専用ツールに整理**
+> v3.1.0 より、Codex CLI / GitHub Copilot CLI の起動メニュー (S2/S3/L2/L3) は削除されました。本ツールは **Claude Code 専用の自律開発ランチャー** として位置づけを明確化し、Linux crontab 連携・セッション情報タブ・Statusline グローバル適用などの新機能に投資が集中しています。
 
 ## 対応ツール
 
 | ツール | 提供元 | 位置付け | 主な用途 |
 |--------|--------|---------|---------|
-| 🌟 **Claude Code** | Anthropic | **主軸** — ClaudeOS v8 統合 / Agent Teams / Boot Sequence / 自律開発ループ | 大規模なコード修正、レビュー、自律開発、Issue/PR 自動化 |
-| Codex CLI | OpenAI | 併設 (基本起動のみ) | ターミナル中心のコード生成、シェル支援 |
-| GitHub Copilot CLI | GitHub | 併設 (基本起動のみ) | `copilot --yolo` によるシェル・GitHub 操作支援 |
+| 🌟 **Claude Code** | Anthropic | **唯一の起動対象** — ClaudeOS v8 統合 / Agent Teams / Boot Sequence / 自律開発ループ | 大規模なコード修正、レビュー、自律開発、Issue/PR 自動化、Linux cron による週次自律実行 |
 
-> Codex CLI / GitHub Copilot CLI は `Start-CodexCLI.ps1` / `Start-CopilotCLI.ps1` で起動可能ですが、Pre-Launch Diagnostics や AgentTeams ランタイムなどの ClaudeOS 拡張機能は Claude Code 専用です。
+> v3.1.0 以降、Codex CLI / GitHub Copilot CLI の起動メニューは提供しません。`Start-CodexCLI.ps1` / `Start-CopilotCLI.ps1` ファイル自体はリポジトリ内に残していますが、`config.json` の `tools.codex.enabled = false` / `tools.copilot.enabled = false` で無効化されています。
 
 ---
 
@@ -23,7 +21,7 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.0.0** (Phase 4 完了 / Release タグ準備中) |
+| バージョン | **v3.1.0** (Cron / Session Info Tab / Statusline 全適用 / Slash Commands 新設) |
 | テスト | **477件** — (Pester, CI) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8.1 (Harness Evolution / Progressive Disclosure / Frontier-Test / Dead-Weight 自動検出 / Stop-Doing 点検 / CodeRabbit 統合 / **Phase Compaction (`/compact` 標準化)**) |
@@ -84,28 +82,31 @@
 graph TD
     A["start.bat"] --> B["Start-Menu.ps1"]
     B --> C["Start-ClaudeCode.ps1"]
-    B --> D["Start-CodexCLI.ps1"]
-    B --> E["Start-CopilotCLI.ps1"]
     B --> F["Start-All.ps1"]
+    B --> NCS["🆕 New-CronSchedule.ps1"]
+    B --> SSL["🆕 Set-Statusline.ps1"]
     B --> G["Test-AllTools.ps1"]
-    B --> H["Test-McpHealth.ps1"]
-    B --> I["Test-AgentTeams.ps1"]
 
     C --> J{"Local or SSH?"}
-    D --> J
-    E --> J
+    C --> SIT["🆕 Show-SessionInfoTab.ps1"]
+    SIT --> WT["wt.exe new-tab"]
+    WT --> WSI["🆕 Watch-SessionInfo.ps1"]
+    WSI --> SJ["session.json (1s poll)"]
 
     J -->|Local| K["projectsDir"]
     J -->|SSH| L["linuxHost via SSH"]
     L --> M["claude_pty_bridge.py"]
 
+    NCS --> CMSSH["SSH crontab -l/-"]
+    CMSSH --> CRON["Linux crontab (CLAUDEOS:uuid)"]
+    CRON --> CL["cron-launcher.sh"]
+    CL --> SJ
+
     C --> PLD["Pre-Launch Diagnostics"]
     PLD --> MCP_CHK["MCP Health Check"]
     PLD --> AT_CHK["Agent Teams Check"]
 
-    C --> N["CLAUDE.md deploy"]
-    D --> O["AGENTS.md deploy"]
-    E --> P["copilot-instructions.md deploy"]
+    C --> N["CLAUDE.md / settings.json / commands/ deploy"]
 ```
 
 ## モジュール構成
@@ -276,34 +277,73 @@ start.bat
 
 | メニュー | 説明 |
 |----------|------|
-| `S1` | Claude Code を SSH 起動 |
-| `S2` | Codex CLI を SSH 起動 |
-| `S3` | GitHub Copilot CLI を SSH 起動 |
-| `L1` | Claude Code をローカル起動 |
-| `L2` | Codex CLI をローカル起動 |
-| `L3` | GitHub Copilot CLI をローカル起動 |
+| `S1` | Claude Code を SSH 起動 (自動で Session Info タブも生成) |
+| `L1` | Claude Code をローカル起動 (自動で Session Info タブも生成) |
 | `5` | ツール確認・診断 |
 | `6` | ドライブマッピング診断 |
 | `7` | Windows Terminal セットアップ |
 | `8` | MCP ヘルスチェック |
 | `9` | Agent Teams ランタイム |
 | `10` | Worktree Manager |
-| `11` | 🆕 Architecture Check |
+| `11` | Architecture Check |
+| `12` | 🆕 Cron 登録・編集・削除 (Linux crontab で週次自動起動) |
+| `13` | 🆕 Statusline 設定 (グローバル `~/.claude/settings.json` を Linux に一括適用) |
+
+> **v3.1.0 変更**: `S2` / `S3` / `L2` / `L3` (Codex CLI / GitHub Copilot CLI) は削除されました。
 
 ### PowerShell から直接起動
 
 ```powershell
-# AI CLI ツール起動
+# Claude Code 起動
 .\scripts\main\Start-All.ps1
 .\scripts\main\Start-ClaudeCode.ps1 -Project "my-project"
-.\scripts\main\Start-CodexCLI.ps1 -Project "my-project"
-.\scripts\main\Start-CopilotCLI.ps1 -Project "my-project" -Local
 
-# ClaudeOS Boot Sequence (MVP) 🆕
+# v3.1.0 新機能 🆕
+.\scripts\main\New-CronSchedule.ps1          # メニュー 12: Cron 登録・編集・削除
+.\scripts\main\Set-Statusline.ps1            # メニュー 13: Statusline グローバル適用
+.\scripts\main\Show-SessionInfoTab.ps1 -SessionId <sid>  # 情報タブを手動で開く
+
+# ClaudeOS Boot Sequence (MVP)
 .\scripts\main\Start-ClaudeOS.ps1                    # 9ステップ初期化
 .\scripts\main\Start-ClaudeOS.ps1 -DryRun            # 非破壊プレビュー
 .\scripts\main\Start-ClaudeOS.ps1 -NonInteractive    # CI / 自動実行向け
 ```
+
+### 🆕 v3.1.0 新機能の概要
+
+#### メニュー 12: Cron 登録・編集・削除
+
+Linux crontab に週次自動起動エントリを登録します。`CLAUDEOS:<uuid>` コメントで識別するため、他の cron エントリを壊さず安全に追加・削除できます。
+
+- 登録フロー: プロジェクト番号 → 曜日（複数可）→ 時刻（HH:MM）→ 作業時間（分、既定 300）
+- 起動は Linux 側 `~/.claudeos/cron-launcher.sh` が `timeout` 付き auto mode で ClaudeCode を実行
+- セッションログは `~/.claudeos/logs/` に保存
+
+#### Session Info タブ (Windows Terminal)
+
+S1 / L1 / Cron 起動時に自動で Windows Terminal の新規タブ「Claude Session Info」が開きます。`session.json` を 1 秒間隔で poll し、以下をリアルタイム表示:
+
+- 開始時刻 / 終了予定時刻
+- 作業時間（分）と経過時間
+- 残り時間（秒単位でカウントダウン）
+- セッション status (running / completed / exited / cancelled / failed)
+
+セッション中に `/work-time-set 240` 等で max_duration_minutes を変更すると、タブの残り時間も即追従します。
+
+#### メニュー 13: Statusline グローバル適用
+
+Windows 側 `~/.claude/settings.json` の `statusLine` セクションを Linux 側 `~/.claude/settings.json` へ一括同期します。バックアップを取ってから merge するため安全に巻き戻せます。
+
+#### Slash Commands (ClaudeCode 内)
+
+| Command | 用途 |
+|---------|------|
+| `/cron-register` | ClaudeCode 内から Cron 新規登録 |
+| `/cron-cancel [id|all]` | Cron 解除 |
+| `/cron-list` | 登録済みエントリ一覧 |
+| `/work-time-set <分>` | 現セッションの作業時間を変更 |
+| `/work-time-reset` | 作業時間をデフォルト 5h に戻す |
+| `/session-info` | 現セッションの session.json 整形表示 |
 
 ---
 

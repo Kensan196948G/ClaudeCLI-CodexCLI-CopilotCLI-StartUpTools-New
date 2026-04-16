@@ -20,6 +20,7 @@ Import-Module (Join-Path $ScriptRoot 'scripts\lib\LauncherCommon.psm1') -Force -
 Import-Module (Join-Path $ScriptRoot 'scripts\lib\Config.psm1') -Force -DisableNameChecking
 Import-Module (Join-Path $ScriptRoot 'scripts\lib\McpHealthCheck.psm1') -Force -DisableNameChecking
 Import-Module (Join-Path $ScriptRoot 'scripts\lib\AgentTeams.psm1') -Force -DisableNameChecking
+Import-Module (Join-Path $ScriptRoot 'scripts\lib\SessionTabManager.psm1') -Force -DisableNameChecking
 
 $ScriptRoot = Get-StartupRoot -PSScriptRootPath $PSScriptRoot
 $ConfigPath = Get-StartupConfigPath -StartupRoot $ScriptRoot
@@ -190,6 +191,38 @@ try {
         exit 0
     }
 
+    # --- Session Info Tab (v3.1.0) ---
+    # session.json を生成して、Windows Terminal に情報タブを 1 枚開く。
+    $sessionDurationMin = 300
+    if ($Config.PSObject.Properties.Name -contains 'sessionTabs' -and $Config.sessionTabs.enabled) {
+        try {
+            $sessionsDir = if ($Config.sessionTabs.PSObject.Properties.Name -contains 'localSessionsDir') {
+                [Environment]::ExpandEnvironmentVariables($Config.sessionTabs.localSessionsDir)
+            } else { '' }
+
+            $session = New-SessionInfo -Project $Project -DurationMinutes $sessionDurationMin `
+                -Trigger 'manual' -Pid $PID -ConfigSessionsDir $sessionsDir
+            $env:CLAUDE_SESSION_ID = $session.sessionId
+            $launchContext | Add-Member -NotePropertyName 'SessionId' -NotePropertyValue $session.sessionId -Force
+
+            $tabLauncher = Join-Path $ScriptRoot 'scripts\main\Show-SessionInfoTab.ps1'
+            if (Test-Path $tabLauncher) {
+                $tabArgs = @(
+                    '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $tabLauncher,
+                    '-SessionId', $session.sessionId
+                )
+                if (-not [string]::IsNullOrWhiteSpace($sessionsDir)) {
+                    $tabArgs += @('-SessionsDir', $sessionsDir)
+                }
+                Start-Process -FilePath (Get-Process -Id $PID).Path -ArgumentList $tabArgs -WindowStyle Hidden
+                Write-Info "Session Info タブを起動: $($session.sessionId)"
+            }
+        }
+        catch {
+            Write-Warn "Session Info タブの起動をスキップ: $($_.Exception.Message)"
+        }
+    }
+
     # --- Instance Lock: 同一プロジェクトの多重起動を防止 ---
     # PTY bridge が stdin (fd 0) を同時にrawモードで取り合うと片方が永久にフリーズするため、
     # Named Mutex で同一プロジェクトのインスタンスを1つに制限する。
@@ -354,6 +387,15 @@ try {
         (New-RemoteTemplateDeployScript -TemplatePath $templatePrompt -TargetPath "$linuxProject/.claude/START_PROMPT.md" -Label '.claude/START_PROMPT.md' -EnsureParentDirectory)
         (New-RemoteTemplateDeployScript -TemplatePath $bridgeSource -TargetPath $remoteBridgePath -Label '.claude/claude_pty_bridge.py' -EnsureParentDirectory)
         (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'scripts\templates\claude-statusline.py') -TargetPath "$linuxProject/.claude/statusline.py" -Label '.claude/statusline.py' -EnsureParentDirectory)
+        # v3.1.0: Slash commands (cron / work-time / session-info) を .claude/commands に配布
+        (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'Claude\templates\claudeos\commands\cron-register.md') -TargetPath "$linuxProject/.claude/commands/cron-register.md" -Label '.claude/commands/cron-register.md' -EnsureParentDirectory)
+        (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'Claude\templates\claudeos\commands\cron-cancel.md') -TargetPath "$linuxProject/.claude/commands/cron-cancel.md" -Label '.claude/commands/cron-cancel.md' -EnsureParentDirectory)
+        (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'Claude\templates\claudeos\commands\cron-list.md') -TargetPath "$linuxProject/.claude/commands/cron-list.md" -Label '.claude/commands/cron-list.md' -EnsureParentDirectory)
+        (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'Claude\templates\claudeos\commands\work-time-set.md') -TargetPath "$linuxProject/.claude/commands/work-time-set.md" -Label '.claude/commands/work-time-set.md' -EnsureParentDirectory)
+        (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'Claude\templates\claudeos\commands\work-time-reset.md') -TargetPath "$linuxProject/.claude/commands/work-time-reset.md" -Label '.claude/commands/work-time-reset.md' -EnsureParentDirectory)
+        (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'Claude\templates\claudeos\commands\session-info.md') -TargetPath "$linuxProject/.claude/commands/session-info.md" -Label '.claude/commands/session-info.md' -EnsureParentDirectory)
+        # v3.1.0: cron-launcher.sh を ~/.claudeos/ に配布
+        (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'Claude\templates\linux\cron-launcher.sh') -TargetPath "~/.claudeos/cron-launcher.sh" -Label '~/.claudeos/cron-launcher.sh' -EnsureParentDirectory)
 @"
 cat > $(ConvertTo-BashSingleQuoted -Value $remoteBootstrap) <<'EOF'
 #!/usr/bin/env bash
@@ -417,6 +459,28 @@ finally {
     if ($Config) {
         Complete-LauncherExecutionContext -Context $launchContext -Config $Config
     }
+
+    # --- Session Info Tab: status を最終状態へ更新 (v3.1.0) ---
+    if ($launchContext -and ($launchContext.PSObject.Properties.Name -contains 'SessionId') -and $launchContext.SessionId) {
+        try {
+            $sessionsDir = if ($Config -and $Config.PSObject.Properties.Name -contains 'sessionTabs' -and `
+                $Config.sessionTabs.PSObject.Properties.Name -contains 'localSessionsDir') {
+                [Environment]::ExpandEnvironmentVariables($Config.sessionTabs.localSessionsDir)
+            } else { '' }
+
+            $finalStatus = switch ($launchContext.Result) {
+                'success' { 'completed' }
+                'cancelled' { 'cancelled' }
+                'failure' { 'failed' }
+                default { 'exited' }
+            }
+            Set-SessionStatus -SessionId $launchContext.SessionId -Status $finalStatus -ConfigSessionsDir $sessionsDir | Out-Null
+        }
+        catch {
+            Write-Debug "Session status update failed: $_"
+        }
+    }
+
     # 終了通知音（同期再生：セッション終了を確実に通知）
     Invoke-LauncherNotificationSound -Tool 'claude' -Config $Config -Wait $true
     # インスタンスロック解放

@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# ============================================================
+# cron-launcher.sh - Linux 側で ClaudeCode を cron から起動するラッパ
+# ClaudeOS v3.1.0
+#
+# Usage: cron-launcher.sh <project> <duration-minutes>
+#
+# 責務:
+#   - /home/kensan/Projects/<project> に cd
+#   - timeout <Ns> 付きで claude を起動（auto mode）
+#   - session.json の生成・更新（start/end/status）
+#   - ログを /home/kensan/.claudeos/logs/ へ
+# ============================================================
+
+set -euo pipefail
+
+PROJECT="${1:-}"
+DURATION_MIN="${2:-300}"
+
+if [[ -z "$PROJECT" ]]; then
+  echo "[ERROR] project 引数がありません" >&2
+  echo "Usage: $0 <project> <duration-minutes>" >&2
+  exit 2
+fi
+
+CLAUDEOS_HOME="${CLAUDEOS_HOME:-$HOME/.claudeos}"
+SESSIONS_DIR="$CLAUDEOS_HOME/sessions"
+LOGS_DIR="$CLAUDEOS_HOME/logs"
+PROJECTS_BASE="${PROJECTS_BASE:-$HOME/Projects}"
+PROJECT_DIR="$PROJECTS_BASE/$PROJECT"
+
+mkdir -p "$SESSIONS_DIR" "$LOGS_DIR"
+chmod 700 "$CLAUDEOS_HOME" "$SESSIONS_DIR" "$LOGS_DIR" 2>/dev/null || true
+
+if [[ ! -d "$PROJECT_DIR" ]]; then
+  echo "[ERROR] プロジェクトディレクトリが存在しません: $PROJECT_DIR" >&2
+  exit 3
+fi
+
+DURATION_SEC=$((DURATION_MIN * 60))
+SAFE_PROJECT=$(echo "$PROJECT" | tr -c 'A-Za-z0-9_-' '_')
+STAMP=$(date +'%Y%m%d-%H%M%S')
+SESSION_ID="${STAMP}-${SAFE_PROJECT}"
+SESSION_FILE="$SESSIONS_DIR/${SESSION_ID}.json"
+LOG_FILE="$LOGS_DIR/cron-${STAMP}.log"
+
+START_TIME=$(date -Iseconds)
+END_TIME_PLANNED=$(date -Iseconds -d "+${DURATION_MIN} minutes")
+
+# --- session.json を初期化 ---
+cat > "$SESSION_FILE.tmp" <<EOF
+{
+  "sessionId": "$SESSION_ID",
+  "project": "$PROJECT",
+  "trigger": "cron",
+  "start_time": "$START_TIME",
+  "max_duration_minutes": $DURATION_MIN,
+  "end_time_planned": "$END_TIME_PLANNED",
+  "status": "running",
+  "pid": $$,
+  "last_updated": "$START_TIME"
+}
+EOF
+mv "$SESSION_FILE.tmp" "$SESSION_FILE"
+
+# 終了時に status を更新するトラップ
+finalize() {
+  local exit_code=$?
+  local final_status="completed"
+  if [[ $exit_code -eq 124 ]]; then
+    # timeout による終了
+    final_status="completed"
+  elif [[ $exit_code -ne 0 ]]; then
+    final_status="failed"
+  fi
+  local now
+  now=$(date -Iseconds)
+
+  if [[ -f "$SESSION_FILE" ]]; then
+    # jq があればそれで、無ければ sed で status と last_updated を書き換える
+    if command -v jq >/dev/null 2>&1; then
+      jq --arg s "$final_status" --arg t "$now" \
+        '.status = $s | .last_updated = $t' "$SESSION_FILE" > "$SESSION_FILE.tmp" \
+        && mv "$SESSION_FILE.tmp" "$SESSION_FILE"
+    else
+      sed -i \
+        -e "s/\"status\": \"running\"/\"status\": \"$final_status\"/" \
+        -e "s/\"last_updated\": \"[^\"]*\"/\"last_updated\": \"$now\"/" \
+        "$SESSION_FILE"
+    fi
+  fi
+
+  echo "[cron-launcher] session finished status=$final_status exit=$exit_code at $now" >> "$LOG_FILE"
+}
+trap finalize EXIT
+
+echo "[cron-launcher] $(date -Iseconds) project=$PROJECT duration=${DURATION_MIN}m session=$SESSION_ID" | tee -a "$LOG_FILE"
+
+cd "$PROJECT_DIR"
+
+export LANG=C.UTF-8 LC_ALL=C.UTF-8
+export CLAUDE_SESSION_ID="$SESSION_ID"
+export CLAUDE_PROJECT="$PROJECT"
+
+# START_PROMPT.md が存在すれば引数として渡し、ClaudeCode を auto mode で起動
+PROMPT_ARG=""
+if [[ -f "$PROJECT_DIR/.claude/START_PROMPT.md" ]]; then
+  PROMPT_ARG="$(cat "$PROJECT_DIR/.claude/START_PROMPT.md")"
+fi
+
+if [[ -n "$PROMPT_ARG" ]]; then
+  timeout "${DURATION_SEC}s" claude --dangerously-skip-permissions "$PROMPT_ARG" >> "$LOG_FILE" 2>&1
+else
+  timeout "${DURATION_SEC}s" claude --dangerously-skip-permissions >> "$LOG_FILE" 2>&1
+fi
