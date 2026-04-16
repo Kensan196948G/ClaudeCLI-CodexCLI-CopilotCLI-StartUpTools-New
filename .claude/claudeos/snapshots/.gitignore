@@ -1,0 +1,3 @@
+# Snapshot artifacts created by PreCompact hook are local-only.
+# Keep .gitkeep so the directory is tracked.
+state.*.json
