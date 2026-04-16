@@ -1,6 +1,6 @@
 {
-  "_comment": "AI CLI スタートアップツール設定テンプレート v2.0.0 - コピーしてconfig.jsonとして使用",
-  "version": "2.0.0",
+  "_comment": "Claude Code スタートアップツール設定テンプレート v3.1.0 - コピーしてconfig.jsonとして使用",
+  "version": "3.1.0",
   "projectsDir": "X:\\",
   "sshProjectsDir": "auto",
   "projectsDirUnc": "\\\\<your-linux-host>\\Projects",
@@ -38,7 +38,8 @@
       "apiKeyEnvVar": "ANTHROPIC_API_KEY"
     },
     "codex": {
-      "enabled": true,
+      "enabled": false,
+      "_disabled_reason": "v3.1.0 で Codex CLI 連携は廃止。将来復活の保険としてフィールドは保持。",
       "displayName": "Codex CLI (OpenAI)",
       "command": "codex",
       "args": [
@@ -52,7 +53,8 @@
       "apiKeyEnvVar": "OPENAI_API_KEY"
     },
     "copilot": {
-      "enabled": true,
+      "enabled": false,
+      "_disabled_reason": "v3.1.0 で Copilot CLI 連携は廃止。将来復活の保険としてフィールドは保持。",
       "displayName": "GitHub Copilot CLI",
       "command": "copilot",
       "args": [
@@ -104,5 +106,29 @@
       "codex":   "D:\\アラートサウンドデザイン＃01.mp3",
       "copilot": "D:\\アラートサウンドデザイン＃01.mp3"
     }
+  },
+  "cron": {
+    "_comment": "v3.1.0 新設。Linux 側 crontab で ClaudeCode を週次自動起動する機能の設定。",
+    "enabled": true,
+    "defaultDurationMinutes": 300,
+    "launcherPath": "/home/kensan/.claudeos/cron-launcher.sh",
+    "sessionsDir": "/home/kensan/.claudeos/sessions",
+    "logsDir": "/home/kensan/.claudeos/logs",
+    "entryPrefix": "CLAUDEOS"
+  },
+  "sessionTabs": {
+    "_comment": "v3.1.0 新設。Windows Terminal に情報タブを 1 枚追加し、開始/終了/残り時間をリアルタイム表示する。",
+    "enabled": true,
+    "title": "Claude Session Info",
+    "pollIntervalSeconds": 1,
+    "autoCloseAfterExitSeconds": 10,
+    "localSessionsDir": "%USERPROFILE%\\.claudeos\\sessions"
+  },
+  "statusline": {
+    "_comment": "v3.1.0 新設。メニュー 13 で実行される、グローバル statusLine 設定を Linux 側に一括同期する設定。",
+    "enabled": true,
+    "sourceSettingsPath": "%USERPROFILE%\\.claude\\settings.json",
+    "remoteSettingsPath": "~/.claude/settings.json",
+    "backupBeforeApply": true
   }
 }
