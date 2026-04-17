@@ -31,6 +31,8 @@ Import-Module (Join-Path $ScriptRoot 'scripts\lib\Config.psm1') -Force -DisableN
 $ConfigPath = Get-StartupConfigPath -StartupRoot $ScriptRoot
 $Config     = Import-LauncherConfig -ConfigPath $ConfigPath
 $LinuxHost  = $Config.linuxHost
+$LinuxUser  = if ($Config.PSObject.Properties.Name -contains 'linuxUser' -and -not [string]::IsNullOrWhiteSpace($Config.linuxUser)) { $Config.linuxUser } else { 'kensan' }
+$SshTarget  = "${LinuxUser}@${LinuxHost}"
 
 $LogsDir = '/home/kensan/.claudeos/logs'
 if ($Config.PSObject.Properties.Name -contains 'cron' -and
@@ -108,7 +110,7 @@ function Write-LiveHeader {
 }
 
 function Get-LatestLog {
-    $result = ssh "kensan@$LinuxHost" "ls -t $LogsDir/cron-*.log 2>/dev/null | head -1" 2>$null
+    $result = ssh $SshTarget "ls -t $LogsDir/cron-*.log 2>/dev/null | head -1" 2>$null
     if ($null -eq $result) { return '' }
     return $result.Trim()
 }
@@ -117,7 +119,7 @@ function Get-SessionIdForLog {
     param([string]$LogPath)
     $basename = ($LogPath -split '/')[-1]
     $stamp    = $basename -replace '^cron-', '' -replace '\.log$', ''
-    $result   = ssh "kensan@$LinuxHost" "ls '$SessionsDir/${stamp}-'*.json 2>/dev/null | head -1" 2>$null
+    $result   = ssh $SshTarget "ls '$SessionsDir/${stamp}-'*.json 2>/dev/null | head -1" 2>$null
     if ($null -eq $result -or [string]::IsNullOrWhiteSpace($result)) { return '' }
     return ($result.Trim() -split '/')[-1] -replace '\.json$', ''
 }
@@ -137,7 +139,7 @@ function Open-TmuxAttachTab {
     }
     $safeProject = $parts[2]
     $tmuxSession  = "claudeos-$safeProject"
-    $sshCmd       = "ssh -t kensan@$LinuxHost tmux attach -t $tmuxSession"
+    $sshCmd       = "ssh -t $SshTarget tmux attach -t $tmuxSession"
     $psExe        = (Get-Process -Id $PID).Path
     $psArgs = @(
         '-NoExit', '-NoProfile', '-ExecutionPolicy', 'Bypass',
@@ -166,6 +168,7 @@ function Open-SessionInfoTab {
         '-File', $siScript,
         '-SessionId', $SessionId,
         '-LinuxHost', $LinuxHost,
+        '-LinuxUser', $LinuxUser,
         '-SessionsDir', $SessionsDir
     )
     $wtArgs = @('-w', '0', 'new-tab', '--title', 'Session-Info', '--', $psExe) + $psArgs
@@ -202,7 +205,7 @@ while ($true) {
 
         Write-Host ''
         # tail -f でリアルタイム表示（SSH セッションが終わるまでブロック）
-        ssh "kensan@$LinuxHost" "tail -n 50 -f '$latest'"
+        ssh $SshTarget "tail -n 50 -f '$latest'"
         $sshExitCode = $LASTEXITCODE
         Write-Host ''
         if ($sshExitCode -ne 0) {

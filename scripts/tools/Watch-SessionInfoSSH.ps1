@@ -21,6 +21,7 @@
 param(
     [Parameter(Mandatory)][string]$SessionId,
     [Parameter(Mandatory)][string]$LinuxHost,
+    [string]$LinuxUser = 'kensan',
     [string]$SessionsDir = '/home/kensan/.claudeos/sessions',
     [int]$PollIntervalSeconds = 1,
     [int]$AutoCloseAfterExitSeconds = 10
@@ -51,7 +52,7 @@ function Get-StatusColor {
 
 function Get-RemoteSession {
     $sessionFile = "$SessionsDir/${SessionId}.json"
-    $json = ssh "kensan@$LinuxHost" "cat '$sessionFile' 2>/dev/null" 2>$null
+    $json = ssh "${LinuxUser}@$LinuxHost" "cat '$sessionFile' 2>/dev/null" 2>$null
     if ($null -eq $json -or [string]::IsNullOrWhiteSpace($json)) { return $null }
     try { return ($json | ConvertFrom-Json) }
     catch { return $null }
