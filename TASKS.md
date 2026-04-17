@@ -30,7 +30,7 @@
 21. [DONE] [Priority:P1][Owner:Developer][Source:GitHub#149] v3.2.4 repo rename docs 反映 — 22 ファイル / 55 箇所一括置換 (PR #150)
 22. [DONE] [Priority:P1][Owner:Developer][Source:GitHub#151] v3.2.5 PSScriptAnalyzer 警告 10 件解消 — 7 ファイル修正 / CI Round 1 5 テスト失敗回収 / STABLE N=2 達成 (PR #152)
 23. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#153] v3.2.6 PSUseApprovedVerbs 警告 9 件解消 — 8 ファイル / 9 関数改名 / STABLE N=2 達成 (PR #154)
-24. [IN_PROGRESS] [Priority:P2][Owner:Developer][Source:GitHub#155] v3.2.7 PSUseBOMForUnicodeEncodedFile 警告 35 件解消 — 35 ファイル UTF-8 BOM 追加 / CI待機中 (PR #156)
+24. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#155] v3.2.7 PSUseBOMForUnicodeEncodedFile 警告 35 件解消 — 35 ファイル UTF-8 BOM 追加 / STABLE N=2 達成 (PR #156)
 
 ## Auto Extracted From Agent Teams Matrix
 
