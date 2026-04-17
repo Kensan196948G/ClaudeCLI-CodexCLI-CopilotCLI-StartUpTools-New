@@ -243,8 +243,8 @@ flowchart TD
 ### セットアップ
 
 ```cmd
-git clone <repository-url> D:\ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New
-cd D:\ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New
+git clone <repository-url> D:\ClaudeCode-StartUpTools-New
+cd D:\ClaudeCode-StartUpTools-New
 copy config\config.json.template config\config.json
 ```
 

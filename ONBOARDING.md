@@ -1,4 +1,4 @@
-# ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New Onboarding
+# ClaudeCode-StartUpTools-New Onboarding
 
 > このファイルは `/team-onboarding` により自動生成されます。
 > 手動編集は次回実行時に上書きされます。恒久的な記述は `CLAUDE.md` または `docs/` に配置してください。
@@ -6,7 +6,7 @@
 **生成日時**: 2026-04-14T00:00:00Z
 **ClaudeOS バージョン**: v8 (Weekly Optimized Loops + CodeRabbit 統合)
 **Git ブランチ**: main（生成時点。実作業は feature branch で実施）
-**リポジトリ**: https://github.com/Kensan196948G/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New
+**リポジトリ**: https://github.com/Kensan196948G/ClaudeCode-StartUpTools-New
 
 ---
 
