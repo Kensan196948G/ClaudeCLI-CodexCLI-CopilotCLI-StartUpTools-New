@@ -64,9 +64,12 @@ function Get-RemoteSession {
         }
     #>
     $sessionFile = "$SessionsDir/${SessionId}.json"
+    # POSIX shell エスケープ — SessionId / SessionsDir にシングルクォートが混入しても
+    # リモートコマンドインジェクションにならないよう必ず quote する
+    $quotedSessionFile = "'" + ($sessionFile -replace "'", "'\''") + "'"
     foreach ($attempt in 1..2) {
         # SSH exit code を捕捉するため stderr 握りつぶしを外し、cat の exit を分離
-        $json = ssh "${LinuxUser}@$LinuxHost" "cat '$sessionFile' 2>/dev/null || true" 2>$null
+        $json = ssh "${LinuxUser}@$LinuxHost" "cat $quotedSessionFile 2>/dev/null || true" 2>$null
         $sshExit = $LASTEXITCODE
         if ($sshExit -ne 0) {
             return [pscustomobject]@{
@@ -165,13 +168,20 @@ try {
                 exit 0
             }
         }
+        elseif ($result.Status -eq 'ssh_error' -and $null -ne $lastValidSession) {
+            # SSH 接続断 — 前回値を STALE 表示し、exit code も併記
+            Show-SessionFrame -Session $lastValidSession -LastValidReadAt $lastValidReadAt -IsStale:$true
+            Write-Host ("   ⚠ SSH 接続失敗 (exit $($result.ExitCode)) — キャッシュ値を表示中") -ForegroundColor Red
+        }
         elseif ($result.Status -eq 'parse_error' -and $null -ne $lastValidSession) {
             # 破損検出 — 前回値を STALE として表示し続ける
             Show-SessionFrame -Session $lastValidSession -LastValidReadAt $lastValidReadAt -IsStale:$true
+            Write-Host '   ⚠ JSON パース失敗 (書き込み中の可能性) — キャッシュ値を表示中' -ForegroundColor Yellow
         }
         elseif ($null -ne $lastValidSession) {
             # empty（ファイル一時消失）だが過去に有効値あり → キャッシュ継続
             Show-SessionFrame -Session $lastValidSession -LastValidReadAt $lastValidReadAt -IsStale:$true
+            Write-Host '   ⚠ セッションファイル消失 — キャッシュ値を表示中' -ForegroundColor DarkYellow
         }
         else {
             Clear-Host
