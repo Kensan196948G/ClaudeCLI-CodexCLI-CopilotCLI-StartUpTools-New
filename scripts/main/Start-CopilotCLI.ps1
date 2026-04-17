@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     GitHub Copilot CLI startup script.
 .DESCRIPTION

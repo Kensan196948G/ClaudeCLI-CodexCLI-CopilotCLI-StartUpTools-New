@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # SelfEvolution.psm1 - Self-evolution and session learning system
 # ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools v2.9.0
 # Phase 3: Self Evolution System (Issue #50)

@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     メニュー 12 本体。Linux crontab の CLAUDEOS エントリを対話的に登録・編集・削除する。
 .DESCRIPTION

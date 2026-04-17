@@ -1,4 +1,4 @@
-param(
+﻿param(
     [ValidateSet('list', 'check', 'sync')]
     [string]$Action = 'list',
     [switch]$ApplyMetadata,

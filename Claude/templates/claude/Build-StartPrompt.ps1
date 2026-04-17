@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     instructions/ 内の分割ファイルを結合して START_PROMPT.md を自動生成する
 

@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     情報タブ内で実行されるセッション表示ループ。
 .DESCRIPTION

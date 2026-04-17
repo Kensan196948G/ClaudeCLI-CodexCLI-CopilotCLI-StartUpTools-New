@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # ArchitectureCheck.psm1 - Architecture violation detector
 # ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools v2.9.0
 # Phase 3: Architecture Check Loop (Issue #49)
