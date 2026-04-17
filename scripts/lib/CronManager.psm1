@@ -14,6 +14,10 @@ $script:EntryPrefix = 'CLAUDEOS'
 $script:LauncherPath = '/home/kensan/.claudeos/cron-launcher.sh'
 $script:LogsDir = '/home/kensan/.claudeos/logs'
 
+<#
+.SYNOPSIS
+    Overrides module-scope defaults for cron entry prefix, launcher path, and logs directory.
+#>
 function Set-CronManagerConfig {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
@@ -67,10 +71,11 @@ function Invoke-RemoteCrontab {
     return $proc.ExitCode
 }
 
+<#
+.SYNOPSIS
+    Extracts CLAUDEOS-managed cron entries and their expressions from the remote host's current crontab.
+#>
 function Get-ClaudeOSCronEntry {
-    <#
-    .SYNOPSIS 現在の crontab から CLAUDEOS: 行と対応する cron 式を抽出
-    #>
     param([Parameter(Mandatory)][string]$LinuxHost)
 
     $raw = Invoke-RemoteCrontab -LinuxHost $LinuxHost -Action 'read'
@@ -104,10 +109,11 @@ function Get-ClaudeOSCronEntry {
     return $entries
 }
 
+<#
+.SYNOPSIS
+    Generates a cron expression from day-of-week values (0=Sunday to 6=Saturday) and an HH:MM time string.
+#>
 function Format-CronExpression {
-    <#
-    .SYNOPSIS 曜日（0=日〜6=土、複数可）と HH:MM から cron 式を生成
-    #>
     param(
         [Parameter(Mandatory)][int[]]$DayOfWeek,
         [Parameter(Mandatory)][string]$Time
@@ -128,16 +134,21 @@ function Format-CronExpression {
     return "$minute $hour * * $dowStr"
 }
 
+<#
+.SYNOPSIS
+    Generates a short unique identifier for a new cron entry.
+#>
 function New-CronEntryId {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Factory function returns in-memory object; no persistent system state is modified')]
     param()
     return [Guid]::NewGuid().ToString('N').Substring(0, 8)
 }
 
+<#
+.SYNOPSIS
+    Appends a new CLAUDEOS-managed cron entry to the remote host's crontab.
+#>
 function Add-ClaudeOSCronEntry {
-    <#
-    .SYNOPSIS 新規 CLAUDEOS エントリを crontab 末尾に追加
-    #>
     param(
         [Parameter(Mandatory)][string]$LinuxHost,
         [Parameter(Mandatory)][string]$Project,
@@ -175,10 +186,11 @@ function Add-ClaudeOSCronEntry {
     }
 }
 
+<#
+.SYNOPSIS
+    Removes a CLAUDEOS-managed cron entry (comment line and cron line pair) identified by its ID from the remote crontab.
+#>
 function Remove-ClaudeOSCronEntry {
-    <#
-    .SYNOPSIS ID 指定で CLAUDEOS エントリを削除（コメント行 + 直後の cron 式の 2 行セット）
-    #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
         [Parameter(Mandatory)][string]$LinuxHost,
@@ -212,6 +224,10 @@ function Remove-ClaudeOSCronEntry {
     return $removed
 }
 
+<#
+.SYNOPSIS
+    Removes all CLAUDEOS-managed cron entries from the remote host's crontab.
+#>
 function Remove-AllClaudeOSCronEntry {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param([Parameter(Mandatory)][string]$LinuxHost)
@@ -224,6 +240,10 @@ function Remove-AllClaudeOSCronEntry {
     return $count
 }
 
+<#
+.SYNOPSIS
+    Returns the Japanese day-of-week label for an integer day value (0=Sunday, 6=Saturday).
+#>
 function Get-DayOfWeekLabel {
     param([int]$Dow)
     $labels = @('日', '月', '火', '水', '木', '金', '土')
@@ -231,6 +251,10 @@ function Get-DayOfWeekLabel {
     return "?"
 }
 
+<#
+.SYNOPSIS
+    Formats a cron entry object as a human-readable display string.
+#>
 function Format-CronEntryForDisplay {
     param([pscustomobject]$Entry)
 

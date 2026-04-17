@@ -1,3 +1,7 @@
+<#
+.SYNOPSIS
+    Normalizes the tool filter string to a validated value or empty string for use in recent-menu queries.
+#>
 function ConvertTo-MenuRecentToolFilter {
     param([string]$ToolFilter = '')
 
@@ -12,6 +16,10 @@ function ConvertTo-MenuRecentToolFilter {
     return ''
 }
 
+<#
+.SYNOPSIS
+    Normalizes the sort mode string to a validated value, defaulting to 'success'.
+#>
 function ConvertTo-MenuRecentSortMode {
     param([string]$SortMode = 'success')
 
@@ -22,6 +30,10 @@ function ConvertTo-MenuRecentSortMode {
     return 'success'
 }
 
+<#
+.SYNOPSIS
+    Returns a summary object of the active recent-menu filter, search, and sort settings.
+#>
 function Get-MenuRecentFilterSummary {
     param(
         [string]$ToolFilter = '',

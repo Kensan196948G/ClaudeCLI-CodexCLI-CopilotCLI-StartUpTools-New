@@ -5,6 +5,10 @@
 
 Set-StrictMode -Version Latest
 
+<#
+.SYNOPSIS
+    Returns the resolved path to the sessions directory, falling back to the default user profile location.
+#>
 function Get-SessionDir {
     param([string]$ConfigSessionsDir = '')
 
@@ -14,6 +18,10 @@ function Get-SessionDir {
     return (Join-Path $env:USERPROFILE '.claudeos\sessions')
 }
 
+<#
+.SYNOPSIS
+    Generates a timestamped unique session identifier for the given project name.
+#>
 function New-SessionId {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Factory function returns in-memory object; no persistent system state is modified')]
     param(
@@ -24,6 +32,10 @@ function New-SessionId {
     return "$stamp-$safe"
 }
 
+<#
+.SYNOPSIS
+    Creates and persists a new session info object with running status and planned end time.
+#>
 function New-SessionInfo {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Factory function returns in-memory object; no persistent system state is modified')]
     param(
@@ -60,6 +72,10 @@ function New-SessionInfo {
     return $session
 }
 
+<#
+.SYNOPSIS
+    Atomically writes a session info object to its JSON file in the sessions directory.
+#>
 function Save-SessionInfo {
     param(
         [Parameter(Mandatory)][pscustomobject]$Session,
@@ -78,6 +94,10 @@ function Save-SessionInfo {
     return $path
 }
 
+<#
+.SYNOPSIS
+    Reads and returns the session info object for the given session ID from the sessions directory.
+#>
 function Get-SessionInfo {
     param(
         [Parameter(Mandatory)][string]$SessionId,
@@ -92,6 +112,10 @@ function Get-SessionInfo {
     return (Get-Content $path -Raw -Encoding UTF8 | ConvertFrom-Json)
 }
 
+<#
+.SYNOPSIS
+    Updates the status field of the specified session and saves the change to disk.
+#>
 function Set-SessionStatus {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
@@ -108,6 +132,10 @@ function Set-SessionStatus {
     return (Save-SessionInfo -Session $session -ConfigSessionsDir $ConfigSessionsDir)
 }
 
+<#
+.SYNOPSIS
+    Updates the planned duration and recalculates end_time_planned for the specified session.
+#>
 function Update-SessionDuration {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
@@ -126,6 +154,10 @@ function Update-SessionDuration {
     return (Save-SessionInfo -Session $session -ConfigSessionsDir $ConfigSessionsDir)
 }
 
+<#
+.SYNOPSIS
+    Returns the most recently updated session with status 'running', or null if none exists.
+#>
 function Get-ActiveSession {
     param([string]$ConfigSessionsDir = '')
 

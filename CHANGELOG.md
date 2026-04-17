@@ -2,6 +2,34 @@
 
 # CHANGELOG
 
+## [v3.2.14] - 2026-04-17 — PSProvideCommentHelp 警告 85 件解消
+
+### 🎯 概要
+
+- 9 ファイル 85 関数に `.SYNOPSIS` コメントブロックを追加
+- PSScriptAnalyzer `PSProvideCommentHelp` 警告を 0 件へ解消
+
+### 🔧 変更対象
+
+| ファイル | 追加件数 |
+|---|---|
+| `scripts/lib/LauncherCommon.psm1` | 41 |
+| `scripts/lib/CronManager.psm1` | 9 |
+| `scripts/lib/AgentTeams.psm1` | 8 |
+| `scripts/lib/SessionTabManager.psm1` | 8 |
+| `scripts/lib/LogManager.psm1` | 5 |
+| `scripts/lib/McpHealthCheck.psm1` | 5 |
+| `scripts/lib/Config.psm1` | 4 |
+| `scripts/lib/MenuCommon.psm1` | 3 |
+| `scripts/lib/StatuslineManager.psm1` | 2 |
+
+### ✅ 検証結果
+
+- `Invoke-ScriptAnalyzer -IncludeRule PSProvideCommentHelp` = **0 件**
+- `Invoke-Pester` Passed: **477** / Failed: **0**
+
+---
+
 ## [v3.2.13] - 2026-04-17 — PSAvoidUsingPositionalParameters 残存 1 件解消 + CLAUDE.md v8.3
 
 ### 🎯 概要
