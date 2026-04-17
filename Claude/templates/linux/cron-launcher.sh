@@ -142,16 +142,17 @@ if [[ -f "$PROJECT_DIR/.claude/START_PROMPT.md" ]]; then
 fi
 
 # wrapper script: env var 経由で引数を安全に渡す（tmux new-session での引用符崩れ対策）
+# set -e を使わず claude_exit に明示的に格納する（非0終了でも wait-for -S を必ず実行するため）
 cat > "$CLAUDE_WRAPPER" <<'WRAPPER_EOF'
 #!/usr/bin/env bash
-set -euo pipefail
+claude_exit=0
 if [[ -n "${_CLAUDEOS_PROMPT_ARG:-}" ]]; then
-  timeout "${_CLAUDEOS_DURATION_SEC}s" claude --dangerously-skip-permissions "${_CLAUDEOS_PROMPT_ARG}"
+  timeout "${_CLAUDEOS_DURATION_SEC}s" claude --dangerously-skip-permissions "${_CLAUDEOS_PROMPT_ARG}" || claude_exit=$?
 else
-  timeout "${_CLAUDEOS_DURATION_SEC}s" claude --dangerously-skip-permissions
+  timeout "${_CLAUDEOS_DURATION_SEC}s" claude --dangerously-skip-permissions || claude_exit=$?
 fi
-echo $? > "${_CLAUDEOS_EXIT_FILE}"
-# tmux wait-for でメイン shell へ終了を通知
+echo "$claude_exit" > "${_CLAUDEOS_EXIT_FILE}"
+# 終了コード書き込み後に親 shell へ通知（失敗時もここまで必ず到達する）
 tmux wait-for -S "${_CLAUDEOS_TMUX_DONE}"
 WRAPPER_EOF
 chmod +x "$CLAUDE_WRAPPER"
