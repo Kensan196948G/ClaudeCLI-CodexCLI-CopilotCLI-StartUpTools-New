@@ -5,10 +5,11 @@
 
 Set-StrictMode -Version Latest
 
+<#
+.SYNOPSIS
+    Extracts the statusLine section from the Windows-side ~/.claude/settings.json file.
+#>
 function Get-GlobalStatusLineConfig {
-    <#
-    .SYNOPSIS Windows 側 ~/.claude/settings.json から statusLine セクションを抽出
-    #>
     param([string]$SettingsPath = '')
 
     if ([string]::IsNullOrWhiteSpace($SettingsPath)) {
@@ -39,12 +40,11 @@ function Get-GlobalStatusLineConfig {
     }
 }
 
+<#
+.SYNOPSIS
+    Merges the statusLine configuration into the remote Linux host's ~/.claude/settings.json via SSH.
+#>
 function Invoke-RemoteSettingsSync {
-    <#
-    .SYNOPSIS Linux 側 ~/.claude/settings.json に statusLine を merge
-    .DESCRIPTION
-      既存ファイルがあればバックアップを取り、Python (Linux 標準) で JSON merge
-    #>
     param(
         [Parameter(Mandatory)][string]$LinuxHost,
         [Parameter(Mandatory)][object]$StatusLine,

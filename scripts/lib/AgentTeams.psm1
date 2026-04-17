@@ -34,6 +34,10 @@ $script:TaskTypePatterns = @(
     [pscustomobject]@{ type = 'kotlin';    pattern = 'Kotlin|Android';                                          agents = @('kotlin-reviewer', 'kotlin-build-resolver') }
 )
 
+<#
+.SYNOPSIS
+    Loads agent definitions from .md files in the specified agents directory.
+#>
 function Import-AgentDefinition {
     param(
         [Parameter(Mandatory)]
@@ -87,6 +91,10 @@ function Import-AgentDefinition {
     return $agents
 }
 
+<#
+.SYNOPSIS
+    Analyzes a task description and returns matched task types and specialist agent IDs.
+#>
 function Get-TaskTypeAnalysis {
     param(
         [Parameter(Mandatory)]
@@ -115,6 +123,10 @@ function Get-TaskTypeAnalysis {
     }
 }
 
+<#
+.SYNOPSIS
+    Matches a task description against backlog rules to determine priority and owner.
+#>
 function Get-BacklogRuleMatch {
     param(
         [Parameter(Mandatory)]
@@ -158,6 +170,10 @@ function Get-BacklogRuleMatch {
     return $result
 }
 
+<#
+.SYNOPSIS
+    Assembles an agent team based on task description and available agent definitions.
+#>
 function New-AgentTeam {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
@@ -228,6 +244,10 @@ function New-AgentTeam {
     return [pscustomobject]$team
 }
 
+<#
+.SYNOPSIS
+    Formats an agent team composition as a discussion-style text block.
+#>
 function Format-AgentTeamDiscussion {
     param(
         [Parameter(Mandatory)]
@@ -265,6 +285,10 @@ function Format-AgentTeamDiscussion {
     return ($lines -join "`n")
 }
 
+<#
+.SYNOPSIS
+    Displays the agent team composition in a formatted console output.
+#>
 function Show-AgentTeamComposition {
     param(
         [Parameter(Mandatory)]
@@ -297,6 +321,10 @@ function Show-AgentTeamComposition {
     Write-Host ''
 }
 
+<#
+.SYNOPSIS
+    Generates a report of available agents and optionally builds an agent team for a given task.
+#>
 function Get-AgentTeamReport {
     param(
         [Parameter(Mandatory)]
@@ -329,6 +357,10 @@ function Get-AgentTeamReport {
     return [pscustomobject]$report
 }
 
+<#
+.SYNOPSIS
+    Displays the agent team report to the console with formatted output.
+#>
 function Show-AgentTeamReport {
     param([pscustomobject]$Report)
 

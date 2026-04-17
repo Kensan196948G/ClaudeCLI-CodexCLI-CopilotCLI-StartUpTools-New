@@ -1,4 +1,8 @@
-﻿function Get-StartupRoot {
+﻿<#
+.SYNOPSIS
+    Returns the repository root directory by walking two levels up from the script root path.
+#>
+function Get-StartupRoot {
     param(
         [Parameter(Mandatory)]
         [string]$PSScriptRootPath
@@ -7,6 +11,10 @@
     return (Split-Path -Parent (Split-Path -Parent $PSScriptRootPath))
 }
 
+<#
+.SYNOPSIS
+    Returns the config.json path, honoring the AI_STARTUP_CONFIG_PATH environment variable override.
+#>
 function Get-StartupConfigPath {
     param(
         [Parameter(Mandatory)]
@@ -20,6 +28,10 @@ function Get-StartupConfigPath {
     return (Join-Path $StartupRoot "config\\config.json")
 }
 
+<#
+.SYNOPSIS
+    Reads and parses the launcher config.json file from the specified path.
+#>
 function Import-LauncherConfig {
     param(
         [Parameter(Mandatory)]
@@ -33,6 +45,10 @@ function Import-LauncherConfig {
     return (Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json)
 }
 
+<#
+.SYNOPSIS
+    Finds and returns the first available Windows drive letter not currently in use.
+#>
 function Find-AvailableDriveLetter {
     [CmdletBinding()]
     [OutputType([System.String])]
@@ -60,6 +76,10 @@ function Find-AvailableDriveLetter {
     return $null
 }
 
+<#
+.SYNOPSIS
+    Resolves the SSH projects directory path, auto-mapping a UNC drive when sshProjectsDir is 'auto'.
+#>
 function Resolve-SshProjectsDir {
     [CmdletBinding()]
     [OutputType([System.String])]
@@ -113,6 +133,10 @@ function Resolve-SshProjectsDir {
     return $sshDir
 }
 
+<#
+.SYNOPSIS
+    Returns true if the specified command is available in the current environment.
+#>
 function Test-LauncherCommand {
     param(
         [Parameter(Mandatory)]
@@ -122,6 +146,10 @@ function Test-LauncherCommand {
     return [bool](Get-Command $Command -ErrorAction SilentlyContinue)
 }
 
+<#
+.SYNOPSIS
+    Checks that a required CLI tool is installed and optionally prompts to install it if missing.
+#>
 function Assert-LauncherToolAvailable {
     param(
         [Parameter(Mandatory)]
@@ -153,6 +181,10 @@ function Assert-LauncherToolAvailable {
     return $false
 }
 
+<#
+.SYNOPSIS
+    Retrieves an API key value from environment variables or the EnvMap config object.
+#>
 function Get-LauncherApiKeyValue {
     param(
         [string]$ApiKeyName,
@@ -178,6 +210,10 @@ function Get-LauncherApiKeyValue {
     return $null
 }
 
+<#
+.SYNOPSIS
+    Displays a warning and setup hints when a required API key environment variable is not set.
+#>
 function Show-LauncherApiKeyWarning {
     param(
         [string]$ApiKeyName,
@@ -198,6 +234,10 @@ function Show-LauncherApiKeyWarning {
     }
 }
 
+<#
+.SYNOPSIS
+    Determines whether to run in local or SSH mode, prompting the user if linuxHost is unconfigured.
+#>
 function Resolve-LauncherMode {
     param(
         [Parameter(Mandatory)]
@@ -243,6 +283,10 @@ function Resolve-LauncherMode {
     }
 }
 
+<#
+.SYNOPSIS
+    Resolves the target project name, prompting the user with a directory listing when not specified.
+#>
 function Resolve-LauncherProject {
     param(
         [Parameter(Mandatory)]
@@ -324,6 +368,10 @@ SSH プロジェクトフォルダにアクセスできません。
     return $dirs[$numInt - 1].Name
 }
 
+<#
+.SYNOPSIS
+    Displays a numbered list of projects for the user to select from.
+#>
 function Show-LauncherProjectChoice {
     param(
         [Parameter(Mandatory)]
@@ -342,6 +390,10 @@ function Show-LauncherProjectChoice {
     }
 }
 
+<#
+.SYNOPSIS
+    Returns a human-readable label describing the current execution mode (local or SSH) and project path.
+#>
 function Get-LauncherModeLabel {
     param(
         [Parameter(Mandatory)]
@@ -359,6 +411,10 @@ function Get-LauncherModeLabel {
     return "SSH  $LinuxHost → $LinuxBase/$Project"
 }
 
+<#
+.SYNOPSIS
+    Returns 'local' or 'ssh' as the canonical mode name string.
+#>
 function Get-LauncherModeName {
     param([switch]$Local)
 
@@ -369,6 +425,10 @@ function Get-LauncherModeName {
     return 'ssh'
 }
 
+<#
+.SYNOPSIS
+    Returns a dry-run message string describing the command that would be executed.
+#>
 function New-LauncherDryRunMessage {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Factory function returns in-memory object; no persistent system state is modified')]
     param(
@@ -391,6 +451,10 @@ function New-LauncherDryRunMessage {
     return @("[DryRun] cd $WorkingDirectory && $Command$joinedArgs")
 }
 
+<#
+.SYNOPSIS
+    Prompts the user to confirm the launcher start unless NonInteractive mode is set.
+#>
 function Confirm-LauncherStart {
     param(
         [Parameter(Mandatory)]
@@ -418,6 +482,10 @@ function Confirm-LauncherStart {
     return ($confirm -notmatch '^(n|no)$')
 }
 
+<#
+.SYNOPSIS
+    Sets process-scoped environment variables from the provided EnvMap object.
+#>
 function Set-LauncherEnvironment {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
@@ -432,6 +500,10 @@ function Set-LauncherEnvironment {
     }
 }
 
+<#
+.SYNOPSIS
+    Converts an EnvMap object into a newline-separated string of Bash export statements.
+#>
 function ConvertTo-BashExport {
     param(
         [Parameter(Mandatory)]
@@ -449,6 +521,10 @@ function ConvertTo-BashExport {
     return ($lines -join "`n")
 }
 
+<#
+.SYNOPSIS
+    Copies a template file to the target path if it differs, creating parent directories as needed.
+#>
 function Sync-ProjectTemplate {
     param(
         [Parameter(Mandatory)]
@@ -488,6 +564,10 @@ function Sync-ProjectTemplate {
     }
 }
 
+<#
+.SYNOPSIS
+    Recursively copies all files from the source directory into the target directory.
+#>
 function Sync-ProjectDirectory {
     param(
         [Parameter(Mandatory)]
@@ -510,6 +590,10 @@ function Sync-ProjectDirectory {
     Write-Host "[OK] $Label を配置/更新しました: $TargetDirectory" -ForegroundColor Green
 }
 
+<#
+.SYNOPSIS
+    Recursively syncs each file in the template directory to the corresponding path in the target directory.
+#>
 function Sync-ProjectTemplateDirectory {
     param(
         [Parameter(Mandatory)]
@@ -544,6 +628,10 @@ function Sync-ProjectTemplateDirectory {
     }
 }
 
+<#
+.SYNOPSIS
+    Copies a template file to the target path only if the target does not already exist.
+#>
 function Initialize-ProjectTemplate {
     param(
         [Parameter(Mandatory)]
@@ -575,6 +663,10 @@ function Initialize-ProjectTemplate {
     Write-Host "[OK] $Label を初期配置しました: $TargetPath" -ForegroundColor Green
 }
 
+<#
+.SYNOPSIS
+    Syncs Claude global config templates (CLAUDE.md, .claude/claudeos, settings.json, .mcp.json) into the project directory.
+#>
 function Sync-LauncherClaudeGlobalConfig {
     param(
         [Parameter(Mandatory)]
@@ -617,6 +709,10 @@ function Sync-LauncherClaudeGlobalConfig {
         -EnsureParentDirectory
 }
 
+<#
+.SYNOPSIS
+    Syncs Codex global config templates (AGENTS.md, .codex/config.toml) into the project directory.
+#>
 function Sync-LauncherCodexGlobalConfig {
     param(
         [Parameter(Mandatory)]
@@ -642,6 +738,10 @@ function Sync-LauncherCodexGlobalConfig {
         -EnsureParentDirectory
 }
 
+<#
+.SYNOPSIS
+    Syncs Copilot global config templates (copilot-instructions.md, .github/mcp.json) into the project directory.
+#>
 function Sync-LauncherCopilotGlobalConfig {
     param(
         [Parameter(Mandatory)]
@@ -668,6 +768,10 @@ function Sync-LauncherCopilotGlobalConfig {
         -EnsureParentDirectory
 }
 
+<#
+.SYNOPSIS
+    Executes a shell script on a remote Linux host via SSH and returns the exit code.
+#>
 function Invoke-LauncherSshScript {
     param(
         [Parameter(Mandatory)]
@@ -734,6 +838,10 @@ function Invoke-LauncherSshScript {
     return $exitCode
 }
 
+<#
+.SYNOPSIS
+    Returns the PowerShell executable name, preferring pwsh over powershell.exe when available.
+#>
 function Get-LauncherShell {
     if (Get-Command pwsh -ErrorAction SilentlyContinue) {
         return "pwsh.exe"
@@ -742,6 +850,10 @@ function Get-LauncherShell {
     return "powershell.exe"
 }
 
+<#
+.SYNOPSIS
+    Records a launcher execution result to the recent projects history when the feature is enabled.
+#>
 function Write-LauncherExecutionResult {
     param(
         [Parameter(Mandatory)]
@@ -778,6 +890,10 @@ function Write-LauncherExecutionResult {
         -MaxHistory $Config.recentProjects.maxHistory
 }
 
+<#
+.SYNOPSIS
+    Returns the path to today's launch metadata JSONL log file derived from the Config logging or history settings.
+#>
 function Get-LauncherMetadataLogPath {
     param(
         [Parameter(Mandatory)]
@@ -798,6 +914,10 @@ function Get-LauncherMetadataLogPath {
     return $null
 }
 
+<#
+.SYNOPSIS
+    Reads and returns recent launcher metadata entries from the JSONL log files in the log directory.
+#>
 function Get-LauncherMetadataEntry {
     param(
         [Parameter(Mandatory)]
@@ -851,6 +971,10 @@ function Get-LauncherMetadataEntry {
     )
 }
 
+<#
+.SYNOPSIS
+    Reads TASKS.md and returns a summary of pending task count and priority distribution.
+#>
 function Get-LauncherBacklogSummary {
     param(
         [string]$TasksPath = (Join-Path (Get-Location) 'TASKS.md')
@@ -883,6 +1007,10 @@ function Get-LauncherBacklogSummary {
     }
 }
 
+<#
+.SYNOPSIS
+    Appends a launcher metadata entry as a JSON line to today's metadata log file with write-lock retry.
+#>
 function Write-LauncherMetadataLog {
     param(
         [Parameter(Mandatory)]
@@ -929,6 +1057,10 @@ function Write-LauncherMetadataLog {
     }
 }
 
+<#
+.SYNOPSIS
+    Creates a new execution context object used to track a launcher session's timing, tool, mode, and result.
+#>
 function New-LauncherExecutionContext {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Factory function returns in-memory object; no persistent system state is modified')]
     param()
@@ -941,6 +1073,10 @@ function New-LauncherExecutionContext {
     }
 }
 
+<#
+.SYNOPSIS
+    Finalizes an execution context by writing the result and elapsed time to the execution log.
+#>
 function Complete-LauncherExecutionContext {
     param(
         [Parameter(Mandatory)]
@@ -966,6 +1102,10 @@ function Complete-LauncherExecutionContext {
     })
 }
 
+<#
+.SYNOPSIS
+    Computes a summary (total runs, success rate, average elapsed time) from a collection of recent entries.
+#>
 function Get-LauncherRecentSummary {
     param(
         [Parameter(Mandatory)]
@@ -998,6 +1138,10 @@ function Get-LauncherRecentSummary {
     }
 }
 
+<#
+.SYNOPSIS
+    Returns per-tool statistics (runs, success rate, average elapsed time, latest result) from recent entries.
+#>
 function Get-LauncherToolStatistic {
     param(
         [AllowEmptyCollection()]
@@ -1035,6 +1179,10 @@ function Get-LauncherToolStatistic {
     return @($stats)
 }
 
+<#
+.SYNOPSIS
+    Builds Architect, QA, and Ops lane event summaries from recent metadata entries and the backlog summary.
+#>
 function Get-LauncherAgentLaneEvent {
     param(
         [Parameter(Mandatory)]
@@ -1143,6 +1291,10 @@ function Get-LauncherAgentLaneEvent {
     )
 }
 
+<#
+.SYNOPSIS
+    Returns the current token budget zone and status message based on the AI_STARTUP_TOKEN_USAGE_PCT environment variable.
+#>
 function Get-LauncherTokenBudgetStatus {
     $pct = if ($env:AI_STARTUP_TOKEN_USAGE_PCT) { [int]$env:AI_STARTUP_TOKEN_USAGE_PCT } else { -1 }
     if ($pct -lt 0) {
@@ -1161,6 +1313,10 @@ function Get-LauncherTokenBudgetStatus {
     return [pscustomobject]@{ Percent = $pct; Zone = 'Red'; Status = 'Development stop threshold' }
 }
 
+<#
+.SYNOPSIS
+    Returns recent project entries from the history file when the recentProjects feature is enabled.
+#>
 function Get-LauncherRecentEntry {
     param(
         [Parameter(Mandatory)]
@@ -1189,6 +1345,10 @@ function Get-LauncherRecentEntry {
     )
 }
 
+<#
+.SYNOPSIS
+    Returns the most recent result, elapsed time, and timestamp for each tool from the provided entry list.
+#>
 function Get-LauncherRecentToolResult {
     param(
         [Parameter(Mandatory)]
@@ -1339,6 +1499,10 @@ public class LauncherWinMM {
 }
 Export-ModuleMember -Function Invoke-LauncherNotificationSound
 
+<#
+.SYNOPSIS
+    Generates a Bash script fragment that deploys a template file to a remote target path via base64 encoding.
+#>
 function New-RemoteTemplateDeployScript {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Factory function returns in-memory object; no persistent system state is modified')]
     param(

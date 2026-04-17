@@ -7,6 +7,10 @@
 $script:CurrentLogPath = $null
 $script:LoggingActive = $false
 
+<#
+.SYNOPSIS
+    Starts a transcript log session and returns the log file path.
+#>
 function Start-SessionLog {
     [CmdletBinding()]
     [OutputType([System.Collections.Hashtable])]
@@ -66,6 +70,10 @@ function Start-SessionLog {
     return @{ LogPath = $logPath }
 }
 
+<#
+.SYNOPSIS
+    Stops the active transcript log and renames the file with a SUCCESS or FAILURE suffix.
+#>
 function Stop-SessionLog {
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
@@ -103,6 +111,10 @@ function Stop-SessionLog {
     $script:CurrentLogPath = $null
 }
 
+<#
+.SYNOPSIS
+    Deletes aged log files from the log directory based on configured retention days.
+#>
 function Invoke-LogRotation {
     [CmdletBinding()]
     param(
@@ -176,6 +188,10 @@ function Invoke-LogRotation {
     }
 }
 
+<#
+.SYNOPSIS
+    Archives aged log files into monthly zip archives under the log directory.
+#>
 function Invoke-LogArchive {
     [CmdletBinding()]
     param(
@@ -223,6 +239,10 @@ function Invoke-LogArchive {
     }
 }
 
+<#
+.SYNOPSIS
+    Returns a summary hashtable of log file counts, sizes, and date range for the configured log directory.
+#>
 function Get-LogSummary {
     [CmdletBinding()]
     [OutputType([System.Collections.Hashtable])]

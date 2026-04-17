@@ -20,6 +20,10 @@ function ConvertTo-McpProcessArgumentString {
     )
 }
 
+<#
+.SYNOPSIS
+    Runs a process with a timeout and returns its exit code, output, and timeout status.
+#>
 function Invoke-McpProcessWithTimeout {
     param(
         [string]$Command,
@@ -58,12 +62,20 @@ function Invoke-McpProcessWithTimeout {
     }
 }
 
+<#
+.SYNOPSIS
+    Tests whether the specified command is available in the current environment.
+#>
 function Test-McpCommandExists {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'Exists is a verb suffix not a plural noun')]
     param([string]$Command)
     return [bool](Get-Command $Command -ErrorAction SilentlyContinue)
 }
 
+<#
+.SYNOPSIS
+    Returns a health status object for a single MCP server definition.
+#>
 function Get-McpServerHealth {
     param(
         [string]$Name,
@@ -213,6 +225,10 @@ function Get-McpServerHealth {
     }
 }
 
+<#
+.SYNOPSIS
+    Generates a full MCP health report for all servers defined in the project's .mcp.json.
+#>
 function Get-McpHealthReport {
     param([string]$ProjectRoot)
 
@@ -279,6 +295,10 @@ function Get-McpHealthReport {
     return [pscustomobject]$report
 }
 
+<#
+.SYNOPSIS
+    Displays the MCP health report to the console with color-coded status indicators.
+#>
 function Show-McpHealthReport {
     param([pscustomobject]$Report)
 

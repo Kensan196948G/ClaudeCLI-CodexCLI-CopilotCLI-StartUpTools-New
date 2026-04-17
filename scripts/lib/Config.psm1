@@ -47,6 +47,10 @@ function Add-SchemaError {
     $Errors.Add($Message)
 }
 
+<#
+.SYNOPSIS
+    Validates a startup configuration object against the required schema and returns a list of errors.
+#>
 function Test-StartupConfigSchema {
     [CmdletBinding()]
     [OutputType([System.Object[]])]
@@ -181,6 +185,10 @@ function Test-StartupConfigSchema {
     return @($errors)
 }
 
+<#
+.SYNOPSIS
+    Loads and validates a config.json file, throwing on any schema errors.
+#>
 function Assert-StartupConfigSchema {
     [CmdletBinding()]
     [OutputType([System.Boolean])]
@@ -279,6 +287,10 @@ function Import-StartupConfig {
 
 # 後方互換性のためのラッパー関数
 function Import-DevToolsConfig {
+    <#
+    .SYNOPSIS
+        Backward-compatible wrapper for Import-StartupConfig.
+    #>
     param([string]$ConfigPath)
     Import-StartupConfig -ConfigPath $ConfigPath
 }
@@ -546,6 +558,10 @@ function Update-RecentProject {
     }
 }
 
+<#
+.SYNOPSIS
+    Returns true if the recentProjects feature is enabled and configured in the given Config object.
+#>
 function Test-RecentProjectsEnabled {
     [CmdletBinding()]
     param(
