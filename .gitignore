@@ -44,8 +44,9 @@ DevTools-chrome-*
 
 # hookify ローカルルール（ユーザー固有・コミット不要）
 # 推奨ルール集は docs/common/17_hookify-CTO-guard.md を参照
+# NOTE: hookify プラグインの命名規約は .claude/hookify.{name}.local.md
+#       のフラット配置のみ想定。サブフォルダ配置が必要になったら **/ 付きへ拡張。
 .claude/hookify.*.local.md
-.claude/*.local.md
 .mcp.json.bak.*
 .mcp.json.backup.*
 
