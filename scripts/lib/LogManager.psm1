@@ -9,6 +9,7 @@ $script:LoggingActive = $false
 
 function Start-SessionLog {
     [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
         [Parameter(Mandatory=$true)]
@@ -224,6 +225,7 @@ function Invoke-LogArchive {
 
 function Get-LogSummary {
     [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
     param(
         [Parameter(Mandatory=$true)]
         [psobject]$Config

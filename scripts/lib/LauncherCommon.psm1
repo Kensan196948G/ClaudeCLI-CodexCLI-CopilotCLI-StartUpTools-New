@@ -35,6 +35,7 @@ function Import-LauncherConfig {
 
 function Find-AvailableDriveLetter {
     [CmdletBinding()]
+    [OutputType([System.String])]
     param(
         [string[]]$PreferredLetters = @('P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'Y'),
         [string[]]$ExcludeLetters = @()
@@ -61,6 +62,7 @@ function Find-AvailableDriveLetter {
 
 function Resolve-SshProjectsDir {
     [CmdletBinding()]
+    [OutputType([System.String])]
     param(
         [Parameter(Mandatory)]
         [object]$Config

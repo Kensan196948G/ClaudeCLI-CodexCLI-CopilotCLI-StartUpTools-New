@@ -196,6 +196,7 @@ function Show-ArchitectureCheckReport {
 
 function Test-ModuleDependency {
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [string]$Path = ''
     )

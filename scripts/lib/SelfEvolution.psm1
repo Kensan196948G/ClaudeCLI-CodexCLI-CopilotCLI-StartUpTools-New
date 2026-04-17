@@ -24,6 +24,7 @@ $script:DefaultEvolutionDir = Join-Path -Path $env:USERPROFILE -ChildPath '.copi
 
 function Get-EvolutionStorePath {
     [CmdletBinding()]
+    [OutputType([System.String])]
     param(
         [string]$BasePath = $script:DefaultEvolutionDir
     )
@@ -83,6 +84,7 @@ function Save-EvolutionRecord {
 
 function Get-EvolutionHistory {
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [string]$StorePath = '',
         [int]$Last = 10,
@@ -112,6 +114,7 @@ function Get-EvolutionHistory {
 
 function Get-FrequentLesson {
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [string]$StorePath = '',
         [int]$TopN = 5
