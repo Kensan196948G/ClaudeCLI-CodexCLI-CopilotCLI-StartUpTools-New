@@ -2,6 +2,30 @@
 
 # CHANGELOG
 
+## [v3.2.12] - 2026-04-17 — PSUseOutputTypeCorrectly 警告 37 件解消
+
+### 🎯 概要
+
+PSScriptAnalyzer `PSUseOutputTypeCorrectly` ルール警告を解消。
+7 ファイル 13 関数に `[OutputType()]` 属性を追加。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/lib/ArchitectureCheck.psm1` | `Test-ModuleDependency` → `[OutputType([System.Object[]])]` |
+| `scripts/lib/Config.psm1` | `Test-StartupConfigSchema` / `Assert-StartupConfigSchema` / `Get-RecentProject` に `[OutputType()]` |
+| `scripts/lib/LauncherCommon.psm1` | `Find-AvailableDriveLetter` / `Resolve-SshProjectsDir` に `[OutputType([System.String])]` |
+| `scripts/lib/LogManager.psm1` | `Start-SessionLog` / `Get-LogSummary` に `[OutputType([System.Collections.Hashtable])]` |
+| `scripts/lib/MessageBus.psm1` | `Get-BusMessage` / `Confirm-BusMessage` / `Get-BusStatus` / `Initialize-MessageBus` に `[OutputType()]` |
+| `scripts/lib/SelfEvolution.psm1` | `Get-EvolutionStorePath` / `Get-EvolutionHistory` / `Get-FrequentLesson` に `[OutputType()]` |
+| `scripts/lib/SSHHelper.psm1` | `ConvertTo-EscapedSSHArgument` / `Test-SSHConnection` に `[OutputType()]` |
+
+### ✅ 検証結果
+
+- `Invoke-ScriptAnalyzer -IncludeRule PSUseOutputTypeCorrectly` = **0 件**
+- `Invoke-Pester` Passed: **477** / Failed: **0**
+
 ## [v3.2.11] - 2026-04-17 — PSAvoidUsingPositionalParameters 警告解消
 
 ### 🎯 概要

@@ -20,6 +20,7 @@
 #>
 function ConvertTo-EscapedSSHArgument {
     [CmdletBinding()]
+    [OutputType([System.String])]
     param(
         [Parameter(Mandatory=$true)]
         [string]$Value
@@ -50,6 +51,7 @@ function ConvertTo-EscapedSSHArgument {
 #>
 function Test-SSHConnection {
     [CmdletBinding()]
+    [OutputType([System.Boolean])]
     param(
         [Parameter(Mandatory=$true)]
         [string]$Host,

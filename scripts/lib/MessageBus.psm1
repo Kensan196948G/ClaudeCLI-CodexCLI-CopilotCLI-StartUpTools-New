@@ -198,6 +198,7 @@ function Get-BusMessage {
         Get-BusMessage -Topic 'phase.transition' -Consumer 'Orchestrator'
     #>
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter(Mandatory = $true)]
         [string]$Topic,
@@ -273,6 +274,7 @@ function Confirm-BusMessage {
             -Consumer 'Orchestrator'
     #>
     [CmdletBinding()]
+    [OutputType([System.Boolean])]
     param(
         [Parameter(Mandatory = $true)]
         [string]$Topic,
@@ -347,6 +349,7 @@ function Get-BusStatus {
         Get-BusStatus | Format-Table
     #>
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter(Mandatory = $false)]
         [string]$StatePath
@@ -404,6 +407,7 @@ function Initialize-MessageBus {
         Initialize-MessageBus
     #>
     [CmdletBinding()]
+    [OutputType([System.Boolean])]
     param(
         [Parameter(Mandatory = $false)]
         [string]$StatePath

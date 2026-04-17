@@ -49,6 +49,7 @@ function Add-SchemaError {
 
 function Test-StartupConfigSchema {
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter(Mandatory=$true)]
         [object]$Config
@@ -182,6 +183,7 @@ function Test-StartupConfigSchema {
 
 function Assert-StartupConfigSchema {
     [CmdletBinding()]
+    [OutputType([System.Boolean])]
     param(
         [Parameter(Mandatory=$true)]
         [string]$ConfigPath
@@ -400,6 +402,7 @@ function Backup-ConfigFile {
 #>
 function Get-RecentProject {
     [CmdletBinding()]
+    [OutputType([System.Object[]])]
     param(
         [Parameter(Mandatory=$true)]
         [string]$HistoryPath
