@@ -110,7 +110,7 @@ function Get-EvolutionHistory {
     return $records
 }
 
-function Get-FrequentLessons {
+function Get-FrequentLesson {
     [CmdletBinding()]
     param(
         [string]$StorePath = '',
@@ -287,7 +287,7 @@ function Show-EvolutionSummary {
     )
 
     $history = Get-EvolutionHistory -StorePath $StorePath -Last $Last
-    $topLessons = Get-FrequentLessons -StorePath $StorePath -TopN 3
+    $topLessons = Get-FrequentLesson -StorePath $StorePath -TopN 3
 
     Write-Host ""
     Write-Host "=== Evolution Summary (Last $Last sessions) ===" -ForegroundColor Magenta
@@ -330,7 +330,7 @@ function Show-EvolutionSummary {
 Export-ModuleMember -Function @(
     'Save-EvolutionRecord'
     'Get-EvolutionHistory'
-    'Get-FrequentLessons'
+    'Get-FrequentLesson'
     'Invoke-SelfEvolutionCycle'
     'Show-EvolutionSummary'
     'Get-EvolutionStorePath'

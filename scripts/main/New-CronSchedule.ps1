@@ -140,7 +140,7 @@ function Invoke-Register {
 }
 
 function Invoke-List {
-    $entries = Get-ClaudeOSCronEntries -LinuxHost $LinuxHost
+    $entries = Get-ClaudeOSCronEntry -LinuxHost $LinuxHost
     Write-Host ""
     if ($entries.Count -eq 0) {
         Write-Host "  登録済みの CLAUDEOS Cron エントリはありません。" -ForegroundColor Yellow
@@ -154,7 +154,7 @@ function Invoke-List {
 
 function Invoke-Edit {
     Invoke-List
-    $entries = Get-ClaudeOSCronEntries -LinuxHost $LinuxHost
+    $entries = Get-ClaudeOSCronEntry -LinuxHost $LinuxHost
     if ($entries.Count -eq 0) { return }
     $id = Read-Host "  編集対象の ID"
     $target = $entries | Where-Object { $_.Id -eq $id }
@@ -169,7 +169,7 @@ function Invoke-Edit {
 
 function Invoke-Remove {
     Invoke-List
-    $entries = Get-ClaudeOSCronEntries -LinuxHost $LinuxHost
+    $entries = Get-ClaudeOSCronEntry -LinuxHost $LinuxHost
     if ($entries.Count -eq 0) { return }
     $id = Read-Host "  削除対象の ID"
     try {
@@ -193,7 +193,7 @@ function Invoke-RemoveAll {
         return
     }
     try {
-        $removed = Remove-AllClaudeOSCronEntries -LinuxHost $LinuxHost
+        $removed = Remove-AllClaudeOSCronEntry -LinuxHost $LinuxHost
         Write-Host "  [OK] $removed 件削除しました" -ForegroundColor Green
     }
     catch {

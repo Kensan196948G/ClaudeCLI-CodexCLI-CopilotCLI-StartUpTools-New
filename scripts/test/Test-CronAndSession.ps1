@@ -48,6 +48,7 @@ function Assert-Match {
 }
 
 function Assert-Throws {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'Throws is a verb form not a plural noun')]
     param([scriptblock]$Block, [string]$Label)
     $script:Total++
     try {

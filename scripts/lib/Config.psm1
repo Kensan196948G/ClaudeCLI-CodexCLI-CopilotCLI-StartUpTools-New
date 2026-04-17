@@ -396,9 +396,9 @@ function Backup-ConfigFile {
     履歴ファイルのパス（%USERPROFILE% などの環境変数を展開する）
 
 .EXAMPLE
-    $recent = Get-RecentProjects -HistoryPath "%USERPROFILE%\.ai-startup\recent-projects.json"
+    $recent = Get-RecentProject -HistoryPath "%USERPROFILE%\.ai-startup\recent-projects.json"
 #>
-function Get-RecentProjects {
+function Get-RecentProject {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
@@ -470,9 +470,9 @@ function Get-RecentProjects {
     保持する最大履歴数（デフォルト: 10）
 
 .EXAMPLE
-    Update-RecentProjects -ProjectName "MyProject" -HistoryPath "%USERPROFILE%\.ai-startup\recent-projects.json"
+    Update-RecentProject -ProjectName "MyProject" -HistoryPath "%USERPROFILE%\.ai-startup\recent-projects.json"
 #>
-function Update-RecentProjects {
+function Update-RecentProject {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
@@ -508,7 +508,7 @@ function Update-RecentProjects {
     }
 
     $projects = [System.Collections.Generic.List[object]]::new()
-    $existing = Get-RecentProjects -HistoryPath $HistoryPath
+    $existing = Get-RecentProject -HistoryPath $HistoryPath
     foreach ($p in $existing) {
         $sameProject = ($p.project -eq $ProjectName)
         $sameTool = (([string]::IsNullOrWhiteSpace($Tool) -and [string]::IsNullOrWhiteSpace($p.tool)) -or ($p.tool -eq $Tool))
@@ -559,7 +559,7 @@ Export-ModuleMember -Function @(
     'Test-StartupConfigSchema',
     'Assert-StartupConfigSchema',
     'Backup-ConfigFile',
-    'Get-RecentProjects',
-    'Update-RecentProjects',
+    'Get-RecentProject',
+    'Update-RecentProject',
     'Test-RecentProjectsEnabled'
 )

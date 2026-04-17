@@ -24,7 +24,7 @@ foreach ($line in Get-Content $TasksPath -Encoding UTF8) {
     $lines.Add($line)
 }
 
-function Get-TaskLines {
+function Get-TaskLine {
     param([System.Collections.Generic.List[string]]$TaskLines)
     return @($TaskLines | Where-Object { $_ -match '^\d+\.\s' })
 }
@@ -113,14 +113,14 @@ function Build-TaskLine {
 
 switch ($Action) {
     'list' {
-        Get-TaskLines -TaskLines $lines | ForEach-Object { Write-Host $_ }
+        Get-TaskLine -TaskLines $lines | ForEach-Object { Write-Host $_ }
         exit 0
     }
     'add' {
         if ([string]::IsNullOrWhiteSpace($Text)) {
             throw "-Text が必要です。"
         }
-        $tasks = @(Get-TaskLines -TaskLines $lines)
+        $tasks = @(Get-TaskLine -TaskLines $lines)
         $nextIndex = $tasks.Count + 1
         $prefix = New-TaskMetadataPrefix -Priority $Priority -Owner $Owner -Source $Source
         $lines.Add("$nextIndex. $prefix$Text")

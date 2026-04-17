@@ -76,13 +76,13 @@ function Test-SSHConnection {
         else {
             Write-Warning "❌ SSH接続失敗: $Host (終了コード: $LASTEXITCODE)"
             Write-Warning "   出力: $result"
-            Show-SSHDiagnostics -HostName $Host
+            Show-SSHDiagnostic -HostName $Host
             return $false
         }
     }
     catch {
         Write-Warning "❌ SSH接続中に例外が発生しました: $_"
-        Show-SSHDiagnostics -HostName $Host
+        Show-SSHDiagnostic -HostName $Host
         return $false
     }
 }
@@ -91,7 +91,7 @@ function Test-SSHConnection {
 .SYNOPSIS
     SSH診断メッセージを表示（内部ヘルパー）
 #>
-function Show-SSHDiagnostics {
+function Show-SSHDiagnostic {
     param([string]$HostName)
 
     Write-Host "`n💡 SSH接続診断:" -ForegroundColor Yellow

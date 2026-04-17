@@ -138,7 +138,7 @@ function Invoke-ArchitectureCheck {
     return $result
 }
 
-function Get-ArchitectureViolations {
+function Get-ArchitectureViolation {
     [CmdletBinding()]
     param(
         [string]$Path = '',
@@ -193,7 +193,7 @@ function Show-ArchitectureCheckReport {
     return $result
 }
 
-function Test-ModuleDependencies {
+function Test-ModuleDependency {
     [CmdletBinding()]
     param(
         [string]$Path = ''
@@ -227,7 +227,7 @@ function Test-ModuleDependencies {
 
 Export-ModuleMember -Function @(
     'Invoke-ArchitectureCheck'
-    'Get-ArchitectureViolations'
+    'Get-ArchitectureViolation'
     'Show-ArchitectureCheckReport'
-    'Test-ModuleDependencies'
+    'Test-ModuleDependency'
 )

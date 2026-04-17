@@ -114,21 +114,21 @@ Describe 'SelfEvolution Module' {
         }
     }
 
-    Describe 'Get-FrequentLessons' {
+    Describe 'Get-FrequentLesson' {
         It '同じ教訓が複数回出現する場合に上位を返す' {
             $lesson = 'Always run tests before commit'
             1..3 | ForEach-Object {
                 Save-EvolutionRecord -Phase 'Verify' -Lessons @($lesson) -StorePath $TempEvolutionDir
             }
 
-            $lessons = Get-FrequentLessons -StorePath $TempEvolutionDir -TopN 5
+            $lessons = Get-FrequentLesson -StorePath $TempEvolutionDir -TopN 5
             $found = $lessons | Where-Object { $_.Lesson -eq $lesson }
             $found | Should -Not -BeNullOrEmpty
             $found.Count | Should -BeGreaterOrEqual 3
         }
 
         It 'TopN で件数を制限する' {
-            $lessons = Get-FrequentLessons -StorePath $TempEvolutionDir -TopN 2
+            $lessons = Get-FrequentLesson -StorePath $TempEvolutionDir -TopN 2
             $lessons.Count | Should -BeLessOrEqual 2
         }
     }

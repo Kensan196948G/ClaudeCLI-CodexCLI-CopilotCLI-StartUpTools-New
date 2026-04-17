@@ -378,17 +378,17 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
     }
 }
 
-Describe 'Get-RecentProjects and Update-RecentProjects' {
+Describe 'Get-RecentProject and Update-RecentProject' {
 
     Context '履歴ファイルが存在しない場合' {
 
-        It 'Get-RecentProjects が空配列を返すこと' {
-            $result = Get-RecentProjects -HistoryPath (Join-Path $TestDrive 'nonexistent.json')
+        It 'Get-RecentProject が空配列を返すこと' {
+            $result = Get-RecentProject -HistoryPath (Join-Path $TestDrive 'nonexistent.json')
             $result | Should -BeNullOrEmpty
         }
     }
 
-    Context 'Update-RecentProjects のテスト' {
+    Context 'Update-RecentProject のテスト' {
 
         BeforeAll {
             $script:HistoryPath = Join-Path $TestDrive 'recent.json'
@@ -399,8 +399,8 @@ Describe 'Get-RecentProjects and Update-RecentProjects' {
         }
 
         It 'プロジェクトが追加されること' {
-            Update-RecentProjects -ProjectName 'TestProject' -Tool 'claude' -Mode 'local' -Result 'success' -ElapsedMs 100 -HistoryPath $script:HistoryPath
-            $result = Get-RecentProjects -HistoryPath $script:HistoryPath
+            Update-RecentProject -ProjectName 'TestProject' -Tool 'claude' -Mode 'local' -Result 'success' -ElapsedMs 100 -HistoryPath $script:HistoryPath
+            $result = Get-RecentProject -HistoryPath $script:HistoryPath
             $result.project | Should -Contain 'TestProject'
             $result[0].tool | Should -Be 'claude'
             $result[0].mode | Should -Be 'local'
@@ -410,24 +410,24 @@ Describe 'Get-RecentProjects and Update-RecentProjects' {
         }
 
         It '重複が削除されること' {
-            Update-RecentProjects -ProjectName 'TestProject' -Tool 'codex' -Mode 'ssh' -HistoryPath $script:HistoryPath
-            Update-RecentProjects -ProjectName 'TestProject' -Tool 'codex' -Mode 'ssh' -HistoryPath $script:HistoryPath
-            $result = Get-RecentProjects -HistoryPath $script:HistoryPath
+            Update-RecentProject -ProjectName 'TestProject' -Tool 'codex' -Mode 'ssh' -HistoryPath $script:HistoryPath
+            Update-RecentProject -ProjectName 'TestProject' -Tool 'codex' -Mode 'ssh' -HistoryPath $script:HistoryPath
+            $result = Get-RecentProject -HistoryPath $script:HistoryPath
             ($result | Where-Object { $_.project -eq 'TestProject' }).Count | Should -Be 1
         }
 
         It 'MaxHistory を超えた場合に古いエントリが削除されること' {
             1..12 | ForEach-Object {
-                Update-RecentProjects -ProjectName "Project$_" -Tool 'claude' -Mode 'ssh' -HistoryPath $script:HistoryPath -MaxHistory 3
+                Update-RecentProject -ProjectName "Project$_" -Tool 'claude' -Mode 'ssh' -HistoryPath $script:HistoryPath -MaxHistory 3
             }
-            $result = Get-RecentProjects -HistoryPath $script:HistoryPath
+            $result = Get-RecentProject -HistoryPath $script:HistoryPath
             $result.Count | Should -BeLessOrEqual 3
         }
 
         It '旧形式の文字列配列も正規化して読み込めること' {
             $legacyPath = Join-Path $TestDrive 'recent-legacy.json'
             @{ projects = @('LegacyProject') } | ConvertTo-Json -Depth 5 | Set-Content -Path $legacyPath -Encoding UTF8
-            $result = Get-RecentProjects -HistoryPath $legacyPath
+            $result = Get-RecentProject -HistoryPath $legacyPath
             $result[0].project | Should -Be 'LegacyProject'
             $result[0].tool | Should -BeNullOrEmpty
             $result[0].mode | Should -BeNullOrEmpty

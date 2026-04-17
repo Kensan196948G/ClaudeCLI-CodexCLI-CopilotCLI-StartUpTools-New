@@ -94,21 +94,21 @@ Describe 'ArchitectureCheck Module' {
         }
     }
 
-    Describe 'Get-ArchitectureViolations' {
+    Describe 'Get-ArchitectureViolation' {
         It 'Severity=ALL で全違反を返す' {
-            $violations = Get-ArchitectureViolations -Path $PSScriptRoot -Severity ALL
+            $violations = Get-ArchitectureViolation -Path $PSScriptRoot -Severity ALL
             $violations | Should -Not -BeNullOrEmpty -Because "testsディレクトリには違反がある可能性がある"
         }
 
         It 'Severity=CRITICAL でCRITICALのみ返す' {
-            $violations = Get-ArchitectureViolations -Path $PSScriptRoot -Severity CRITICAL
+            $violations = Get-ArchitectureViolation -Path $PSScriptRoot -Severity CRITICAL
             foreach ($v in $violations) {
                 $v.Severity | Should -Be 'CRITICAL'
             }
         }
 
         It 'Severity=WARNING でWARNINGのみ返す' {
-            $violations = Get-ArchitectureViolations -Path $PSScriptRoot -Severity WARNING
+            $violations = Get-ArchitectureViolation -Path $PSScriptRoot -Severity WARNING
             foreach ($v in $violations) {
                 $v.Severity | Should -Be 'WARNING'
             }
@@ -124,16 +124,16 @@ Describe 'ArchitectureCheck Module' {
         }
     }
 
-    Describe 'Test-ModuleDependencies' {
+    Describe 'Test-ModuleDependency' {
         It 'プロジェクトルートでモジュール依存関係をチェックする' {
             $projectRoot = Split-Path $PSScriptRoot -Parent
-            $results = Test-ModuleDependencies -Path $projectRoot
+            $results = Test-ModuleDependency -Path $projectRoot
             $results | Should -Not -BeNullOrEmpty
         }
 
         It '結果にScript, Module, Status プロパティが含まれる' {
             $projectRoot = Split-Path $PSScriptRoot -Parent
-            $results = Test-ModuleDependencies -Path $projectRoot
+            $results = Test-ModuleDependency -Path $projectRoot
             if ($results.Count -gt 0) {
                 $results[0].PSObject.Properties.Name | Should -Contain 'Script'
                 $results[0].PSObject.Properties.Name | Should -Contain 'Module'

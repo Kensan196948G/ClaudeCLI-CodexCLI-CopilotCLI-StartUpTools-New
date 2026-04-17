@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # Sync-Issues.Tests.ps1 - Sync-Issues.ps1 integration tests
 # Pester 5.x
 # Issue sync CI/hooks integration
@@ -33,7 +33,7 @@ Describe 'Sync-Issues check action' {
         Set-Content -Path $script:TestTasks -Value ($content -join "`n") -Encoding UTF8
 
         # Test by directly calling the module functions (check logic)
-        $parsed = Get-TasksSections -TasksPath $script:TestTasks
+        $parsed = Get-TaskSection -TasksPath $script:TestTasks
         $parsed.Sections.Keys | Should -Contain 'Manual Backlog'
         $parsed.Sections.Keys | Should -Contain 'GitHub Issues Sync'
 
@@ -67,7 +67,7 @@ Describe 'Sync-Issues check action' {
         )
         Set-Content -Path $script:TestTasks -Value ($content -join "`n") -Encoding UTF8
 
-        $parsed = Get-TasksSections -TasksPath $script:TestTasks
+        $parsed = Get-TaskSection -TasksPath $script:TestTasks
         $manualLines = @($parsed.Sections['Manual Backlog'] | Where-Object { $_ -match '^\d+\.\s' })
         $manualLines[0] | Should -Not -Match '\[Priority:P[1-3]\]'
     }
@@ -83,7 +83,7 @@ Describe 'Sync-Issues check action' {
         )
         Set-Content -Path $script:TestTasks -Value ($content -join "`n") -Encoding UTF8
 
-        $parsed = Get-TasksSections -TasksPath $script:TestTasks
+        $parsed = Get-TaskSection -TasksPath $script:TestTasks
         $issueLines = @($parsed.Sections['GitHub Issues Sync'] | Where-Object { $_ -match '^\d+\.\s' })
         $issueLines[0] | Should -Not -Match '\[Source:GitHub#\d+\]'
     }
@@ -99,7 +99,7 @@ Describe 'Sync-Issues check action' {
         )
         Set-Content -Path $script:TestTasks -Value ($content -join "`n") -Encoding UTF8
 
-        $parsed = Get-TasksSections -TasksPath $script:TestTasks
+        $parsed = Get-TaskSection -TasksPath $script:TestTasks
         $parsed.Sections.Keys | Should -Not -Contain 'GitHub Issues Sync'
     }
 }
@@ -120,7 +120,7 @@ Describe 'Sync-Issues sync action with DryRun' {
     }
 
     It 'creates GitHub Issues Sync section via DryRun' {
-        Mock Get-GitHubIssues -ModuleName IssueSyncManager {
+        Mock Get-GitHubIssue -ModuleName IssueSyncManager {
             return @(
                 [pscustomobject]@{
                     number    = 34
@@ -132,7 +132,7 @@ Describe 'Sync-Issues sync action with DryRun' {
             )
         }
 
-        $result = Sync-IssuesToTasks -Owner 'test' -Repo 'test' -TasksPath $script:TestTasks2 -DryRun
+        $result = Sync-IssueToTask -Owner 'test' -Repo 'test' -TasksPath $script:TestTasks2 -DryRun
         $result.IssueCount | Should -Be 1
         $result.Content | Should -Contain '## GitHub Issues Sync'
         $joined = $result.Content -join "`n"
@@ -142,11 +142,11 @@ Describe 'Sync-Issues sync action with DryRun' {
     }
 
     It 'preserves existing sections when adding issue sync' {
-        Mock Get-GitHubIssues -ModuleName IssueSyncManager {
+        Mock Get-GitHubIssue -ModuleName IssueSyncManager {
             return @()
         }
 
-        $result = Sync-IssuesToTasks -Owner 'test' -Repo 'test' -TasksPath $script:TestTasks2 -DryRun
+        $result = Sync-IssueToTask -Owner 'test' -Repo 'test' -TasksPath $script:TestTasks2 -DryRun
         $result.Content | Should -Contain '## Manual Backlog'
         $result.Content | Should -Contain '## GitHub Issues Sync'
     }
@@ -168,7 +168,7 @@ Describe 'Get-SyncStatus' {
     }
 
     It 'reports in-sync when issues match' {
-        Mock Get-GitHubIssues -ModuleName IssueSyncManager {
+        Mock Get-GitHubIssue -ModuleName IssueSyncManager {
             return @(
                 [pscustomobject]@{
                     number    = 34
@@ -187,7 +187,7 @@ Describe 'Get-SyncStatus' {
     }
 
     It 'detects missing issues' {
-        Mock Get-GitHubIssues -ModuleName IssueSyncManager {
+        Mock Get-GitHubIssue -ModuleName IssueSyncManager {
             return @(
                 [pscustomobject]@{ number = 34; title = 'a'; labels = @(); state = 'open'; assignees = @() },
                 [pscustomobject]@{ number = 50; title = 'b'; labels = @(); state = 'open'; assignees = @() }
@@ -200,7 +200,7 @@ Describe 'Get-SyncStatus' {
     }
 
     It 'detects stale entries' {
-        Mock Get-GitHubIssues -ModuleName IssueSyncManager {
+        Mock Get-GitHubIssue -ModuleName IssueSyncManager {
             return @()
         }
 

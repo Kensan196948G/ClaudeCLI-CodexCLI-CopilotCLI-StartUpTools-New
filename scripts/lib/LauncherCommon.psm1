@@ -311,7 +311,7 @@ SSH プロジェクトフォルダにアクセスできません。
         throw "非対話モードでは -Project の指定が必要です。"
     }
 
-    Show-LauncherProjectChoices -Projects $dirs.Name -Local:$Local -LinuxHost $LinuxHost
+    Show-LauncherProjectChoice -Projects $dirs.Name -Local:$Local -LinuxHost $LinuxHost
 
     $num = Read-Host "番号を入力してください"
     $numInt = $num -as [int]
@@ -322,7 +322,7 @@ SSH プロジェクトフォルダにアクセスできません。
     return $dirs[$numInt - 1].Name
 }
 
-function Show-LauncherProjectChoices {
+function Show-LauncherProjectChoice {
     param(
         [Parameter(Mandatory)]
         [string[]]$Projects,
@@ -428,7 +428,7 @@ function Set-LauncherEnvironment {
     }
 }
 
-function ConvertTo-BashExports {
+function ConvertTo-BashExport {
     param(
         [Parameter(Mandatory)]
         [object]$EnvMap
@@ -756,7 +756,7 @@ function Write-LauncherExecutionResult {
         [int]$ElapsedMs = 0
     )
 
-    if (-not (Get-Command Update-RecentProjects -ErrorAction SilentlyContinue)) {
+    if (-not (Get-Command Update-RecentProject -ErrorAction SilentlyContinue)) {
         return
     }
 
@@ -764,7 +764,7 @@ function Write-LauncherExecutionResult {
         return
     }
 
-    Update-RecentProjects `
+    Update-RecentProject `
         -ProjectName $Project `
         -Tool $Tool `
         -Mode $Mode `
@@ -794,7 +794,7 @@ function Get-LauncherMetadataLogPath {
     return $null
 }
 
-function Get-LauncherMetadataEntries {
+function Get-LauncherMetadataEntry {
     param(
         [Parameter(Mandatory)]
         [object]$Config,
@@ -992,7 +992,7 @@ function Get-LauncherRecentSummary {
     }
 }
 
-function Get-LauncherToolStatistics {
+function Get-LauncherToolStatistic {
     param(
         [AllowEmptyCollection()]
         [object[]]$Entries = @(),
@@ -1029,7 +1029,7 @@ function Get-LauncherToolStatistics {
     return @($stats)
 }
 
-function Get-LauncherAgentLaneEvents {
+function Get-LauncherAgentLaneEvent {
     param(
         [Parameter(Mandatory)]
         [object]$Config,
@@ -1155,14 +1155,14 @@ function Get-LauncherTokenBudgetStatus {
     return [pscustomobject]@{ Percent = $pct; Zone = 'Red'; Status = 'Development stop threshold' }
 }
 
-function Get-LauncherRecentEntries {
+function Get-LauncherRecentEntry {
     param(
         [Parameter(Mandatory)]
         [object]$Config,
         [int]$MaxCount = 20
     )
 
-    if (-not (Get-Command Get-RecentProjects -ErrorAction SilentlyContinue)) {
+    if (-not (Get-Command Get-RecentProject -ErrorAction SilentlyContinue)) {
         return @()
     }
     if ($null -eq $Config.recentProjects -or -not $Config.recentProjects.enabled -or [string]::IsNullOrWhiteSpace($Config.recentProjects.historyFile)) {
@@ -1170,7 +1170,7 @@ function Get-LauncherRecentEntries {
     }
 
     return @(
-        Get-RecentProjects -HistoryPath $Config.recentProjects.historyFile |
+        Get-RecentProject -HistoryPath $Config.recentProjects.historyFile |
             Sort-Object @{ Expression = {
                 if ($_.timestamp) {
                     try { [datetimeoffset]$_.timestamp } catch { [datetimeoffset]::MinValue }
@@ -1183,7 +1183,7 @@ function Get-LauncherRecentEntries {
     )
 }
 
-function Get-LauncherRecentToolResults {
+function Get-LauncherRecentToolResult {
     param(
         [Parameter(Mandatory)]
         [object[]]$Entries,
@@ -1225,13 +1225,13 @@ Export-ModuleMember -Function Get-LauncherApiKeyValue
 Export-ModuleMember -Function Show-LauncherApiKeyWarning
 Export-ModuleMember -Function Resolve-LauncherMode
 Export-ModuleMember -Function Resolve-LauncherProject
-Export-ModuleMember -Function Show-LauncherProjectChoices
+Export-ModuleMember -Function Show-LauncherProjectChoice
 Export-ModuleMember -Function Get-LauncherModeLabel
 Export-ModuleMember -Function Get-LauncherModeName
 Export-ModuleMember -Function New-LauncherDryRunMessage
 Export-ModuleMember -Function Confirm-LauncherStart
 Export-ModuleMember -Function Set-LauncherEnvironment
-Export-ModuleMember -Function ConvertTo-BashExports
+Export-ModuleMember -Function ConvertTo-BashExport
 Export-ModuleMember -Function Sync-ProjectTemplate
 Export-ModuleMember -Function Sync-ProjectTemplateDirectory
 Export-ModuleMember -Function Initialize-ProjectTemplate
@@ -1243,15 +1243,15 @@ Export-ModuleMember -Function Invoke-LauncherSshScript
 Export-ModuleMember -Function Get-LauncherShell
 Export-ModuleMember -Function Write-LauncherExecutionResult
 Export-ModuleMember -Function Get-LauncherMetadataLogPath
-Export-ModuleMember -Function Get-LauncherMetadataEntries
+Export-ModuleMember -Function Get-LauncherMetadataEntry
 Export-ModuleMember -Function Write-LauncherMetadataLog
 Export-ModuleMember -Function New-LauncherExecutionContext
 Export-ModuleMember -Function Complete-LauncherExecutionContext
 Export-ModuleMember -Function Get-LauncherRecentSummary
-Export-ModuleMember -Function Get-LauncherRecentEntries
-Export-ModuleMember -Function Get-LauncherRecentToolResults
-Export-ModuleMember -Function Get-LauncherToolStatistics
-Export-ModuleMember -Function Get-LauncherAgentLaneEvents
+Export-ModuleMember -Function Get-LauncherRecentEntry
+Export-ModuleMember -Function Get-LauncherRecentToolResult
+Export-ModuleMember -Function Get-LauncherToolStatistic
+Export-ModuleMember -Function Get-LauncherAgentLaneEvent
 Export-ModuleMember -Function Get-LauncherTokenBudgetStatus
 Export-ModuleMember -Function Get-LauncherBacklogSummary
 

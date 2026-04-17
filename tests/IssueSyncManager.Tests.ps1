@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # IssueSyncManager.Tests.ps1 - IssueSyncManager.psm1 unit tests
 # Pester 5.x
 # Issue #33: Issue / Backlog auto-generation
@@ -104,7 +104,7 @@ Describe 'ConvertFrom-TaskLine' {
     }
 }
 
-Describe 'Get-TasksSections' {
+Describe 'Get-TaskSection' {
 
     BeforeAll {
         $script:TestTasks = Join-Path $TestDrive 'TASKS.md'
@@ -126,30 +126,30 @@ Describe 'Get-TasksSections' {
     }
 
     It 'parses sections correctly' {
-        $result = Get-TasksSections -TasksPath $script:TestTasks
+        $result = Get-TaskSection -TasksPath $script:TestTasks
         $result.Sections.Keys | Should -Contain 'Manual Backlog'
         $result.Sections.Keys | Should -Contain 'Auto Extracted From Agent Teams Matrix'
     }
 
     It 'preserves header lines' {
-        $result = Get-TasksSections -TasksPath $script:TestTasks
+        $result = Get-TaskSection -TasksPath $script:TestTasks
         $result.Header | Should -Contain '# TASKS'
     }
 
     It 'preserves section order' {
-        $result = Get-TasksSections -TasksPath $script:TestTasks
+        $result = Get-TaskSection -TasksPath $script:TestTasks
         $result.SectionOrder.Count | Should -Be 2
         $result.SectionOrder[0] | Should -Be 'Manual Backlog'
     }
 
     It 'returns empty structure for missing file' {
-        $result = Get-TasksSections -TasksPath (Join-Path $TestDrive 'nonexistent.md')
+        $result = Get-TaskSection -TasksPath (Join-Path $TestDrive 'nonexistent.md')
         $result.Header | Should -Contain '# TASKS'
         $result.Sections.Count | Should -Be 0
     }
 }
 
-Describe 'Sync-IssuesToTasks DryRun' {
+Describe 'Sync-IssueToTask DryRun' {
 
     BeforeAll {
         $script:TestTasks2 = Join-Path $TestDrive 'TASKS2.md'
@@ -165,7 +165,7 @@ Describe 'Sync-IssuesToTasks DryRun' {
     }
 
     It 'adds GitHub Issues Sync section with DryRun' {
-        Mock Get-GitHubIssues -ModuleName IssueSyncManager {
+        Mock Get-GitHubIssue -ModuleName IssueSyncManager {
             return @(
                 [pscustomobject]@{
                     number    = 10
@@ -177,14 +177,14 @@ Describe 'Sync-IssuesToTasks DryRun' {
             )
         }
 
-        $result = Sync-IssuesToTasks -Owner 'test' -Repo 'test' -TasksPath $script:TestTasks2 -DryRun
+        $result = Sync-IssueToTask -Owner 'test' -Repo 'test' -TasksPath $script:TestTasks2 -DryRun
         $result.IssueCount | Should -Be 1
         $result.Content | Should -Contain '## GitHub Issues Sync'
         $result.Content | Should -Contain '## Manual Backlog'
     }
 }
 
-Describe 'Sync-TasksToIssues DryRun' {
+Describe 'Sync-TaskToIssue DryRun' {
 
     BeforeAll {
         $script:TestTasks3 = Join-Path $TestDrive 'TASKS3.md'
@@ -202,18 +202,18 @@ Describe 'Sync-TasksToIssues DryRun' {
     }
 
     It 'identifies tasks that need GitHub Issues' {
-        $result = Sync-TasksToIssues -Owner 'test' -Repo 'test' -TasksPath $script:TestTasks3 -DryRun
+        $result = Sync-TaskToIssue -Owner 'test' -Repo 'test' -TasksPath $script:TestTasks3 -DryRun
         $result.Count | Should -Be 1
         $result.WouldCreate | Should -Contain 'new task without issue'
     }
 
     It 'skips DONE tasks' {
-        $result = Sync-TasksToIssues -Owner 'test' -Repo 'test' -TasksPath $script:TestTasks3 -DryRun
+        $result = Sync-TaskToIssue -Owner 'test' -Repo 'test' -TasksPath $script:TestTasks3 -DryRun
         $result.WouldCreate | Should -Not -Contain 'completed task'
     }
 
     It 'skips tasks already linked to GitHub' {
-        $result = Sync-TasksToIssues -Owner 'test' -Repo 'test' -TasksPath $script:TestTasks3 -DryRun
+        $result = Sync-TaskToIssue -Owner 'test' -Repo 'test' -TasksPath $script:TestTasks3 -DryRun
         $result.WouldCreate | Should -Not -Contain 'already linked'
     }
 }
