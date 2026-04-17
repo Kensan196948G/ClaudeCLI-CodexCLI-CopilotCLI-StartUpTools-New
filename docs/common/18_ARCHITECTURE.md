@@ -66,7 +66,8 @@ PowerShell スクリプトの依存は **一方向** に固定します。逆方
 - **`Claude/` を触りたい → 他プロジェクトへ配布するテンプレを更新したい**
 - **`docs/claude/` を触りたい → 利用者向けの説明を追加・修正したい**
 
-各ディレクトリ直下に `README.md` を配置しており、目的を即座に確認できます。
+多くのディレクトリでは直下の `README.md` で目的を確認できます（`Claude/`, `reports/` 等）。
+`.codex/` のように `README.md` を置かず設定ファイル（`config.toml`）で役割を表現する例外もあります。
 
 ## 3. 用語集
 
@@ -74,7 +75,7 @@ PowerShell スクリプトの依存は **一方向** に固定します。逆方
 
 | 用語 | 定義 | 関連 |
 |---|---|---|
-| **Agent** | 特化ロールを持つ Claude Code サブエージェント（現 17 体）。Task tool 経由で並列起動される | `.claude/agents/`, CLAUDE.md §6 |
+| **Agent** | 特化ロールを持つ Claude Code サブエージェント（現 17 体）。Task tool 経由で並列起動される | `.claude/claudeos/agents/`, CLAUDE.md §6 |
 | **Agent Teams** | 複数 Agent を Orchestrator 配下で並列運用する仕組み。単発 subagent と区別 | CLAUDE.md §6 |
 | **Role** | CTO / Architect / Developer / Reviewer 等の責務単位。Agent とは直交する概念 | CLAUDE.md §6 |
 | **Loop** | Monitor / Build / Verify / Improvement の 4 フェーズ自律開発サイクル | CLAUDE.md §5 |

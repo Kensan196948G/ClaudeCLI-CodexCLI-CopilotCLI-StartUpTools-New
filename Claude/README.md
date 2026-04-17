@@ -32,4 +32,4 @@
 ## 関連
 
 - 配布ロジック: `scripts/main/Start-ClaudeOS.ps1`
-- ディレクトリ分類の全体図: [`docs/common/ARCHITECTURE.md`](../docs/common/ARCHITECTURE.md)
+- ディレクトリ分類の全体図: [`docs/common/18_ARCHITECTURE.md`](../docs/common/18_ARCHITECTURE.md)
