@@ -339,7 +339,7 @@ function Invoke-WorktreeCleanup {
     $removed = @()
     foreach ($wt in $candidates) {
         try {
-            Remove-Worktree -BranchName $wt.Branch -DeleteBranch -RepoRoot $RepoRoot
+            $null = Remove-Worktree -BranchName $wt.Branch -DeleteBranch -RepoRoot $RepoRoot
             $removed += [pscustomobject]@{
                 Branch  = $wt.Branch
                 Path    = $wt.Path
