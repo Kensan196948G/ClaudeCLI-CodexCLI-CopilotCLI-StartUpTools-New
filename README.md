@@ -27,7 +27,7 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.2.21** (3 タブ監視 品質向上 / 外部レビュー指摘対応) — 旧: v3.2.18 (外部レビュー Quick-wins) / v3.2.17 (3タブ監視 + tmux UI) |
+| バージョン | **v3.2.22** (3 タブ監視 品質向上 / 外部レビュー指摘対応) — 旧: v3.2.18 (外部レビュー Quick-wins) / v3.2.17 (3タブ監視 + tmux UI) |
 | テスト | **477件** — (Pester, CI) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |

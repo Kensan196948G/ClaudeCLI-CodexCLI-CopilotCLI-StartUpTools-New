@@ -2,6 +2,29 @@
 
 # CHANGELOG
 
+## [v3.2.22] - 2026-04-17 — state.json.example スキーマ整合 / CI example バリデーション
+
+### 🎯 概要
+
+v3.2.21 で拡張した `state.schema.json` に対して `state.json.example` の構造・型が不整合だった
+6 箇所を修正。CI に example → schema バリデーションステップを追加し、再発を防止。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `state.json.example` | `message_bus` をフラットキーからネスト構造に修正 / `debug.debug_mode` を `"normal"` → `false` (boolean) / `debug.last_failure_category` 等 3 フィールドを `"none"` → `null` / `_note` バージョン表記を "v8.2" → "v8" に修正 |
+| `scripts/validate-state-example.js` | 新規。`state.json.example` を `state.schema.json` に対して型・構造チェック (外部依存なし) |
+| `.github/workflows/ci.yml` | "Validate State Example Against Schema" ステップ追加 |
+| `TASKS.md` | v3.2.19/v3.2.20/v3.2.21 を [DONE] に更新、v3.2.22 エントリ追加 |
+
+### ✅ Verify
+
+- `node scripts/validate-state-example.js`: PASSED
+- `node scripts/check-doc-versions.js`: PASSED
+
+---
+
 ## [v3.2.21] - 2026-04-17 — ドキュメント品質 / スキーマ拡張 / README 自動整合
 
 ### 🎯 概要

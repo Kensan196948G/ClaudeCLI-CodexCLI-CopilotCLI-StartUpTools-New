@@ -40,7 +40,10 @@
 31. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.14 PSProvideCommentHelp 警告 85 件解消 — 9 ファイル全関数に .SYNOPSIS 追加 / STABLE N=2 達成 (PR #167)
 32. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.2.17 3タブ監視構成 + tmux UI 統合 — Watch-ClaudeLog.ps1 / Watch-SessionInfoSSH.ps1 新規 / cron-launcher.sh tmux TTY 実行化 / linuxUser config パラメータ化 / DateTimeOffset TZ 対応 (PR #168)
 33. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.2.18 外部コードレビュー指摘 5 件対応 (Quick-wins) — reports/ 新設 (#17) / Claude/README.md 追加 (#6) / .codex/config.toml 簡略化 + profiles 復元 (#32) / README 標準コマンドセクション (#21) / docs/common/18_ARCHITECTURE.md 新規 (#9, #34, #39) / STABLE N=2 達成 (PR #169)
-34. [Priority:P2][Owner:Developer][Source:Manual] v3.2.19 3 タブ監視品質向上 — tail -f → -F (ローテーション耐性) / tmux attach → new-session -A (attach-or-create) / JSON 破損時リトライ + 前回値保持 (外部評価 2026-04-17 追加指摘 #1, #3, #5)
+34. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.19 3 タブ監視品質向上 — tail -f → -F (ローテーション耐性) / tmux attach → new-session -A (attach-or-create) / JSON 破損時リトライ + 前回値保持 (外部評価 2026-04-17 追加指摘 #1, #3, #5) (PR #170)
+35. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.20 CI testResults.xml 移行 (reports/) + .codex/config.toml.example テンプレ化 + ONBOARDING.md 刷新 + 外部レビュー即時対応 3 件 (PR #170)
+36. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.21 state.schema.json 拡張 (frontier / message_bus / learning / debug / onboarding / improvement) + docs/common/18_ARCHITECTURE.md Agent 数修正 (25体) + scripts/update-readme-stats.js + CI README 自動整合ゲート (PR #171)
+37. [Priority:P2][Owner:Developer][Source:GitHub#172] v3.2.22 state.json.example スキーマ整合修正 (message_bus 構造 / debug 型) + scripts/validate-state-example.js + CI バリデーションステップ (Issue #172)
 
 ## Auto Extracted From Agent Teams Matrix
 

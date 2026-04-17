@@ -139,6 +139,10 @@ jobs:
           if ($required.Count -lt 5) { throw "state.schema.json has too few required fields: $($required.Count)" }
           Write-Host "state.schema.json validated: $($required.Count) required top-level fields"
 
+      - name: Validate State Example Against Schema
+        shell: bash
+        run: node scripts/validate-state-example.js
+
       - name: Check Doc Version Consistency
         shell: bash
         run: node scripts/check-doc-versions.js
