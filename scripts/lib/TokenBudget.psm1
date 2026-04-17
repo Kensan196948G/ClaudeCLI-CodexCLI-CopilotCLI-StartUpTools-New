@@ -183,6 +183,7 @@ function Update-TokenUsage {
 
     $state.token.used = [math]::Min(100, $state.token.used + $Amount)
     $state.token.remaining = [math]::Max(0, $state.token.total_budget - $state.token.used)
+    $state.token | Add-Member -NotePropertyName 'current_phase' -NotePropertyValue $Phase -Force
     $state.token.current_phase_used = $state.token.current_phase_used + $Amount
 
     $json = $state | ConvertTo-Json -Depth 10

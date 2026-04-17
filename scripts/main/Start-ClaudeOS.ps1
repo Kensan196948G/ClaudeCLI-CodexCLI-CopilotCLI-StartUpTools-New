@@ -27,6 +27,8 @@
 #>
 
 [CmdletBinding()]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'DryRun', Justification = 'Planned for Boot Sequence Phase 3 implementation')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'NonInteractive', Justification = 'Planned for Boot Sequence Phase 3 implementation')]
 param(
     [switch]$DryRun,
     [switch]$NonInteractive

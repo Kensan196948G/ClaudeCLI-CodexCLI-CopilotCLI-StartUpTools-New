@@ -135,7 +135,7 @@ function Assert-LauncherToolAvailable {
         return $true
     }
 
-    Write-Host "[WARN] $Command コマンドが見つかりません。" -ForegroundColor Yellow
+    Write-Host "[WARN] $ToolLabel ($Command) コマンドが見つかりません。" -ForegroundColor Yellow
     Write-Host "[INFO] インストール: $InstallCommand" -ForegroundColor Cyan
     if ($NonInteractive) {
         return $false

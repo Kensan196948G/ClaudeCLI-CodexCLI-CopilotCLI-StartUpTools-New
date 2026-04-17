@@ -1,4 +1,5 @@
-﻿param(
+﻿[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'UseAcrylic', Justification = 'Used in hashtable literal useAcrylic = $UseAcrylic; analyzer cannot trace hashtable key assignment')]
+param(
     [string]$StartingDirectory = '%USERPROFILE%',
     [string]$ProfileName = 'AI CLI Startup',
     [string[]]$AdditionalProfileNames = @(),

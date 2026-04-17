@@ -2,6 +2,32 @@
 
 # CHANGELOG
 
+## [v3.2.10] - 2026-04-17 — PSReviewUnusedParameter 警告 7 件解消
+
+### 🎯 概要
+
+PSScriptAnalyzer `PSReviewUnusedParameter` ルール警告 7 件を解消。
+偽陽性（ハッシュテーブルキー代入・スコープ継承）は `SuppressMessageAttribute` で抑制。
+真の未使用は実際に使用するよう修正（LauncherCommon.psm1 の `ToolLabel`）または
+`Add-Member` パターンへ変更（TokenBudget.psm1 の `current_phase`）。
+
+### 🔧 変更対象（6 ファイル・7 件）
+
+| ファイル | パラメータ | 対応 |
+|---|---|---|
+| `scripts/lib/ArchitectureCheck.psm1` | `IncludeWarnings` | SuppressMessage（将来 API 確保） |
+| `scripts/main/Start-ClaudeOS.ps1` | `DryRun`, `NonInteractive` | SuppressMessage（Boot Sequence Phase 3 予定） |
+| `scripts/setup/setup-windows-terminal.ps1` | `UseAcrylic` | SuppressMessage（ハッシュテーブルキー偽陽性） |
+| `scripts/lib/LauncherCommon.psm1` | `ToolLabel` | 実際に使用するよう修正（WARN ログへ追加） |
+| `scripts/lib/TokenBudget.psm1` | `Phase` | `Add-Member -Force` で `current_phase` を設定 |
+| `scripts/tools/Sync-AgentTeamsBacklog.ps1` | `ApplyMetadata` | スコープ継承を明示的パラメータ渡しに変更 |
+
+### ✅ 検証結果
+
+- `Invoke-ScriptAnalyzer -IncludeRule PSReviewUnusedParameter` = **0 件**
+- `Invoke-Pester` Passed: **477** / Failed: **0**
+- CI STABLE N=2 達成
+
 ## [v3.2.9] - 2026-04-17 — PSUseShouldProcessForStateChangingFunctions 警告 26 件解消
 
 ### 🎯 概要

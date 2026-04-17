@@ -48,7 +48,8 @@ function Get-TaskSeedLine {
     param(
         [int]$Index,
         [string]$Text,
-        [object]$Rules
+        [object]$Rules,
+        [bool]$WithMetadata = $false
     )
 
     $owner = 'ScrumMaster'
@@ -71,19 +72,19 @@ function Get-TaskSeedLine {
         }
     }
 
-    if ($ApplyMetadata) {
+    if ($WithMetadata) {
         return "$Index. [Priority:$priority][Owner:$owner][Source:$source] $Text"
     }
     return "$Index. $Text"
 }
 
 function Get-ExtractedSection {
-    param([string[]]$Items, [object]$Rules)
+    param([string[]]$Items, [object]$Rules, [bool]$WithMetadata = $false)
 
     $lines = @('## Auto Extracted From Agent Teams Matrix', '')
     $itemArray = @($Items)
     for ($i = 0; $i -lt $itemArray.Count; $i++) {
-        $lines += (Get-TaskSeedLine -Index ($i + 1) -Text $itemArray[$i] -Rules $Rules)
+        $lines += (Get-TaskSeedLine -Index ($i + 1) -Text $itemArray[$i] -Rules $Rules -WithMetadata $WithMetadata)
     }
     return @($lines)
 }
@@ -127,7 +128,7 @@ switch ($Action) {
         exit 0
     }
     'sync' {
-        $newSection = Get-ExtractedSection -Items $items -Rules $rules
+        $newSection = Get-ExtractedSection -Items $items -Rules $rules -WithMetadata ([bool]$ApplyMetadata)
         $output = [System.Collections.Generic.List[string]]::new()
         $skip = $false
         $replaced = $false
