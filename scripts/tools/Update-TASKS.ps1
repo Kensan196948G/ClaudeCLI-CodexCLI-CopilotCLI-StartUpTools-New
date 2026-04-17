@@ -67,7 +67,7 @@ function Get-TaskLineIndex {
     return -1
 }
 
-function Parse-TaskBody {
+function ConvertFrom-TaskBody {
     param([string]$Line)
 
     $body = $Line -replace '^\d+\.\s*', ''
@@ -143,7 +143,7 @@ switch ($Action) {
         if ($taskLineIndex -lt 0) {
             throw "指定したタスクが見つかりません: $Index"
         }
-        $parsed = Parse-TaskBody -Line $lines[$taskLineIndex]
+        $parsed = ConvertFrom-TaskBody -Line $lines[$taskLineIndex]
         $metadata = [ordered]@{}
         foreach ($key in $parsed.Metadata.Keys) {
             $metadata[$key] = $parsed.Metadata[$key]
@@ -161,7 +161,7 @@ switch ($Action) {
         if ($taskLineIndex -lt 0) {
             throw "指定したタスクが見つかりません: $Index"
         }
-        $parsed = Parse-TaskBody -Line $lines[$taskLineIndex]
+        $parsed = ConvertFrom-TaskBody -Line $lines[$taskLineIndex]
         $lines[$taskLineIndex] = Build-TaskLine -Index $Index -IsDone $false -Metadata $parsed.Metadata -Text $parsed.Text
     }
     'assign' {
@@ -172,7 +172,7 @@ switch ($Action) {
         if ($taskLineIndex -lt 0) {
             throw "指定したタスクが見つかりません: $Index"
         }
-        $parsed = Parse-TaskBody -Line $lines[$taskLineIndex]
+        $parsed = ConvertFrom-TaskBody -Line $lines[$taskLineIndex]
         $metadata = [ordered]@{}
         foreach ($key in $parsed.Metadata.Keys) {
             $metadata[$key] = $parsed.Metadata[$key]
@@ -191,7 +191,7 @@ switch ($Action) {
         if ($taskLineIndex -lt 0) {
             throw "指定したタスクが見つかりません: $Index"
         }
-        $parsed = Parse-TaskBody -Line $lines[$taskLineIndex]
+        $parsed = ConvertFrom-TaskBody -Line $lines[$taskLineIndex]
         $metadata = [ordered]@{}
         foreach ($key in $parsed.Metadata.Keys) {
             $metadata[$key] = $parsed.Metadata[$key]

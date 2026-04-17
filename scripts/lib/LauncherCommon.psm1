@@ -540,7 +540,7 @@ function Sync-ProjectTemplateDirectory {
     }
 }
 
-function Seed-ProjectTemplate {
+function Initialize-ProjectTemplate {
     param(
         [Parameter(Mandatory)]
         [string]$TemplatePath,
@@ -595,13 +595,13 @@ function Sync-LauncherClaudeGlobalConfig {
         -Label '.claude/claudeos'
 
     $settingsTemplatePath = Join-Path $StartupRoot 'scripts\templates\claude-settings.json'
-    Seed-ProjectTemplate `
+    Initialize-ProjectTemplate `
         -TemplatePath $settingsTemplatePath `
         -TargetPath (Join-Path $ProjectDir '.claude\settings.json') `
         -Label '.claude/settings.json' `
         -EnsureParentDirectory
 
-    Seed-ProjectTemplate `
+    Initialize-ProjectTemplate `
         -TemplatePath (Join-Path $StartupRoot 'scripts\templates\claude-mcp.json') `
         -TargetPath (Join-Path $ProjectDir '.mcp.json') `
         -Label '.mcp.json'
@@ -631,7 +631,7 @@ function Sync-LauncherCodexGlobalConfig {
         -TargetPath (Join-Path $ProjectDir 'AGENTS.md') `
         -Label 'AGENTS.md'
 
-    Seed-ProjectTemplate `
+    Initialize-ProjectTemplate `
         -TemplatePath (Join-Path $StartupRoot 'scripts\templates\codex-config.toml') `
         -TargetPath (Join-Path $ProjectDir '.codex\config.toml') `
         -Label '.codex/config.toml' `
@@ -657,7 +657,7 @@ function Sync-LauncherCopilotGlobalConfig {
         -Label 'copilot-instructions.md' `
         -EnsureParentDirectory
 
-    Seed-ProjectTemplate `
+    Initialize-ProjectTemplate `
         -TemplatePath (Join-Path $StartupRoot 'scripts\templates\copilot-mcp.json') `
         -TargetPath (Join-Path $ProjectDir '.github\mcp.json') `
         -Label '.github/mcp.json' `
@@ -1234,7 +1234,7 @@ Export-ModuleMember -Function Set-LauncherEnvironment
 Export-ModuleMember -Function ConvertTo-BashExports
 Export-ModuleMember -Function Sync-ProjectTemplate
 Export-ModuleMember -Function Sync-ProjectTemplateDirectory
-Export-ModuleMember -Function Seed-ProjectTemplate
+Export-ModuleMember -Function Initialize-ProjectTemplate
 Export-ModuleMember -Function Sync-LauncherClaudeGlobalConfig
 Export-ModuleMember -Function Sync-LauncherCodexGlobalConfig
 Export-ModuleMember -Function Sync-LauncherCopilotGlobalConfig

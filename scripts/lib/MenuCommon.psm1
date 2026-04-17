@@ -1,4 +1,4 @@
-function Normalize-MenuRecentToolFilter {
+function ConvertTo-MenuRecentToolFilter {
     param([string]$ToolFilter = '')
 
     if ([string]::IsNullOrWhiteSpace($ToolFilter) -or $ToolFilter -eq 'all') {
@@ -12,7 +12,7 @@ function Normalize-MenuRecentToolFilter {
     return ''
 }
 
-function Normalize-MenuRecentSortMode {
+function ConvertTo-MenuRecentSortMode {
     param([string]$SortMode = 'success')
 
     if ($SortMode -in @('success', 'timestamp', 'elapsed')) {
@@ -32,10 +32,10 @@ function Get-MenuRecentFilterSummary {
     return [pscustomobject]@{
         tool = if ([string]::IsNullOrWhiteSpace($ToolFilter)) { 'all' } else { $ToolFilter }
         search = if ([string]::IsNullOrWhiteSpace($SearchQuery)) { 'none' } else { $SearchQuery }
-        sort = Normalize-MenuRecentSortMode -SortMode $SortMode
+        sort = ConvertTo-MenuRecentSortMode -SortMode $SortMode
     }
 }
 
-Export-ModuleMember -Function Normalize-MenuRecentToolFilter
-Export-ModuleMember -Function Normalize-MenuRecentSortMode
+Export-ModuleMember -Function ConvertTo-MenuRecentToolFilter
+Export-ModuleMember -Function ConvertTo-MenuRecentSortMode
 Export-ModuleMember -Function Get-MenuRecentFilterSummary

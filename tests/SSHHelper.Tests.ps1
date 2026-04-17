@@ -7,21 +7,21 @@ BeforeAll {
     Import-Module "$PSScriptRoot\..\scripts\lib\SSHHelper.psm1" -Force -DisableNameChecking
 }
 
-Describe 'Escape-SSHArgument' {
+Describe 'ConvertTo-EscapedSSHArgument' {
 
     Context '通常の文字列の場合' {
 
         It 'シングルクォートで囲まれること' {
-            $result = Escape-SSHArgument -Value 'hello'
+            $result = ConvertTo-EscapedSSHArgument -Value 'hello'
             $result | Should -Be "'hello'"
         }
 
         It '空文字列を渡すと例外をスローすること（Mandatory パラメータのため）' {
-            { Escape-SSHArgument -Value '' } | Should -Throw
+            { ConvertTo-EscapedSSHArgument -Value '' } | Should -Throw
         }
 
         It 'スペースを含む文字列を正しくエスケープすること' {
-            $result = Escape-SSHArgument -Value 'hello world'
+            $result = ConvertTo-EscapedSSHArgument -Value 'hello world'
             $result | Should -Be "'hello world'"
         }
     }
@@ -29,18 +29,18 @@ Describe 'Escape-SSHArgument' {
     Context 'シングルクォートを含む文字列の場合' {
 
         It "シングルクォートが '\''  にエスケープされること" {
-            $result = Escape-SSHArgument -Value "hello 'world'"
+            $result = ConvertTo-EscapedSSHArgument -Value "hello 'world'"
             # 期待値: 'hello '\''world'\'''
             $result | Should -Be "'hello '\''world'\'''"
         }
 
         It '先頭のシングルクォートが正しくエスケープされること' {
-            $result = Escape-SSHArgument -Value "'test"
+            $result = ConvertTo-EscapedSSHArgument -Value "'test"
             $result | Should -Be "''\''test'"
         }
 
         It '複数のシングルクォートがすべてエスケープされること' {
-            $result = Escape-SSHArgument -Value "it's a 'test'"
+            $result = ConvertTo-EscapedSSHArgument -Value "it's a 'test'"
             $result | Should -Not -BeNullOrEmpty
             $result | Should -Be "'it'\''s a '\''test'\'''"
         }
@@ -49,17 +49,17 @@ Describe 'Escape-SSHArgument' {
     Context '特殊文字を含む文字列の場合' {
 
         It 'ダブルクォートはエスケープされないこと' {
-            $result = Escape-SSHArgument -Value 'say "hello"'
+            $result = ConvertTo-EscapedSSHArgument -Value 'say "hello"'
             $result | Should -Be "'say `"hello`"'"
         }
 
         It 'バックスラッシュはエスケープされないこと' {
-            $result = Escape-SSHArgument -Value 'C:\Users\test'
+            $result = ConvertTo-EscapedSSHArgument -Value 'C:\Users\test'
             $result | Should -Be "'C:\Users\test'"
         }
 
         It 'ドル記号はエスケープされないこと' {
-            $result = Escape-SSHArgument -Value '$HOME'
+            $result = ConvertTo-EscapedSSHArgument -Value '$HOME'
             $result | Should -Be "'`$HOME'"
         }
     }

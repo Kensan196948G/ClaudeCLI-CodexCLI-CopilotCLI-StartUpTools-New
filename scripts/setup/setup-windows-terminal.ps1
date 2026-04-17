@@ -77,7 +77,7 @@ function Get-ProfileOverrides {
     return @($content)
 }
 
-function Ensure-JsonRootMembers {
+function Initialize-JsonRootMembers {
     param([object]$Settings)
 
     if (-not ($Settings.PSObject.Properties.Name -contains 'profiles') -or $null -eq $Settings.profiles) {
@@ -138,7 +138,7 @@ function New-TerminalProfileObject {
     return $terminalProfile
 }
 
-function Upsert-TerminalProfile {
+function Set-TerminalProfile {
     param(
         [object]$Settings,
         [string]$Name,
@@ -205,7 +205,7 @@ catch {
     exit 1
 }
 
-Ensure-JsonRootMembers -Settings $settings
+Initialize-JsonRootMembers -Settings $settings
 
 $externalScheme = Get-ExternalScheme -Path $ThemeJsonPath
 $profileOverrides = Get-ProfileOverrides -Path $ProfileOverridesJsonPath
@@ -251,7 +251,7 @@ $mainBackgroundImage = if ($mainOverride.Count -gt 0 -and ($mainOverride[0].PSOb
 $mainFontFace = if ($mainOverride.Count -gt 0 -and ($mainOverride[0].PSObject.Properties.Name -contains 'fontFace') -and $mainOverride[0].fontFace) { "$($mainOverride[0].fontFace)" } else { $FontFace }
 $mainFontSize = if ($mainOverride.Count -gt 0 -and ($mainOverride[0].PSObject.Properties.Name -contains 'fontSize') -and $mainOverride[0].fontSize) { [int]$mainOverride[0].fontSize } else { $FontSize }
 $mainOpacity = if ($mainOverride.Count -gt 0 -and ($mainOverride[0].PSObject.Properties.Name -contains 'opacity') -and $mainOverride[0].opacity) { [int]$mainOverride[0].opacity } else { $Opacity }
-$mainProfile = Upsert-TerminalProfile -Settings $settings -Name $ProfileName -SchemeName $mainTheme -ProfileStartingDirectory $mainDir -ProfileIcon $mainIcon -ProfileBackgroundImage $mainBackgroundImage -ProfileFontFace $mainFontFace -ProfileFontSize $mainFontSize -ProfileOpacity $mainOpacity -ProfileColorScheme $mainTheme
+$mainProfile = Set-TerminalProfile -Settings $settings -Name $ProfileName -SchemeName $mainTheme -ProfileStartingDirectory $mainDir -ProfileIcon $mainIcon -ProfileBackgroundImage $mainBackgroundImage -ProfileFontFace $mainFontFace -ProfileFontSize $mainFontSize -ProfileOpacity $mainOpacity -ProfileColorScheme $mainTheme
 foreach ($name in @($AdditionalProfileNames | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })) {
     $override = @($profileOverrides | Where-Object { $_.name -eq $name } | Select-Object -First 1)
     $profileTheme = if ($override.Count -gt 0 -and ($override[0].PSObject.Properties.Name -contains 'colorScheme') -and $override[0].colorScheme) { "$($override[0].colorScheme)" } elseif ($override.Count -gt 0 -and ($override[0].PSObject.Properties.Name -contains 'theme') -and $override[0].theme) { "$($override[0].theme)" } else { $effectiveTheme }
@@ -261,7 +261,7 @@ foreach ($name in @($AdditionalProfileNames | Where-Object { -not [string]::IsNu
     $profileFontFace = if ($override.Count -gt 0 -and ($override[0].PSObject.Properties.Name -contains 'fontFace') -and $override[0].fontFace) { "$($override[0].fontFace)" } else { $FontFace }
     $profileFontSize = if ($override.Count -gt 0 -and ($override[0].PSObject.Properties.Name -contains 'fontSize') -and $override[0].fontSize) { [int]$override[0].fontSize } else { $FontSize }
     $profileOpacity = if ($override.Count -gt 0 -and ($override[0].PSObject.Properties.Name -contains 'opacity') -and $override[0].opacity) { [int]$override[0].opacity } else { $Opacity }
-    [void](Upsert-TerminalProfile -Settings $settings -Name $name -SchemeName $profileTheme -ProfileStartingDirectory $profileDir -ProfileIcon $profileIcon -ProfileBackgroundImage $profileBackgroundImage -ProfileFontFace $profileFontFace -ProfileFontSize $profileFontSize -ProfileOpacity $profileOpacity -ProfileColorScheme $profileTheme)
+    [void](Set-TerminalProfile -Settings $settings -Name $name -SchemeName $profileTheme -ProfileStartingDirectory $profileDir -ProfileIcon $profileIcon -ProfileBackgroundImage $profileBackgroundImage -ProfileFontFace $profileFontFace -ProfileFontSize $profileFontSize -ProfileOpacity $profileOpacity -ProfileColorScheme $profileTheme)
 }
 
 if ($SetAsDefault) {
