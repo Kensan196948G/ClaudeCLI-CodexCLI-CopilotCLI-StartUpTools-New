@@ -25,3 +25,17 @@ bash /home/kensan/.claudeos/cron-cli.sh register \
 
 `cron-cli.sh` が未配置の場合は、先に `/home/kensan/.claudeos/cron-launcher.sh` と合わせて
 スタートアップツール経由で配置されているか確認してください。
+
+## v3.2.0 — HTML メールレポート連携
+
+登録した cron エントリは、終了時に `~/.claudeos/report-and-mail.py` 経由で HTML レポート
+メールを送信します(`CLAUDEOS_EMAIL_ENABLED=1` で有効化、既定 off)。
+
+メール送信を有効化する場合、次の追加準備をユーザーに案内してください:
+
+1. `~/.env-claudeos` (chmod 600) に `CLAUDEOS_SMTP_USER` / `CLAUDEOS_SMTP_PASS` /
+   `CLAUDEOS_EMAIL_ENABLED=1` を配置
+2. `cron-launcher.sh` 冒頭で `source ~/.env-claudeos` していることを確認
+3. dry-run で HTML プレビュー → 実機テスト送信で受信確認
+
+詳細はリポジトリルートからの相対パス `docs/common/16_HTMLメールレポート設定.md` を参照(本ファイルは `Claude/templates/claudeos/commands/` 配下のテンプレートのため、利用時に `.claude/commands/` 等へデプロイされた後はリポジトリルートからのパスとして解釈してください)。
