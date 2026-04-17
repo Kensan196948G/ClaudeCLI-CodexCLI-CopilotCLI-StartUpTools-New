@@ -2,6 +2,40 @@
 
 # CHANGELOG
 
+## [v3.2.17] - 2026-04-17 — 3タブ監視構成 + tmux UI 統合
+
+### 🎯 概要
+
+cron 発火した ClaudeCode セッションを Windows Terminal から 3 タブでリアルタイム監視できる構成を実装：
+
+- **Tab①** ログ監視 (`Watch-ClaudeLog.ps1`): SSH `tail -f` で cron ログをリアルタイム表示
+- **Tab②** Claude UI (`tmux attach`): cron-launcher 側で tmux 内に Claude を TTY あり起動、`ssh -t tmux attach` で対話 UI を Windows から閲覧可能
+- **Tab③** Session Info (`Watch-SessionInfoSSH.ps1`): session.json を SSH ポーリングで残り時間・status をリアルタイム更新
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/tools/Watch-ClaudeLog.ps1` | 新規。cron ログ検出 + Tab②③ 自動展開 |
+| `scripts/tools/Watch-SessionInfoSSH.ps1` | 新規。session.json SSH ポーリング表示 |
+| `Claude/templates/linux/cron-launcher.sh` | tmux new-session で Claude を TTY あり実行、wrapper script で引数安全渡し、`tmux pipe-pane` でログも同時書き込み、`tmux wait-for` で同期 |
+| `scripts/main/Start-Menu.ps1` | 項目 14「Claude ログ監視タブを開く」追加 |
+| `config/config.json.template` | `linuxUser` フィールド追加（default: kensan） |
+
+### 🔐 CodeRabbit / Codex 指摘対応
+
+- SSH ユーザー名を `config.linuxUser` からパラメータ化（ハードコード解消）
+- DateTimeOffset でタイムゾーン情報を保持（Get-Date ローカルタイム問題解消）
+- wrapper script の `set -euo pipefail` を除去 — claude 非0終了でも `tmux wait-for -S` 到達保証
+
+### ✅ 検証結果
+
+- CI: test-and-validate / PSScriptAnalyzer / gitleaks / CodeRabbit 全 SUCCESS
+- Linux デプロイ: `/home/kensan/.claudeos/cron-launcher.sh` v3.2.16 確認
+- tmux 3.4 インストール確認済み
+
+---
+
 ## [v3.2.14] - 2026-04-17 — PSProvideCommentHelp 警告 85 件解消
 
 ### 🎯 概要
