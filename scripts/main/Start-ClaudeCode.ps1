@@ -39,6 +39,7 @@ function ConvertTo-BashSingleQuoted {
 }
 
 function New-RemoteTemplateDeployScript {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Factory function returns in-memory object; no persistent system state is modified')]
     param(
         [Parameter(Mandatory)][string]$TemplatePath,
         [Parameter(Mandatory)][string]$TargetPath,

@@ -93,6 +93,7 @@ function Initialize-JsonRootMembers {
 }
 
 function New-TerminalProfileObject {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Factory function returns in-memory object; no persistent system state is modified')]
     param(
         [string]$Name,
         [string]$Guid,
@@ -140,6 +141,7 @@ function New-TerminalProfileObject {
 }
 
 function Set-TerminalProfile {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
         [object]$Settings,
         [string]$Name,

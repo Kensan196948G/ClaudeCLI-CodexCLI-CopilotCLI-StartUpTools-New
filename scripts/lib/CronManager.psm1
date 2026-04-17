@@ -15,6 +15,7 @@ $script:LauncherPath = '/home/kensan/.claudeos/cron-launcher.sh'
 $script:LogsDir = '/home/kensan/.claudeos/logs'
 
 function Set-CronManagerConfig {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
         [string]$EntryPrefix = '',
         [string]$LauncherPath = '',
@@ -128,6 +129,8 @@ function Format-CronExpression {
 }
 
 function New-CronEntryId {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Factory function returns in-memory object; no persistent system state is modified')]
+    param()
     return [Guid]::NewGuid().ToString('N').Substring(0, 8)
 }
 
@@ -176,6 +179,7 @@ function Remove-ClaudeOSCronEntry {
     <#
     .SYNOPSIS ID 指定で CLAUDEOS エントリを削除（コメント行 + 直後の cron 式の 2 行セット）
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
         [Parameter(Mandatory)][string]$LinuxHost,
         [Parameter(Mandatory)][string]$Id
@@ -209,6 +213,7 @@ function Remove-ClaudeOSCronEntry {
 }
 
 function Remove-AllClaudeOSCronEntry {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param([Parameter(Mandatory)][string]$LinuxHost)
 
     $entries = Get-ClaudeOSCronEntry -LinuxHost $LinuxHost

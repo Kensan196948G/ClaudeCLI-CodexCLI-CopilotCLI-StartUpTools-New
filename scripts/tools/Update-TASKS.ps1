@@ -30,6 +30,7 @@ function Get-TaskLine {
 }
 
 function New-TaskMetadataPrefix {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Factory function returns in-memory object; no persistent system state is modified')]
     param(
         [string]$Priority,
         [string]$Owner,
