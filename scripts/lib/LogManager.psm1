@@ -9,6 +9,7 @@ $script:LoggingActive = $false
 
 function Start-SessionLog {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
         [Parameter(Mandatory=$true)]
         [psobject]$Config,
@@ -66,6 +67,7 @@ function Start-SessionLog {
 
 function Stop-SessionLog {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
         [Parameter(Mandatory=$true)]
         [bool]$Success

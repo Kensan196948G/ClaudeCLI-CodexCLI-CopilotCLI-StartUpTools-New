@@ -50,6 +50,8 @@ function Write-StateJson {
 }
 
 function New-BusSection {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Factory function returns in-memory object; no persistent system state is modified')]
+    param()
     <#
     .SYNOPSIS
         message_bus セクションの初期値を返す。
@@ -69,6 +71,8 @@ function Assert-TopicAllowed {
 }
 
 function New-MessageId {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Factory function returns in-memory object; no persistent system state is modified')]
+    param()
     $timestamp = Get-Date -Format 'yyyyMMddHHmmss'
     $random    = -join ((65..90) + (97..122) | Get-Random -Count 4 | ForEach-Object { [char]$_ })
     return "msg-$timestamp-$random"

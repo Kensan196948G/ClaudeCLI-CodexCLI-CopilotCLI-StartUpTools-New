@@ -474,6 +474,7 @@ function Get-RecentProject {
 #>
 function Update-RecentProject {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
         [Parameter(Mandatory=$true)]
         [string]$ProjectName,

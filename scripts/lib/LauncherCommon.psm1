@@ -368,6 +368,7 @@ function Get-LauncherModeName {
 }
 
 function New-LauncherDryRunMessage {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Factory function returns in-memory object; no persistent system state is modified')]
     param(
         [Parameter(Mandatory)]
         [string]$Command,
@@ -416,6 +417,7 @@ function Confirm-LauncherStart {
 }
 
 function Set-LauncherEnvironment {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
         [Parameter(Mandatory)]
         [object]$EnvMap
@@ -926,6 +928,8 @@ function Write-LauncherMetadataLog {
 }
 
 function New-LauncherExecutionContext {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Factory function returns in-memory object; no persistent system state is modified')]
+    param()
     return [pscustomobject]@{
         StartTime = Get-Date
         Result = 'unknown'
@@ -1334,6 +1338,7 @@ public class LauncherWinMM {
 Export-ModuleMember -Function Invoke-LauncherNotificationSound
 
 function New-RemoteTemplateDeployScript {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Factory function returns in-memory object; no persistent system state is modified')]
     param(
         [Parameter(Mandatory)]
         [string]$TemplatePath,

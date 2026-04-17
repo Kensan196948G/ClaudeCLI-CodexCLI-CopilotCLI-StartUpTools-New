@@ -15,6 +15,7 @@ function Get-SessionDir {
 }
 
 function New-SessionId {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Factory function returns in-memory object; no persistent system state is modified')]
     param(
         [Parameter(Mandatory)][string]$Project
     )
@@ -24,6 +25,7 @@ function New-SessionId {
 }
 
 function New-SessionInfo {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Factory function returns in-memory object; no persistent system state is modified')]
     param(
         [Parameter(Mandatory)][string]$Project,
         [int]$DurationMinutes = 300,
@@ -91,6 +93,7 @@ function Get-SessionInfo {
 }
 
 function Set-SessionStatus {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
         [Parameter(Mandatory)][string]$SessionId,
         [Parameter(Mandatory)]
@@ -106,6 +109,7 @@ function Set-SessionStatus {
 }
 
 function Update-SessionDuration {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
         [Parameter(Mandatory)][string]$SessionId,
         [Parameter(Mandatory)][int]$DurationMinutes,

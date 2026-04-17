@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # WorktreeManager.psm1 - Git Worktree management module
 # ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools v2.7.0
 # Issue #32: Worktree Manager implementation
@@ -111,6 +111,7 @@ function New-Worktree {
     .PARAMETER WorktreeDir
         Custom worktree directory path. Auto-generated under .worktrees/ if omitted.
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
         [Parameter(Mandatory)]
         [string]$BranchName,
@@ -205,6 +206,7 @@ function Remove-Worktree {
     .PARAMETER RepoRoot
         Repository root path. Auto-detected if omitted.
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
         [Parameter(Mandatory)]
         [string]$BranchName,

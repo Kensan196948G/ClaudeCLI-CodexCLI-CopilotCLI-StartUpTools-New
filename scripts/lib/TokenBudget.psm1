@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # TokenBudget.psm1 - Token Budget Manager
 # ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools v2.8.0
 # Phase 3: Token Budget auto-control
@@ -57,6 +57,8 @@ function Get-TokenState {
 }
 
 function New-TokenState {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Factory function returns in-memory object; no persistent system state is modified')]
+    param()
     <#
     .SYNOPSIS
         Creates a fresh token budget state with default allocation.
@@ -147,6 +149,7 @@ function Update-TokenUsage {
     .PARAMETER StatePath
         Path to state.json.
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
         [Parameter(Mandatory)]
         [ValidateSet('monitor', 'development', 'verify', 'improvement', 'debug')]

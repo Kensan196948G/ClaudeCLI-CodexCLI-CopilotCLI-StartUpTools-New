@@ -159,6 +159,7 @@ function Get-BacklogRuleMatch {
 }
 
 function New-AgentTeam {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal autonomous CLI function; ShouldProcess disrupts unattended operation')]
     param(
         [Parameter(Mandatory)]
         [string]$TaskDescription,
