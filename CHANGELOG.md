@@ -2,6 +2,38 @@
 
 # CHANGELOG
 
+## [v3.2.7] - 2026-04-17 — PSUseBOMForUnicodeEncodedFile 警告 35 件解消
+
+### 🎯 概要
+
+PSScriptAnalyzer `PSUseBOMForUnicodeEncodedFile` ルール警告 35 件を解消。
+非 ASCII 文字（日本語コメント等）を含む 35 ファイルに UTF-8 BOM を追加。
+コードロジック変更・関数リネームなし。
+
+### 🔧 変更対象 (35 ファイル)
+
+| カテゴリ | ファイル数 |
+|---|---|
+| `scripts/lib/*.psm1` | 12 |
+| `scripts/main/*.ps1` | 6 |
+| `scripts/test/*.ps1` | 2 |
+| `scripts/tools/*.ps1` | 2 |
+| `tests/*.Tests.ps1` | 12 |
+| `Claude/templates/claude/` | 1 |
+
+### 🛡️ 設計判断
+
+- **ロジック変更ゼロ**: `[System.IO.File]::WriteAllText($path, $content, [System.Text.UTF8Encoding]::new($true))` による純粋なエンコーディング変更のみ
+- **BOM 二重付与防止**: 先頭 3 バイト (EF BB BF) を事前チェックして SKIP
+- **テスト全通過**: Pester 477 tests Passed: 477 / Failed: 0
+
+### 🔗 参照
+
+- Issue: #155
+- PR: #156 (予定)
+
+---
+
 ## [v3.2.6] - 2026-04-17 — PSUseApprovedVerbs 警告 9 件解消
 
 ### 🎯 概要
