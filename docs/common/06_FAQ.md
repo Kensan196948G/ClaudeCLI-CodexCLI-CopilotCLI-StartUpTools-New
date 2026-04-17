@@ -123,7 +123,7 @@ finalize trap
    ├─ CLAUDEOS_EMAIL_ENABLED=1 確認
    └─ python3 ~/.claudeos/report-and-mail.py --status ... 🆕 v3.2.0
         ↓
-        kensan1969@gmail.com に HTML レポート到着 📧
+        CLAUDEOS_DEFAULT_TO で指定したアドレスに HTML レポート到着 📧
 ```
 
 ログは `~/.claudeos/logs/cron-{YYYYMMDD-HHMMSS}.log` に常時保存されます。
@@ -135,12 +135,12 @@ finalize trap
 セットアップは 5 ステップで完了します。
 
 1. Gmail で **アプリパスワード**を取得(2 段階認証 → アプリパスワード)
-2. Linux 側で `~/.env-claudeos` を作成(`echo` 方式推奨、heredoc は失敗しやすい)
+2. Linux 側で `~/.env-claudeos` を作成(完全手順 docs では heredoc 例を記載していますが、ターミナル貼り付けで終端 EOF が行頭インデント付きになり失敗するケースがあるため、その場合は `echo 'export ...' >> ~/.env-claudeos` を 1 行ずつ実行する方式が安全です)
 3. `~/.claudeos/` に `report-and-mail.py` と `cron-launcher.sh` を scp で配置
 4. `cron-launcher.sh` 冒頭に `[[ -f ~/.env-claudeos ]] && source ~/.env-claudeos` を sed で追加
 5. dry-run でプレビュー → 実機テスト送信で受信確認
 
-完全手順は [`16_HTMLメールレポート設定.md`](./16_HTMLメールレポート設定.md)。
+完全手順は [`16_HTMLメールレポート設定.md`](./16_HTMLメールレポート設定.md)、heredoc トラブル時の代替手順は [`05_トラブルシューティング.md`](./05_トラブルシューティング.md#cron-html-メールレポート-v320) を参照。
 
 ---
 

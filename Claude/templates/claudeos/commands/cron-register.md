@@ -38,4 +38,4 @@ bash /home/kensan/.claudeos/cron-cli.sh register \
 2. `cron-launcher.sh` 冒頭で `source ~/.env-claudeos` していることを確認
 3. dry-run で HTML プレビュー → 実機テスト送信で受信確認
 
-詳細は `docs/common/16_HTMLメールレポート設定.md` を参照。
+詳細はリポジトリルートからの相対パス `docs/common/16_HTMLメールレポート設定.md` を参照(本ファイルは `Claude/templates/claudeos/commands/` 配下のテンプレートのため、利用時に `.claude/commands/` 等へデプロイされた後はリポジトリルートからのパスとして解釈してください)。

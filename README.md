@@ -8,7 +8,7 @@
 > v3.1.0 より、Codex CLI / GitHub Copilot CLI の起動メニュー (S2/S3/L2/L3) は削除されました。本ツールは **Claude Code 専用の自律開発ランチャー** として位置づけを明確化し、Linux crontab 連携・セッション情報タブ・Statusline グローバル適用などの新機能に投資が集中しています。
 
 > **📨 v3.2.0 — Cron HTML メールレポート (Visual Recap Mail)**
-> Cron で起動された ClaudeCode セッションの完了時に、**HTML 形式のレポートメール** を Gmail SMTP 経由で送信。アイコン+色付き表組み+実行サマリ(Monitor/Development/Verify/Improvement の出現回数/エラー検出/STABLE 達成)+次フェーズ提案を含む。SMTP 認証情報は `~/.env-claudeos` の Linux 環境変数で管理(config.json には書かない設計)。詳細は [`docs/common/16_HTMLメールレポート設定.md`](./docs/common/16_HTMLメールレポート設定.md) を参照。
+> Cron で起動された ClaudeCode セッションの完了時に、**HTML 形式のレポートメール** を Gmail SMTP 経由で送信。アイコン+色付き表組み+実行サマリ(Monitor/Development/Verify/Improvement の出現回数/エラー検出/STABLE 達成)+次フェーズ提案を含む。送信先は `CLAUDEOS_DEFAULT_TO`(未設定時 `CLAUDEOS_SMTP_USER`)で指定し、SMTP 認証情報は `~/.env-claudeos` の Linux 環境変数で管理(config.json には書かない設計)。詳細は [`docs/common/16_HTMLメールレポート設定.md`](./docs/common/16_HTMLメールレポート設定.md) を参照。
 
 ## 対応ツール
 
@@ -27,7 +27,7 @@
 | バージョン | **v3.2.0** (Cron HTML メールレポート / Visual Recap Mail) — 旧: v3.1.0 (Cron / Session Info Tab / Statusline / Slash Commands) |
 | テスト | **477件** — (Pester, CI) |
 | CI | ✅ SUCCESS |
-| ClaudeOS (Claude Code 専用) | v8.1 (Harness Evolution / Progressive Disclosure / Frontier-Test / Dead-Weight 自動検出 / Stop-Doing 点検 / CodeRabbit 統合 / **Phase Compaction (`/compact` 標準化)**) |
+| ClaudeOS (Claude Code 専用) | v8.2 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) — 旧 v8.1: Harness Evolution / Progressive Disclosure / Frontier-Test / CodeRabbit 統合 / Phase Compaction |
 | Agents | **17体** の特化サブエージェント (2026Q2 棚卸しで最適化済み) |
 | Skills | **0個** — Claude Opus 4.6 内包能力で代替可能な汎用スキルを棚卸しで全削除 |
 | Hooks | **4個** — agent-risk-check / capture-result / onboarding-refresh / usage-history-recorder |
@@ -321,7 +321,7 @@ Linux crontab に週次自動起動エントリを登録します。`CLAUDEOS:<u
 - 登録フロー: プロジェクト番号 → 曜日（複数可）→ 時刻（HH:MM）→ 作業時間（分、既定 300）
 - 起動は Linux 側 `~/.claudeos/cron-launcher.sh` が `timeout` 付き auto mode で ClaudeCode を実行
 - セッションログは `~/.claudeos/logs/` に保存
-- **🆕 v3.2.0**: 終了時に `~/.claudeos/report-and-mail.py` が HTML レポートメールを `kensan1969@gmail.com`(設定先)に送信(`CLAUDEOS_EMAIL_ENABLED=1` で明示 opt-in、認証情報は `~/.env-claudeos` 経由)
+- **🆕 v3.2.0**: 終了時に `~/.claudeos/report-and-mail.py` が HTML レポートメールを **`CLAUDEOS_DEFAULT_TO` で指定したアドレス** に送信(`CLAUDEOS_EMAIL_ENABLED=1` で明示 opt-in、認証情報は `~/.env-claudeos` 経由、`config.json` には書かない設計)
 
 #### Session Info タブ (Windows Terminal)
 
