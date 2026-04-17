@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Kensan196948G/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/blob/main/state.schema.json",
   "title": "ClaudeOS v8.2 state.json",
   "description": "Runtime state for ClaudeOS autonomous development loops. Read by session-start.js / pre-compact.js / notify-stable.js hooks.",

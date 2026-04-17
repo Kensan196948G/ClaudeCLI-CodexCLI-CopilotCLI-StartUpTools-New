@@ -15,7 +15,7 @@ v3.2.2 STABLE (PR #146) 達成後の Monitor で検出された 4 項目 (M-1..M
 ### 🗂 state 設定アーティファクト整備 (M-2)
 
 - **`state.json.example`** を v8.2 フル対応に更新。既存版では `task_budget` / `compact` / `notification` / `effort_strategy` / `cache` / `message_bus` / `execution.current_session_*` / `stable.*_pr` 等が欠落していた。
-- **`state.schema.json`** を新規配置 (JSON Schema draft-07)。必須フィールド / enum / 型制約を明示。
+- **`state.schema.json`** を新規配置 (JSON Schema draft/2020-12、既存 `docs/common/schemas/state.schema.json` と meta-schema 一致)。必須フィールド / enum / 型制約を明示。合わせて v7.4 時代の `docs/common/schemas/state.schema.json` (重複) を削除。
 - CLAUDE.md §4 で「配置してください」と明示されていた推奨事項を実装。
 
 ### 🛡️ hookify CTO ガード 検出フレーズ拡充 (M-4)
