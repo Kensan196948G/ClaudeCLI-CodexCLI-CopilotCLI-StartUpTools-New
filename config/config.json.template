@@ -5,6 +5,7 @@
   "sshProjectsDir": "auto",
   "projectsDirUnc": "\\\\<your-linux-host>\\Projects",
   "linuxHost": "<your-linux-host>",
+  "linuxUser": "kensan",
   "linuxBase": "/home/kensan/Projects",
   "localExcludes": [],
   "tools": {
