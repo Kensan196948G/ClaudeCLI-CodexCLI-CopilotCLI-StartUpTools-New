@@ -88,7 +88,7 @@ function Get-ExtractedSection {
     return @($lines)
 }
 
-$items = Get-UnimplementedItems
+$items = @(Get-UnimplementedItems)
 $rules = Get-MetadataRules -Path $RulesPath
 $taskLines = Get-Content -Path $TasksPath -Encoding UTF8
 $currentExtracted = @()
