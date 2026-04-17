@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # cron-launcher.sh - Linux 側で ClaudeCode を cron から起動するラッパ
-# ClaudeOS v3.2.0
+# ClaudeOS v3.2.16
 #
 # Usage: cron-launcher.sh <project> <duration-minutes>
 #
@@ -65,14 +65,9 @@ cat > "$SESSION_FILE.tmp" <<EOF
 EOF
 mv "$SESSION_FILE.tmp" "$SESSION_FILE"
 
-# --- tmux log-tail セッション起動（CLAUDEOS_TMUX=0 で無効化） ---
-# tmux attach -t "claudeos-SAFEPROJECT" でリアルタイムログを閲覧できる
 TMUX_SESSION="claudeos-${SAFE_PROJECT}"
-if command -v tmux >/dev/null 2>&1 && [[ "${CLAUDEOS_TMUX:-1}" == "1" ]]; then
-  tmux kill-session -t "$TMUX_SESSION" 2>/dev/null || true
-  tmux new-session -d -s "$TMUX_SESSION" bash -c "tail -f '$LOG_FILE'"
-  echo "[cron-launcher] tmux log-tail: tmux attach -t $TMUX_SESSION" >> "$LOG_FILE"
-fi
+CLAUDE_EXIT_FILE="$SESSIONS_DIR/${SESSION_ID}.exit"
+CLAUDE_WRAPPER="$SESSIONS_DIR/${SESSION_ID}.wrapper.sh"
 
 # 終了時に status を更新するトラップ
 finalize() {
@@ -103,10 +98,11 @@ finalize() {
 
   echo "[cron-launcher] session finished status=$final_status exit=$exit_code at $now" >> "$LOG_FILE"
 
-  # tmux log-tail セッションを終了
+  # tmux セッションを終了・一時ファイルを削除
   if command -v tmux >/dev/null 2>&1; then
     tmux kill-session -t "claudeos-${SAFE_PROJECT}" 2>/dev/null || true
   fi
+  rm -f "$CLAUDE_WRAPPER" "$CLAUDE_EXIT_FILE"
 
   # --- v3.2.0: HTML レポートメール送信 ---
   # 明示的トグル CLAUDEOS_EMAIL_ENABLED=1 が必要。誤送信防止のため既定 off。
@@ -145,8 +141,44 @@ if [[ -f "$PROJECT_DIR/.claude/START_PROMPT.md" ]]; then
   PROMPT_ARG="$(cat "$PROJECT_DIR/.claude/START_PROMPT.md")"
 fi
 
-if [[ -n "$PROMPT_ARG" ]]; then
-  timeout "${DURATION_SEC}s" claude --dangerously-skip-permissions "$PROMPT_ARG" >> "$LOG_FILE" 2>&1
+# wrapper script: env var 経由で引数を安全に渡す（tmux new-session での引用符崩れ対策）
+cat > "$CLAUDE_WRAPPER" <<'WRAPPER_EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ -n "${_CLAUDEOS_PROMPT_ARG:-}" ]]; then
+  timeout "${_CLAUDEOS_DURATION_SEC}s" claude --dangerously-skip-permissions "${_CLAUDEOS_PROMPT_ARG}"
 else
-  timeout "${DURATION_SEC}s" claude --dangerously-skip-permissions >> "$LOG_FILE" 2>&1
+  timeout "${_CLAUDEOS_DURATION_SEC}s" claude --dangerously-skip-permissions
+fi
+echo $? > "${_CLAUDEOS_EXIT_FILE}"
+# tmux wait-for でメイン shell へ終了を通知
+tmux wait-for -S "${_CLAUDEOS_TMUX_DONE}"
+WRAPPER_EOF
+chmod +x "$CLAUDE_WRAPPER"
+
+export _CLAUDEOS_PROMPT_ARG="$PROMPT_ARG"
+export _CLAUDEOS_DURATION_SEC="$DURATION_SEC"
+export _CLAUDEOS_EXIT_FILE="$CLAUDE_EXIT_FILE"
+export _CLAUDEOS_TMUX_DONE="done-${SAFE_PROJECT}"
+
+if command -v tmux >/dev/null 2>&1 && [[ "${CLAUDEOS_TMUX:-1}" == "1" ]]; then
+  # Claude を tmux セッション内で起動（TTY あり → attach で UI 閲覧可能）
+  tmux kill-session -t "$TMUX_SESSION" 2>/dev/null || true
+  tmux new-session -d -s "$TMUX_SESSION" -x 220 -y 50 "$CLAUDE_WRAPPER"
+  # tmux pipe-pane でセッション出力をログファイルへも書き込む
+  tmux pipe-pane -t "$TMUX_SESSION" -o "cat >> '$LOG_FILE'"
+  echo "[cron-launcher] tmux attach -t $TMUX_SESSION  (UI閲覧用)" >> "$LOG_FILE"
+  # tmux セッション終了まで待機
+  tmux wait-for "${_CLAUDEOS_TMUX_DONE}"
+else
+  # tmux 無効時は従来通り TTY なし実行
+  timeout "${DURATION_SEC}s" claude --dangerously-skip-permissions ${PROMPT_ARG:+"$PROMPT_ARG"} >> "$LOG_FILE" 2>&1
+fi
+
+# wrapper が書いた終了コードを読み取り、EXIT トラップへ伝播
+if [[ -f "$CLAUDE_EXIT_FILE" ]]; then
+  CLAUDE_EXIT=$(cat "$CLAUDE_EXIT_FILE")
+  if [[ "$CLAUDE_EXIT" != "0" ]]; then
+    exit "${CLAUDE_EXIT}"
+  fi
 fi

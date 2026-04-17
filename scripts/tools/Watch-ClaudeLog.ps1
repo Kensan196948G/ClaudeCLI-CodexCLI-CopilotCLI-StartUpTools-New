@@ -5,7 +5,7 @@
     Linux 側の cron-launcher.sh が出力するログファイルを自動検出し
     Windows Terminal の新規タブで tail -f を開始する。
     cron 実行前に起動しておくと、発火を検知して自動でログ表示を開始する。
-    ClaudeOS v3.2.15
+    ClaudeOS v3.2.16
 .PARAMETER NewTab
     Windows Terminal の新規タブで開く（既定: 現在のウィンドウで実行）。
 .PARAMETER PollIntervalSeconds
@@ -122,6 +122,32 @@ function Get-SessionIdForLog {
     return ($result.Trim() -split '/')[-1] -replace '\.json$', ''
 }
 
+function Open-TmuxAttachTab {
+    param([string]$SessionId)
+    $wtExe = Get-Command wt.exe -ErrorAction SilentlyContinue
+    if (-not $wtExe) {
+        Write-Host '  [INFO] wt.exe が非検出のため Tmux Attach タブを開けません。' -ForegroundColor Yellow
+        return
+    }
+    # SessionId = "YYYYMMDD-HHMMSS-SAFEPROJECT" → 3番目セグメントが SAFE_PROJECT
+    $parts = $SessionId -split '-', 3
+    if ($parts.Count -lt 3) {
+        Write-Host "  [WARN] SessionId のパースに失敗しました: $SessionId" -ForegroundColor Yellow
+        return
+    }
+    $safeProject = $parts[2]
+    $tmuxSession  = "claudeos-$safeProject"
+    $sshCmd       = "ssh -t kensan@$LinuxHost tmux attach -t $tmuxSession"
+    $psExe        = (Get-Process -Id $PID).Path
+    $psArgs = @(
+        '-NoExit', '-NoProfile', '-ExecutionPolicy', 'Bypass',
+        '-Command', $sshCmd
+    )
+    $wtArgs = @('-w', '0', 'new-tab', '--title', 'Claude-UI', '--', $psExe) + $psArgs
+    Start-Process -FilePath $wtExe.Source -ArgumentList $wtArgs -WindowStyle Hidden
+    Write-Host "  Claude UI タブを開きました: tmux attach -t $tmuxSession" -ForegroundColor Magenta
+}
+
 function Open-SessionInfoTab {
     param([string]$SessionId)
     $wtExe = Get-Command wt.exe -ErrorAction SilentlyContinue
@@ -166,7 +192,9 @@ while ($true) {
             Write-Host '  Session ID を取得中...' -ForegroundColor DarkGray
             $sessionId = Get-SessionIdForLog -LogPath $latest
             if ($sessionId) {
-                Open-SessionInfoTab -SessionId $sessionId
+                Open-TmuxAttachTab -SessionId $sessionId   # Tab ②: Claude UI (tmux attach)
+                Start-Sleep -Seconds 1
+                Open-SessionInfoTab -SessionId $sessionId  # Tab ③: Session Info
             } else {
                 Write-Host '  [WARN] Session ID が見つかりませんでした。' -ForegroundColor Yellow
             }
