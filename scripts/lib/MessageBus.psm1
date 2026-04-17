@@ -300,10 +300,13 @@ function Confirm-BusMessage {
         return $false
     }
 
-    $found = $false
+    if (-not ($bus.$Topic | Where-Object { $_.id -eq $MessageId })) {
+        Write-Verbose "MessageBus: Message '$MessageId' not found in topic '$Topic'"
+        return $false
+    }
+
     $updatedQueue = @($bus.$Topic) | ForEach-Object {
         if ($_.id -eq $MessageId) {
-            $found = $true
             $consumed = @($_.consumed_by)
             if ($Consumer -notin $consumed) {
                 $consumed += $Consumer
@@ -311,11 +314,6 @@ function Confirm-BusMessage {
             }
         }
         $_
-    }
-
-    if (-not $found) {
-        Write-Verbose "MessageBus: Message '$MessageId' not found in topic '$Topic'"
-        return $false
     }
 
     $bus | Add-Member -MemberType NoteProperty -Name $Topic -Value $updatedQueue -Force

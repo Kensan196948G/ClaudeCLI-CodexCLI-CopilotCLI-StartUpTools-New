@@ -29,7 +29,7 @@ function New-SessionInfo {
         [int]$DurationMinutes = 300,
         [ValidateSet('manual', 'cron')]
         [string]$Trigger = 'manual',
-        [int]$Pid = 0,
+        [int]$ProcessId = 0,
         [string]$ConfigSessionsDir = ''
     )
 
@@ -45,7 +45,7 @@ function New-SessionInfo {
         max_duration_minutes = $DurationMinutes
         end_time_planned     = $end.ToString('o')
         status               = 'running'
-        pid                  = $Pid
+        pid                  = $ProcessId
         last_updated         = $start.ToString('o')
     }
 

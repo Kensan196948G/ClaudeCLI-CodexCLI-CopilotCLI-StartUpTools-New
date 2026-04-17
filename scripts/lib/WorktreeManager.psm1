@@ -228,7 +228,6 @@ function Remove-Worktree {
     }
 
     # Remove worktree
-    $forceFlag = if ($Force) { '--force' } else { '' }
     $removeArgs = @('-C', $RepoRoot, 'worktree', 'remove')
     if ($Force) { $removeArgs += '--force' }
     $removeArgs += $worktree.Path
@@ -340,7 +339,7 @@ function Invoke-WorktreeCleanup {
     $removed = @()
     foreach ($wt in $candidates) {
         try {
-            $result = Remove-Worktree -BranchName $wt.Branch -DeleteBranch -RepoRoot $RepoRoot
+            $null = Remove-Worktree -BranchName $wt.Branch -DeleteBranch -RepoRoot $RepoRoot
             $removed += [pscustomobject]@{
                 Branch  = $wt.Branch
                 Path    = $wt.Path
