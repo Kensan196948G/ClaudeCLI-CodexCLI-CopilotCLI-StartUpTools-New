@@ -333,7 +333,7 @@ Describe 'ClaudeOS System Files Integrity' {
         }
 
         It 'benchmark-tasks.md が存在すること (Issue #109)' {
-            Join-Path $script:ClaudeOsDir 'frontier' 'benchmark-tasks.md' | Should -Exist
+            Join-Path -Path $script:ClaudeOsDir -ChildPath 'frontier\benchmark-tasks.md' | Should -Exist
         }
     }
 }
@@ -389,6 +389,6 @@ Describe 'v3.0.0 New Document Existence (Issue #103-#109)' {
     }
 
     It 'v3 リリースノート MD が存在すること' {
-        Join-Path $script:RepoRoot 'docs' 'common' '15_v3リリースノート.md' | Should -Exist
+        Join-Path -Path $script:RepoRoot -ChildPath 'docs\common\15_v3リリースノート.md' | Should -Exist
     }
 }

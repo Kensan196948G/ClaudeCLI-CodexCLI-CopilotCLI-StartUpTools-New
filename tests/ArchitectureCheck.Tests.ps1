@@ -3,7 +3,7 @@
 # ============================================================
 
 BeforeAll {
-    $ModulePath = Join-Path $PSScriptRoot '..' 'scripts' 'lib' 'ArchitectureCheck.psm1'
+    $ModulePath = Join-Path -Path $PSScriptRoot -ChildPath '..\scripts\lib\ArchitectureCheck.psm1'
     Import-Module $ModulePath -Force -DisableNameChecking
 }
 

@@ -34,6 +34,7 @@
 25. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#157] v3.2.8 PSUseSingularNouns 警告 36 件解消 — 32 関数リネーム / 誤検知 4 件 SuppressMessageAttribute / STABLE N=2 達成 (PR #158)
 26. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#160] v3.2.9 PSUseShouldProcessForStateChangingFunctions 警告 26 件解消 — 12 ファイル SuppressMessageAttribute / STABLE N=2 達成 (PR #161)
 27. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.10 PSReviewUnusedParameter 警告 7 件解消 — 6 ファイル修正 (SuppressMessage 4件 / 実使用 1件 / Add-Member修正 1件) / STABLE N=2 達成
+28. [Priority:P2][Owner:Developer][Source:Manual] v3.2.11 PSAvoidUsingPositionalParameters 警告解消 — 6 ファイル (Join-Path 6件 / Assert-Eq 12件 / Assert-Match 2件 / Write-BootStep 1件) 名前付き引数変換
 
 ## Auto Extracted From Agent Teams Matrix
 
@@ -42,6 +43,9 @@
 ## GitHub Issues Sync
 
 (No open issues)
+
+
+
 
 
 
