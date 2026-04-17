@@ -34,6 +34,8 @@
 | P1 | Issue 本文の必須フィールド（Intent / Constraints / Acceptance Criteria / Target Files）を §7 に追加 |
 | P1 | Thinking 制御プロンプト指針（deeper / speed）を §24.1 に追加 |
 | P1 | ツール使用明示ガイドラインを §24.1 に追加 |
+| P2 | Auto mode 操作手順（Shift+Tab、Claude Code Max）を §3 に追加 |
+| P2 | Response length calibration 指針を §24.1 に追加 |
 
 ## 0. セッション開始時の自動実行（最優先）
 
@@ -130,6 +132,21 @@ agents、skills、commands、rules、hooks、scripts、contexts、examples、mcp
 | 最大作業時間 | 5 時間（厳守） |
 | Loop Guard | 最優先 |
 | 言語 | 日本語（コード内コメントは英語可） |
+
+### Auto mode 操作手順（v8.3 追加・Claude Code Max ユーザー向け）
+
+Claude Code で **Shift+Tab** を押すと Auto mode が切り替わる。
+Auto mode では Claude がツール呼び出し・ファイル編集・コマンド実行を自律判断で進める。
+本件（CTO 全権委任）では Auto mode を **常時 ON** とし、確認ダイアログを出さない。
+
+| 操作 | 効果 |
+|---|---|
+| `Shift+Tab` | Auto mode ON/OFF トグル |
+| Auto mode ON | ツール・編集・実行をすべて自律判断で進める |
+| Auto mode OFF | 各ステップでユーザー確認を求める（原則使用しない） |
+
+> Claude Code Max サブスクリプションでは Auto mode が既定で利用可能。
+> 非 Max 環境では `--dangerously-skip-permissions` フラグを確認すること。
 
 ## 4. Goal Driven System
 
@@ -803,6 +820,16 @@ Agent Teams は並列で spawn する  / 単独集約しない
   - speed 優先（Monitor・ドキュメント更新等）: `深い推論より速度を優先してください` と明記
 - **ツール使用の明示**: Opus 4.7 はツール呼び出しを抑制するため、エージェント指示に
   「Codex レビューを必ず実行すること」「並列に複数 Agent を spawn すること」を字義通りに記載する
+- **Response length calibration（v8.3 追加）**: Opus 4.7 は指示を字義通り解釈するため、
+  フェーズ・目的に応じたレスポンス長を明示することで出力品質が安定する。
+
+  | フェーズ / 目的 | 長さ指針 | プロンプト文例 |
+  |---|---|---|
+  | Monitor / ステータス確認 | 短答（3 行以内） | `結果だけ 3 行以内で報告してください` |
+  | Verify レポート | 詳細（全チェック結果） | `各チェック項目の結果を漏れなく列挙してください` |
+  | CI 失敗分析 | 中程度（原因 + 修正案） | `原因と最小修正案を 10 行以内でまとめてください` |
+  | ドキュメント更新 | 完全な内容 | `省略せず全文を出力してください` |
+  | Agent ログ | 1 行サマリー | `1 行でアクションと結果を報告してください` |
 
 ### 24.2 禁止事項
 

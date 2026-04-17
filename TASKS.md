@@ -35,7 +35,7 @@
 26. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#160] v3.2.9 PSUseShouldProcessForStateChangingFunctions 警告 26 件解消 — 12 ファイル SuppressMessageAttribute / STABLE N=2 達成 (PR #161)
 27. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.10 PSReviewUnusedParameter 警告 7 件解消 — 6 ファイル修正 (SuppressMessage 4件 / 実使用 1件 / Add-Member修正 1件) / STABLE N=2 達成
 28. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.11 PSAvoidUsingPositionalParameters 警告解消 — 6 ファイル (Join-Path 6件 / Assert-Eq 12件 / Assert-Match 2件 / Write-BootStep 1件) 名前付き引数変換 (PR #163)
-29. [Priority:P2][Owner:Developer][Source:Manual] v3.2.12 PSUseOutputTypeCorrectly 警告解消 — 7 ファイル 13 関数 [OutputType()] 追加
+29. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.12 PSUseOutputTypeCorrectly 警告解消 — 7 ファイル 13 関数 [OutputType()] 追加 / STABLE N=2 達成 (PR #164)
 
 ## Auto Extracted From Agent Teams Matrix
 
