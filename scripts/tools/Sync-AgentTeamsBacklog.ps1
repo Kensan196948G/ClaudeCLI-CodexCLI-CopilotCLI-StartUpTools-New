@@ -81,13 +81,14 @@ function Get-ExtractedSection {
     param([string[]]$Items, [object]$Rules)
 
     $lines = @('## Auto Extracted From Agent Teams Matrix', '')
-    for ($i = 0; $i -lt $Items.Count; $i++) {
-        $lines += (Get-TaskSeedLine -Index ($i + 1) -Text $Items[$i] -Rules $Rules)
+    $itemArray = @($Items)
+    for ($i = 0; $i -lt $itemArray.Count; $i++) {
+        $lines += (Get-TaskSeedLine -Index ($i + 1) -Text $itemArray[$i] -Rules $Rules)
     }
     return @($lines)
 }
 
-$items = Get-UnimplementedItems
+$items = @(Get-UnimplementedItems)
 $rules = Get-MetadataRules -Path $RulesPath
 $taskLines = Get-Content -Path $TasksPath -Encoding UTF8
 $currentExtracted = @()

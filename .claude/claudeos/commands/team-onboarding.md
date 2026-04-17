@@ -30,14 +30,13 @@ ClaudeOS フレームワーク全般の説明ではなく、**このリポジト
 
 **必ず単一メッセージ内で並列実行すること。** 逐次実行は禁止（Phase B だけで数秒〜十数秒のロスが発生するため）。
 
-以下 7 件の tool 呼び出しを **同一の assistant メッセージ内に束ねる**:
+以下 6 件の tool 呼び出しを **同一の assistant メッセージ内に束ねる**:
 
 ```
 並列バッチ例（疑似コード）:
   Read("./CLAUDE.md")
   Read("./state.json")
   Read("./README.md")
-  Read(".claude/claudeos/CLAUDE.md")
   Glob(".claude/claudeos/agents/**/*.md")
   Glob(".claude/claudeos/commands/*.md")
   Read(".claude/claudeos/hooks/hooks.json")
@@ -48,12 +47,13 @@ ClaudeOS フレームワーク全般の説明ではなく、**このリポジト
 | `./CLAUDE.md` | `Read` | Phase A で弾くので到達しない |
 | `./state.json` | `Read` | 動的生成前で未存在が通常。欠損時は `CLAUDE.md` §4 Goal Driven System から Goal / KPI の初期値テンプレを抽出 |
 | `./README.md` | `Read` | `*README 未整備 — プロジェクト概要セクションは空欄のまま出力*` |
-| `.claude/claudeos/CLAUDE.md` | `Read` | 継承なし、グローバル設定のみとみなす |
 | `.claude/claudeos/agents/` | `Glob("**/*.md")` | `*Agent Teams 未整備 — .claude/claudeos/agents/ ディレクトリなし*` |
 | `.claude/claudeos/commands/` | `Glob("*.md")` | `*コマンド未整備 — .claude/claudeos/commands/ ディレクトリなし*` |
 | `.claude/claudeos/hooks/hooks.json` | `Read` | `*フック未設定 — hooks.json 未配置*` |
 
-並列化が守られない場合の運用コストは、各 tool 呼び出しのラウンドトリップ遅延 × 7 倍。Claude Code の tool dispatcher は独立した呼び出しを物理的に並列化するため、**1 メッセージに全部入れる** のが唯一の最適化手段。
+並列化が守られない場合の運用コストは、各 tool 呼び出しのラウンドトリップ遅延 × 6 倍。Claude Code の tool dispatcher は独立した呼び出しを物理的に並列化するため、**1 メッセージに全部入れる** のが唯一の最適化手段。
+
+> **Note (v3.2.3)**: 旧版では `.claude/claudeos/CLAUDE.md` も並列 Read の対象に含めていたが、v3.2.3 でこのファイルは v6 旧スタイル残存だったため削除された。v8.2 以降、プロジェクト運用規約の真正値は `./CLAUDE.md` と `.claude/claudeos/system/*.md` 群であり、`.claude/claudeos/` 直下の `CLAUDE.md` は参照しない。
 
 ### Phase C: 禁止事項・運用規約の動的抽出
 

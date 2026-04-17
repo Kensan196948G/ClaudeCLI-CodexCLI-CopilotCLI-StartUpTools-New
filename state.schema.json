@@ -1,0 +1,211 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/Kensan196948G/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/main/state.schema.json",
+  "title": "ClaudeOS v8.2 state.json",
+  "description": "Runtime state for ClaudeOS autonomous development loops. Read by session-start.js / pre-compact.js / notify-stable.js hooks. NOTE: This schema validates the primary v8.2 blocks (execution / stable / token / effort_strategy / compact / notification / task_budget / cache / goal / kpi / session / codex). Additional blocks present in state.json (frontier / message_bus / onboarding / improvement / learning / debug / automation) are intentionally unvalidated here; their structure is documented in state.json.example and may evolve per session without schema version bumps.",
+  "type": "object",
+  "required": [
+    "goal",
+    "kpi",
+    "execution",
+    "stable",
+    "token",
+    "effort_strategy",
+    "compact",
+    "notification"
+  ],
+  "properties": {
+    "goal": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": { "type": "string" }
+      }
+    },
+    "kpi": {
+      "type": "object",
+      "properties": {
+        "success_rate_target": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "required": ["max_duration_minutes", "phase"],
+      "properties": {
+        "start_time": { "type": ["string", "null"], "format": "date-time" },
+        "max_duration_minutes": { "type": "integer", "minimum": 1, "maximum": 300 },
+        "elapsed_minutes": { "type": "number", "minimum": 0 },
+        "remaining_minutes": { "type": "number", "minimum": 0 },
+        "phase": {
+          "type": "string",
+          "enum": ["Idle", "Monitor", "Development", "Verify", "Improvement", "Repair", "Release"]
+        },
+        "auto_stop_threshold": { "type": "integer", "minimum": 1 },
+        "graceful_shutdown": { "type": "boolean" },
+        "last_session_summary": { "type": "string" },
+        "last_stop_at": { "type": ["string", "null"], "format": "date-time" },
+        "current_session_start_at": { "type": ["string", "null"], "format": "date-time" },
+        "current_session_prs": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 }
+        },
+        "current_session_last_pr": { "type": ["integer", "null"] },
+        "current_session_last_merge_commit": { "type": ["string", "null"] },
+        "current_session_last_merged_at": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "session": {
+      "type": "object",
+      "properties": {
+        "context_load_tier": {
+          "type": "string",
+          "enum": ["minimal", "standard", "full"]
+        }
+      }
+    },
+    "stable": {
+      "type": "object",
+      "required": ["consecutive_success", "target_n", "stable_achieved"],
+      "properties": {
+        "consecutive_success": { "type": "integer", "minimum": 0 },
+        "target_n": { "type": "integer", "enum": [2, 3, 5] },
+        "target_n_reason": { "type": "string" },
+        "last_verified_at": { "type": ["string", "null"], "format": "date-time" },
+        "stable_achieved": { "type": "boolean" },
+        "stable_achieved_pr": { "type": ["integer", "null"] },
+        "stable_achieved_issue": { "type": ["integer", "null"] }
+      }
+    },
+    "automation": {
+      "type": "object",
+      "properties": {
+        "auto_issue_generation": { "type": "boolean" },
+        "self_evolution": { "type": "boolean" }
+      }
+    },
+    "codex": {
+      "type": "object",
+      "properties": {
+        "setup_checked": { "type": "boolean" },
+        "setup_checked_at": { "type": ["string", "null"], "format": "date-time" },
+        "review_gate": { "type": "string", "enum": ["on", "off"] },
+        "last_review_status": { "type": "string", "enum": ["none", "running", "done", "failed"] },
+        "last_review_type": { "type": "string" },
+        "last_review_job_id": { "type": "string" },
+        "last_review_summary": { "type": "string" },
+        "last_adversarial_status": { "type": "string", "enum": ["none", "running", "done", "failed"] },
+        "last_adversarial_job_id": { "type": "string" },
+        "last_adversarial_summary": { "type": "string" },
+        "last_rescue_status": { "type": "string", "enum": ["none", "running", "done", "failed"] },
+        "last_rescue_job_id": { "type": "string" },
+        "last_rescue_summary": { "type": "string" },
+        "blocking_issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "severity": { "type": "string", "enum": ["none", "low", "medium", "high", "critical"] }
+      }
+    },
+    "token": {
+      "type": "object",
+      "required": ["total_budget", "used", "remaining", "allocation"],
+      "properties": {
+        "total_budget": { "type": "integer", "const": 100 },
+        "used": { "type": "number", "minimum": 0, "maximum": 100 },
+        "remaining": { "type": "number", "minimum": 0, "maximum": 100 },
+        "tokenizer_calibration": { "type": "string", "enum": ["opus-4-7", "opus-4-6", "sonnet-4-6"] },
+        "calibration_factor": { "type": "number", "minimum": 1.0 },
+        "allocation": {
+          "type": "object",
+          "required": ["monitor", "development", "verify", "improvement", "debug", "release"],
+          "properties": {
+            "monitor": { "type": "integer", "minimum": 0 },
+            "development": { "type": "integer", "minimum": 0 },
+            "verify": { "type": "integer", "minimum": 0 },
+            "improvement": { "type": "integer", "minimum": 0 },
+            "debug": { "type": "integer", "minimum": 0 },
+            "release": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "task_budget": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "total_tokens": { "type": "integer", "minimum": 0 },
+        "minimum": { "type": "integer", "minimum": 0 },
+        "beta_header": { "type": "string" },
+        "applied_phases": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "skipped_phases": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "compact": {
+      "type": "object",
+      "required": ["trigger_at_pct"],
+      "properties": {
+        "trigger_at_pct": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "verify_failure_threshold": { "type": "integer", "minimum": 1 },
+        "phase_transition": { "type": "boolean" },
+        "rescue_pre_trigger": { "type": "boolean" },
+        "long_session_minutes": { "type": "integer", "minimum": 1 },
+        "last_pre_compact_at": { "type": ["string", "null"], "format": "date-time" },
+        "snapshot_dir": { "type": "string" }
+      }
+    },
+    "notification": {
+      "type": "object",
+      "properties": {
+        "stable": { "type": "boolean" },
+        "blocked": { "type": "boolean" },
+        "five_hour_end": { "type": "boolean" },
+        "critical_review": { "type": "boolean" },
+        "channel": { "type": "string", "enum": ["push", "email", "webhook"] },
+        "last_sent_event": { "type": ["string", "null"] },
+        "last_sent_at": { "type": ["string", "null"], "format": "date-time" },
+        "last_dispatched_stable_notification": {
+          "type": ["object", "null"],
+          "description": "Record of the last STABLE notification dispatched by notify-stable.js (via session-end.js require).",
+          "properties": {
+            "pr": { "type": ["integer", "null"] },
+            "commit": { "type": ["string", "null"] },
+            "scope": { "type": "string" },
+            "target_n": { "type": "integer" },
+            "consecutive_success": { "type": "integer" },
+            "dispatched_via": { "type": "string" },
+            "dispatched_at": { "type": ["string", "null"], "format": "date-time" }
+          }
+        }
+      }
+    },
+    "effort_strategy": {
+      "type": "object",
+      "required": ["default", "current"],
+      "properties": {
+        "default": { "type": "string", "enum": ["xhigh", "high", "medium", "low"] },
+        "current": { "type": "string", "enum": ["xhigh", "high", "medium", "low"] },
+        "concurrent_worktrees_threshold": { "type": "integer", "minimum": 1 },
+        "low_token_threshold_pct": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "force_medium_pct": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "doc_only_effort": { "type": "string", "enum": ["xhigh", "high", "medium", "low"] },
+        "critical_change_keep_xhigh": { "type": "boolean" }
+      }
+    },
+    "cache": {
+      "type": "object",
+      "properties": {
+        "prompt_caching_1h_enabled": { "type": "boolean" },
+        "applied_blocks": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

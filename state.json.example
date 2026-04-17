@@ -1,6 +1,7 @@
 {
+  "_note": "ClaudeOS v8.2 state.json template. Copy to state.json (which is gitignored) and edit for your project. The session-start.js / pre-compact.js / notify-stable.js hooks read this from project root via process.cwd()/state.json. Schema: state.schema.json.",
   "goal": {
-    "title": "ClaudeOS v8 自律開発最適化"
+    "title": "<your project goal — e.g. ClaudeOS v8 自律開発最適化>"
   },
   "kpi": {
     "success_rate_target": 0.9
@@ -10,18 +11,35 @@
     "max_duration_minutes": 300,
     "elapsed_minutes": 0,
     "remaining_minutes": 300,
-    "phase": "Monitor",
+    "phase": "Idle",
     "auto_stop_threshold": 5,
-    "graceful_shutdown": true
+    "graceful_shutdown": true,
+    "last_session_summary": "",
+    "last_stop_at": null,
+    "current_session_start_at": null,
+    "current_session_prs": [],
+    "current_session_last_pr": null,
+    "current_session_last_merge_commit": null,
+    "current_session_last_merged_at": null
+  },
+  "frontier": {
+    "last_test_date": null,
+    "test_count": 0,
+    "last_deprecation_candidates": [],
+    "last_low_usage_items": []
   },
   "session": {
     "context_load_tier": "standard",
-    "_comment": "minimal=フロントマターのみ / standard=H1/H2見出し構造 / full=全文(従来の挙動)"
+    "_comment": "minimal=frontmatter only / standard=H1/H2 structure / full=entire content (legacy behavior)"
   },
   "stable": {
     "consecutive_success": 0,
     "target_n": 3,
-    "last_verified_at": null
+    "target_n_reason": "default (§9 通常)",
+    "last_verified_at": null,
+    "stable_achieved": false,
+    "stable_achieved_pr": null,
+    "stable_achieved_issue": null
   },
   "onboarding": {
     "last_refresh": null,
@@ -32,7 +50,7 @@
     "self_evolution": true
   },
   "improvement": {
-    "stop_doing_review_date": "2026-07-15",
+    "stop_doing_review_date": null,
     "stop_doing_review_interval_days": 90,
     "stop_doing_last_run": null,
     "stop_doing_candidates_found": 0
@@ -51,14 +69,9 @@
       "candidates_pending_issue": []
     }
   },
-  "frontier": {
-    "last_test_date": null,
-    "test_count": 0,
-    "last_deprecation_candidates": [],
-    "last_low_usage_items": []
-  },
   "codex": {
     "setup_checked": false,
+    "setup_checked_at": null,
     "review_gate": "off",
     "last_review_status": "none",
     "last_review_type": "none",
@@ -84,10 +97,16 @@
     "flaky_suspected": false,
     "debug_mode": "normal"
   },
+  "message_bus": {
+    "phase.transition": [],
+    "ci.status": []
+  },
   "token": {
     "total_budget": 100,
     "used": 0,
     "remaining": 100,
+    "tokenizer_calibration": "opus-4-7",
+    "calibration_factor": 1.35,
     "allocation": {
       "monitor": 10,
       "development": 35,
@@ -99,5 +118,59 @@
     "dynamic_mode": true,
     "current_phase_budget": 0,
     "current_phase_used": 0
+  },
+  "task_budget": {
+    "enabled": true,
+    "total_tokens": 128000,
+    "minimum": 20000,
+    "beta_header": "task-budgets-2026-03-13",
+    "applied_phases": [
+      "verify",
+      "improvement",
+      "release"
+    ],
+    "skipped_phases": [
+      "monitor"
+    ]
+  },
+  "compact": {
+    "trigger_at_pct": 70,
+    "verify_failure_threshold": 3,
+    "phase_transition": true,
+    "rescue_pre_trigger": true,
+    "long_session_minutes": 120,
+    "last_pre_compact_at": null,
+    "snapshot_dir": ".claude/claudeos/snapshots"
+  },
+  "notification": {
+    "stable": true,
+    "blocked": true,
+    "five_hour_end": true,
+    "critical_review": true,
+    "channel": "push",
+    "last_sent_event": null,
+    "last_sent_at": null,
+    "last_dispatched_stable_notification": null
+  },
+  "effort_strategy": {
+    "default": "xhigh",
+    "current": "xhigh",
+    "concurrent_worktrees_threshold": 2,
+    "low_token_threshold_pct": 30,
+    "force_medium_pct": 15,
+    "doc_only_effort": "medium",
+    "critical_change_keep_xhigh": true
+  },
+  "cache": {
+    "prompt_caching_1h_enabled": true,
+    "applied_blocks": [
+      "CLAUDE.md",
+      "~/.claude/CLAUDE.md",
+      "state.json",
+      "claudeos/system/orchestrator.md",
+      "claudeos/system/role-contracts.md",
+      "claudeos/system/loop-guard.md",
+      "claudeos/system/token-budget.md"
+    ]
   }
 }

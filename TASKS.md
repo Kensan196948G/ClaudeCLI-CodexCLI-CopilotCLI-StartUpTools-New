@@ -29,8 +29,9 @@
 
 ## Auto Extracted From Agent Teams Matrix
 
-1. [Priority:P2][Owner:Ops][Source:AgentTeamsMatrix] worktree ベースの並列ブランチ運用
-2. [Priority:P2][Owner:ScrumMaster][Source:AgentTeamsMatrix] issue / backlog 自動生成
+1. [Priority:P2][Owner:ScrumMaster][Source:AgentTeamsMatrix] Memory MCP 退避機能 (PreCompact hook 拡張、ClaudeOS v8.3 予定)
+2. [Priority:P2][Owner:ScrumMaster][Source:AgentTeamsMatrix] Verify 連動 ONBOARDING.md 自動再生成フック (Issue #100)
+
 ## GitHub Issues Sync
 
 (No open issues)

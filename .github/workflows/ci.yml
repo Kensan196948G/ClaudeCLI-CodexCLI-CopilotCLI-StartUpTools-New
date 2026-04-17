@@ -126,7 +126,7 @@ jobs:
       - name: Validate State Schema
         shell: pwsh
         run: |
-          $schema = Get-Content .\docs\common\schemas\state.schema.json -Raw | ConvertFrom-Json
+          $schema = Get-Content .\state.schema.json -Raw | ConvertFrom-Json
           if (-not $schema.'$schema') { throw "state.schema.json is missing \$schema field" }
           $required = $schema.required
           if ($required.Count -lt 5) { throw "state.schema.json has too few required fields: $($required.Count)" }
