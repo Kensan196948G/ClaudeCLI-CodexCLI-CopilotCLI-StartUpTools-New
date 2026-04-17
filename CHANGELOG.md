@@ -2,6 +2,35 @@
 
 # CHANGELOG
 
+## [v3.2.5] - 2026-04-17 — PSScriptAnalyzer 警告 10 件解消
+
+### 🎯 概要
+
+PSScriptAnalyzer high-priority 警告 (`PSAvoidUsingInvokeExpression` / `PSAvoidAssignmentToAutomaticVariable` / `PSUseDeclaredVarsMoreThanAssignments`) を 7 ファイルで修正。CI Round 1 の 5 テスト失敗（`$Config` スコープ共有見落とし + `Remove-Worktree` 出力ストリーム漏れ）も回収し STABLE N=2 達成。
+
+### 🔧 変更対象 (7 ファイル)
+
+| ファイル | 修正内容 |
+|---|---|
+| `scripts/lib/WorktreeManager.psm1` | `Remove-Worktree` 呼び出しを `$null =` でラップし出力ストリーム漏れを防止 |
+| `scripts/lib/CronManager.psm1` | `PSAvoidAssignmentToAutomaticVariable` — `$_` 変数をリネーム |
+| `scripts/main/New-CronSchedule.ps1` | `PSUseDeclaredVarsMoreThanAssignments` 抑制コメント追加 |
+| `scripts/main/Start-Menu.ps1` | `PSAvoidUsingInvokeExpression` 対応 |
+| `tests/StartScripts.Tests.ps1` | `$Config = ...; $null = $Config` パターンで PSScriptAnalyzer 適合 + スコープ保持 |
+| `tests/Diagnostics.Tests.ps1` | 同上 |
+| `tests/WorktreeManager.Tests.ps1` | 関連テスト修正 |
+
+### 🛡️ 設計判断
+
+- **ドットソース + スコープ共有の落とし穴**: `BeforeAll` で `. Start-Menu.ps1` するテストでは、`$Config` を `| Out-Null` に置換すると dot-sourced 関数が実行時に `$Config` を参照できなくなる。`$null = $Config` パターンで変数をスコープに残しつつ PSScriptAnalyzer 警告を解消する
+- **出力ストリーム管理**: PowerShell では bare 関数呼び出しの戻り値が呼び出し元の出力ストリームに漏れる。`$null = Func()` が `| Out-Null` より副作用制御で優れる
+
+### 🔗 関連
+
+- Issue: #151
+- PR: #152
+- 前回 STABLE: PR #150 (v3.2.4 repo rename docs, commit 46e205f)
+
 ## [v3.2.4] - 2026-04-17 — repo rename docs 反映
 
 ### 🎯 概要

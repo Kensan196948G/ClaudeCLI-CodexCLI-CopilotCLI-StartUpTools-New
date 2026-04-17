@@ -28,6 +28,7 @@
 19. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.2.0 Cron HTML メールレポート (Visual Recap Mail) — report-and-mail.py 新規 / cron-launcher.sh finalize 連携 / config.json email セクション / SMTP 環境変数管理 / Gmail アプリパスワード手順ドキュメント (PR #143)
 20. [DONE] [Priority:P1][Owner:Developer][Source:GitHub#147] v3.2.3 docs drift cleanup + state artifacts + hookify 検出強化 (PR #148)
 21. [DONE] [Priority:P1][Owner:Developer][Source:GitHub#149] v3.2.4 repo rename docs 反映 — 22 ファイル / 55 箇所一括置換 (PR #150)
+22. [DONE] [Priority:P1][Owner:Developer][Source:GitHub#151] v3.2.5 PSScriptAnalyzer 警告 10 件解消 — 7 ファイル修正 / CI Round 1 5 テスト失敗回収 / STABLE N=2 達成 (PR #152)
 
 ## Auto Extracted From Agent Teams Matrix
 
