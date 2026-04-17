@@ -2,6 +2,37 @@
 
 # CHANGELOG
 
+## [v3.2.19] - 2026-04-17 — 3 タブ監視 品質向上 (外部レビュー追加指摘 3 件対応)
+
+### 🎯 概要
+
+v3.2.17 で導入した 3 タブ監視構成に対して、2026-04-17 受領の外部レビュー（15 改善アイデア中）から設計欠陥に該当する 3 件を修正。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 | 対応評価項目 |
+|---|---|---|
+| `scripts/tools/Watch-ClaudeLog.ps1` (L142, L208) | `tmux attach -t` → `tmux new-session -A -s` (attach-or-create)、`tail -f` → `tail -F` (inode 変化追従 = ログローテーション耐性) | #1, #3 |
+| `scripts/tools/Watch-SessionInfoSSH.ps1` (L53-) | `Get-RemoteSession` を 2 段リトライ化、戻り値を `{Session, Status, Raw}` 構造体に拡張。書き込み途中 JSON の破損時は 200ms 後に再取得 | #5 |
+| `scripts/tools/Watch-SessionInfoSSH.ps1` (main loop) | 前回有効値キャッシュ (`$lastValidSession` / `$lastValidReadAt`) + `[STALE]` 表示で破損・消失時も前回値を継続表示 | #5, #11 |
+| `scripts/tools/Watch-SessionInfoSSH.ps1` (Show-SessionFrame) | `LastValidReadAt` + `IsStale` を引数追加、stale 秒数と最終有効読取時刻を併記 | #11 |
+
+### 📊 対応方針
+
+評価 15 項目のうち、実装確認（grep）で **既対応判明** した項目:
+- #4 引数化・設定化: `$SshTarget` / `$tmuxSession` / `$LinuxHost` / `$LinuxUser` / `$SessionsDir` 全パラメータ化済 (v3.2.17)
+- #7 タブタイトル明示: `Claude-Live-Log` / `Claude-UI` / `Session-Info` 付与済 (v3.2.17)
+- #9 失敗分離 (部分): `if ($wtExe)` ガード + 各 tab 独立 `Start-Process` 済
+
+残 10 項目（exit code 表示、疎通事前チェック、タブ色・アイコン、マルチホスト等）は P3 backlog として別 Issue 起票予定。
+
+### ✅ Verify
+
+- `Invoke-Pester` Passed: **477** / Failed: **0**
+- `Invoke-ScriptAnalyzer -Severity Error`: 0 件
+
+---
+
 ## [v3.2.18] - 2026-04-17 — 外部コードレビュー指摘 5 件対応 (Quick-wins)
 
 ### 🎯 概要

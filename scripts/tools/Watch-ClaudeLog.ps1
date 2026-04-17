@@ -139,7 +139,8 @@ function Open-TmuxAttachTab {
     }
     $safeProject = $parts[2]
     $tmuxSession  = "claudeos-$safeProject"
-    $sshCmd       = "ssh -t $SshTarget tmux attach -t $tmuxSession"
+    # tmux new-session -A: attach-or-create（セッション未作成時に自動生成）
+    $sshCmd       = "ssh -t $SshTarget tmux new-session -A -s $tmuxSession"
     $psExe        = (Get-Process -Id $PID).Path
     $psArgs = @(
         '-NoExit', '-NoProfile', '-ExecutionPolicy', 'Bypass',
@@ -147,7 +148,7 @@ function Open-TmuxAttachTab {
     )
     $wtArgs = @('-w', '0', 'new-tab', '--title', 'Claude-UI', '--', $psExe) + $psArgs
     Start-Process -FilePath $wtExe.Source -ArgumentList $wtArgs -WindowStyle Hidden
-    Write-Host "  Claude UI タブを開きました: tmux attach -t $tmuxSession" -ForegroundColor Magenta
+    Write-Host "  Claude UI タブを開きました: tmux new-session -A -s $tmuxSession" -ForegroundColor Magenta
 }
 
 function Open-SessionInfoTab {
@@ -204,8 +205,8 @@ while ($true) {
         }
 
         Write-Host ''
-        # tail -f でリアルタイム表示（SSH セッションが終わるまでブロック）
-        ssh $SshTarget "tail -n 50 -f '$latest'"
+        # tail -F でリアルタイム表示 — -F はログローテーション (inode 変化) に追従
+        ssh $SshTarget "tail -n 50 -F '$latest'"
         $sshExitCode = $LASTEXITCODE
         Write-Host ''
         if ($sshExitCode -ne 0) {
