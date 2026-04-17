@@ -85,6 +85,23 @@
 
 ---
 
+## 標準コマンド
+
+日常運用で最も使うコマンドを 4 つの動詞に集約しています。前提条件は PowerShell 5.1 以上、標準コマンド実行は PowerShell 7 を推奨します（`pwsh -NoProfile` 推奨）。
+
+| 動詞 | コマンド | 目的 |
+|---|---|---|
+| **lint** | `Invoke-ScriptAnalyzer -Path . -Recurse -Severity Error` | PSScriptAnalyzer による静的解析（Error 粒度で CI ゲート、Warning は非ブロッキング） |
+| **test** | `Invoke-Pester .\tests -CI` | Pester 全テスト（現在 477 件 / Unit + E2E）。`-CI` で `testResults.xml` 生成 |
+| **build** | `.\scripts\main\Start-ClaudeOS.ps1 -DryRun` | ブートシーケンス検証（Step 1 〜 9 を実行せず設定のみ確認） |
+| **security** | `.\scripts\test\Test-McpHealth.ps1` + `gitleaks detect --source .`（CI と同等目的） | MCP サーバーヘルス + secret 漏洩スキャン（CI では [`security-scan.yml`](./.github/workflows/security-scan.yml) が gitleaks 実行） |
+
+> CI 側の同等コマンドは [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) と [`.github/workflows/security-scan.yml`](./.github/workflows/security-scan.yml) を参照。
+
+詳細な診断コマンドは [`診断とテスト`](#診断とテスト) セクションへ。
+
+---
+
 ## アーキテクチャ
 
 ```mermaid

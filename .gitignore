@@ -120,6 +120,11 @@ config/config/
 *.backup-pre-puppeteer
 testResults.xml
 
+# reports/ — ClaudeOS ループ生成レポート（README.md のみ追跡）
+reports/.loop-*.md
+reports/*.log
+reports/*.xml
+
 # バックアップディレクトリ
 scripts/claudeos-back/
 

@@ -2,6 +2,46 @@
 
 # CHANGELOG
 
+## [v3.2.18] - 2026-04-17 — 外部コードレビュー指摘 5 件対応 (Quick-wins)
+
+### 🎯 概要
+
+外部コードレビュー (2026-04-17) で受領した 60 項目の改善提案のうち、影響範囲が小さく
+即対応可能な 5 カテゴリ（評価項目 #6, #9, #17, #21, #32, #34, #39）を 1 PR で束ねて消化。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 | 対応評価項目 |
+|---|---|---|
+| `reports/README.md` | 新規。`.loop-*.md` 等の揮発性レポート集約先を定義 | #17 |
+| `reports/.loop-monitor-report.md` | ルート直下から移動（未追跡） | #17 |
+| `.gitignore` | `reports/.loop-*.md`, `reports/*.log`, `reports/*.xml` 追加 | #17 |
+| `.claude/claudeos/loops/monitor-loop.md` | Output パスを `reports/.loop-monitor-report.md` に更新 | #17 |
+| `scripts/templates/claudeos/loops/monitor-loop.md` | 同上（配布用テンプレ側も同期） | #17 |
+| `Claude/README.md` | 新規。`.claude/` / `Claude/` / `docs/claude/` の役割差分明記 | #6 |
+| `.codex/config.toml` | 旧 profiles/features/shell_environment_policy 削除、`[shell]` で `pwsh -NoLogo -NoProfile -NonInteractive` 固定 | #32 |
+| `README.md` | `## 標準コマンド` セクション追加（lint / test / build / security の 4 動詞集約） | #21 |
+| `docs/common/18_ARCHITECTURE.md` | 新規。scripts 依存方向 + Claude/Codex ディレクトリ差分 + 用語集を 1 ページ統合 | #9, #34, #39 |
+
+### 📊 対応スコア
+
+- 60 項目中 **9 項目対応** (15%) — 既対応 9 項目と合わせて計 18 項目 (30%) が解消済
+- 残項目のうち中期対応 18 / 判断要 16 / 不採用候補 5 は別 Issue / PR で順次処理
+
+### 🚫 スコープ外
+
+- 評価 #19 `testResults.xml` の `reports/` 移動は Pester `-CI` スイッチと ci.yml の両方を調整する必要があるため、別 Issue に切り出し
+- 評価 #11 `tests/` の unit/integration/smoke 分類は 17 ファイル の仕分けを要するため別 PR
+- 評価 #15 `state.json` JSON Schema は既存 (`state.schema.json`) により対応済
+
+### ✅ Verify
+
+- `Invoke-Pester` Passed: **477** / Failed: **0**
+- `Invoke-ScriptAnalyzer -Severity Error`: 0 件
+- STABLE N=2 達成予定
+
+---
+
 ## [v3.2.17] - 2026-04-17 — 3タブ監視構成 + tmux UI 統合
 
 ### 🎯 概要

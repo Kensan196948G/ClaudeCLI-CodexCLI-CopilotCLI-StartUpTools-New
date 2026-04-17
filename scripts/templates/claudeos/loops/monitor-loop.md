@@ -35,7 +35,10 @@
 
 ## Output
 
-`.loop-monitor-report.md`
+`reports/.loop-monitor-report.md`
+
+> 配布先プロジェクトで `reports/` ディレクトリが未作成の場合、本レポートの
+> 書き出し前に `New-Item -ItemType Directory reports -Force` で作成すること。
 
 ---
 
