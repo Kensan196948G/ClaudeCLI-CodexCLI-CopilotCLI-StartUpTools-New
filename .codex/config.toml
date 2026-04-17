@@ -1,7 +1,6 @@
 model = "gpt-5.4"
 model_reasoning_effort = "medium"
 
-# AGENTS.md 準拠: default(手動) / full_auto(標準) / yolo(限定強権限)
 [profiles.default]
 approval_policy = "on-request"
 sandbox_mode = "workspace-write"
@@ -14,8 +13,23 @@ sandbox_mode = "workspace-write"
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
 
-# Windows / Linux (SSH) 両対応のため PATH 解決に委ねる
-# pwsh 7+ を両環境の PATH 先頭に配置する前提
 [shell]
-program = "pwsh"
-args = ["-NoLogo", "-NoProfile", "-NonInteractive"]
+program = "pwsh.exe"
+# command と program のどちらか片方に統一
+# command = "pwsh.exe" でもよいが、どちらかだけにする
+args = [
+    "-NoLogo",
+    "-NoProfile",
+    "-NonInteractive",
+]
+
+# [shell_environment_policy
+# inherit = "core"
+# experimental_use_profile = true
+
+# [shell_environment_policy.set]
+# CLAUDE_AUTOCOMPACT_PCT_OVERRIDE = "50"
+# CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION = "true"
+# CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"
+# ENABLE_PROMPT_CACHING_1H = "1"
+# ENABLE_TOOL_SEARCH = "true"
