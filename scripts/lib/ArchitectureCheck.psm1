@@ -64,6 +64,7 @@ function Get-ProjectRoot {
 
 function Invoke-ArchitectureCheck {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'IncludeWarnings', Justification = 'Reserved for future warning-level output; API surface must remain stable')]
     param(
         [string]$Path = '',
         [string[]]$Extensions = @('.ps1', '.psm1'),
