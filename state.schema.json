@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Kensan196948G/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/blob/main/state.schema.json",
+  "$id": "https://raw.githubusercontent.com/Kensan196948G/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/main/state.schema.json",
   "title": "ClaudeOS v8.2 state.json",
-  "description": "Runtime state for ClaudeOS autonomous development loops. Read by session-start.js / pre-compact.js / notify-stable.js hooks.",
+  "description": "Runtime state for ClaudeOS autonomous development loops. Read by session-start.js / pre-compact.js / notify-stable.js hooks. NOTE: This schema validates the primary v8.2 blocks (execution / stable / token / effort_strategy / compact / notification / task_budget / cache / goal / kpi / session / codex). Additional blocks present in state.json (frontier / message_bus / onboarding / improvement / learning / debug / automation) are intentionally unvalidated here; their structure is documented in state.json.example and may evolve per session without schema version bumps.",
   "type": "object",
   "required": [
     "goal",
@@ -90,8 +90,38 @@
         "setup_checked_at": { "type": ["string", "null"], "format": "date-time" },
         "review_gate": { "type": "string", "enum": ["on", "off"] },
         "last_review_status": { "type": "string", "enum": ["none", "running", "done", "failed"] },
+        "last_review_type": { "type": "string" },
+        "last_review_job_id": { "type": "string" },
+        "last_review_summary": { "type": "string" },
+        "last_adversarial_status": { "type": "string", "enum": ["none", "running", "done", "failed"] },
+        "last_adversarial_job_id": { "type": "string" },
+        "last_adversarial_summary": { "type": "string" },
         "last_rescue_status": { "type": "string", "enum": ["none", "running", "done", "failed"] },
+        "last_rescue_job_id": { "type": "string" },
+        "last_rescue_summary": { "type": "string" },
+        "blocking_issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
         "severity": { "type": "string", "enum": ["none", "low", "medium", "high", "critical"] }
+      }
+    },
+    "notification_extended": {
+      "type": "object",
+      "description": "Extended notification fields used by notify-stable.js — documented here so consumers can validate the richer record.",
+      "properties": {
+        "last_dispatched_stable_notification": {
+          "type": ["object", "null"],
+          "properties": {
+            "pr": { "type": ["integer", "null"] },
+            "commit": { "type": ["string", "null"] },
+            "scope": { "type": "string" },
+            "target_n": { "type": "integer" },
+            "consecutive_success": { "type": "integer" },
+            "dispatched_via": { "type": "string" },
+            "dispatched_at": { "type": ["string", "null"], "format": "date-time" }
+          }
+        }
       }
     },
     "token": {

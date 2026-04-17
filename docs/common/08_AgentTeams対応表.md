@@ -50,11 +50,14 @@
 
 ## 未実装機能
 
-(現時点で未実装の大物項目はなし — worktree ベース並列ブランチ運用 / issue / backlog 自動生成は PR #37 / PR #38 / ClaudeOS v8.2 §10 で実運用化済み)
+- Memory MCP 退避機能 (PreCompact hook 拡張、ClaudeOS v8.3 予定)
+- Verify 連動 ONBOARDING.md 自動再生成フック (Issue #100)
+
+(旧項目「worktree ベース並列ブランチ運用」「issue / backlog 自動生成」は PR #37 / PR #38 / ClaudeOS v8.2 §10 で実運用化済み)
 
 ## 自動抽出
 
-`scripts/tools/Sync-AgentTeamsBacklog.ps1` は、この `## 未実装機能` セクションの箇条書きを読み取り、`TASKS.md` の自動抽出セクションと同期します。未実装機能が 0 件の場合、Auto Extracted セクションは空同期となります。
+`scripts/tools/Sync-AgentTeamsBacklog.ps1` は、この `## 未実装機能` セクションの箇条書きを読み取り、`TASKS.md` の自動抽出セクションと同期します。
 抽出単位は 1 行 1 項目です。文言を変えると backlog の同期結果も変わります。
 metadata の自動付与は [config/agent-teams-backlog-rules.json](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/config/agent-teams-backlog-rules.json) を参照します。端末ごとに調整したい場合は template ではなく実ファイル側を編集します。
 

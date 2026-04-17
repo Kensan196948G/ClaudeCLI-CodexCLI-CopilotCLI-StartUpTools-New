@@ -29,7 +29,8 @@
 
 ## Auto Extracted From Agent Teams Matrix
 
-(未実装機能なし — worktree ベース並列 / issue / backlog 自動生成は PR #37 / PR #38 / ClaudeOS v8.2 §10 で DONE)
+1. [Priority:P2][Owner:ScrumMaster][Source:AgentTeamsMatrix] Memory MCP 退避機能 (PreCompact hook 拡張、ClaudeOS v8.3 予定)
+2. [Priority:P2][Owner:ScrumMaster][Source:AgentTeamsMatrix] Verify 連動 ONBOARDING.md 自動再生成フック (Issue #100)
 
 ## GitHub Issues Sync
 
