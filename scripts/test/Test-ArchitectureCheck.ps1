@@ -13,7 +13,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $ScriptDir = Split-Path $MyInvocation.MyCommand.Path -Parent
-$ModulePath = Join-Path $ScriptDir '..' 'lib' 'ArchitectureCheck.psm1'
+$ModulePath = Join-Path -Path $ScriptDir -ChildPath '..' -AdditionalChildPath 'lib', 'ArchitectureCheck.psm1'
 Import-Module $ModulePath -Force -DisableNameChecking
 
 if (-not $Path) {
