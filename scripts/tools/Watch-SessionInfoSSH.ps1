@@ -53,13 +53,26 @@ function Get-StatusColor {
 function Get-RemoteSession {
     <#
     .SYNOPSIS
-        SSH 経由で session.json を取得しパース。破損・不存在時は 1 回即時リトライ。
+        SSH 経由で session.json を取得しパース。JSON 破損時のみ 1 回即時リトライ。
+        SSH 接続失敗 / ファイル不存在 / パース失敗をそれぞれ別 Status で区別する。
     .OUTPUTS
-        pscustomobject @{ Session = <parsed>; Status = 'ok'|'empty'|'parse_error'; Raw = <json> }
+        pscustomobject @{
+            Session = <parsed or null>;
+            Status  = 'ok' | 'empty' | 'parse_error' | 'ssh_error';
+            Raw     = <json or null>;
+            ExitCode = <int, ssh_error 時のみ>
+        }
     #>
     $sessionFile = "$SessionsDir/${SessionId}.json"
     foreach ($attempt in 1..2) {
-        $json = ssh "${LinuxUser}@$LinuxHost" "cat '$sessionFile' 2>/dev/null" 2>$null
+        # SSH exit code を捕捉するため stderr 握りつぶしを外し、cat の exit を分離
+        $json = ssh "${LinuxUser}@$LinuxHost" "cat '$sessionFile' 2>/dev/null || true" 2>$null
+        $sshExit = $LASTEXITCODE
+        if ($sshExit -ne 0) {
+            return [pscustomobject]@{
+                Session = $null; Status = 'ssh_error'; Raw = $null; ExitCode = $sshExit
+            }
+        }
         if ($null -eq $json -or [string]::IsNullOrWhiteSpace($json)) {
             return [pscustomobject]@{ Session = $null; Status = 'empty'; Raw = $null }
         }
@@ -67,7 +80,7 @@ function Get-RemoteSession {
             return [pscustomobject]@{ Session = ($json | ConvertFrom-Json); Status = 'ok'; Raw = $json }
         } catch {
             if ($attempt -eq 1) {
-                # 書き込み途中の可能性 — 短時間待って再取得
+                # 書き込み途中の可能性 — 短時間待って再取得（破損時のみリトライ）
                 Start-Sleep -Milliseconds 200
                 continue
             }
@@ -163,7 +176,13 @@ try {
         else {
             Clear-Host
             Write-Host ''
-            Write-Host "  セッション情報が見つかりません: $SessionId (Status: $($result.Status))" -ForegroundColor Red
+            $msg = switch ($result.Status) {
+                'empty'       { "セッション情報ファイル未作成: $SessionId" }
+                'parse_error' { "JSON パース失敗 (書き込み中 or 破損): $SessionId" }
+                'ssh_error'   { "SSH 接続失敗 (exit $($result.ExitCode)): ${LinuxUser}@$LinuxHost" }
+                default       { "セッション情報取得失敗 (Status: $($result.Status)): $SessionId" }
+            }
+            Write-Host "  $msg" -ForegroundColor Red
             Write-Host "  Host: $LinuxHost  Dir: $SessionsDir" -ForegroundColor DarkGray
             Start-Sleep -Seconds 3
             continue
