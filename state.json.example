@@ -1,5 +1,5 @@
 {
-  "_note": "ClaudeOS v8.2 state.json template. Copy to state.json (which is gitignored) and edit for your project. The session-start.js / pre-compact.js / notify-stable.js hooks read this from project root via process.cwd()/state.json. Schema: state.schema.json.",
+  "_note": "ClaudeOS v8 state.json template. Copy to state.json (which is gitignored) and edit for your project. The session-start.js / pre-compact.js / notify-stable.js hooks read this from project root via process.cwd()/state.json. Schema: state.schema.json.",
   "goal": {
     "title": "<your project goal — e.g. ClaudeOS v8 自律開発最適化>"
   },
@@ -87,19 +87,23 @@
     "severity": "none"
   },
   "debug": {
-    "last_failure_category": "none",
+    "last_failure_category": null,
     "failure_count_by_category": {},
     "same_error_retry_count": 0,
     "rescue_retry_count": 0,
-    "last_root_cause": "",
-    "last_fix_scope": "none",
-    "last_fix_strategy": "none",
+    "last_root_cause": null,
+    "last_fix_scope": null,
+    "last_fix_strategy": null,
     "flaky_suspected": false,
-    "debug_mode": "normal"
+    "debug_mode": false
   },
   "message_bus": {
-    "phase.transition": [],
-    "ci.status": []
+    "phase": {
+      "transition": []
+    },
+    "ci": {
+      "status": []
+    }
   },
   "token": {
     "total_budget": 100,
