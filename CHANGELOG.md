@@ -2,6 +2,39 @@
 
 # CHANGELOG
 
+## [v3.2.6] - 2026-04-17 — PSUseApprovedVerbs 警告 9 件解消
+
+### 🎯 概要
+
+PSScriptAnalyzer `PSUseApprovedVerbs` 警告 9 件を 8 ファイルで解消。PowerShell 承認済み動詞 (`Get-Verb`) に準拠した関数名への改名により、IDE 補完精度とコードベース一貫性を向上。
+
+### 🔧 変更対象 (8 ファイル)
+
+| 旧名称 | 新名称 | ファイル |
+|---|---|---|
+| `Normalize-MenuRecentToolFilter` | `ConvertTo-MenuRecentToolFilter` | `scripts/lib/MenuCommon.psm1` |
+| `Normalize-MenuRecentSortMode` | `ConvertTo-MenuRecentSortMode` | `scripts/lib/MenuCommon.psm1` |
+| `Escape-SSHArgument` | `ConvertTo-EscapedSSHArgument` | `scripts/lib/SSHHelper.psm1` |
+| `_Show-SSHDiagnostics` | `Show-SSHDiagnostics` | `scripts/lib/SSHHelper.psm1` |
+| `Parse-TaskBody` | `ConvertFrom-TaskBody` | `scripts/tools/Update-TASKS.ps1` |
+| `Mask-SecretTail` | `Protect-SecretTail` | `scripts/test/Test-AllTools.ps1` |
+| `Ensure-JsonRootMembers` | `Initialize-JsonRootMembers` | `scripts/setup/setup-windows-terminal.ps1` |
+| `Upsert-TerminalProfile` | `Set-TerminalProfile` | `scripts/setup/setup-windows-terminal.ps1` |
+| `Seed-ProjectTemplate` | `Initialize-ProjectTemplate` | `scripts/lib/LauncherCommon.psm1` |
+
+テストファイル (`tests/SSHHelper.Tests.ps1`, `tests/Diagnostics.Tests.ps1`) の参照も一括更新済み。
+
+### 🛡️ 設計判断
+
+- **`PSUseApprovedVerbs` は CI Warning ではなく品質改善**: `-Severity Error` ゲートは通過しているが、将来の PSScriptAnalyzer バージョンで昇格する可能性があるため先行解消
+- **`replace_all` による安全な一括更新**: 関数定義・呼び出しサイト・`Export-ModuleMember`・テストの `Describe` タイトル・`It` ブロック内呼び出しを漏れなく置換
+
+### 🔗 関連
+
+- Issue: #153
+- PR: #154
+- 前回 STABLE: PR #152 (v3.2.5 PSScriptAnalyzer 警告 10 件解消)
+
 ## [v3.2.5] - 2026-04-17 — PSScriptAnalyzer 警告 10 件解消
 
 ### 🎯 概要

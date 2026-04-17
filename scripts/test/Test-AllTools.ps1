@@ -46,7 +46,7 @@ function Get-CommandVersionLine {
     return $null
 }
 
-function Mask-SecretTail {
+function Protect-SecretTail {
     param([string]$Value)
 
     if ([string]::IsNullOrWhiteSpace($Value)) {
@@ -241,7 +241,7 @@ function Get-AllToolsDiagnostics {
                 install = $tool.install
                 authEnv = $tool.authEnv
                 authConfigured = [bool]$secret
-                authDisplay = if ($secret) { Mask-SecretTail -Value $secret } else { '未設定' }
+                authDisplay = if ($secret) { Protect-SecretTail -Value $secret } else { '未設定' }
                 authHint = $tool.authHint
             }
         }

@@ -630,8 +630,8 @@ Describe 'Start-Menu recent projects' {
     }
 
     It 'menu helper が filter と sort を正規化できること' {
-        (Normalize-MenuRecentToolFilter -ToolFilter 'all') | Should -Be ''
-        (Normalize-MenuRecentSortMode -SortMode 'invalid') | Should -Be 'success'
+        (ConvertTo-MenuRecentToolFilter -ToolFilter 'all') | Should -Be ''
+        (ConvertTo-MenuRecentSortMode -SortMode 'invalid') | Should -Be 'success'
     }
 }
 
