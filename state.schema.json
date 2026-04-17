@@ -106,24 +106,6 @@
         "severity": { "type": "string", "enum": ["none", "low", "medium", "high", "critical"] }
       }
     },
-    "notification_extended": {
-      "type": "object",
-      "description": "Extended notification fields used by notify-stable.js — documented here so consumers can validate the richer record.",
-      "properties": {
-        "last_dispatched_stable_notification": {
-          "type": ["object", "null"],
-          "properties": {
-            "pr": { "type": ["integer", "null"] },
-            "commit": { "type": ["string", "null"] },
-            "scope": { "type": "string" },
-            "target_n": { "type": "integer" },
-            "consecutive_success": { "type": "integer" },
-            "dispatched_via": { "type": "string" },
-            "dispatched_at": { "type": ["string", "null"], "format": "date-time" }
-          }
-        }
-      }
-    },
     "token": {
       "type": "object",
       "required": ["total_budget", "used", "remaining", "allocation"],
@@ -186,7 +168,20 @@
         "critical_review": { "type": "boolean" },
         "channel": { "type": "string", "enum": ["push", "email", "webhook"] },
         "last_sent_event": { "type": ["string", "null"] },
-        "last_sent_at": { "type": ["string", "null"], "format": "date-time" }
+        "last_sent_at": { "type": ["string", "null"], "format": "date-time" },
+        "last_dispatched_stable_notification": {
+          "type": ["object", "null"],
+          "description": "Record of the last STABLE notification dispatched by notify-stable.js (via session-end.js require).",
+          "properties": {
+            "pr": { "type": ["integer", "null"] },
+            "commit": { "type": ["string", "null"] },
+            "scope": { "type": "string" },
+            "target_n": { "type": "integer" },
+            "consecutive_success": { "type": "integer" },
+            "dispatched_via": { "type": "string" },
+            "dispatched_at": { "type": ["string", "null"], "format": "date-time" }
+          }
+        }
       }
     },
     "effort_strategy": {
