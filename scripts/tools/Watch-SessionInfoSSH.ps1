@@ -60,9 +60,10 @@ function Get-RemoteSession {
 function Show-SessionFrame {
     param([pscustomobject]$Session)
     Clear-Host
-    $start     = [datetime]::Parse($Session.start_time)
-    $end       = [datetime]::Parse($Session.end_time_planned)
-    $now       = Get-Date
+    # DateTimeOffset でタイムゾーン情報を保持（Linux `date -Iseconds` はタイムゾーン付きを返す）
+    $start     = [datetimeoffset]::Parse($Session.start_time)
+    $end       = [datetimeoffset]::Parse($Session.end_time_planned)
+    $now       = [datetimeoffset]::Now
     $elapsed   = $now - $start
     $remaining = $end - $now
     $duration  = [TimeSpan]::FromMinutes($Session.max_duration_minutes)
