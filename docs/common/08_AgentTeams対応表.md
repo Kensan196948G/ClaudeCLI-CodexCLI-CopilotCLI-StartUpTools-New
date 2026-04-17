@@ -31,8 +31,8 @@
 | CI Manager | `.github/workflows/ci.yml` | 部分対応 | 3 |
 | Agent Teams 会話可視化 | `AgentTeams.psm1` でランタイムTeam構成・可視化。37 Agent定義読込、17パターン自動割当 | 実運用可能 | 3 |
 | MCP サーバー連携 | `McpHealthCheck.psm1` でモジュール化。Start-Menu統合、Text/JSON出力、ヘルスチェック実行 | ほぼ対応 | 4 |
-| Worktree Manager | 現行ランチャーには未実装 | 未対応 | 0 |
-| Backlog Manager | `TASKS.md` と CI の同期確認まで対応 | 部分対応 | 2 |
+| Worktree Manager | `git worktree` 運用手順を docs 化 + ClaudeOS v8.2 §10 WorkTree 規約で並列開発を実運用 | 実運用可能 | 3 |
+| Backlog Manager | `TASKS.md` と CI の同期確認 + GitHub Issue 自動生成 (PR #38) | ほぼ対応 | 4 |
 
 ## 実装済み機能
 
@@ -50,12 +50,11 @@
 
 ## 未実装機能
 
-- worktree ベースの並列ブランチ運用
-- issue / backlog 自動生成
+(現時点で未実装の大物項目はなし — worktree ベース並列ブランチ運用 / issue / backlog 自動生成は PR #37 / PR #38 / ClaudeOS v8.2 §10 で実運用化済み)
 
 ## 自動抽出
 
-`scripts/tools/Sync-AgentTeamsBacklog.ps1` は、この `## 未実装機能` セクションの箇条書きを読み取り、`TASKS.md` の自動抽出セクションと同期します。
+`scripts/tools/Sync-AgentTeamsBacklog.ps1` は、この `## 未実装機能` セクションの箇条書きを読み取り、`TASKS.md` の自動抽出セクションと同期します。未実装機能が 0 件の場合、Auto Extracted セクションは空同期となります。
 抽出単位は 1 行 1 項目です。文言を変えると backlog の同期結果も変わります。
 metadata の自動付与は [config/agent-teams-backlog-rules.json](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/config/agent-teams-backlog-rules.json) を参照します。端末ごとに調整したい場合は template ではなく実ファイル側を編集します。
 

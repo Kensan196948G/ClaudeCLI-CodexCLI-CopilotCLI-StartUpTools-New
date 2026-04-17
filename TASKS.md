@@ -29,8 +29,8 @@
 
 ## Auto Extracted From Agent Teams Matrix
 
-1. [Priority:P2][Owner:Ops][Source:AgentTeamsMatrix] worktree ベースの並列ブランチ運用
-2. [Priority:P2][Owner:ScrumMaster][Source:AgentTeamsMatrix] issue / backlog 自動生成
+(未実装機能なし — worktree ベース並列 / issue / backlog 自動生成は PR #37 / PR #38 / ClaudeOS v8.2 §10 で DONE)
+
 ## GitHub Issues Sync
 
 (No open issues)

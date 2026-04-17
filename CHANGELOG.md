@@ -2,6 +2,46 @@
 
 # CHANGELOG
 
+## [v3.2.3] - 2026-04-17 — docs drift cleanup + state artifacts + hookify 検出強化
+
+### 🎯 概要
+
+v3.2.2 STABLE (PR #146) 達成後の Monitor で検出された 4 項目 (M-1..M-4) を 1 PR で整理。
+
+### 🧹 docs drift 解消 (M-1)
+
+- **`.claude/claudeos/CLAUDE.md` を削除** — v6 旧スタイル (`/model sonnet` 指示 / `everything-claude-code/...` パス参照 / 旧 Boot Sequence) が v8.2 ルート CLAUDE.md と矛盾し、階層 CLAUDE.md 解決で毎セッション Claude に注入されていた問題を解消。v8.2 真正値はプロジェクトルート `CLAUDE.md` と `.claude/claudeos/system/*.md` 群。
+
+### 🗂 state 設定アーティファクト整備 (M-2)
+
+- **`state.json.example`** を v8.2 フル対応に更新。既存版では `task_budget` / `compact` / `notification` / `effort_strategy` / `cache` / `message_bus` / `execution.current_session_*` / `stable.*_pr` 等が欠落していた。
+- **`state.schema.json`** を新規配置 (JSON Schema draft-07)。必須フィールド / enum / 型制約を明示。
+- CLAUDE.md §4 で「配置してください」と明示されていた推奨事項を実装。
+
+### 🛡️ hookify CTO ガード 検出フレーズ拡充 (M-4)
+
+v3.2.2 の 4 フレーズに加え、本日別セッションで観測された違反表現 4 種を本番 regex に昇格:
+
+| フレーズ | distinctive な理由 |
+|---|---|
+| `この方針で進めて問題ないですか？` | 逐語連結が自然会話に出ない |
+| `どの方針で進めますか？` / `どの方針にしますか？` | CTO 判断投げ返しに特有 |
+| `別プラン: (a)` | 小文字括弧の選択肢列挙が典型 |
+| `ユーザーに確認します:` | 自律実行停止の自己文言 |
+
+`docs/common/17_hookify-CTO-guard.md` の pattern サンプルと検出表も更新。ローカル rule (`.claude/hookify.warn-cto-delegation-violation.local.md`) は各ユーザーが同 docs の手順で個別更新する。
+
+### 📋 AgentTeams backlog 同期 (M-3)
+
+- **`docs/common/08_AgentTeams対応表.md`** — Worktree Manager / Backlog Manager の対応レベルを現状 (PR #37 / PR #38 で DONE) に反映。「未実装機能」セクションは 0 件化。
+- **`TASKS.md`** — Auto Extracted セクションを空同期。
+
+### 🔗 関連
+
+- Issue: #147
+- 前回 STABLE: PR #146 (v3.2.2 hookify 3 層防御完成)
+- 参照: CLAUDE.md §4 / §6 / §23
+
 ## [v3.2.2] - 2026-04-17 — hookify CTO 全権委任ガード (ランタイム層)
 
 ### 🛡️ ランタイム防御層を追加
