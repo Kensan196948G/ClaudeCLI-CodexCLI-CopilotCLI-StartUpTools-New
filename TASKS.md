@@ -38,7 +38,8 @@
 29. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.12 PSUseOutputTypeCorrectly 警告解消 — 7 ファイル 13 関数 [OutputType()] 追加 / STABLE N=2 達成 (PR #164)
 30. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.13 PSAvoidUsingPositionalParameters 残存 1 件解消 (Test-ArchitectureCheck.ps1) + CLAUDE.md v8.3 Auto mode / Response length calibration 追加 / STABLE N=2 達成 (PR #165)
 31. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.14 PSProvideCommentHelp 警告 85 件解消 — 9 ファイル全関数に .SYNOPSIS 追加 / STABLE N=2 達成 (PR #167)
-32. [Priority:P1][Owner:Developer][Source:Manual] v3.2.17 3タブ監視構成 + tmux UI 統合 — Watch-ClaudeLog.ps1 / Watch-SessionInfoSSH.ps1 新規 / cron-launcher.sh tmux TTY 実行化 / linuxUser config パラメータ化 / DateTimeOffset TZ 対応 (PR #168)
+32. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.2.17 3タブ監視構成 + tmux UI 統合 — Watch-ClaudeLog.ps1 / Watch-SessionInfoSSH.ps1 新規 / cron-launcher.sh tmux TTY 実行化 / linuxUser config パラメータ化 / DateTimeOffset TZ 対応 (PR #168)
+33. [Priority:P1][Owner:Developer][Source:Manual] v3.2.18 外部コードレビュー指摘 5 件対応 (Quick-wins) — reports/ 新設 (#17) / Claude/README.md 追加 (#6) / .codex/config.toml 簡略化 (#32) / README 標準コマンドセクション (#21) / docs/common/18_ARCHITECTURE.md 新規 (#9, #34, #39)
 
 ## Auto Extracted From Agent Teams Matrix
 
@@ -47,6 +48,9 @@
 ## GitHub Issues Sync
 
 (No open issues)
+
+
+
 
 
 

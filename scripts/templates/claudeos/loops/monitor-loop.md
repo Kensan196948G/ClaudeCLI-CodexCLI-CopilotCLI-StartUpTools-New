@@ -35,7 +35,7 @@
 
 ## Output
 
-`.loop-monitor-report.md`
+`reports/.loop-monitor-report.md`
 
 ---
 
