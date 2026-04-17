@@ -2,6 +2,57 @@
 
 # CHANGELOG
 
+## [v3.2.8] - 2026-04-17 — PSUseSingularNouns 警告 36 件解消
+
+### 🎯 概要
+
+PSScriptAnalyzer `PSUseSingularNouns` ルール警告 36 件を解消。
+関数名の複数形名詞 32 件を単数形にリネーム、誤検知 4 件を `SuppressMessageAttribute` で抑制。
+全呼び出し元 70 ファイルを一括更新。コードロジック変更なし。
+
+### 🔧 変更対象
+
+| 対応方法 | 件数 | 対象例 |
+|---|---|---|
+| 関数リネーム（複数→単数） | 32 | `Get-GitHubIssue`, `Sync-IssueToTask` |
+| SuppressMessageAttribute（誤検知） | 4 | `Test-McpCommandExists`, `Assert-Throws` |
+
+#### リネーム対応一覧（主要）
+
+| 旧名 | 新名 |
+|---|---|
+| `Import-AgentDefinitions` | `Import-AgentDefinition` |
+| `Get-RecentProjects` | `Get-RecentProject` |
+| `Get-ClaudeOSCronEntries` | `Get-ClaudeOSCronEntry` |
+| `Get-GitHubIssues` | `Get-GitHubIssue` |
+| `Sync-IssuesToTasks` | `Sync-IssueToTask` |
+| `Sync-TasksToIssues` | `Sync-TaskToIssue` |
+| `Get-LauncherMetadataEntries` | `Get-LauncherMetadataEntry` |
+| `Get-BusMessages` | `Get-BusMessage` |
+| `Get-AllToolsDiagnostics` | `Get-AllToolsDiagnostic` |
+
+#### SuppressMessageAttribute 抑制（誤検知）
+
+| 関数名 | 理由 |
+|---|---|
+| `Test-McpCommandExists` | `Exists` は動詞サフィックス、複数名詞ではない |
+| `Test-CommandExists` | 同上 |
+| `Assert-Throws` | `Throws` は動詞形 |
+| `Initialize-JsonRootMembers` | `Members` は JSON プロパティ集合を指すドメイン概念 |
+
+### 🛡️ 設計判断
+
+- **属性配置**: `SuppressMessageAttribute` は関数内 `param()` ブロック直前に配置（PowerShell 構文規則）
+- **ロジック変更ゼロ**: リネームのみ。全呼び出し元を一括置換
+- **テスト全通過**: Pester 477 tests Passed: 477 / Failed: 0
+
+### 🔗 参照
+
+- Issue: #157
+- PR: #158
+
+---
+
 ## [v3.2.7] - 2026-04-17 — PSUseBOMForUnicodeEncodedFile 警告 35 件解消
 
 ### 🎯 概要

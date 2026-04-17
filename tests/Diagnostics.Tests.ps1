@@ -282,13 +282,13 @@ echo OpenSSH_9
     }
 
     It 'JSON スキーマ検証関数が通ること' {
-        $report = Get-AllToolsDiagnostics -ConfigPath $script:ConfigPath
+        $report = Get-AllToolsDiagnostic -ConfigPath $script:ConfigPath
         $errors = Test-AllToolsReportSchema -Report $report
         $errors | Should -BeNullOrEmpty
     }
 
     It 'MCP server の運用手順を connections に含めること' {
-        $report = Get-AllToolsDiagnostics -ConfigPath $script:ConfigPath
+        $report = Get-AllToolsDiagnostic -ConfigPath $script:ConfigPath
         $memoryConnection = @($report.mcp.connections | Where-Object name -eq 'memory')[0]
         $memoryConnection.kind | Should -Be 'memory'
         $memoryConnection.operatingProcedure.startup | Should -Match 'memory.js --start'
@@ -297,7 +297,7 @@ echo OpenSSH_9
     }
 
     It 'MCP server の startup/shutdown timeout を返すこと' {
-        $report = Get-AllToolsDiagnostics -ConfigPath $script:ConfigPath
+        $report = Get-AllToolsDiagnostic -ConfigPath $script:ConfigPath
         $memoryServer = @($report.mcp.servers | Where-Object name -eq 'memory')[0]
         $memoryServer.startupCommandTimeoutSec | Should -Be 10
         $memoryServer.shutdownCommandTimeoutSec | Should -Be 10
@@ -305,7 +305,7 @@ echo OpenSSH_9
 
     It 'MCP config parse failure を summary に反映すること' {
         Set-Content -Path $script:McpConfigPath -Value '{invalid-json' -Encoding UTF8
-        $report = Get-AllToolsDiagnostics -ConfigPath $script:ConfigPath
+        $report = Get-AllToolsDiagnostic -ConfigPath $script:ConfigPath
         $report.mcp.summary | Should -Match '解析に失敗'
     }
 
@@ -315,7 +315,7 @@ echo OpenSSH_9
                 browser = @{ command = 'missing-mcp'; args = @(); healthCommand = @('missing-health') }
             }
         } | ConvertTo-Json -Depth 10 | Set-Content -Path $script:McpConfigPath -Encoding UTF8
-        $report = Get-AllToolsDiagnostics -ConfigPath $script:ConfigPath
+        $report = Get-AllToolsDiagnostic -ConfigPath $script:ConfigPath
         $server = $report.mcp.servers | Where-Object name -eq 'browser'
         $server.status | Should -Be 'unavailable'
         $server.healthStatus | Should -Be 'health_command_unavailable'
@@ -327,7 +327,7 @@ echo OpenSSH_9
                 memory = @{ command = 'node'; args = @('memory.js'); healthCommand = @($script:PowerShellExe, '-NoProfile', '-Command', 'Write-Output fail; exit 1'); healthCommandTimeoutSec = 2 }
             }
         } | ConvertTo-Json -Depth 10 | Set-Content -Path $script:McpConfigPath -Encoding UTF8
-        $report = Get-AllToolsDiagnostics -ConfigPath $script:ConfigPath
+        $report = Get-AllToolsDiagnostic -ConfigPath $script:ConfigPath
         $server = @($report.mcp.servers | Where-Object name -eq 'memory')[0]
         $server.healthStatus | Should -Be 'unhealthy'
     }
@@ -338,7 +338,7 @@ echo OpenSSH_9
                 memory = @{ command = 'node'; args = @('memory.js'); healthCommand = @('ping', '127.0.0.1', '-n', '6'); healthCommandTimeoutSec = 1 }
             }
         } | ConvertTo-Json -Depth 10 | Set-Content -Path $script:McpConfigPath -Encoding UTF8
-        $report = Get-AllToolsDiagnostics -ConfigPath $script:ConfigPath
+        $report = Get-AllToolsDiagnostic -ConfigPath $script:ConfigPath
         $server = @($report.mcp.servers | Where-Object name -eq 'memory')[0]
         $server.healthStatus | Should -Be 'timeout'
         $server.healthOutput | Should -Match 'timed out'
@@ -361,7 +361,7 @@ echo OpenSSH_9
                     }
                 }
             } | ConvertTo-Json -Depth 10 | Set-Content -Path $script:McpConfigPath -Encoding UTF8
-            $report = Get-AllToolsDiagnostics -ConfigPath $script:ConfigPath
+            $report = Get-AllToolsDiagnostic -ConfigPath $script:ConfigPath
             $connection = @($report.mcp.connections | Where-Object name -eq 'memory')[0]
             $connection.runtimeProbe.enabled | Should -BeTrue
             $connection.runtimeProbe.startupStatus | Should -Be 'started'
@@ -584,7 +584,7 @@ Describe 'Start-Menu recent projects' {
     }
 
     It 'recent projects 表示ラベルに tool と mode が含まれること' {
-        $recent = Get-RecentProjects -HistoryPath $script:MenuHistoryPath
+        $recent = Get-RecentProject -HistoryPath $script:MenuHistoryPath
         $label = Get-RecentProjectLabel -Entry $recent[0]
         $label | Should -Match 'demo-local \[codex/Local/OK\]'
         $label | Should -Match '1200ms'
@@ -592,7 +592,7 @@ Describe 'Start-Menu recent projects' {
     }
 
     It 'R1 起動導線が保存済み tool と mode を再現すること' {
-        $recent = Get-RecentProjects -HistoryPath $script:MenuHistoryPath
+        $recent = Get-RecentProject -HistoryPath $script:MenuHistoryPath
         $launchSpec = Get-RecentProjectLaunchSpec -Entry $recent[0]
         $launchSpec.file | Should -Be 'scripts\main\Start-CodexCLI.ps1'
         $launchSpec.scriptArgs | Should -Contain '-Local'
@@ -608,24 +608,24 @@ Describe 'Start-Menu recent projects' {
             )
         } | ConvertTo-Json -Depth 10 | Set-Content -Path $script:MenuHistoryPath -Encoding UTF8
 
-        $entries = Get-SortedRecentProjects -Entries @(Get-RecentProjects -HistoryPath $script:MenuHistoryPath)
+        $entries = Get-SortedRecentProject -Entries @(Get-RecentProject -HistoryPath $script:MenuHistoryPath)
         $entries[0].project | Should -Be 'good-project'
         $entries[-1].project | Should -Be 'failed-project'
     }
 
     It 'recent projects の表示色が最終結果に応じて変わること' {
-        $recent = Get-RecentProjects -HistoryPath $script:MenuHistoryPath
+        $recent = Get-RecentProject -HistoryPath $script:MenuHistoryPath
         (Get-RecentProjectColor -Entry $recent[0]) | Should -BeIn @('Green', 'Red', 'Yellow', 'Cyan')
     }
 
     It 'tool filter と search query で recent projects を絞り込めること' {
-        $entries = @(Get-FilteredRecentProjects -Entries @(Get-RecentProjects -HistoryPath $script:MenuHistoryPath) -ToolFilter 'codex' -SearchQuery 'demo' -SortMode 'success')
+        $entries = @(Get-FilteredRecentProject -Entries @(Get-RecentProject -HistoryPath $script:MenuHistoryPath) -ToolFilter 'codex' -SearchQuery 'demo' -SortMode 'success')
         $entries.Count | Should -Be 1
         $entries[0].project | Should -Be 'demo-local'
     }
 
     It 'sort mode=timestamp で最新時刻順に並ぶこと' {
-        $entries = @(Get-SortedRecentProjects -Entries @(Get-RecentProjects -HistoryPath $script:MenuHistoryPath) -SortMode 'timestamp')
+        $entries = @(Get-SortedRecentProject -Entries @(Get-RecentProject -HistoryPath $script:MenuHistoryPath) -SortMode 'timestamp')
         $entries[0].project | Should -Be 'demo-local'
     }
 

@@ -88,18 +88,18 @@ function Write-ClaudeOsStartupDashboard {
     $agentLaneEvents = @()
     $backlogSummary = Get-LauncherBacklogSummary -TasksPath (Join-Path $ScriptRoot 'TASKS.md')
     if (Test-RecentProjectsEnabled -Config $Config) {
-        $recentEntries = Get-LauncherRecentEntries -Config $Config -MaxCount 20
+        $recentEntries = Get-LauncherRecentEntry -Config $Config -MaxCount 20
         $recentSummary = Get-LauncherRecentSummary -Entries $recentEntries
-        $recentToolResults = Get-LauncherRecentToolResults -Entries $recentEntries
+        $recentToolResults = Get-LauncherRecentToolResult -Entries $recentEntries
     }
-    $metadataEntries = Get-LauncherMetadataEntries -Config $Config -MaxCount 20
+    $metadataEntries = Get-LauncherMetadataEntry -Config $Config -MaxCount 20
     if (@($metadataEntries).Count -gt 0) {
-        $toolStatistics = Get-LauncherToolStatistics -Entries $metadataEntries
+        $toolStatistics = Get-LauncherToolStatistic -Entries $metadataEntries
     }
     else {
-        $toolStatistics = Get-LauncherToolStatistics -Entries $recentEntries
+        $toolStatistics = Get-LauncherToolStatistic -Entries $recentEntries
     }
-    $agentLaneEvents = Get-LauncherAgentLaneEvents -Config $Config -MetadataEntries $(if (@($metadataEntries).Count -gt 0) { $metadataEntries } else { $recentEntries }) -BacklogSummary $backlogSummary
+    $agentLaneEvents = Get-LauncherAgentLaneEvent -Config $Config -MetadataEntries $(if (@($metadataEntries).Count -gt 0) { $metadataEntries } else { $recentEntries }) -BacklogSummary $backlogSummary
 
     Write-Host " ClaudeOS" -ForegroundColor Cyan
     Write-Host " Claude Code Autonomous Development System" -ForegroundColor Cyan

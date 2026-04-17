@@ -299,13 +299,13 @@ Describe 'Start-Menu helper flows' {
     }
 
     It 'recent filter/search で codex の project を絞り込めること' {
-        $entries = @(Get-FilteredRecentProjects -Entries @(Get-RecentProjects -HistoryPath $script:MenuHistoryPath) -ToolFilter 'codex' -SearchQuery 'demo' -SortMode 'success')
+        $entries = @(Get-FilteredRecentProject -Entries @(Get-RecentProject -HistoryPath $script:MenuHistoryPath) -ToolFilter 'codex' -SearchQuery 'demo' -SortMode 'success')
         $entries.Count | Should -Be 1
         $entries[0].project | Should -Be 'demo-codex'
     }
 
     It 'recent projects を elapsed sort に切り替えられること' {
-        $entries = @(Get-SortedRecentProjects -Entries @(Get-RecentProjects -HistoryPath $script:MenuHistoryPath) -SortMode 'elapsed')
+        $entries = @(Get-SortedRecentProject -Entries @(Get-RecentProject -HistoryPath $script:MenuHistoryPath) -SortMode 'elapsed')
         $entries[0].project | Should -Be 'demo-copilot'
     }
 }

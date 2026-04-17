@@ -23,6 +23,7 @@ Import-Module (Join-Path $script:StartupRoot 'scripts\lib\LauncherCommon.psm1') 
 Import-Module (Join-Path $script:StartupRoot 'scripts\lib\McpHealthCheck.psm1') -Force
 
 function Test-CommandExists {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'Exists is a verb suffix not a plural noun')]
     param([string]$Command)
     return [bool](Get-Command $Command -ErrorAction SilentlyContinue)
 }
@@ -120,7 +121,7 @@ function Invoke-ProcessWithTimeout {
     }
 }
 
-function Get-McpServerDiagnostics {
+function Get-McpServerDiagnostic {
     param(
         [string]$Name,
         [object]$Definition
@@ -128,12 +129,12 @@ function Get-McpServerDiagnostics {
     return Get-McpServerHealth -Name $Name -Definition $Definition
 }
 
-function Get-McpDiagnostics {
+function Get-McpDiagnostic {
     param([string]$ProjectRoot)
     return Get-McpHealthReport -ProjectRoot $ProjectRoot
 }
 
-function Get-AllToolsDiagnostics {
+function Get-AllToolsDiagnostic {
     param([string]$ConfigPath)
 
     $report = [ordered]@{
@@ -200,7 +201,7 @@ function Get-AllToolsDiagnostics {
         }
     }
 
-    $report.mcp = Get-McpDiagnostics -ProjectRoot $script:StartupRoot
+    $report.mcp = Get-McpDiagnostic -ProjectRoot $script:StartupRoot
     if ($report.mcp.configured -and @($report.mcp.servers | Where-Object { $_.status -eq 'unavailable' }).Count -gt 0) {
         $report.summary.ok = $false
     }
@@ -352,7 +353,7 @@ function Test-AllToolsReportSchema {
     return @($errors)
 }
 
-function Show-AllToolsDiagnostics {
+function Show-AllToolsDiagnostic {
     param([pscustomobject]$Report)
 
     function Write-Info { param([string]$Message) Write-Host "[INFO] $Message" -ForegroundColor Cyan }
@@ -443,11 +444,11 @@ function Show-AllToolsDiagnostics {
 
 if ($MyInvocation.InvocationName -ne '.') {
     $configPath = Get-StartupConfigPath -StartupRoot $script:StartupRoot
-    $report = Get-AllToolsDiagnostics -ConfigPath $configPath
+    $report = Get-AllToolsDiagnostic -ConfigPath $configPath
     if ($OutputFormat -eq 'Json') {
         $report | ConvertTo-Json -Depth 8
     }
     else {
-        Show-AllToolsDiagnostics -Report $report
+        Show-AllToolsDiagnostic -Report $report
     }
 }

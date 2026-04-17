@@ -1,4 +1,4 @@
-# Sync-Issues.ps1 - GitHub Issues <-> TASKS.md sync tool
+﻿# Sync-Issues.ps1 - GitHub Issues <-> TASKS.md sync tool
 # Actions: status, check, sync, sync-to-github
 param(
     [ValidateSet('status', 'check', 'sync', 'sync-to-github')]
@@ -45,7 +45,7 @@ switch ($Action) {
     }
     'check' {
         # CI-safe structural check (no GitHub API calls)
-        $parsed = Get-TasksSections -TasksPath $TasksPath
+        $parsed = Get-TaskSection -TasksPath $TasksPath
         $hasIssueSection = $parsed.Sections.Contains('GitHub Issues Sync')
         $manualLines = @()
         if ($parsed.Sections.Contains('Manual Backlog')) {
@@ -88,7 +88,7 @@ switch ($Action) {
         exit 0
     }
     'sync' {
-        $result = Sync-IssuesToTasks -Owner $Owner -Repo $Repo -TasksPath $TasksPath -DryRun:$DryRun
+        $result = Sync-IssueToTask -Owner $Owner -Repo $Repo -TasksPath $TasksPath -DryRun:$DryRun
         if ($DryRun) {
             Write-Host "DryRun - Would sync $($result.IssueCount) issues to $($result.TasksPath)" -ForegroundColor Yellow
             $result.Content | ForEach-Object { Write-Host $_ }
@@ -99,7 +99,7 @@ switch ($Action) {
         exit 0
     }
     'sync-to-github' {
-        $result = Sync-TasksToIssues -Owner $Owner -Repo $Repo -TasksPath $TasksPath -DryRun:$DryRun
+        $result = Sync-TaskToIssue -Owner $Owner -Repo $Repo -TasksPath $TasksPath -DryRun:$DryRun
         if ($DryRun) {
             Write-Host "DryRun - Would create $($result.Count) issues:" -ForegroundColor Yellow
             $result.WouldCreate | ForEach-Object { Write-Host "  - $_" }

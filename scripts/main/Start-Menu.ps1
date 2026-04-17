@@ -27,7 +27,7 @@ if ($env:AI_STARTUP_MENU_TEST_EXPORT -ne '1') {
     $ShellExe = Get-LauncherShell
 }
 
-function Get-RecentProjectSortWeight {
+function Get-RecentProjectortWeight {
     param([object]$Entry)
 
     switch ($Entry.result) {
@@ -39,11 +39,11 @@ function Get-RecentProjectSortWeight {
     }
 }
 
-function Get-RecentProjectSuccessRate {
+function Get-RecentProjectuccessRate {
     param([object]$Entry)
 
     $matchingEntries = @(
-        Get-RecentProjects -HistoryPath $Config.recentProjects.historyFile |
+        Get-RecentProject -HistoryPath $Config.recentProjects.historyFile |
             Where-Object {
                 $_.project -eq $Entry.project -and
                 $_.tool -eq $Entry.tool -and
@@ -53,7 +53,7 @@ function Get-RecentProjectSuccessRate {
     return (Get-LauncherRecentSummary -Entries $matchingEntries).SuccessRate
 }
 
-function Get-SortedRecentProjects {
+function Get-SortedRecentProject {
     param(
         [object[]]$Entries,
         [ValidateSet('success', 'timestamp', 'elapsed')]
@@ -77,7 +77,7 @@ function Get-SortedRecentProjects {
                         @{ Expression = {
                             if ($null -ne $_.elapsedMs) { [int]$_.elapsedMs } else { [int]::MaxValue }
                         }; Descending = $false }, `
-                        @{ Expression = { Get-RecentProjectSortWeight -Entry $_ }; Descending = $true }, `
+                        @{ Expression = { Get-RecentProjectortWeight -Entry $_ }; Descending = $true }, `
                         @{ Expression = {
                             if ($_.timestamp) { try { [datetimeoffset]$_.timestamp } catch { [datetimeoffset]::MinValue } }
                             else { [datetimeoffset]::MinValue }
@@ -89,8 +89,8 @@ function Get-SortedRecentProjects {
     return @(
         $Entries |
             Sort-Object `
-                @{ Expression = { Get-RecentProjectSuccessRate -Entry $_ }; Descending = $true }, `
-                @{ Expression = { Get-RecentProjectSortWeight -Entry $_ }; Descending = $true }, `
+                @{ Expression = { Get-RecentProjectuccessRate -Entry $_ }; Descending = $true }, `
+                @{ Expression = { Get-RecentProjectortWeight -Entry $_ }; Descending = $true }, `
                 @{ Expression = {
                     if ($_.timestamp) { try { [datetimeoffset]$_.timestamp } catch { [datetimeoffset]::MinValue } }
                     else { [datetimeoffset]::MinValue }
@@ -98,7 +98,7 @@ function Get-SortedRecentProjects {
     )
 }
 
-function Get-FilteredRecentProjects {
+function Get-FilteredRecentProject {
     param(
         [object[]]$Entries,
         [string]$ToolFilter = '',
@@ -114,7 +114,7 @@ function Get-FilteredRecentProjects {
     if (-not [string]::IsNullOrWhiteSpace($SearchQuery)) {
         $filtered = @($filtered | Where-Object { $_.project -like "*$SearchQuery*" })
     }
-    return @(@(Get-SortedRecentProjects -Entries $filtered -SortMode $SortMode))
+    return @(@(Get-SortedRecentProject -Entries $filtered -SortMode $SortMode))
 }
 
 function Get-RecentProjectLabel {
@@ -138,7 +138,7 @@ function Get-RecentProjectLabel {
 
     $elapsed = if ($null -ne $Entry.elapsedMs) { "{0}ms" -f [int]$Entry.elapsedMs } else { 'n/a' }
     $matchingEntries = @(
-        Get-RecentProjects -HistoryPath $Config.recentProjects.historyFile |
+        Get-RecentProject -HistoryPath $Config.recentProjects.historyFile |
             Where-Object {
                 $_.project -eq $Entry.project -and
                 $_.tool -eq $Entry.tool -and

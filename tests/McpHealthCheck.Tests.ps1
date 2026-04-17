@@ -379,14 +379,14 @@ Describe 'Test-AllTools.ps1 との互換性' {
         . (Join-Path $script:RepoRoot 'scripts\test\Test-AllTools.ps1')
     }
 
-    Context 'Get-McpServerDiagnostics が委譲されている場合' {
+    Context 'Get-McpServerDiagnostic が委譲されている場合' {
         It 'Get-McpServerHealth と同じ結果を返すこと' {
             $definition = [pscustomobject]@{
                 command = 'cmd'
                 args    = @('/c', 'echo', 'test')
             }
 
-            $diagnosticsResult = Get-McpServerDiagnostics -Name 'compat-test' -Definition $definition
+            $diagnosticsResult = Get-McpServerDiagnostic -Name 'compat-test' -Definition $definition
             $healthResult = Get-McpServerHealth -Name 'compat-test' -Definition $definition
 
             $diagnosticsResult.name | Should -Be $healthResult.name
@@ -395,11 +395,11 @@ Describe 'Test-AllTools.ps1 との互換性' {
         }
     }
 
-    Context 'Get-McpDiagnostics が委譲されている場合' {
+    Context 'Get-McpDiagnostic が委譲されている場合' {
         It 'configured フィールドが一致すること' {
             $env:AI_STARTUP_MCP_CONFIG_PATH = Join-Path $TestDrive 'nonexistent.json'
 
-            $diagnosticsResult = Get-McpDiagnostics -ProjectRoot $TestDrive
+            $diagnosticsResult = Get-McpDiagnostic -ProjectRoot $TestDrive
             $healthResult = Get-McpHealthReport -ProjectRoot $TestDrive
 
             $diagnosticsResult.configured | Should -Be $healthResult.configured

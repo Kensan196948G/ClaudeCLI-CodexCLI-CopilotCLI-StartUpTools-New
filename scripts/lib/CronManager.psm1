@@ -66,7 +66,7 @@ function Invoke-RemoteCrontab {
     return $proc.ExitCode
 }
 
-function Get-ClaudeOSCronEntries {
+function Get-ClaudeOSCronEntry {
     <#
     .SYNOPSIS 現在の crontab から CLAUDEOS: 行と対応する cron 式を抽出
     #>
@@ -208,10 +208,10 @@ function Remove-ClaudeOSCronEntry {
     return $removed
 }
 
-function Remove-AllClaudeOSCronEntries {
+function Remove-AllClaudeOSCronEntry {
     param([Parameter(Mandatory)][string]$LinuxHost)
 
-    $entries = Get-ClaudeOSCronEntries -LinuxHost $LinuxHost
+    $entries = Get-ClaudeOSCronEntry -LinuxHost $LinuxHost
     $count = 0
     foreach ($e in $entries) {
         $count += Remove-ClaudeOSCronEntry -LinuxHost $LinuxHost -Id $e.Id
@@ -238,10 +238,10 @@ function Format-CronEntryForDisplay {
 
 Export-ModuleMember -Function `
     Set-CronManagerConfig, `
-    Get-ClaudeOSCronEntries, `
+    Get-ClaudeOSCronEntry, `
     Add-ClaudeOSCronEntry, `
     Remove-ClaudeOSCronEntry, `
-    Remove-AllClaudeOSCronEntries, `
+    Remove-AllClaudeOSCronEntry, `
     Format-CronExpression, `
     Format-CronEntryForDisplay, `
     New-CronEntryId, `

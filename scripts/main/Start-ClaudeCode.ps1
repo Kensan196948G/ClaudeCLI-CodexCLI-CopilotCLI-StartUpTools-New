@@ -72,7 +72,7 @@ fi
 "@
 }
 
-function Get-StartPromptSections {
+function Get-StartPromptSection {
     param([Parameter(Mandatory)][string]$PromptPath)
 
     $content = Get-Content -Path $PromptPath -Raw -Encoding UTF8
@@ -297,7 +297,7 @@ try {
         $localPromptPath = Join-Path $ScriptRoot 'Claude\templates\claude\START_PROMPT.md'
         $localPromptArgs = @()
         if (Test-Path $localPromptPath) {
-            $localPromptSections = Get-StartPromptSections -PromptPath $localPromptPath
+            $localPromptSections = Get-StartPromptSection -PromptPath $localPromptPath
             $localPromptArgs = @($localPromptSections.FullText)
             Write-Info "START_PROMPT を自動送信します ($localPromptPath)"
         }
@@ -329,7 +329,7 @@ try {
     $templatePrompt = Join-Path $ScriptRoot 'Claude\templates\claude\START_PROMPT.md'
     $bridgeSource = Join-Path $ScriptRoot 'scripts\helpers\claude_pty_bridge.py'
 
-    $promptSections = Get-StartPromptSections -PromptPath $templatePrompt
+    $promptSections = Get-StartPromptSection -PromptPath $templatePrompt
 
     # --- Pre-Launch Diagnostics (SSH mode) ---
     Write-Host ''

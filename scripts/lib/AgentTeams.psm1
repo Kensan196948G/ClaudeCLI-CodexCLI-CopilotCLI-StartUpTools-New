@@ -34,7 +34,7 @@ $script:TaskTypePatterns = @(
     [pscustomobject]@{ type = 'kotlin';    pattern = 'Kotlin|Android';                                          agents = @('kotlin-reviewer', 'kotlin-build-resolver') }
 )
 
-function Import-AgentDefinitions {
+function Import-AgentDefinition {
     param(
         [Parameter(Mandatory)]
         [string]$AgentsDir
@@ -171,7 +171,7 @@ function New-AgentTeam {
 
     $availableAgents = @()
     if ($AgentsDir -and (Test-Path $AgentsDir)) {
-        $availableAgents = @(Import-AgentDefinitions -AgentsDir $AgentsDir)
+        $availableAgents = @(Import-AgentDefinition -AgentsDir $AgentsDir)
     }
 
     $team = [ordered]@{
@@ -308,7 +308,7 @@ function Get-AgentTeamReport {
 
     $availableAgents = @()
     if (Test-Path $agentsDir) {
-        $availableAgents = @(Import-AgentDefinitions -AgentsDir $agentsDir)
+        $availableAgents = @(Import-AgentDefinition -AgentsDir $agentsDir)
     }
 
     $report = [ordered]@{
@@ -380,7 +380,7 @@ function Get-AgentCapabilityMatrix {
         [string]$AgentsDir
     )
 
-    $agents = Import-AgentDefinitions -AgentsDir $AgentsDir
+    $agents = Import-AgentDefinition -AgentsDir $AgentsDir
 
     $domains = [ordered]@{
         'Core Team'     = @('planner', 'architect', 'orchestrator', 'loop-operator', 'chief-of-staff')
@@ -459,7 +459,7 @@ function Get-AgentQuickStatus {
 }
 
 Export-ModuleMember -Function @(
-    'Import-AgentDefinitions',
+    'Import-AgentDefinition',
     'Get-TaskTypeAnalysis',
     'Get-BacklogRuleMatch',
     'New-AgentTeam',

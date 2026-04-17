@@ -167,7 +167,7 @@ function Publish-BusMessage {
     return $msgId
 }
 
-function Get-BusMessages {
+function Get-BusMessage {
     <#
     .SYNOPSIS
         指定トピックのメッセージ一覧を取得する。
@@ -191,7 +191,7 @@ function Get-BusMessages {
 
     .EXAMPLE
         # Orchestrator が未読の phase.transition を取得
-        Get-BusMessages -Topic 'phase.transition' -Consumer 'Orchestrator'
+        Get-BusMessage -Topic 'phase.transition' -Consumer 'Orchestrator'
     #>
     [CmdletBinding()]
     param(
@@ -425,7 +425,7 @@ function Initialize-MessageBus {
 
 Export-ModuleMember -Function @(
     'Publish-BusMessage',
-    'Get-BusMessages',
+    'Get-BusMessage',
     'Confirm-BusMessage',
     'Get-BusStatus',
     'Initialize-MessageBus'

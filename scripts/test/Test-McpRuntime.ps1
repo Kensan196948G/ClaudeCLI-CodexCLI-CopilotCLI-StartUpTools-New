@@ -35,13 +35,13 @@ try {
     }
     . $scriptPath
     $configPath = Get-StartupConfigPath -StartupRoot $StartupRoot
-    $report = Get-AllToolsDiagnostics -ConfigPath $configPath
+    $report = Get-AllToolsDiagnostic -ConfigPath $configPath
 
     if ($requestedOutputFormat -eq 'Json') {
         $report | ConvertTo-Json -Depth 8
     }
     else {
-        Show-AllToolsDiagnostics -Report $report
+        Show-AllToolsDiagnostic -Report $report
     }
 }
 finally {

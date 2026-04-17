@@ -14,7 +14,7 @@ $TasksPath = Join-Path $RepoRoot 'TASKS.md'
 $DefaultRulesPath = Join-Path $RepoRoot 'config\agent-teams-backlog-rules.json'
 $TemplateRulesPath = Join-Path $RepoRoot 'config\agent-teams-backlog-rules.json.template'
 
-function Get-MetadataRules {
+function Get-MetadataRule {
     param([string]$Path)
 
     $resolved = if (-not [string]::IsNullOrWhiteSpace($Path)) { $Path } elseif (Test-Path $DefaultRulesPath) { $DefaultRulesPath } else { $TemplateRulesPath }
@@ -25,7 +25,7 @@ function Get-MetadataRules {
     return (Get-Content -Path $resolved -Raw -Encoding UTF8 | ConvertFrom-Json)
 }
 
-function Get-UnimplementedItems {
+function Get-UnimplementedItem {
     $docLines = Get-Content -Path $DocPath -Encoding UTF8
     $items = @()
     $inSection = $false
@@ -88,8 +88,8 @@ function Get-ExtractedSection {
     return @($lines)
 }
 
-$items = @(Get-UnimplementedItems)
-$rules = Get-MetadataRules -Path $RulesPath
+$items = @(Get-UnimplementedItem)
+$rules = Get-MetadataRule -Path $RulesPath
 $taskLines = Get-Content -Path $TasksPath -Encoding UTF8
 $currentExtracted = @()
 $inExtracted = $false

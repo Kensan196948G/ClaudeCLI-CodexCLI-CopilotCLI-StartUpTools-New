@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # IssueSyncManager.psm1 - GitHub Issues <-> TASKS.md sync
 # ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools v2.7.0
 # Issue #33: Issue / Backlog auto-generation
@@ -19,7 +19,7 @@ function Get-TasksFilePath {
     return Join-Path $RepoRoot $script:DefaultTasksPath
 }
 
-function Get-GitHubIssues {
+function Get-GitHubIssue {
     <#
     .SYNOPSIS
         Fetches open GitHub Issues for the repository.
@@ -149,7 +149,7 @@ function ConvertFrom-TaskLine {
     return [pscustomobject]$result
 }
 
-function Get-TasksSections {
+function Get-TaskSection {
     <#
     .SYNOPSIS
         Parses TASKS.md into sections with their content lines.
@@ -195,7 +195,7 @@ function Get-TasksSections {
     }
 }
 
-function Sync-IssuesToTasks {
+function Sync-IssueToTask {
     <#
     .SYNOPSIS
         Syncs GitHub Issues into the TASKS.md file under a dedicated section.
@@ -223,12 +223,12 @@ function Sync-IssuesToTasks {
         $TasksPath = Get-TasksFilePath
     }
 
-    $issues = Get-GitHubIssues -Owner $Owner -Repo $Repo -State 'open'
+    $issues = Get-GitHubIssue -Owner $Owner -Repo $Repo -State 'open'
 
     # Filter out pull requests (they also appear as issues)
     $issues = @($issues | Where-Object { -not ($_.PSObject.Properties.Name -contains 'pull_request') })
 
-    $parsed = Get-TasksSections -TasksPath $TasksPath
+    $parsed = Get-TaskSection -TasksPath $TasksPath
 
     # Build new issue section lines
     $issueLines = @('')
@@ -275,7 +275,7 @@ function Sync-IssuesToTasks {
     }
 }
 
-function Sync-TasksToIssues {
+function Sync-TaskToIssue {
     <#
     .SYNOPSIS
         Creates GitHub Issues from TASKS.md manual entries that don't have a GitHub source.
@@ -303,7 +303,7 @@ function Sync-TasksToIssues {
         $TasksPath = Get-TasksFilePath
     }
 
-    $parsed = Get-TasksSections -TasksPath $TasksPath
+    $parsed = Get-TaskSection -TasksPath $TasksPath
 
     $manualLines = @()
     if ($parsed.Sections.Contains($script:ManualSection)) {
@@ -360,8 +360,8 @@ function Get-SyncStatus {
         $TasksPath = Get-TasksFilePath
     }
 
-    $issues = Get-GitHubIssues -Owner $Owner -Repo $Repo
-    $parsed = Get-TasksSections -TasksPath $TasksPath
+    $issues = Get-GitHubIssue -Owner $Owner -Repo $Repo
+    $parsed = Get-TaskSection -TasksPath $TasksPath
 
     $issueSyncLines = @()
     if ($parsed.Sections.Contains($script:IssueSection)) {
@@ -388,12 +388,12 @@ function Get-SyncStatus {
 }
 
 Export-ModuleMember -Function @(
-    'Get-GitHubIssues'
+    'Get-GitHubIssue'
     'ConvertTo-TaskLine'
     'ConvertFrom-TaskLine'
-    'Get-TasksSections'
-    'Sync-IssuesToTasks'
-    'Sync-TasksToIssues'
+    'Get-TaskSection'
+    'Sync-IssueToTask'
+    'Sync-TaskToIssue'
     'Get-SyncStatus'
     'Get-TasksFilePath'
 )

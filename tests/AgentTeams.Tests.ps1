@@ -8,7 +8,7 @@ BeforeAll {
     Import-Module (Join-Path $script:RepoRoot 'scripts\lib\AgentTeams.psm1') -Force
 }
 
-Describe 'Import-AgentDefinitions' {
+Describe 'Import-AgentDefinition' {
 
     Context 'agents ディレクトリが存在する場合' {
 
@@ -40,37 +40,37 @@ Handles simple tasks.
         }
 
         It 'Agent 定義ファイルを読み込めること' {
-            $result = Import-AgentDefinitions -AgentsDir $script:AgentsDir
+            $result = Import-AgentDefinition -AgentsDir $script:AgentsDir
             @($result).Count | Should -Be 2
         }
 
         It 'frontmatter の name を正しくパースすること' {
-            $result = Import-AgentDefinitions -AgentsDir $script:AgentsDir
+            $result = Import-AgentDefinition -AgentsDir $script:AgentsDir
             $architect = @($result) | Where-Object { $_.id -eq 'test-architect' }
             $architect.name | Should -Be 'test-architect'
         }
 
         It 'frontmatter の description を正しくパースすること' {
-            $result = Import-AgentDefinitions -AgentsDir $script:AgentsDir
+            $result = Import-AgentDefinition -AgentsDir $script:AgentsDir
             $architect = @($result) | Where-Object { $_.id -eq 'test-architect' }
             $architect.description | Should -Be 'Test architecture agent'
         }
 
         It 'frontmatter の tools を配列としてパースすること' {
-            $result = Import-AgentDefinitions -AgentsDir $script:AgentsDir
+            $result = Import-AgentDefinition -AgentsDir $script:AgentsDir
             $architect = @($result) | Where-Object { $_.id -eq 'test-architect' }
             $architect.tools.Count | Should -Be 3
             $architect.tools[0] | Should -Be 'Read'
         }
 
         It 'frontmatter がない場合は本文から description を抽出すること' {
-            $result = Import-AgentDefinitions -AgentsDir $script:AgentsDir
+            $result = Import-AgentDefinition -AgentsDir $script:AgentsDir
             $simple = @($result) | Where-Object { $_.id -eq 'simple-agent' }
             $simple.description | Should -Be 'Handles simple tasks.'
         }
 
         It 'CLAUDE.md をスキップすること' {
-            $result = Import-AgentDefinitions -AgentsDir $script:AgentsDir
+            $result = Import-AgentDefinition -AgentsDir $script:AgentsDir
             $claude = @($result) | Where-Object { $_.id -eq 'CLAUDE' }
             $claude | Should -BeNullOrEmpty
         }
@@ -78,7 +78,7 @@ Handles simple tasks.
 
     Context 'agents ディレクトリが存在しない場合' {
         It '空配列を返すこと' {
-            $result = Import-AgentDefinitions -AgentsDir (Join-Path $TestDrive 'nonexistent')
+            $result = Import-AgentDefinition -AgentsDir (Join-Path $TestDrive 'nonexistent')
             @($result).Count | Should -Be 0
         }
     }
@@ -88,7 +88,7 @@ Handles simple tasks.
             # 棚卸し 2026Q2 (Issue #117-#120) でカテゴリ A+D 計 55 件を削除。残存 17 件以上を確認。
             $agentsDir = Join-Path $script:RepoRoot '.claude\claudeos\agents'
             if (Test-Path $agentsDir) {
-                $result = Import-AgentDefinitions -AgentsDir $agentsDir
+                $result = Import-AgentDefinition -AgentsDir $agentsDir
                 @($result).Count | Should -BeGreaterOrEqual 15
             }
         }

@@ -163,7 +163,7 @@ Describe 'Publish-BusMessage' {
     }
 }
 
-Describe 'Get-BusMessages' {
+Describe 'Get-BusMessage' {
 
     BeforeEach {
         $script:StatePath = Join-Path $TestDrive 'state.json'
@@ -178,12 +178,12 @@ Describe 'Get-BusMessages' {
                 -Payload @{ from = 'Monitor'; to = 'Development' } -StatePath $script:StatePath | Out-Null
             Publish-BusMessage -Topic 'phase.transition' -Publisher 'Orchestrator' `
                 -Payload @{ from = 'Development'; to = 'Verify' } -StatePath $script:StatePath | Out-Null
-            $msgs = Get-BusMessages -Topic 'phase.transition' -StatePath $script:StatePath
+            $msgs = Get-BusMessage -Topic 'phase.transition' -StatePath $script:StatePath
             @($msgs) | Should -HaveCount 2
         }
 
         It 'メッセージがない場合は空を返す' {
-            $msgs = Get-BusMessages -Topic 'ci.status' -StatePath $script:StatePath
+            $msgs = Get-BusMessage -Topic 'ci.status' -StatePath $script:StatePath
             @($msgs) | Should -HaveCount 0
         }
     }
@@ -193,7 +193,7 @@ Describe 'Get-BusMessages' {
         It 'consume 前は未読として返る' {
             Publish-BusMessage -Topic 'ci.status' -Publisher 'DevOps' `
                 -Payload @{ status = 'pass' } -StatePath $script:StatePath | Out-Null
-            $msgs = Get-BusMessages -Topic 'ci.status' -Consumer 'Orchestrator' -StatePath $script:StatePath
+            $msgs = Get-BusMessage -Topic 'ci.status' -Consumer 'Orchestrator' -StatePath $script:StatePath
             @($msgs) | Should -HaveCount 1
         }
 
@@ -202,7 +202,7 @@ Describe 'Get-BusMessages' {
                 -Payload @{ status = 'pass' } -StatePath $script:StatePath
             Confirm-BusMessage -Topic 'ci.status' -MessageId $id -Consumer 'Orchestrator' `
                 -StatePath $script:StatePath | Out-Null
-            $msgs = Get-BusMessages -Topic 'ci.status' -Consumer 'Orchestrator' -StatePath $script:StatePath
+            $msgs = Get-BusMessage -Topic 'ci.status' -Consumer 'Orchestrator' -StatePath $script:StatePath
             @($msgs) | Should -HaveCount 0
         }
 
@@ -211,7 +211,7 @@ Describe 'Get-BusMessages' {
                 -Payload @{ status = 'pass' } -StatePath $script:StatePath
             Confirm-BusMessage -Topic 'ci.status' -MessageId $id -Consumer 'Orchestrator' `
                 -StatePath $script:StatePath | Out-Null
-            $msgs = Get-BusMessages -Topic 'ci.status' -Consumer 'QA' -StatePath $script:StatePath
+            $msgs = Get-BusMessage -Topic 'ci.status' -Consumer 'QA' -StatePath $script:StatePath
             @($msgs) | Should -HaveCount 1
         }
     }
@@ -219,7 +219,7 @@ Describe 'Get-BusMessages' {
     Context 'state.json が存在しない場合' {
 
         It '空配列を返す' {
-            $msgs = Get-BusMessages -Topic 'phase.transition' `
+            $msgs = Get-BusMessage -Topic 'phase.transition' `
                 -StatePath (Join-Path $TestDrive 'nonexistent.json')
             @($msgs) | Should -HaveCount 0
         }

@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$StartingDirectory = '%USERPROFILE%',
     [string]$ProfileName = 'AI CLI Startup',
     [string[]]$AdditionalProfileNames = @(),
@@ -59,7 +59,7 @@ function Get-ExternalScheme {
     return $content
 }
 
-function Get-ProfileOverrides {
+function Get-ProfileOverride {
     param([string]$Path)
 
     if ([string]::IsNullOrWhiteSpace($Path) -or -not (Test-Path $Path)) {
@@ -78,6 +78,7 @@ function Get-ProfileOverrides {
 }
 
 function Initialize-JsonRootMembers {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'Members is a domain concept referring to JSON object properties collectively')]
     param([object]$Settings)
 
     if (-not ($Settings.PSObject.Properties.Name -contains 'profiles') -or $null -eq $Settings.profiles) {
@@ -208,7 +209,7 @@ catch {
 Initialize-JsonRootMembers -Settings $settings
 
 $externalScheme = Get-ExternalScheme -Path $ThemeJsonPath
-$profileOverrides = Get-ProfileOverrides -Path $ProfileOverridesJsonPath
+$profileOverrides = Get-ProfileOverride -Path $ProfileOverridesJsonPath
 $effectiveTheme = if ($null -ne $externalScheme -and $externalScheme.PSObject.Properties.Name -contains 'name' -and $externalScheme.name) { "$($externalScheme.name)" } else { $Theme }
 
 $builtInScheme = $settings.schemes | Where-Object { $_.name -eq 'One Half Light' } | Select-Object -First 1

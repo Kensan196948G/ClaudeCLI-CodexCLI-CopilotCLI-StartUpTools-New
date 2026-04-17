@@ -59,6 +59,7 @@ function Invoke-McpProcessWithTimeout {
 }
 
 function Test-McpCommandExists {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'Exists is a verb suffix not a plural noun')]
     param([string]$Command)
     return [bool](Get-Command $Command -ErrorAction SilentlyContinue)
 }
