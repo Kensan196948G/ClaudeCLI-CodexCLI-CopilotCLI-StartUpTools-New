@@ -148,7 +148,7 @@ Describe 'ClaudeOS Scripts' {
     It 'フックスクリプトの構文が有効であること' {
         $hookScripts = Get-ChildItem (Join-Path $script:PluginRoot 'scripts\hooks') -Filter '*.js'
         foreach ($script_ in $hookScripts) {
-            $result = & node --check $script_.FullName 2>&1
+            & node --check $script_.FullName 2>&1 | Out-Null
             $LASTEXITCODE | Should -Be 0 -Because "$($script_.Name) should have valid JS syntax"
         }
     }

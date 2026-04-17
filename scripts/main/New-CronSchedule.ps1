@@ -92,9 +92,9 @@ function Select-DayOfWeek {
     Write-Host ""
     Write-Host "  -- 曜日選択 (複数可、カンマ区切り) --" -ForegroundColor Cyan
     Write-Host "    0=日 1=月 2=火 3=水 4=木 5=金 6=土" -ForegroundColor DarkGray
-    $input = Read-Host "  曜日 (例: 0 または 1,3,5)"
+    $rawInput = Read-Host "  曜日 (例: 0 または 1,3,5)"
     $list = @()
-    foreach ($token in ($input -split ',')) {
+    foreach ($token in ($rawInput -split ',')) {
         $t = $token.Trim()
         if ($t -match '^\d$') { $list += [int]$t }
     }

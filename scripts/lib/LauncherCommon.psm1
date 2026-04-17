@@ -143,7 +143,8 @@ function Assert-LauncherToolAvailable {
 
     $answer = Read-Host "今すぐインストールしますか？ [y/N]"
     if ($answer -match '^[yY]') {
-        Invoke-Expression $InstallCommand
+        $installParts = $InstallCommand -split '\s+' | Where-Object { $_ }
+        & $installParts[0] ($installParts[1..($installParts.Count - 1)])
         return (Test-LauncherCommand -Command $Command)
     }
 
@@ -1038,7 +1039,6 @@ function Get-LauncherAgentLaneEvents {
         [object]$BacklogSummary = $null
     )
 
-    $toolStats = Get-LauncherToolStatistics -Entries $MetadataEntries
     $architectLatest = @(
         $MetadataEntries |
             Where-Object { $_.tool -in @('claude', 'codex') } |
