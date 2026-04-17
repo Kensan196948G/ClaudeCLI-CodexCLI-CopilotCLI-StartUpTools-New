@@ -1,4 +1,4 @@
-function Get-StartupRoot {
+﻿function Get-StartupRoot {
     param(
         [Parameter(Mandatory)]
         [string]$PSScriptRootPath

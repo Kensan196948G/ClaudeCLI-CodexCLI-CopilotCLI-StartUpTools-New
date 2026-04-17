@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Windows Terminal に情報タブ（Claude Session Info）を 1 枚開く。
 .DESCRIPTION

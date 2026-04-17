@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Codex CLI startup script
 .DESCRIPTION

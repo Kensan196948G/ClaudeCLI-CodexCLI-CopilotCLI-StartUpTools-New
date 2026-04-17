@@ -1,4 +1,4 @@
-BeforeAll {
+﻿BeforeAll {
     $script:RepoRoot = Split-Path -Parent $PSScriptRoot
     $script:PowerShellExe = (Get-Process -Id $PID).Path
     $script:OriginalPath = $env:PATH

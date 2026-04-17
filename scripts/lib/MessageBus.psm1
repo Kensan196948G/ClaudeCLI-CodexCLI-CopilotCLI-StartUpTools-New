@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # MessageBus.psm1 - Agent Message Bus (Phase 1)
 # ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools v3.1.0
 # Issue #127 — state.json 拡張による非同期メッセージ交換

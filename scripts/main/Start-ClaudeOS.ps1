@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     ClaudeOS Boot Sequence entry point (MVP scaffold).
 

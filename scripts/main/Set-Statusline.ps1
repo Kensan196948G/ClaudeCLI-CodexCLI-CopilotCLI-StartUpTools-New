@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     メニュー 13 本体。Windows 側 ~/.claude/settings.json の statusLine を Linux 側へ同期する。
 .DESCRIPTION
