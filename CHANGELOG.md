@@ -2,6 +2,30 @@
 
 # CHANGELOG
 
+## [v3.2.11] - 2026-04-17 — PSAvoidUsingPositionalParameters 警告解消
+
+### 🎯 概要
+
+PSScriptAnalyzer `PSAvoidUsingPositionalParameters` ルール警告を解消。
+`Join-Path`・`Assert-Eq`・`Assert-Match`・`Write-BootStep` の位置引数呼び出しを
+名前付き引数 (`-Path -ChildPath`、`-Expected -Actual -Label` 等) へ変換。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/lib/SelfEvolution.psm1` | `Join-Path` → `-Path -ChildPath` |
+| `tests/ArchitectureCheck.Tests.ps1` | `Join-Path` → `-Path -ChildPath` |
+| `tests/SelfEvolution.Tests.ps1` | `Join-Path` → `-Path -ChildPath` |
+| `tests/E2E.Tests.ps1` | 3/4引数 `Join-Path` → `-Path -ChildPath` (2件) |
+| `scripts/test/Test-CronAndSession.ps1` | `Join-Path` 2件 + `Assert-Eq` 12件 + `Assert-Match` 2件 → 名前付き引数 |
+| `scripts/main/Start-ClaudeOS.ps1` | `Write-BootStep` → `-Number -Name -Status` |
+
+### ✅ 検証結果
+
+- `Invoke-ScriptAnalyzer -IncludeRule PSAvoidUsingPositionalParameters` = **0 件** (対象ファイル)
+- `Invoke-Pester` Passed: **477** / Failed: **0**
+
 ## [v3.2.10] - 2026-04-17 — PSReviewUnusedParameter 警告 7 件解消
 
 ### 🎯 概要

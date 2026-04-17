@@ -20,7 +20,7 @@ $script:EvolutionRecordSchema = @{
     next_actions  = @()
 }
 
-$script:DefaultEvolutionDir = Join-Path $env:USERPROFILE '.copilot' 'evolution'
+$script:DefaultEvolutionDir = Join-Path -Path $env:USERPROFILE -ChildPath '.copilot\evolution'
 
 function Get-EvolutionStorePath {
     [CmdletBinding()]

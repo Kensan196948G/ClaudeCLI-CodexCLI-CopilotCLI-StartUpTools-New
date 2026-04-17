@@ -191,7 +191,7 @@ function Invoke-StepMemoryRestore {
 
 function Invoke-StepPlaceholder {
     param([int]$Number, [string]$Name, [string]$Reason)
-    Write-BootStep $Number $Name 'SKIP'
+    Write-BootStep -Number $Number -Name $Name -Status 'SKIP'
     Write-Host ('  [SKIP] {0}' -f $Reason) -ForegroundColor DarkGray
     Write-Host ''
     return @{ Step = $Number; Name = $Name; Status = 'SKIP'; Detail = $Reason }
