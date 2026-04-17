@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/Kensan196948G/ClaudeCode-StartUpTools-New/main/state.schema.json",
-  "title": "ClaudeOS v8.2 state.json",
-  "description": "Runtime state for ClaudeOS autonomous development loops. Read by session-start.js / pre-compact.js / notify-stable.js hooks. NOTE: This schema validates the primary v8.2 blocks (execution / stable / token / effort_strategy / compact / notification / task_budget / cache / goal / kpi / session / codex). Additional blocks present in state.json (frontier / message_bus / onboarding / improvement / learning / debug / automation) are intentionally unvalidated here; their structure is documented in state.json.example and may evolve per session without schema version bumps.",
+  "title": "ClaudeOS v8 state.json",
+  "description": "Runtime state for ClaudeOS autonomous development loops. Read by session-start.js / pre-compact.js / notify-stable.js hooks. Validates: goal / kpi / execution / stable / token / effort_strategy / compact / notification / task_budget / cache / session / codex / frontier / message_bus / learning / debug / onboarding / improvement / automation.",
   "type": "object",
   "required": [
     "goal",
@@ -205,6 +205,100 @@
           "type": "array",
           "items": { "type": "string" }
         }
+      }
+    },
+    "frontier": {
+      "type": "object",
+      "properties": {
+        "last_test_date": { "type": ["string", "null"], "format": "date-time" },
+        "test_count": { "type": "integer", "minimum": 0 },
+        "last_deprecation_candidates": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "last_low_usage_items": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "message_bus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "type": "object",
+          "properties": {
+            "transition": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "ci": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "learning": {
+      "type": "object",
+      "properties": {
+        "usage_history": {
+          "type": "object",
+          "properties": {
+            "agents": { "type": "object" },
+            "skills": { "type": "object" },
+            "commands": { "type": "object" },
+            "hooks": { "type": "object" }
+          }
+        },
+        "dead_weight": {
+          "type": "object",
+          "properties": {
+            "stale_threshold_days": { "type": "integer", "minimum": 1 },
+            "grace_period_days": { "type": "integer", "minimum": 0 },
+            "last_detection_run": { "type": ["string", "null"], "format": "date-time" },
+            "candidates_pending_issue": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "debug": {
+      "type": "object",
+      "properties": {
+        "last_failure_category": { "type": ["string", "null"] },
+        "failure_count_by_category": { "type": "object" },
+        "same_error_retry_count": { "type": "integer", "minimum": 0 },
+        "rescue_retry_count": { "type": "integer", "minimum": 0 },
+        "last_root_cause": { "type": ["string", "null"] },
+        "last_fix_scope": { "type": ["string", "null"] },
+        "last_fix_strategy": { "type": ["string", "null"] },
+        "flaky_suspected": { "type": "boolean" },
+        "debug_mode": { "type": "boolean" }
+      }
+    },
+    "onboarding": {
+      "type": "object",
+      "properties": {
+        "last_refresh": { "type": ["string", "null"], "format": "date-time" },
+        "refresh_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "improvement": {
+      "type": "object",
+      "properties": {
+        "stop_doing_review_date": { "type": ["string", "null"], "format": "date" },
+        "stop_doing_review_interval_days": { "type": "integer", "minimum": 1 },
+        "stop_doing_last_run": { "type": ["string", "null"], "format": "date-time" },
+        "stop_doing_candidates_found": { "type": "integer", "minimum": 0 }
       }
     }
   }

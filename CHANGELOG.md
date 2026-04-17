@@ -2,6 +2,56 @@
 
 # CHANGELOG
 
+## [v3.2.21] - 2026-04-17 — ドキュメント品質 / スキーマ拡張 / README 自動整合
+
+### 🎯 概要
+
+外部コードレビュー評価 (2026-04-17) の中期対応 3 項目を実装。
+state.schema.json を拡張、README 統計の自動注入スクリプトを追加し、
+CI でのドリフト検出を強化。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 | 対応評価項目 |
+|---|---|---|
+| `state.schema.json` | `frontier / message_bus / learning / debug / onboarding / improvement` ブロック追加。title を "ClaudeOS v8" に整合 | #35 |
+| `docs/common/18_ARCHITECTURE.md` | Agent 数を 17 → 25 体に修正 | #9 |
+| `scripts/update-readme-stats.js` | 新規。CHANGELOG 最新バージョン / Agent 数 / コマンド数を README.md に自動注入 | #2 |
+| `.github/workflows/ci.yml` | "Check README Stats Up-to-date" ステップ追加（スクリプト実行後 git diff が残れば CI 失敗） | #2 |
+
+### ✅ Verify
+
+- `node scripts/update-readme-stats.js`: README already up-to-date — no changes written
+- `node scripts/check-doc-versions.js`: PASSED
+
+---
+
+## [v3.2.20] - 2026-04-17 — CI テスト出力先移行 / .codex テンプレ化 / ドキュメントドリフト修正
+
+### 🎯 概要
+
+外部コードレビュー評価 (2026-04-17) の即時対応 3 項目を実装。
+testResults.xml を reports/ へ移行、.codex/config.toml を .gitignore 対象化、
+README/ONBOARDING のバージョン・エージェント数不一致を修正。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 | 対応評価項目 |
+|---|---|---|
+| `.github/workflows/ci.yml` | Pester を PesterConfiguration で `reports/testResults.xml` に出力、"Check Doc Version Consistency" ステップ追加 | #17, #2 |
+| `scripts/check-doc-versions.js` | 新規。CHANGELOG バージョン / Agent 数を README と比較して不一致を CI で検出 | #2 |
+| `.codex/config.toml.example` | 新規。共有テンプレートとして設計（パスワード・個人設定なし） | #32 |
+| `.codex/config.toml` | `git rm --cached` で追跡解除 + `.gitignore` 追加 | #32 |
+| `README.md` | バージョン v3.2.5 → v3.2.19、Agents 17 → 25 体、Mermaid・カーネル行の数値整合 | #2 |
+| `ONBOARDING.md` | state.json 未存在記述を実値に更新、Agent 数 37 → 25 体、git log を v3.2.8〜v3.2.19 に更新 | #2 |
+| `reports/README.md` | testResults.xml / playwright スクリーンショットの移行状況を追記 | #17 |
+
+### ✅ Verify
+
+- `node scripts/check-doc-versions.js`: PASSED — v3.2.19 / 25 agents / 34 commands
+
+---
+
 ## [v3.2.19] - 2026-04-17 — 3 タブ監視 品質向上 (外部レビュー追加指摘 3 件対応)
 
 ### 🎯 概要

@@ -29,14 +29,21 @@ jobs:
       - name: Run Pester
         shell: pwsh
         run: |
-          Invoke-Pester .\tests -CI
+          $null = New-Item -ItemType Directory -Force -Path .\reports
+          $cfg = New-PesterConfiguration
+          $cfg.Run.Path = '.\tests'
+          $cfg.TestResult.Enabled = $true
+          $cfg.TestResult.OutputPath = '.\reports\testResults.xml'
+          $cfg.Run.Exit = $true
+          Invoke-Pester -Configuration $cfg
 
       - name: Report Test Count
         if: always()
         shell: pwsh
         run: |
-          if (Test-Path testResults.xml) {
-            $xml = [xml](Get-Content testResults.xml)
+          $xmlPath = if (Test-Path .\reports\testResults.xml) { '.\reports\testResults.xml' } else { 'testResults.xml' }
+          if (Test-Path $xmlPath) {
+            $xml = [xml](Get-Content $xmlPath)
             $root = $xml.'test-results'
             $total = [int]$root.total
             $failed = [int]$root.failures + [int]$root.errors
@@ -131,6 +138,20 @@ jobs:
           $required = $schema.required
           if ($required.Count -lt 5) { throw "state.schema.json has too few required fields: $($required.Count)" }
           Write-Host "state.schema.json validated: $($required.Count) required top-level fields"
+
+      - name: Check Doc Version Consistency
+        shell: bash
+        run: node scripts/check-doc-versions.js
+
+      - name: Check README Stats Up-to-date
+        shell: bash
+        run: |
+          node scripts/update-readme-stats.js
+          if ! git diff --quiet README.md; then
+            echo "::error::README.md の統計情報が古いです。ローカルで 'node scripts/update-readme-stats.js' を実行してコミットしてください。"
+            git diff README.md
+            exit 1
+          fi
 
       - name: Markdown Lint
         shell: bash

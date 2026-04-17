@@ -75,7 +75,7 @@ PowerShell スクリプトの依存は **一方向** に固定します。逆方
 
 | 用語 | 定義 | 関連 |
 |---|---|---|
-| **Agent** | 特化ロールを持つ Claude Code サブエージェント（現 17 体）。Task tool 経由で並列起動される | `.claude/claudeos/agents/`, CLAUDE.md §6 |
+| **Agent** | 特化ロールを持つ Claude Code サブエージェント（現 25 体）。Task tool 経由で並列起動される | `.claude/claudeos/agents/`, CLAUDE.md §6 |
 | **Agent Teams** | 複数 Agent を Orchestrator 配下で並列運用する仕組み。単発 subagent と区別 | CLAUDE.md §6 |
 | **Role** | CTO / Architect / Developer / Reviewer 等の責務単位。Agent とは直交する概念 | CLAUDE.md §6 |
 | **Loop** | Monitor / Build / Verify / Improvement の 4 フェーズ自律開発サイクル | CLAUDE.md §5 |

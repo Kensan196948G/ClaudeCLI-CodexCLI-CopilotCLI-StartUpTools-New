@@ -7,11 +7,8 @@
 > **📌 v3.1.0 で Claude Code 専用ツールに整理**
 > v3.1.0 より、Codex CLI / GitHub Copilot CLI の起動メニュー (S2/S3/L2/L3) は削除されました。本ツールは **Claude Code 専用の自律開発ランチャー** として位置づけを明確化し、Linux crontab 連携・セッション情報タブ・Statusline グローバル適用などの新機能に投資が集中しています。
 
-> **🔧 v3.2.5 — PSScriptAnalyzer 警告 10 件解消**
-> `PSAvoidUsingInvokeExpression` / `PSAvoidAssignmentToAutomaticVariable` / `PSUseDeclaredVarsMoreThanAssignments` を 7 ファイルで修正。CI Round 1 の 5 テスト失敗（`$Config` ドットソーススコープ共有見落とし + `Remove-Worktree` 出力ストリーム漏れ）も回収。詳細は [`CHANGELOG.md`](./CHANGELOG.md) v3.2.5 節を参照。
-
-> **📝 v3.2.4 — repo rename docs 反映**
-> リポジトリ名変更 (`ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New` → `ClaudeCode-StartUpTools-New`) に伴い 22 ファイル / 55 箇所の URL・パス参照を一括置換。詳細は [`CHANGELOG.md`](./CHANGELOG.md) v3.2.4 節を参照。
+> **🔧 v3.2.19 — 3 タブ監視 品質向上 + 外部レビュー対応**
+> 外部コードレビュー追加指摘 3 件（SSH injection 修正 / ssh_error 吸収 / SSH 診断性向上）に対応。CodeRabbit Round 2 指摘も解消。詳細は [`CHANGELOG.md`](./CHANGELOG.md) v3.2.19 節を参照。
 
 > **📨 v3.2.0 — Cron HTML メールレポート (Visual Recap Mail)**
 > Cron で起動された ClaudeCode セッションの完了時に、**HTML 形式のレポートメール** を Gmail SMTP 経由で送信。アイコン+色付き表組み+実行サマリ(Monitor/Development/Verify/Improvement の出現回数/エラー検出/STABLE 達成)+次フェーズ提案を含む。送信先は `CLAUDEOS_DEFAULT_TO`(未設定時 `CLAUDEOS_SMTP_USER`)で指定し、SMTP 認証情報は `~/.env-claudeos` の Linux 環境変数で管理(config.json には書かない設計)。詳細は [`docs/common/16_HTMLメールレポート設定.md`](./docs/common/16_HTMLメールレポート設定.md) を参照。
@@ -30,11 +27,11 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.2.5** (PSScriptAnalyzer 警告 10 件解消 / 7 ファイル修正) — 旧: v3.2.4 (repo rename docs) / v3.2.3 (docs drift cleanup) |
+| バージョン | **v3.2.21** (3 タブ監視 品質向上 / 外部レビュー指摘対応) — 旧: v3.2.18 (外部レビュー Quick-wins) / v3.2.17 (3タブ監視 + tmux UI) |
 | テスト | **477件** — (Pester, CI) |
 | CI | ✅ SUCCESS |
-| ClaudeOS (Claude Code 専用) | v8.2 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) — 旧 v8.1: Harness Evolution / Progressive Disclosure / Frontier-Test / CodeRabbit 統合 / Phase Compaction |
-| Agents | **17体** の特化サブエージェント (2026Q2 棚卸しで最適化済み) |
+| ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |
+| Agents | **25体** の特化サブエージェント (2026Q2 棚卸し後、追加復元済み) |
 | Skills | **0個** — Claude Opus 4.6 内包能力で代替可能な汎用スキルを棚卸しで全削除 |
 | Hooks | **4個** — agent-risk-check / capture-result / onboarding-refresh / usage-history-recorder |
 | Boot Sequence | `Start-ClaudeOS.ps1` (Step 3 Memory/Step 7 Agent Init/Step 9 Dashboard 実装完了) ✅ |
@@ -59,15 +56,19 @@
 
 ### ClaudeOS エージェント構成 (2026Q2 棚卸し後)
 
-> 2026Q2 棚卸し (PR #122) にて「Claude Opus 4.6 で代替可能」または「冗長」と判定された 38体を削除。
-> 残存 17体はドメイン固有知識を持つ高価値エージェントのみ。
+> 2026Q2 棚卸し (PR #122) 後、ドメイン固有知識エージェントを追加復元。現在 **25体**。
 
 | ドメイン | Agent数 | 主なエージェント |
 |----------|---------|-----------------|
-| Quality | 2 | security-reviewer, e2e-runner |
+| Quality | 3 | security-reviewer, e2e-runner, tester |
 | Language Reviewer | 7 | typescript, python, go, java, kotlin, rust, cpp reviewer |
 | Build Resolver | 7 | build-error-resolver, go/java/kotlin/rust/cpp/pytorch resolver |
 | Infrastructure | 1 | database-reviewer |
+| Design | 1 | architect |
+| Development | 2 | dev-api, dev-ui |
+| Operations | 2 | ops, security |
+| Orchestration | 1 | orchestrator |
+| Testing | 1 | qa |
 
 ### Hooks 構成 (4個)
 
@@ -212,7 +213,7 @@ flowchart TD
     Core --> Ops["DevOps"]
     Core --> Rev["Reviewer"]
 
-    Spec --> S1["37 Agent定義から<br/>タスク種別で自動選定"]
+    Spec --> S1["25 Agent定義から<br/>タスク種別で自動選定"]
 ```
 
 ---
@@ -230,7 +231,7 @@ flowchart TD
 | ⚙️ 一元設定 | 🔧 共通 | `config/config.json` で対応ツールを一元管理 |
 | 🩺 診断ツール | 🔧 共通 | `Test-AllTools.ps1` で環境を一括チェック |
 | ⚡ CI/CD | 🔧 共通 | GitHub Actions による自動テスト (Pester 477件 — 17 test files) |
-| 🧠 ClaudeOS カーネル | ⭐ Claude 専用 | 17体のエージェント + 4フック + 35コマンド (2026Q2 棚卸し済み) |
+| 🧠 ClaudeOS カーネル | ⭐ Claude 専用 | 25体のエージェント + 4フック + 34コマンド |
 | 🔌 MCP ヘルスチェック | ⭐ Claude 専用 | `McpHealthCheck.psm1` で4サーバーの起動・接続・状態診断 |
 | 🤖 Agent Teams ランタイム | ⭐ Claude 専用 | `AgentTeams.psm1` でタスク分析→Team自動構成→能力マトリクス→可視化 |
 | 🏁 Pre-Launch Diagnostics | ⭐ Claude 専用 | Claude Code 起動前に MCP/Agent 状態を自動チェック |

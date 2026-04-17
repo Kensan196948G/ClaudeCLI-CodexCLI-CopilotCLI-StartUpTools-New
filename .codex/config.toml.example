@@ -1,3 +1,8 @@
+# Codex CLI 設定テンプレート
+# 使い方: このファイルを config.toml としてコピーし、必要に応じて編集してください。
+#   cp .codex/config.toml.example .codex/config.toml
+# config.toml は .gitignore 対象です。個人設定を安全に保持できます。
+
 model = "gpt-5.4"
 model_reasoning_effort = "medium"
 
@@ -15,18 +20,17 @@ sandbox_mode = "danger-full-access"
 
 [shell]
 program = "pwsh.exe"
-# command と program のどちらか片方に統一
-# command = "pwsh.exe" でもよいが、どちらかだけにする
 args = [
     "-NoLogo",
     "-NoProfile",
     "-NonInteractive",
 ]
 
-# [shell_environment_policy
+# 環境変数をカスタマイズする場合は以下のブロックを有効化
+# [shell_environment_policy]
 # inherit = "core"
 # experimental_use_profile = true
-
+#
 # [shell_environment_policy.set]
 # CLAUDE_AUTOCOMPACT_PCT_OVERRIDE = "50"
 # CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION = "true"
