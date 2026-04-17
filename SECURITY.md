@@ -18,7 +18,7 @@
 **公開 Issue には投稿しないでください**。脆弱性情報が攻撃に利用される前に修正する時間を確保するため、以下のいずれかの非公開チャネルを利用してください。
 
 1. **GitHub Private Vulnerability Reporting** (推奨)
-   - 本リポジトリの [Security タブ](https://github.com/Kensan196948G/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/security) → "Report a vulnerability"
+   - 本リポジトリの [Security タブ](https://github.com/Kensan196948G/ClaudeCode-StartUpTools-New/security) → "Report a vulnerability"
 2. **リポジトリ管理者への直接連絡**
    - GitHub: [@Kensan196948G](https://github.com/Kensan196948G)
 
@@ -40,7 +40,7 @@
 
 ## 脆弱性の公開
 
-- 修正版リリース後に [GitHub Security Advisories](https://github.com/Kensan196948G/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/security/advisories) で公開
+- 修正版リリース後に [GitHub Security Advisories](https://github.com/Kensan196948G/ClaudeCode-StartUpTools-New/security/advisories) で公開
 - 報告者のクレジット明記 (希望者のみ)
 - CVE 登録は Critical 以上を対象
 

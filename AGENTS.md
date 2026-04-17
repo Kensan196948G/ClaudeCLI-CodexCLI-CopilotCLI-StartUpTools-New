@@ -5,7 +5,7 @@
 このファイルは、Codex をこのプロジェクトにおける自律型実行エンジンとして使うための正式テンプレートです。
 
 共通思想:
-- [11_自律開発コア.md](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/docs/common/11_自律開発コア.md)
+- [11_自律開発コア.md](/D:/ClaudeCode-StartUpTools-New/docs/common/11_自律開発コア.md)
 
 Codex 固有の前提:
 - 管理者-担当者オーケストレーション

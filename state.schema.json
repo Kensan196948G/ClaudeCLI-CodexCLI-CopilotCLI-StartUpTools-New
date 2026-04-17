@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/Kensan196948G/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/main/state.schema.json",
+  "$id": "https://raw.githubusercontent.com/Kensan196948G/ClaudeCode-StartUpTools-New/main/state.schema.json",
   "title": "ClaudeOS v8.2 state.json",
   "description": "Runtime state for ClaudeOS autonomous development loops. Read by session-start.js / pre-compact.js / notify-stable.js hooks. NOTE: This schema validates the primary v8.2 blocks (execution / stable / token / effort_strategy / compact / notification / task_budget / cache / goal / kpi / session / codex). Additional blocks present in state.json (frontier / message_bus / onboarding / improvement / learning / debug / automation) are intentionally unvalidated here; their structure is documented in state.json.example and may evolve per session without schema version bumps.",
   "type": "object",

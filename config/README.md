@@ -1,6 +1,6 @@
 # 設定ファイル運用
 
-このリポジトリでは、設定の正本を [config/config.json.template](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/config/config.json.template) とし、実機固有の値だけを `config/config.json` に持たせます。
+このリポジトリでは、設定の正本を [config/config.json.template](/D:/ClaudeCode-StartUpTools-New/config/config.json.template) とし、実機固有の値だけを `config/config.json` に持たせます。
 
 ## 基本ルール
 
@@ -147,7 +147,7 @@ Codex の基準コマンドは `codex --full-auto` です。`.codex/config.toml`
 
 ## 関連ドキュメント
 
-- [docs/common/07_設定運用ガイド.md](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/docs/common/07_設定運用ガイド.md)
-- [docs/common/11_自律開発コア.md](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/docs/common/11_自律開発コア.md)
-- [docs/common/12_自律機能対応表.md](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/docs/common/12_自律機能対応表.md)
-- [README.md](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/README.md)
+- [docs/common/07_設定運用ガイド.md](/D:/ClaudeCode-StartUpTools-New/docs/common/07_設定運用ガイド.md)
+- [docs/common/11_自律開発コア.md](/D:/ClaudeCode-StartUpTools-New/docs/common/11_自律開発コア.md)
+- [docs/common/12_自律機能対応表.md](/D:/ClaudeCode-StartUpTools-New/docs/common/12_自律機能対応表.md)
+- [README.md](/D:/ClaudeCode-StartUpTools-New/README.md)

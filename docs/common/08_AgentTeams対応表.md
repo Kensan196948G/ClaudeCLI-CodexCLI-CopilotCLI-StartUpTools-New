@@ -1,8 +1,8 @@
 # Agent Teams 対応表
 
-このドキュメントは、[Claude/claudeos](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/Claude/claudeos/) にある ClaudeOS ポリシーと、現行ランチャー実装およびツール別テンプレートの対応関係を整理するためのものです。
+このドキュメントは、[Claude/claudeos](/D:/ClaudeCode-StartUpTools-New/Claude/claudeos/) にある ClaudeOS ポリシーと、現行ランチャー実装およびツール別テンプレートの対応関係を整理するためのものです。
 
-ツール別の可能 / 擬似実装 / 不可 は [12_自律機能対応表.md](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/docs/common/12_自律機能対応表.md) を参照してください。
+ツール別の可能 / 擬似実装 / 不可 は [12_自律機能対応表.md](/D:/ClaudeCode-StartUpTools-New/docs/common/12_自律機能対応表.md) を参照してください。
 
 ## 対応状況
 
@@ -59,7 +59,7 @@
 
 `scripts/tools/Sync-AgentTeamsBacklog.ps1` は、この `## 未実装機能` セクションの箇条書きを読み取り、`TASKS.md` の自動抽出セクションと同期します。
 抽出単位は 1 行 1 項目です。文言を変えると backlog の同期結果も変わります。
-metadata の自動付与は [config/agent-teams-backlog-rules.json](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/config/agent-teams-backlog-rules.json) を参照します。端末ごとに調整したい場合は template ではなく実ファイル側を編集します。
+metadata の自動付与は [config/agent-teams-backlog-rules.json](/D:/ClaudeCode-StartUpTools-New/config/agent-teams-backlog-rules.json) を参照します。端末ごとに調整したい場合は template ではなく実ファイル側を編集します。
 
 ## 今後の実装候補
 
@@ -70,4 +70,4 @@ metadata の自動付与は [config/agent-teams-backlog-rules.json](/D:/ClaudeCL
 
 ## Backlog
 
-未実装項目の優先バックログは [TASKS.md](/D:/ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools-New/TASKS.md) で管理します。
+未実装項目の優先バックログは [TASKS.md](/D:/ClaudeCode-StartUpTools-New/TASKS.md) で管理します。
