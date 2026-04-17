@@ -143,6 +143,16 @@ jobs:
         shell: bash
         run: node scripts/check-doc-versions.js
 
+      - name: Check README Stats Up-to-date
+        shell: bash
+        run: |
+          node scripts/update-readme-stats.js
+          if ! git diff --quiet README.md; then
+            echo "::error::README.md の統計情報が古いです。ローカルで 'node scripts/update-readme-stats.js' を実行してコミットしてください。"
+            git diff README.md
+            exit 1
+          fi
+
       - name: Markdown Lint
         shell: bash
         run: |
