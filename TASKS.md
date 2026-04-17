@@ -29,13 +29,16 @@
 20. [DONE] [Priority:P1][Owner:Developer][Source:GitHub#147] v3.2.3 docs drift cleanup + state artifacts + hookify 検出強化 (PR #148)
 21. [DONE] [Priority:P1][Owner:Developer][Source:GitHub#149] v3.2.4 repo rename docs 反映 — 22 ファイル / 55 箇所一括置換 (PR #150)
 22. [DONE] [Priority:P1][Owner:Developer][Source:GitHub#151] v3.2.5 PSScriptAnalyzer 警告 10 件解消 — 7 ファイル修正 / CI Round 1 5 テスト失敗回収 / STABLE N=2 達成 (PR #152)
+23. [IN_PROGRESS] [Priority:P2][Owner:Developer][Source:GitHub#153] v3.2.6 PSUseApprovedVerbs 警告 9 件解消 — 8 ファイル / 9 関数改名 / CI待機中 (PR #154)
 
 ## Auto Extracted From Agent Teams Matrix
 
-1. [Priority:P2][Owner:ScrumMaster][Source:AgentTeamsMatrix] Memory MCP 退避機能 (PreCompact hook 拡張、ClaudeOS v8.3 予定)
-2. [Priority:P2][Owner:ScrumMaster][Source:AgentTeamsMatrix] Verify 連動 ONBOARDING.md 自動再生成フック (Issue #100)
-
+1. [Priority:P1][Owner:Ops][Source:AgentTeamsMatrix] Memory MCP 退避機能 (PreCompact hook 拡張、ClaudeOS v8.3 予定)
+2. [Priority:P1][Owner:QA][Source:AgentTeamsMatrix] Verify 連動 ONBOARDING.md 自動再生成フック (Issue #100)
 ## GitHub Issues Sync
 
 (No open issues)
+
+
+
 
