@@ -2,6 +2,18 @@
 
 # CHANGELOG
 
+## [v3.2.1] - 2026-04-17 — START_PROMPT CTO 全権委任 文言正規化
+
+### 📝 ドキュメント
+
+- **`Claude/templates/claude/instructions/_header.md`** — Monitor チェックリスト直下の宣言を `以降は全てCTO全権委任で自律開発を開始してください。` に統一（`01-session-startup.md:41` と完全一致）。
+- **`Claude/templates/claude/instructions/01-session-startup.md`** — `LOOP 登録 → Codex → CTO 委任` の手順を 2 行に分割し、強調を均質化。
+- **`Claude/templates/claude/START_PROMPT.md`** — 「フェーズ間でユーザーの確認・承認を求めて停止してはならない」の太字装飾をフラット化し、他の禁止項目と重み付けを揃えた。
+
+### 🎯 意図
+
+セッション起動時の確認・前置き・ステップ実況を template 側で恒久抑止。グローバル CLAUDE.md の「CTO 完全全権委任」原則と本プロジェクト §0 自動実行を template のレベルで一致させる。
+
 ## [v3.2.0] - 2026-04-17 — Cron HTML Mail Report
 
 ### 🎯 コードネーム: Visual Recap Mail
