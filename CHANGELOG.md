@@ -2,6 +2,25 @@
 
 # CHANGELOG
 
+## [v3.2.13] - 2026-04-17 — PSAvoidUsingPositionalParameters 残存 1 件解消 + CLAUDE.md v8.3
+
+### 🎯 概要
+
+- `Test-ArchitectureCheck.ps1:16` の `Join-Path` 位置パラメーター警告残存 1 件を修正
+- CLAUDE.md v8.3: Auto mode 操作手順（Shift+Tab）と Response length calibration 指針を追加
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/test/Test-ArchitectureCheck.ps1` | `Join-Path` → `-AdditionalChildPath` 名前付き引数へ変換 |
+| `CLAUDE.md` | §3 Auto mode Shift+Tab 操作手順テーブル追加 / §24.1 Response length calibration 指針追加 |
+
+### ✅ 検証結果
+
+- `Invoke-ScriptAnalyzer -IncludeRule PSAvoidUsingPositionalParameters` = **0 件**
+- `Invoke-Pester` Passed: **477** / Failed: **0**
+
 ## [v3.2.12] - 2026-04-17 — PSUseOutputTypeCorrectly 警告 37 件解消
 
 ### 🎯 概要
