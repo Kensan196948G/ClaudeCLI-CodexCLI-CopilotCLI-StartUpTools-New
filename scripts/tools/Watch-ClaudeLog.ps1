@@ -1,0 +1,201 @@
+<#
+.SYNOPSIS
+    Claude Code ログをリアルタイム監視する（SSH + tail -f）。
+.DESCRIPTION
+    Linux 側の cron-launcher.sh が出力するログファイルを自動検出し
+    Windows Terminal の新規タブで tail -f を開始する。
+    cron 実行前に起動しておくと、発火を検知して自動でログ表示を開始する。
+    ClaudeOS v3.2.15
+.PARAMETER NewTab
+    Windows Terminal の新規タブで開く（既定: 現在のウィンドウで実行）。
+.PARAMETER PollIntervalSeconds
+    ログファイル検出のポーリング間隔（秒）。既定: 5。
+.PARAMETER WithSessionInfoTab
+    新しいセッション検出時に Session Info タブを自動で開く。
+#>
+
+param(
+    [switch]$NewTab,
+    [switch]$WithSessionInfoTab,
+    [int]$PollIntervalSeconds = 5
+)
+
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
+$ScriptRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+Import-Module (Join-Path $ScriptRoot 'scripts\lib\LauncherCommon.psm1') -Force -DisableNameChecking
+Import-Module (Join-Path $ScriptRoot 'scripts\lib\Config.psm1') -Force -DisableNameChecking
+
+$ConfigPath = Get-StartupConfigPath -StartupRoot $ScriptRoot
+$Config     = Import-LauncherConfig -ConfigPath $ConfigPath
+$LinuxHost  = $Config.linuxHost
+
+$LogsDir = '/home/kensan/.claudeos/logs'
+if ($Config.PSObject.Properties.Name -contains 'cron' -and
+    $Config.cron.PSObject.Properties.Name -contains 'logsDir') {
+    $LogsDir = $Config.cron.logsDir
+}
+
+$SessionsDir = '/home/kensan/.claudeos/sessions'
+if ($Config.PSObject.Properties.Name -contains 'cron' -and
+    $Config.cron.PSObject.Properties.Name -contains 'sessionsDir') {
+    $SessionsDir = $Config.cron.sessionsDir
+}
+
+if ([string]::IsNullOrWhiteSpace($LinuxHost) -or $LinuxHost -eq '<your-linux-host>') {
+    Write-Host '[ERROR] config.json の linuxHost が未設定です。' -ForegroundColor Red
+    exit 1
+}
+
+# NewTab モード: 自身を新しい Windows Terminal タブで再起動
+if ($NewTab) {
+    $psExe  = (Get-Process -Id $PID).Path
+    $wtExe  = Get-Command wt.exe -ErrorAction SilentlyContinue
+    $myPath = $PSCommandPath
+
+    # $PSCommandPath が空の場合（dot-source 経由など）はガード
+    if ([string]::IsNullOrWhiteSpace($myPath)) {
+        Write-Host '[ERROR] -NewTab モードは PSCommandPath が空のため使用できません。直接ファイルパスを指定して実行してください。' -ForegroundColor Red
+        exit 1
+    }
+
+    $psArgs = @(
+        '-NoExit', '-NoProfile', '-ExecutionPolicy', 'Bypass',
+        '-File', $myPath,
+        '-PollIntervalSeconds', $PollIntervalSeconds
+    )
+    if ($WithSessionInfoTab) { $psArgs += '-WithSessionInfoTab' }
+
+    if ($wtExe) {
+        $wtArgs = @('-w', '0', 'new-tab', '--title', 'Claude-Live-Log', '--', $psExe) + $psArgs
+        Start-Process -FilePath $wtExe.Source -ArgumentList $wtArgs -WindowStyle Hidden
+        Write-Host '[INFO] Claude-Live-Log タブを開きました。' -ForegroundColor Cyan
+    } else {
+        Start-Process -FilePath $psExe -ArgumentList $psArgs -WindowStyle Normal
+        Write-Host '[INFO] Claude Live Log ウィンドウを開きました（wt.exe 非検出）。' -ForegroundColor Yellow
+    }
+    exit 0
+}
+
+# ─── 内部関数 ────────────────────────────────────────────────────────────
+
+function Write-WaitHeader {
+    Write-Host ''
+    Write-Host ('  ' + '=' * 54) -ForegroundColor Cyan
+    Write-Host '   Claude Code ライブログ監視' -ForegroundColor Cyan
+    Write-Host "   Host : $LinuxHost" -ForegroundColor DarkCyan
+    Write-Host "   Log  : (待機中)" -ForegroundColor DarkCyan
+    Write-Host ('  ' + '=' * 54) -ForegroundColor Cyan
+    Write-Host ''
+    Write-Host '  cron 発火待機中...' -ForegroundColor Yellow
+    Write-Host "  ログディレクトリ: $LogsDir" -ForegroundColor DarkGray
+    Write-Host ''
+}
+
+function Write-LiveHeader {
+    param([string]$LogFile)
+    Clear-Host
+    Write-Host ''
+    Write-Host ('  ' + '=' * 54) -ForegroundColor Cyan
+    Write-Host '   Claude Code ライブログ監視' -ForegroundColor Cyan
+    Write-Host "   Host : $LinuxHost" -ForegroundColor DarkCyan
+    Write-Host "   Log  : $LogFile" -ForegroundColor DarkCyan
+    Write-Host ('  ' + '=' * 54) -ForegroundColor Cyan
+    Write-Host '  Ctrl+C でこのタブを閉じる（セッション本体は継続）' -ForegroundColor DarkGray
+    Write-Host ''
+}
+
+function Get-LatestLog {
+    $result = ssh "kensan@$LinuxHost" "ls -t $LogsDir/cron-*.log 2>/dev/null | head -1" 2>$null
+    if ($null -eq $result) { return '' }
+    return $result.Trim()
+}
+
+function Get-SessionIdForLog {
+    param([string]$LogPath)
+    $basename = ($LogPath -split '/')[-1]
+    $stamp    = $basename -replace '^cron-', '' -replace '\.log$', ''
+    $result   = ssh "kensan@$LinuxHost" "ls '$SessionsDir/${stamp}-'*.json 2>/dev/null | head -1" 2>$null
+    if ($null -eq $result -or [string]::IsNullOrWhiteSpace($result)) { return '' }
+    return ($result.Trim() -split '/')[-1] -replace '\.json$', ''
+}
+
+function Open-SessionInfoTab {
+    param([string]$SessionId)
+    $wtExe = Get-Command wt.exe -ErrorAction SilentlyContinue
+    if (-not $wtExe) {
+        Write-Host '  [INFO] wt.exe が非検出のため Session Info タブを開けません。' -ForegroundColor Yellow
+        return
+    }
+    $psExe    = (Get-Process -Id $PID).Path
+    $siScript = Join-Path $PSScriptRoot 'Watch-SessionInfoSSH.ps1'
+    if (-not (Test-Path $siScript)) {
+        Write-Host "  [WARN] Watch-SessionInfoSSH.ps1 が見つかりません: $siScript" -ForegroundColor Yellow
+        return
+    }
+    $psArgs = @(
+        '-NoExit', '-NoProfile', '-ExecutionPolicy', 'Bypass',
+        '-File', $siScript,
+        '-SessionId', $SessionId,
+        '-LinuxHost', $LinuxHost,
+        '-SessionsDir', $SessionsDir
+    )
+    $wtArgs = @('-w', '0', 'new-tab', '--title', 'Session-Info', '--', $psExe) + $psArgs
+    Start-Process -FilePath $wtExe.Source -ArgumentList $wtArgs -WindowStyle Hidden
+    Write-Host "  Session Info タブを開きました: $SessionId" -ForegroundColor Cyan
+}
+
+# ─── 本体: ログ監視ループ ────────────────────────────────────────────────
+
+Write-WaitHeader
+
+$knownLog = Get-LatestLog
+$dotCount = 0
+
+while ($true) {
+    $latest = Get-LatestLog
+
+    # 新しいログが現れたら監視開始
+    if ($latest -and ($latest -ne $knownLog)) {
+        Write-LiveHeader -LogFile $latest
+        Write-Host "  新しいセッション検出: $latest" -ForegroundColor Green
+
+        if ($WithSessionInfoTab) {
+            Write-Host '  Session ID を取得中...' -ForegroundColor DarkGray
+            $sessionId = Get-SessionIdForLog -LogPath $latest
+            if ($sessionId) {
+                Open-SessionInfoTab -SessionId $sessionId
+            } else {
+                Write-Host '  [WARN] Session ID が見つかりませんでした。' -ForegroundColor Yellow
+            }
+        }
+
+        Write-Host ''
+        # tail -f でリアルタイム表示（SSH セッションが終わるまでブロック）
+        ssh "kensan@$LinuxHost" "tail -n 50 -f '$latest'"
+        $sshExitCode = $LASTEXITCODE
+        Write-Host ''
+        if ($sshExitCode -ne 0) {
+            Write-Host "  [WARN] SSH が終了コード $sshExitCode で切断されました。次のポーリングへ戻ります..." -ForegroundColor Yellow
+        } else {
+            Write-Host '  セッション終了を検知しました。次の cron 発火を待機します...' -ForegroundColor Yellow
+        }
+        Write-Host ''
+        $knownLog = $latest
+        $dotCount = 0
+        Write-WaitHeader
+        continue
+    }
+
+    # 待機中ドット表示
+    Write-Host '.' -NoNewline -ForegroundColor DarkGray
+    $dotCount++
+    if ($dotCount -ge 60) {
+        Write-Host ''
+        $dotCount = 0
+    }
+
+    Start-Sleep -Seconds $PollIntervalSeconds
+}

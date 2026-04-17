@@ -214,6 +214,7 @@ function Show-Menu {
     Write-Host "    11. Architecture Check" -ForegroundColor Magenta
     Write-Host "    12. Cron 登録・編集・削除" -ForegroundColor Magenta
     Write-Host "    13. Statusline 設定" -ForegroundColor Magenta
+    Write-Host "    14. Claude ログ監視タブを開く" -ForegroundColor Magenta
     Write-Host ""
 
     Write-Host "    0.  終了" -ForegroundColor Gray
@@ -297,6 +298,12 @@ while ($true) {
         "11" { Invoke-MenuScript -File "scripts\test\Test-ArchitectureCheck.ps1" }
         "12" { Invoke-MenuScript -File "scripts\main\New-CronSchedule.ps1" }
         "13" { Invoke-MenuScript -File "scripts\main\Set-Statusline.ps1" }
+        "14" {
+            $watchScript = Join-Path $ProjectRoot "scripts\tools\Watch-ClaudeLog.ps1"
+            & $ShellExe -NoProfile -ExecutionPolicy Bypass -File $watchScript -NewTab -WithSessionInfoTab
+            Write-Host ""
+            Read-Host "  Enterキーでメニューに戻ります"
+        }
         "0"  { exit 0 }
         default {
             Write-Host ""

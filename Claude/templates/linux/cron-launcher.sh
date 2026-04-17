@@ -65,6 +65,15 @@ cat > "$SESSION_FILE.tmp" <<EOF
 EOF
 mv "$SESSION_FILE.tmp" "$SESSION_FILE"
 
+# --- tmux log-tail セッション起動（CLAUDEOS_TMUX=0 で無効化） ---
+# tmux attach -t "claudeos-SAFEPROJECT" でリアルタイムログを閲覧できる
+TMUX_SESSION="claudeos-${SAFE_PROJECT}"
+if command -v tmux >/dev/null 2>&1 && [[ "${CLAUDEOS_TMUX:-1}" == "1" ]]; then
+  tmux kill-session -t "$TMUX_SESSION" 2>/dev/null || true
+  tmux new-session -d -s "$TMUX_SESSION" bash -c "tail -f '$LOG_FILE'"
+  echo "[cron-launcher] tmux log-tail: tmux attach -t $TMUX_SESSION" >> "$LOG_FILE"
+fi
+
 # 終了時に status を更新するトラップ
 finalize() {
   local exit_code=$?
@@ -93,6 +102,11 @@ finalize() {
   fi
 
   echo "[cron-launcher] session finished status=$final_status exit=$exit_code at $now" >> "$LOG_FILE"
+
+  # tmux log-tail セッションを終了
+  if command -v tmux >/dev/null 2>&1; then
+    tmux kill-session -t "claudeos-${SAFE_PROJECT}" 2>/dev/null || true
+  fi
 
   # --- v3.2.0: HTML レポートメール送信 ---
   # 明示的トグル CLAUDEOS_EMAIL_ENABLED=1 が必要。誤送信防止のため既定 off。
