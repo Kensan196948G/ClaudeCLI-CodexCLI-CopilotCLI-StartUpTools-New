@@ -24,6 +24,8 @@
 15. [Priority:P3][Owner:Ops][Source:GitHub#34] Memory MCP 永続化統合 (Phase 3)
 16. [Priority:P3][Owner:Ops][Source:GitHub#34] Boot Sequence 完全自動化 (Phase 3)
 17. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.1.0 メニュー整理 (S2/S3/L2/L3 削除) + Cron 週次自動起動 + Session Info タブ + Statusline 全適用 + Slash commands 6 本 (PR #140)
+18. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v8.2 Opus 4.7 最適化 + Anthropic 公式ベストプラクティス全反映 (Token 1.35x 補正 / Agent Teams 並列 spawn / /compact 事前発動 / task_budget / 1H cache / /ultrareview / PreCompact hook / /recap fallback / Push Notification / Effort 動的切替 / 文体 literalism 対応) (PR #142)
+19. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.2.0 Cron HTML メールレポート (Visual Recap Mail) — report-and-mail.py 新規 / cron-launcher.sh finalize 連携 / config.json email セクション / SMTP 環境変数管理 / Gmail アプリパスワード手順ドキュメント (PR #143)
 
 ## Auto Extracted From Agent Teams Matrix
 

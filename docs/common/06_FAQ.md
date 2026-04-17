@@ -96,3 +96,62 @@ Slash command が `session.json` の `max_duration_minutes` を書き換え、`e
 ```powershell
 Invoke-Pester .\tests\
 ```
+
+---
+
+## Q9. Cron 自動実行時、Windows ターミナルは起動している必要がありますか?
+
+**いいえ、不要です。** Cron は **完全に Linux 側 crontab で動作** します。Windows PowerShell は「Linux crontab を SSH 越しに編集する UI」に徹しており、実行時 Windows PC は起動していなくても問題ありません。Linux ホストが起動している限り、cron デーモンが時刻到達でセッションを起動します。
+
+詳細は [Q10 のフロー図](#q10-cron-で起動されたセッションのフローは)も参照。
+
+---
+
+## Q10. Cron で起動されたセッションのフローは?
+
+```
+[Linux crontab] 例: 毎週日曜 21:00
+   ↓
+~/.claudeos/cron-launcher.sh <project> 300
+   ↓
+source ~/.env-claudeos          (環境変数読込、CLAUDEOS_EMAIL_ENABLED 等)
+   ↓
+timeout 300m claude --dangerously-skip-permissions   (5h 自律開発)
+   ↓
+finalize trap
+   ├─ session.json status 更新 (running → completed/failed/timeout)
+   ├─ CLAUDEOS_EMAIL_ENABLED=1 確認
+   └─ python3 ~/.claudeos/report-and-mail.py --status ... 🆕 v3.2.0
+        ↓
+        kensan1969@gmail.com に HTML レポート到着 📧
+```
+
+ログは `~/.claudeos/logs/cron-{YYYYMMDD-HHMMSS}.log` に常時保存されます。
+
+---
+
+## Q11. HTML メールレポート機能を有効にするには? (v3.2.0)
+
+セットアップは 5 ステップで完了します。
+
+1. Gmail で **アプリパスワード**を取得(2 段階認証 → アプリパスワード)
+2. Linux 側で `~/.env-claudeos` を作成(`echo` 方式推奨、heredoc は失敗しやすい)
+3. `~/.claudeos/` に `report-and-mail.py` と `cron-launcher.sh` を scp で配置
+4. `cron-launcher.sh` 冒頭に `[[ -f ~/.env-claudeos ]] && source ~/.env-claudeos` を sed で追加
+5. dry-run でプレビュー → 実機テスト送信で受信確認
+
+完全手順は [`16_HTMLメールレポート設定.md`](./16_HTMLメールレポート設定.md)。
+
+---
+
+## Q12. アプリパスワードは config.json に書いてもいいですか?
+
+**いいえ、絶対に書かないでください。** config.json は git commit 対象になり得るため、漏洩リスクがあります。代わりに以下の Linux 環境変数で管理してください(`~/.env-claudeos` は `chmod 600`):
+
+| 環境変数 | 用途 |
+|---|---|
+| `CLAUDEOS_SMTP_USER` | Gmail アドレス |
+| `CLAUDEOS_SMTP_PASS` | アプリパスワード(スペース付き 19 文字 / 除去 16 文字どちらでも可) |
+| `CLAUDEOS_DEFAULT_TO` | 送信先(省略時 `CLAUDEOS_SMTP_USER`) |
+| `CLAUDEOS_DEFAULT_FROM` | 送信元(省略時 `CLAUDEOS_SMTP_USER`) |
+| `CLAUDEOS_EMAIL_ENABLED` | `1` で有効化(既定 off) |
