@@ -31,6 +31,7 @@
 ### 🔗 関連
 
 - Issue: #149
+- PR: #150
 - 前回 STABLE: PR #148 (v3.2.3 docs drift cleanup, commit deef2b3)
 - 参照: CLAUDE.md §17 README 更新基準
 

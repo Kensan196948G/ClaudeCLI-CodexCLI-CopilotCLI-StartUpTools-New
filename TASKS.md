@@ -26,6 +26,8 @@
 17. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.1.0 メニュー整理 (S2/S3/L2/L3 削除) + Cron 週次自動起動 + Session Info タブ + Statusline 全適用 + Slash commands 6 本 (PR #140)
 18. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v8.2 Opus 4.7 最適化 + Anthropic 公式ベストプラクティス全反映 (Token 1.35x 補正 / Agent Teams 並列 spawn / /compact 事前発動 / task_budget / 1H cache / /ultrareview / PreCompact hook / /recap fallback / Push Notification / Effort 動的切替 / 文体 literalism 対応) (PR #142)
 19. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.2.0 Cron HTML メールレポート (Visual Recap Mail) — report-and-mail.py 新規 / cron-launcher.sh finalize 連携 / config.json email セクション / SMTP 環境変数管理 / Gmail アプリパスワード手順ドキュメント (PR #143)
+20. [DONE] [Priority:P1][Owner:Developer][Source:GitHub#147] v3.2.3 docs drift cleanup + state artifacts + hookify 検出強化 (PR #148)
+21. [DONE] [Priority:P1][Owner:Developer][Source:GitHub#149] v3.2.4 repo rename docs 反映 — 22 ファイル / 55 箇所一括置換 (PR #150)
 
 ## Auto Extracted From Agent Teams Matrix
 
