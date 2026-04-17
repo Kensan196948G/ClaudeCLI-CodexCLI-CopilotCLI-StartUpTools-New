@@ -2,6 +2,34 @@
 
 # CHANGELOG
 
+## [v3.2.9] - 2026-04-17 — PSUseShouldProcessForStateChangingFunctions 警告 26 件解消
+
+### 🎯 概要
+
+PSScriptAnalyzer `PSUseShouldProcessForStateChangingFunctions` ルール警告 26 件を解消。
+自律 CLI ツールとして `-WhatIf`/`-Confirm` の実装は CTO 全権委任原則と矛盾するため、
+全件を `SuppressMessageAttribute` で抑制。ロジック変更なし。
+
+### 🔧 変更対象
+
+| Justification | 件数 | 代表関数 |
+|---|---|---|
+| Internal autonomous CLI function | 15 | `New-AgentTeam`, `Set-CronManagerConfig`, `Remove-ClaudeOSCronEntry`, `New/Remove-Worktree` |
+| Factory function returns in-memory object | 11 | `New-CronEntryId`, `New-LauncherExecutionContext`, `New-BusSection`, `New-TokenState` |
+
+**対象ファイル（12 ファイル）**: AgentTeams.psm1, Config.psm1, CronManager.psm1,
+LauncherCommon.psm1, LogManager.psm1, MessageBus.psm1, SessionTabManager.psm1,
+setup-windows-terminal.ps1, Start-ClaudeCode.ps1, TokenBudget.psm1, Update-TASKS.ps1,
+WorktreeManager.psm1
+
+### ✅ 検証結果
+
+- `Invoke-ScriptAnalyzer -IncludeRule PSUseShouldProcessForStateChangingFunctions` = **0 件**
+- `Invoke-Pester` Passed: **477** / Failed: **0**
+- CI STABLE N=2 達成
+
+---
+
 ## [v3.2.8] - 2026-04-17 — PSUseSingularNouns 警告 36 件解消
 
 ### 🎯 概要
