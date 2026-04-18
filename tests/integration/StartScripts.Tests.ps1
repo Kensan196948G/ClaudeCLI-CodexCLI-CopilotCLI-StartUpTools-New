@@ -1,5 +1,5 @@
 ﻿BeforeAll {
-    $script:RepoRoot = Split-Path -Parent $PSScriptRoot
+    $script:RepoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
     $script:PowerShellExe = (Get-Process -Id $PID).Path
     $script:OriginalPath = $env:PATH
     $script:OriginalConfigOverride = $env:AI_STARTUP_CONFIG_PATH

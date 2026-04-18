@@ -3,7 +3,7 @@
 # ============================================================
 
 BeforeAll {
-    $ModulePath = Join-Path -Path $PSScriptRoot -ChildPath '..\scripts\lib\SelfEvolution.psm1'
+    $ModulePath = Join-Path -Path $PSScriptRoot -ChildPath '..\..\scripts\lib\SelfEvolution.psm1'
     Import-Module $ModulePath -Force -DisableNameChecking
 
     $TempEvolutionDir = Join-Path $env:TEMP "evolution-test-$(Get-Random)"

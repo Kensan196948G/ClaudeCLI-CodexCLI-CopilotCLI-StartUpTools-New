@@ -4,7 +4,7 @@
 # ============================================================
 
 BeforeAll {
-    Import-Module "$PSScriptRoot\..\scripts\lib\Config.psm1" -Force
+    Import-Module "$PSScriptRoot\..\..\scripts\lib\Config.psm1" -Force
 }
 
 Describe 'Import-StartupConfig' {

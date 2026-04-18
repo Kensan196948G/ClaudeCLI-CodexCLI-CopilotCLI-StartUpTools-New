@@ -3,7 +3,7 @@
 # ============================================================
 
 BeforeAll {
-    $ModulePath = Join-Path -Path $PSScriptRoot -ChildPath '..\scripts\lib\ArchitectureCheck.psm1'
+    $ModulePath = Join-Path -Path $PSScriptRoot -ChildPath '..\..\scripts\lib\ArchitectureCheck.psm1'
     Import-Module $ModulePath -Force -DisableNameChecking
 }
 
@@ -126,13 +126,13 @@ Describe 'ArchitectureCheck Module' {
 
     Describe 'Test-ModuleDependency' {
         It 'プロジェクトルートでモジュール依存関係をチェックする' {
-            $projectRoot = Split-Path $PSScriptRoot -Parent
+            $projectRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
             $results = Test-ModuleDependency -Path $projectRoot
             $results | Should -Not -BeNullOrEmpty
         }
 
         It '結果にScript, Module, Status プロパティが含まれる' {
-            $projectRoot = Split-Path $PSScriptRoot -Parent
+            $projectRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
             $results = Test-ModuleDependency -Path $projectRoot
             if ($results.Count -gt 0) {
                 $results[0].PSObject.Properties.Name | Should -Contain 'Script'

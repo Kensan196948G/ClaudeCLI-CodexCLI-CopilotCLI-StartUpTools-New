@@ -12,7 +12,7 @@
 # ============================================================
 
 BeforeDiscovery {
-    $script:RepoRoot    = Split-Path -Parent $PSScriptRoot
+    $script:RepoRoot    = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
     $script:ClaudeOsDir = Join-Path $script:RepoRoot '.claude\claudeos'
     $script:AgentsDir   = Join-Path $script:ClaudeOsDir 'agents'
     $script:SkillsDir   = Join-Path $script:ClaudeOsDir 'skills'
@@ -44,7 +44,7 @@ BeforeDiscovery {
 }
 
 BeforeAll {
-    $script:RepoRoot     = Split-Path -Parent $PSScriptRoot
+    $script:RepoRoot     = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
     $script:ClaudeOsDir  = Join-Path $script:RepoRoot '.claude\claudeos'
     $script:AgentsDir    = Join-Path $script:ClaudeOsDir 'agents'
     $script:SkillsDir    = Join-Path $script:ClaudeOsDir 'skills'

@@ -4,7 +4,7 @@
 # ============================================================
 
 BeforeAll {
-    $script:RepoRoot = Split-Path -Parent $PSScriptRoot
+    $script:RepoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
     Import-Module (Join-Path $script:RepoRoot 'scripts\lib\AgentTeams.psm1') -Force
 }
 

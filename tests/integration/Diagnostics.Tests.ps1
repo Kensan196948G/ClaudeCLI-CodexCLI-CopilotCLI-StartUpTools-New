@@ -1,5 +1,5 @@
 ﻿BeforeAll {
-    $script:RepoRoot = Split-Path -Parent $PSScriptRoot
+    $script:RepoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
     . (Join-Path $script:RepoRoot 'scripts\test\test-drive-mapping.ps1')
     . (Join-Path $script:RepoRoot 'scripts\test\Test-AllTools.ps1')
 Import-Module (Join-Path $script:RepoRoot 'scripts\lib\MenuCommon.psm1') -Force -DisableNameChecking

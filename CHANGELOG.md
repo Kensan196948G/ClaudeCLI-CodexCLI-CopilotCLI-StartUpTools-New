@@ -2,6 +2,31 @@
 
 # CHANGELOG
 
+## [v3.2.26] - 2026-04-18 — tests/ サブディレクトリ分類 — unit / integration / smoke
+
+### 🎯 概要
+
+17 テストファイルを `tests/unit/`・`tests/integration/`・`tests/smoke/` へ分類（外部レビュー #11 対応）。
+`$PSScriptRoot` 基準のパス参照をディレクトリ深度増加に合わせて修正。
+`tests/README.md` で分類基準を文書化。Pester 5.x の再帰検索により CI 設定変更不要。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `tests/unit/` | Config / ErrorHandler / LauncherCommon / MessageBus / TokenBudget — 5 ファイル移動 |
+| `tests/integration/` | AgentTeams / ArchitectureCheck / ClaudeOSPlugin / Diagnostics / IssueSyncManager / McpHealthCheck / SelfEvolution / SSHHelper / StartScripts / Sync-Issues / WorktreeManager — 11 ファイル移動 |
+| `tests/smoke/` | E2E — 1 ファイル移動 |
+| `tests/README.md` | 分類基準・ファイル一覧・実行方法を文書化（新規作成） |
+| 各テストファイル | `$PSScriptRoot` → `Split-Path -Parent (Split-Path -Parent $PSScriptRoot)` に修正 |
+
+### ✅ Verify
+
+- CI: 477/477 PASS
+- STABLE N=2 達成
+
+---
+
 ## [v3.2.25] - 2026-04-18 — Loop レポート reports/ 統合 — build / improve 出力先統一
 
 ### 🎯 概要

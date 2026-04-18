@@ -4,7 +4,7 @@
 # ============================================================
 
 BeforeAll {
-    Import-Module "$PSScriptRoot\..\scripts\lib\ErrorHandler.psm1" -Force
+    Import-Module "$PSScriptRoot\..\..\scripts\lib\ErrorHandler.psm1" -Force
 }
 
 Describe 'ErrorHandler モジュール読み込み' {
