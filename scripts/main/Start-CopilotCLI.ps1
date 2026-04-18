@@ -1,7 +1,10 @@
 ﻿<#
 .SYNOPSIS
-    GitHub Copilot CLI startup script.
+    [LEGACY] GitHub Copilot CLI startup script.
 .DESCRIPTION
+    LEGACY: v3.1.0 以降、ClaudeOS は Claude Code 専用に移行済み。
+    このスクリプトは config.json の tools.copilot.enabled=false により無効化されている。
+    参照: docs/SOURCE_OF_TRUTH.md — Legacy 分類
     ClaudeOS-compatible custom-agent lane entry for Main / Task / Code Review / Ops.
     See docs/common/08_AgentTeams対応表.md for the mapping table.
 #>

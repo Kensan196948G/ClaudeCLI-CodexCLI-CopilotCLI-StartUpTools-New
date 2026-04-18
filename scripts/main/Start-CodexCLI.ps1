@@ -1,7 +1,10 @@
 ﻿<#
 .SYNOPSIS
-    Codex CLI startup script
+    [LEGACY] Codex CLI startup script
 .DESCRIPTION
+    LEGACY: v3.1.0 以降、ClaudeOS は Claude Code 専用に移行済み。
+    このスクリプトは config.json の tools.codex.enabled=false により無効化されている。
+    参照: docs/SOURCE_OF_TRUTH.md — Legacy 分類
     ClaudeOS-compatible manager-worker lane: Manager / Architect / Build / Review / Test.
 #>
 

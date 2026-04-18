@@ -28,7 +28,7 @@
 | 項目 | 状態 |
 |------|------|
 | バージョン | **v3.2.34** (Phase 4 テスト BOM 修正) — 旧: v3.2.33 (Phase 4 ユニットテスト + SelfEvolution バグ修正) / v3.2.32 (tmux ゴーストセッション修正) |
-| テスト | **650件** — (Pester, CI) |
+| テスト | **477件** — Pester (Unit 17 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |
 | Agents | **25体** の特化サブエージェント (2026Q2 棚卸し後、追加復元済み) |
@@ -482,9 +482,9 @@ flowchart LR
 ```text
 config/              設定テンプレートと設定ドキュメント
 docs/                利用ガイド（共通/Claude/Codex/Copilot）
-scripts/lib/         共通モジュール (9 modules)
+scripts/lib/         共通モジュール (17 modules)
   Config.psm1          設定管理
-  LauncherCommon.psm1  起動共通処理
+  LauncherCommon.psm1  起動共通処理 (1545行 — 分割対象)
   MenuCommon.psm1      メニュー共通処理
   SSHHelper.psm1       SSH接続ヘルパー
   ErrorHandler.psm1    エラーハンドリング
@@ -493,8 +493,13 @@ scripts/lib/         共通モジュール (9 modules)
   WorktreeManager.psm1 Git Worktree管理
   IssueSyncManager.psm1 Issue/Backlog同期
   TokenBudget.psm1     Token Budget自動制御
-  ArchitectureCheck.psm1 アーキテクチャ違反検出 [NEW Phase3]
-  SelfEvolution.psm1   セッション学習・自己進化 [NEW Phase3]
+  ArchitectureCheck.psm1 アーキテクチャ違反検出
+  SelfEvolution.psm1   セッション学習・自己進化
+  CronManager.psm1     Cronスケジュール管理
+  LogManager.psm1      ログ管理
+  MessageBus.psm1      メッセージバス
+  SessionTabManager.psm1 セッションタブ管理
+  StatuslineManager.psm1 ステータスライン管理
 scripts/main/        起動スクリプト
 scripts/helpers/     PTY bridge 等のヘルパー
 scripts/templates/   各ツール向けテンプレート
@@ -503,7 +508,7 @@ scripts/tools/       TASKS同期・バックログ管理
 tests/               Pester テスト (17 files / 477件)
 Claude/              ClaudeOS 互換ポリシー群
 Codex/               Codex AGENTS.md
-.claude/claudeos/    ClaudeOS カーネル（204ファイル）
+.claude/claudeos/    ClaudeOS カーネル（198ファイル、配備先 — 編集元は Claude/templates/claudeos/）
 .codex/              Codex 設定
 .github/             Copilot 設定 / CI ワークフロー
 ```

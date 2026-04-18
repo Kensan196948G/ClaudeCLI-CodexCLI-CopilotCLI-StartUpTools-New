@@ -1,4 +1,8 @@
-# everything-claude-code
+# everything-claude-code — 配備先（runtime copy）
+
+> **このディレクトリは配備先です。直接編集禁止。**
+> 編集元は `Claude/templates/claudeos/` です。変更はそちらに加え、同期してください。
+> 詳細: `docs/SOURCE_OF_TRUTH.md`
 
 Claude Code を完全自立型開発モードで運用するための統合プラグインパックです。
 
