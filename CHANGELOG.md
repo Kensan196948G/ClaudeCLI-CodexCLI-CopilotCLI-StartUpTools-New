@@ -2,6 +2,49 @@
 
 # CHANGELOG
 
+## [v3.2.36] - 2026-04-18 — Watch-SessionInfoSSH TZ オフセット不整合修正
+
+### 🎯 概要
+
+Linux の `end_time_planned` フィールドが TZ オフセット不整合（`+09:00` vs `+08:00`）で UTC ベース演算が 1 時間ズレ、残り時間が実際より 1 時間多く表示される問題を修正。`start_time + max_duration_minutes`（整数演算）を信頼できる終了時刻として採用し、`ToLocalTime()` で Windows ローカル時刻に統一表示する。5 分超のズレを検出した場合に警告行を表示するドリフト検出機能も追加。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/tools/Watch-SessionInfoSSH.ps1` | `$remaining` を `start + duration - now` で再計算 / `ToLocalTime()` 表示統一 / ドリフト検出警告追加 |
+| `README.md` | バージョン v3.2.36 / テスト件数 650 件に更新 |
+| `TASKS.md` | エントリ 50 (v3.2.35) / 51 (v3.2.36) 追加 |
+
+### ✅ テスト結果
+
+- 650/650 PASS
+- PSScriptAnalyzer 警告 0 件
+
+---
+
+## [v3.2.35] - 2026-04-18 — AgentTeams.psm1 モノリス分割
+
+### 🎯 概要
+
+506 行のモノリシックな `AgentTeams.psm1` を責務ごとに 3 ファイルに分割し、薄い dot-source オーケストレーターに変換。依存順序を `AgentDefinition.ps1 → AgentTeamBuilder.ps1 → AgentCapabilityMatrix.ps1` で明示。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/lib/AgentTeams.psm1` | 18 行の薄い dot-source オーケストレーターに書き換え |
+| `scripts/lib/AgentDefinition.ps1` | 新規追加 — CoreRoles / TaskTypePatterns / Import-AgentDefinition / Get-TaskTypeAnalysis / Get-BacklogRuleMatch |
+| `scripts/lib/AgentTeamBuilder.ps1` | 新規追加 — New-AgentTeam / Format-AgentTeamDiscussion / Show-AgentTeamComposition / Get-AgentTeamReport / Show-AgentTeamReport |
+| `scripts/lib/AgentCapabilityMatrix.ps1` | 新規追加 — Get-AgentCapabilityMatrix / Show-AgentCapabilityMatrix / Get-AgentQuickStatus |
+
+### ✅ テスト結果
+
+- 650/650 PASS
+- PSScriptAnalyzer 警告 0 件
+
+---
+
 ## [v3.2.34] - 2026-04-18 — Phase 4 テストファイル UTF-8 BOM 追加 (PSScriptAnalyzer 警告解消)
 
 ### 🎯 概要
