@@ -693,9 +693,29 @@ Describe 'TASKS tooling' {
 
     It 'Sync-AgentTeamsBacklog.ps1 が metadata 付き抽出を同期できること' {
         $scriptPath = Join-Path $script:RepoRoot 'scripts\tools\Sync-AgentTeamsBacklog.ps1'
-        & $scriptPath -Action sync -ApplyMetadata | Out-Null
-        $content = Get-Content (Join-Path $script:RepoRoot 'TASKS.md') -Raw -Encoding UTF8
-        $content | Should -Match 'Source:AgentTeamsMatrix'
+        $docPath = Join-Path $script:RepoRoot 'docs\common\08_AgentTeams対応表.md'
+        $tasksPath = Join-Path $script:RepoRoot 'TASKS.md'
+        $docBytes = [System.IO.File]::ReadAllBytes($docPath)
+        $tasksBytes = [System.IO.File]::ReadAllBytes($tasksPath)
+        try {
+            $docLines = [System.IO.File]::ReadAllLines($docPath, [System.Text.Encoding]::UTF8)
+            $insertIdx = -1
+            for ($i = 0; $i -lt $docLines.Count; $i++) {
+                if ($docLines[$i] -match '^## 未実装機能') { $insertIdx = $i + 1; break }
+            }
+            if ($insertIdx -ge 0) {
+                $newLines = [System.Collections.Generic.List[string]]::new($docLines)
+                $newLines.Insert($insertIdx, '- テスト用ダミー未実装機能')
+                [System.IO.File]::WriteAllLines($docPath, $newLines, [System.Text.Encoding]::UTF8)
+            }
+            & $scriptPath -Action sync -ApplyMetadata | Out-Null
+            $content = Get-Content $tasksPath -Raw -Encoding UTF8
+            $content | Should -Match 'Source:AgentTeamsMatrix'
+        }
+        finally {
+            [System.IO.File]::WriteAllBytes($docPath, $docBytes)
+            [System.IO.File]::WriteAllBytes($tasksPath, $tasksBytes)
+        }
     }
 
     It 'Test-McpRuntime.ps1 が Json 出力できること' {
