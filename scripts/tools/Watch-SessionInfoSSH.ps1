@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Linux側の session.json を SSH 経由でリアルタイム監視して表示する。
 .DESCRIPTION

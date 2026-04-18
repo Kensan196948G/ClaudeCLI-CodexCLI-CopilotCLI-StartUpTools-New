@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Claude Code ログをリアルタイム監視する（SSH + tail -f）。
 .DESCRIPTION
