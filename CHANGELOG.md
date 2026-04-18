@@ -2,6 +2,28 @@
 
 # CHANGELOG
 
+## [v3.2.32] - 2026-04-18 — Watch-ClaudeLog tmux ゴーストセッション修正 (Issue #188)
+
+### 🎯 概要
+
+`Open-TmuxAttachTab` で `tmux new-session -A -s` を使っていたため、
+`finalize()` がセッションを kill した後に Tab 2 の SSH 接続が遅れて到達すると
+空のゴーストセッションが作成される問題を修正。
+`tmux attach-session -t` に変更することで、セッション不在時はエラー終了し
+ゴーストセッションが生まれなくなる。
+
+### 変更ファイル
+
+| ファイル | 変更内容 |
+|---------|---------|
+| `scripts/tools/Watch-ClaudeLog.ps1` | `Open-TmuxAttachTab`: `new-session -A -s` → `attach-session -t` |
+| `TASKS.md` | エントリ 47 追加 |
+
+### CI
+
+- 569/569 PASS
+- PSScriptAnalyzer 警告 0 件
+
 ## [v3.2.31] - 2026-04-18 — Watch-ClaudeLog 起動時セッション検出修正 + cron-launcher tmux -e 修正 (Issue #185 + #186)
 
 ### 🎯 概要
