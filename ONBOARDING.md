@@ -3,8 +3,8 @@
 > このファイルは `/team-onboarding` により自動生成されます。
 > 手動編集は次回実行時に上書きされます。恒久的な記述は `CLAUDE.md` または `docs/` に配置してください。
 
-**生成日時**: 2026-04-17T21:30:00+09:00
-**ClaudeOS バージョン**: v8 (Weekly Optimized Loops + CodeRabbit 統合 + 3タブ監視)
+**生成日時**: 2026-04-18T09:25:00+09:00
+**ClaudeOS バージョン**: v8 (Weekly Optimized Loops + CodeRabbit 統合 + 3タブ監視) — **v3.2.23**
 **Git ブランチ**: main（生成時点。実作業は feature branch で実施）
 **リポジトリ**: https://github.com/Kensan196948G/ClaudeCode-StartUpTools-New
 
@@ -36,14 +36,16 @@ Git ログから直近の修復系コミット（fix/hotfix 系）を参照:
 
 | 傾向 | 詳細 |
 |---|---|
+| tmux + timeout SIGTTOU 停止 | GNU `timeout` が `setpgid(0,0)` で Claude を新 PGID へ移動 → `tcsetattr()` で SIGTTOU 受信し `Tl` 停止。`timeout --foreground` で解消 (v3.2.23) |
+| tmux pipe-pane による TUI 破壊 | `pipe-pane` が PTY を横断し DA クエリ応答を破壊 → TUI 初期化失敗。pipe-pane 削除で解消 (v3.2.23) |
 | CodeRabbit Critical 指摘 | injection 系 / SSH コマンド構築 — v3.2.19 で解消 |
-| SSH 診断性向上 | ssh_error 吸収 + SSH エラーメッセージの可観測性 |
-| PSScriptAnalyzer 警告蓄積 | PSProvideCommentHelp / PSUseOutputTypeCorrectly など段階的解消中 |
+| README バージョンドリフト | CHANGELOG 更新時に README quote/テーブルを同一 commit で更新しないと CI 失敗 |
+| PSScriptAnalyzer 警告蓄積 | v3.2.6〜v3.2.14 で段階的に全カテゴリ解消済み |
 
 ## 4. 過去の成功パターン
 
 `state.json.learning.success_patterns` は現セッションでは未記録。
-直近 STABLE 達成実績: N=2 連続（v3.2.6 / v3.2.19）。
+直近 STABLE 達成実績: consecutive_success=10 継続中（v3.2.23 時点）。
 
 ## 5. 利用可能な Agent Teams
 
@@ -103,26 +105,18 @@ CLAUDE.md §18 から抽出した **全 8 項目**:
 
 | Hash | 概要 |
 |---|---|
-| 90ec63d | chore(v3.2.19): ClaudeOS config 整理 — CLAUDE.md v8.2→v8, token-budget 簡略化 |
-| 22ddc2e | fix(v3.2.19): CodeRabbit Round 2 指摘 — Critical injection + Major ssh_error 吸収 |
-| 17758b1 | fix(v3.2.19): CodeRabbit + Copilot レビュー 4 件対応 — SSH 診断性向上 |
-| 47ef4e0 | feat(v3.2.19): 3 タブ監視 品質向上 (外部レビュー追加指摘 3 件) |
+| 0c63d54 | docs: README バージョン v3.2.22 → v3.2.23 更新 (CI ドリフト修正) |
+| b4956c8 | chore: CHANGELOG + TASKS.md — v3.2.23 [DONE] 更新 (PR #175) |
+| 4b6e22f | fix(v3.2.23): cron-launcher.sh — timeout --foreground + pipe-pane 削除 (#175) |
+| e7a21a8 | chore(monitor): TASKS.md #37 [DONE] + README quote v3.2.22 更新 |
+| d7de38b | feat(v3.2.22): state.json.example スキーマ整合修正 + CI バリデーション追加 (#173) |
+| dde9eb3 | feat(v3.2.21): スキーマ拡張 + README 自動整合 CI ゲート (PR #171) |
+| b347550 | feat(v3.2.19): 3 タブ監視 品質向上 + 外部レビュー対応 (PR #170) |
 | 9d7bc83 | chore: TASKS.md — v3.2.18 [DONE] 更新 + v3.2.19 起票 (PR #169) |
 | 26e8b22 | feat(v3.2.18): 外部コードレビュー指摘 5 カテゴリ対応 (Quick-wins) (#169) |
 | 25ae708 | feat(v3.2.17): 3タブ監視構成 + tmux UI 統合 + linuxUser パラメータ化 (#168) |
 | e31a547 | chore: TASKS.md — v3.2.14 [DONE] 更新 (PR #167) |
 | 6819125 | docs(v3.2.14): PSProvideCommentHelp 警告 85 件解消 — 9 ファイル全関数に追加 (#167) |
-| 37e213b | chore: TASKS.md — v3.2.13 [DONE] 更新 (PR #165) |
-| 20c3972 | fix: PSAvoidUsingPositionalParameters 残存 1 件解消 (#165) |
-| 8353a23 | docs(v8.3): CLAUDE.md に Auto mode 操作手順を追加 |
-| 5e03081 | feat(v3.2.12): PSUseOutputTypeCorrectly 警告 37 件解消 (#164) |
-| 007934d | chore: TASKS.md — v3.2.11 [DONE] 更新 (PR #163) |
-| 3b8a0a8 | feat(v3.2.11): PSAvoidUsingPositionalParameters 警告解消 (#163) |
-| 08ce0fe | feat(v3.2.10): PSReviewUnusedParameter 警告 7 件解消 (#162) |
-| e562c00 | docs(v3.2.9): TASKS.md + CHANGELOG 更新 |
-| 57cf203 | feat(v3.2.9): PSUseShouldProcessForStateChangingFunctions 警告 26 件解消 (#160) |
-| 9ede059 | feat(v8.3): Anthropic 公式ブログ Opus 4.7 best-practices を CLAUDE.md に反映 |
-| ee6235d | docs(v3.2.8): TASKS.md task 25 を DONE に更新 |
 
 ## 9. 未解決の Codex 指摘
 
@@ -158,11 +152,11 @@ CLAUDE.md §0 のデフォルト 4 ループ登録（state.json.execution.phase=
 
 | 項目 | 値 |
 |---|---|
-| 前回停止 | 2026-04-17T13:00:12Z |
-| 前回要約 | v3.2.6 (PR #154) を main へ admin squash merge 完了。PSUseApprovedVerbs 警告 9 件解消。STABLE N=2 達成。 |
-| 現在フェーズ | Monitor |
+| 前回停止 | 2026-04-18T00:18:47Z |
+| 前回要約 | v3.2.23 (PR #175) squash merge 完了 (4b6e22f)。cron-launcher.sh SIGTTOU 停止バグ修正。STABLE N=10 継続。 |
+| 現在フェーズ | Improvement |
 
-現在ブランチ `feature/v3.2.19-tab-monitoring-quality` で作業継続中。Monitor フェーズから再開し、GitHub Projects / Issues / CI の状態を確認して次のアクションを決定してください。
+main ブランチで STABLE 継続中。open Issue なし。Monitor フェーズから再開し、GitHub Projects / Issues / CI の状態を確認して次のアクションを決定してください。
 
 ---
 

@@ -33,7 +33,7 @@
 
 ## Output
 
-`.loop-verify-report.md`
+`reports/.loop-verify-report.md`
 
 ---
 
