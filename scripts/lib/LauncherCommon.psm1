@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Core launcher utility functions — config, mode, project selection, SSH, environment.
     Template sync functions are in TemplateSyncManager.psm1.

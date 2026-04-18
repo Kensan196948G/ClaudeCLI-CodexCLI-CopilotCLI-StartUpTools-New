@@ -2,6 +2,35 @@
 
 # CHANGELOG
 
+## [v3.2.37] - 2026-04-18 — scripts/lib 全ファイル UTF-8 BOM 追加 (PSScriptAnalyzer 警告ゼロ回復)
+
+### 🎯 概要
+
+v3.2.35 の AgentTeams 分割で生成した 3 ファイルを含む `scripts/lib/` 配下 11 ファイルに UTF-8 BOM が欠落しており `PSUseBOMForUnicodeEncodedFile` 警告が 11 件発生していた。BOM を追加して警告 0 件を回復。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/lib/AgentCapabilityMatrix.ps1` | UTF-8 BOM 追加 |
+| `scripts/lib/AgentDefinition.ps1` | UTF-8 BOM 追加 |
+| `scripts/lib/AgentTeamBuilder.ps1` | UTF-8 BOM 追加 |
+| `scripts/lib/AgentTeams.psm1` | UTF-8 BOM 追加 |
+| `scripts/lib/Config.psm1` | UTF-8 BOM 追加 |
+| `scripts/lib/ConfigLoader.ps1` | UTF-8 BOM 追加 |
+| `scripts/lib/ConfigSchema.ps1` | UTF-8 BOM 追加 |
+| `scripts/lib/LauncherCommon.psm1` | UTF-8 BOM 追加 |
+| `scripts/lib/RecentProjects.ps1` | UTF-8 BOM 追加 |
+| `scripts/lib/SessionLogger.ps1` | UTF-8 BOM 追加 |
+| `scripts/lib/TemplateSyncManager.ps1` | UTF-8 BOM 追加 |
+
+### ✅ テスト結果
+
+- 650/650 PASS
+- PSScriptAnalyzer 警告 0 件
+
+---
+
 ## [v3.2.36] - 2026-04-18 — Watch-SessionInfoSSH TZ オフセット不整合修正
 
 ### 🎯 概要

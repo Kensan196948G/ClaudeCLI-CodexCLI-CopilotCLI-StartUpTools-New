@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Template synchronization functions extracted from LauncherCommon.psm1.
     Handles copying and syncing template files into project directories.

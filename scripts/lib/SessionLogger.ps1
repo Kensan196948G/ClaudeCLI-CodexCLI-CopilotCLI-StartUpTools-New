@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Session logging, metadata, and audio notification functions extracted from LauncherCommon.psm1.
     Handles execution context tracking, JSONL log writes, and WinMM audio playback.

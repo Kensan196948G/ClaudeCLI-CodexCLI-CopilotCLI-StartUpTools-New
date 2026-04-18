@@ -7,8 +7,8 @@
 > **📌 v3.1.0 で Claude Code 専用ツールに整理**
 > v3.1.0 より、Codex CLI / GitHub Copilot CLI の起動メニュー (S2/S3/L2/L3) は削除されました。本ツールは **Claude Code 専用の自律開発ランチャー** として位置づけを明確化し、Linux crontab 連携・セッション情報タブ・Statusline グローバル適用などの新機能に投資が集中しています。
 
-> **🔧 v3.2.36 — Watch-SessionInfoSSH TZ オフセット不整合修正**
-> Linux の `end_time_planned` が TZ オフセット不整合で 1 時間超過して表示される問題を修正。`start_time + max_duration_minutes` を信頼できる終了時刻として使用し、`ToLocalTime()` で表示を統一。TZ ズレ検出警告 (5 分超) も追加。v3.2.35: AgentTeams.psm1 を 3 サブファイルに分割 (506L → モジュール化)。詳細は [`CHANGELOG.md`](./CHANGELOG.md) を参照。
+> **🔧 v3.2.37 — scripts/lib 全ファイル UTF-8 BOM 追加 (PSScriptAnalyzer 警告 0 件回復)**
+> AgentTeams 分割 (v3.2.35) で生成した 3 ファイルを含む `scripts/lib/` 11 ファイルに BOM を追加し `PSUseBOMForUnicodeEncodedFile` 警告 11 件を解消。v3.2.36: Watch-SessionInfoSSH の残り時間 TZ ズレ修正。詳細は [`CHANGELOG.md`](./CHANGELOG.md) を参照。
 
 > **📨 v3.2.0 — Cron HTML メールレポート (Visual Recap Mail)**
 > Cron で起動された ClaudeCode セッションの完了時に、**HTML 形式のレポートメール** を Gmail SMTP 経由で送信。アイコン+色付き表組み+実行サマリ(Monitor/Development/Verify/Improvement の出現回数/エラー検出/STABLE 達成)+次フェーズ提案を含む。送信先は `CLAUDEOS_DEFAULT_TO`(未設定時 `CLAUDEOS_SMTP_USER`)で指定し、SMTP 認証情報は `~/.env-claudeos` の Linux 環境変数で管理(config.json には書かない設計)。詳細は [`docs/common/16_HTMLメールレポート設定.md`](./docs/common/16_HTMLメールレポート設定.md) を参照。
@@ -27,7 +27,7 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.2.36** (Watch-SessionInfoSSH TZ 修正) — 旧: v3.2.35 (AgentTeams 分割) / v3.2.34 (Phase 4 テスト BOM 修正) |
+| バージョン | **v3.2.37** (scripts/lib BOM 追加・警告ゼロ) — 旧: v3.2.36 (Watch-SessionInfoSSH TZ 修正) / v3.2.35 (AgentTeams 分割) |
 | テスト | **650件** — Pester (Unit 17 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |
