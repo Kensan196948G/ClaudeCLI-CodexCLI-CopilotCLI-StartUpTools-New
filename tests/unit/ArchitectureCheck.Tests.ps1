@@ -57,7 +57,7 @@ Describe 'Invoke-ArchitectureCheck' {
             $dir = Join-Path $TestDrive 'arch-secret1'
             New-Item -ItemType Directory -Path $dir | Out-Null
             Set-Content -Path (Join-Path $dir 'bad.ps1') `
-                -Value '$password = "SuperSecret1234"' -Encoding UTF8
+                -Value '$password = "SuperSecret1234"' -Encoding UTF8 # gitleaks:allow
             $result = Invoke-ArchitectureCheck -Path $dir
             $result.Violations.RuleId | Should -Contain 'HARDCODED_SECRET'
         }
@@ -66,7 +66,7 @@ Describe 'Invoke-ArchitectureCheck' {
             $dir = Join-Path $TestDrive 'arch-secret2'
             New-Item -ItemType Directory -Path $dir | Out-Null
             Set-Content -Path (Join-Path $dir 'bad.ps1') `
-                -Value '$api_key = "sk-abcdef1234567890"' -Encoding UTF8
+                -Value '$api_key = "sk-abcdef1234567890"' -Encoding UTF8 # gitleaks:allow
             $result = Invoke-ArchitectureCheck -Path $dir
             $v = $result.Violations | Where-Object { $_.RuleId -eq 'HARDCODED_SECRET' }
             $v.Severity | Should -Be 'CRITICAL'
@@ -76,7 +76,7 @@ Describe 'Invoke-ArchitectureCheck' {
             $dir = Join-Path $TestDrive 'arch-secret3'
             New-Item -ItemType Directory -Path $dir | Out-Null
             Set-Content -Path (Join-Path $dir 'bad.ps1') `
-                -Value '$token = "ghp_abc123xyz789"' -Encoding UTF8
+                -Value '$token = "ghp_abc123xyz789"' -Encoding UTF8 # gitleaks:allow
             $result = Invoke-ArchitectureCheck -Path $dir
             $result.Passed | Should -Be $false
         }
@@ -135,7 +135,7 @@ Describe 'Get-ArchitectureViolation' {
             New-Item -ItemType Directory -Path $script:FilterDir | Out-Null
             # CRITICAL (HARDCODED_SECRET) + WARNING (MISSING_STRICT_MODE) 両方含むファイル
             Set-Content -Path (Join-Path $script:FilterDir 'mixed.psm1') `
-                -Value '$secret = "hardcoded-password-123"' -Encoding UTF8
+                -Value '$secret = "hardcoded-password-123"' -Encoding UTF8 # gitleaks:allow
         }
 
         It 'Severity=CRITICAL で CRITICAL のみ返す' {
