@@ -7,8 +7,8 @@
 > **📌 v3.1.0 で Claude Code 専用ツールに整理**
 > v3.1.0 より、Codex CLI / GitHub Copilot CLI の起動メニュー (S2/S3/L2/L3) は削除されました。本ツールは **Claude Code 専用の自律開発ランチャー** として位置づけを明確化し、Linux crontab 連携・セッション情報タブ・Statusline グローバル適用などの新機能に投資が集中しています。
 
-> **🔧 v3.2.23 — cron-launcher.sh SIGTTOU 停止バグ修正**
-> `timeout --foreground` 追加 (3 箇所) で GNU timeout の `setpgid(0,0)` を無効化し SIGTTOU 停止を解消。`tmux pipe-pane` 削除で DA クエリ応答破壊も修正。本番サーバーで `Tl`→`Sl+` 遷移確認済み。詳細は [`CHANGELOG.md`](./CHANGELOG.md) v3.2.23 節を参照。
+> **🔧 v3.2.24 — Memory MCP 退避機能 + AgentTeams ドキュメントクリーンアップ**
+> PreCompact フック `memory-mcp-evacuation.md` 新規実装。`pre-compact.js` に `evacuation-latest.json` 書き出しを追加し MCP 非接続環境でも再開情報を保全。`08_AgentTeams対応表.md` の未実装機能セクションをクリーンアップ。詳細は [`CHANGELOG.md`](./CHANGELOG.md) v3.2.24 節を参照。
 
 > **📨 v3.2.0 — Cron HTML メールレポート (Visual Recap Mail)**
 > Cron で起動された ClaudeCode セッションの完了時に、**HTML 形式のレポートメール** を Gmail SMTP 経由で送信。アイコン+色付き表組み+実行サマリ(Monitor/Development/Verify/Improvement の出現回数/エラー検出/STABLE 達成)+次フェーズ提案を含む。送信先は `CLAUDEOS_DEFAULT_TO`(未設定時 `CLAUDEOS_SMTP_USER`)で指定し、SMTP 認証情報は `~/.env-claudeos` の Linux 環境変数で管理(config.json には書かない設計)。詳細は [`docs/common/16_HTMLメールレポート設定.md`](./docs/common/16_HTMLメールレポート設定.md) を参照。
@@ -27,7 +27,7 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.2.23** (cron-launcher.sh SIGTTOU 停止バグ修正) — 旧: v3.2.22 (state.json.example スキーマ整合) / v3.2.21 (スキーマ拡張 + README 自動整合) |
+| バージョン | **v3.2.24** (Memory MCP 退避機能 + AgentTeams クリーンアップ) — 旧: v3.2.23 (cron-launcher.sh SIGTTOU 停止バグ修正) / v3.2.22 (state.json.example スキーマ整合) |
 | テスト | **477件** — (Pester, CI) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |

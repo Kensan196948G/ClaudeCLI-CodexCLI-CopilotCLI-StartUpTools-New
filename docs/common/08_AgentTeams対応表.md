@@ -50,10 +50,11 @@
 
 ## 未実装機能
 
-- Memory MCP 退避機能 (PreCompact hook 拡張、ClaudeOS v8.3 予定)
-- Verify 連動 ONBOARDING.md 自動再生成フック (Issue #100)
+(現時点でバックログに残る未実装項目なし)
 
 (旧項目「worktree ベース並列ブランチ運用」「issue / backlog 自動生成」は PR #37 / PR #38 / ClaudeOS v8.2 §10 で実運用化済み)
+(「Verify 連動 ONBOARDING.md 自動再生成フック」は Issue #100 / ClaudeOS v8.2 で実装済み)
+(「Memory MCP 退避機能 (PreCompact hook 拡張)」は Issue #176 / ClaudeOS v8.3 で実装済み)
 
 ## 自動抽出
 

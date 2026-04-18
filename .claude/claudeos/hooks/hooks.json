@@ -1,4 +1,10 @@
 {
+  "PreCompact": [
+    {
+      "name": "memory-mcp-evacuation",
+      "description": "/compact 前に作業状態を Memory MCP へ退避し再開継続性を確保（Memory MCP 未接続時は no-op）"
+    }
+  ],
   "PreToolUse": [
     {
       "name": "agent-risk-check",

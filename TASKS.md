@@ -45,11 +45,11 @@
 36. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.21 state.schema.json 拡張 (frontier / message_bus / learning / debug / onboarding / improvement) + docs/common/18_ARCHITECTURE.md Agent 数修正 (25体) + scripts/update-readme-stats.js + CI README 自動整合ゲート (PR #171)
 37. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#172] v3.2.22 state.json.example スキーマ整合修正 (message_bus 構造 / debug 型) + scripts/validate-state-example.js + CI バリデーションステップ (Issue #172) (PR #173)
 38. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#174] v3.2.23 cron-launcher.sh SIGTTOU 停止バグ修正 — timeout --foreground (3箇所) + tmux pipe-pane 削除 / 本番サーバー検証済み (Issue #174) (PR #175)
+39. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#176] v3.2.24 Memory MCP 退避機能 — memory-mcp-evacuation.md + pre-compact.js evacuation JSON + hooks.json PreCompact + 08_AgentTeams対応表クリーンアップ (Issue #176)
 
 ## Auto Extracted From Agent Teams Matrix
 
-1. [Priority:P1][Owner:Ops][Source:AgentTeamsMatrix] Memory MCP 退避機能 (PreCompact hook 拡張、ClaudeOS v8.3 予定)
-2. [Priority:P1][Owner:QA][Source:AgentTeamsMatrix] Verify 連動 ONBOARDING.md 自動再生成フック (Issue #100)
+(自動抽出対象の未実装機能なし — 全項目実装完了)
 ## GitHub Issues Sync
 
 (No open issues)

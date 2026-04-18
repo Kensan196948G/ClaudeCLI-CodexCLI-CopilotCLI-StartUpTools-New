@@ -2,6 +2,32 @@
 
 # CHANGELOG
 
+## [v3.2.24] - 2026-04-18 — Memory MCP 退避機能 + AgentTeams ドキュメントクリーンアップ
+
+### 🎯 概要
+
+`/compact` 実行前にセッション状態を Memory MCP へ退避する PreCompact フック (`memory-mcp-evacuation.md`) を実装。
+Node.js 側 (`pre-compact.js`) には evacuation JSON 書き出し機能を追加し、MCP 非接続環境でも再開情報を保全。
+`docs/common/08_AgentTeams対応表.md` の `## 未実装機能` セクションから実装済み項目を削除し、
+自動同期スクリプト (`Sync-AgentTeamsBacklog.ps1`) が不要なバックログエントリを生成しなくなった。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `.claude/claudeos/hooks/memory-mcp-evacuation.md` | 新規 — PreCompact フック命令書 (Memory MCP エンティティ書き込み手順) |
+| `.claude/claudeos/scripts/hooks/pre-compact.js` | 拡張 — `writeEvacuationSummary()` 追加、`evacuation-latest.json` を snapshots/ へ書き出し |
+| `.claude/claudeos/hooks/hooks.json` | `PreCompact` セクション追加 — `memory-mcp-evacuation` フック登録 |
+| `docs/common/08_AgentTeams対応表.md` | `## 未実装機能` クリーンアップ — 完了済み 2 項目を実装済み注記へ移動 |
+
+### ✅ Verify
+
+- CI: test-and-validate / PSScriptAnalyzer / Secrets scan — 全 pass
+- Memory MCP 未接続環境: Step 1 で no-op 終了（セッション継続）
+- `evacuation-latest.json` 書き出し: pre-compact.js 単体動作確認済み
+
+---
+
 ## [v3.2.23] - 2026-04-18 — cron-launcher.sh SIGTTOU 停止バグ修正
 
 ### 🎯 概要
