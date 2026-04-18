@@ -1,0 +1,10 @@
+# Default: auto CRLF for Windows text files
+* text=auto
+
+# Shell scripts must always use LF (Linux/macOS execution)
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Other Unix-only files
+Makefile text eol=lf
+*.mk text eol=lf
