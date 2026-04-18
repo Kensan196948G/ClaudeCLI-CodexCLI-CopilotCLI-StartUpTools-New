@@ -13,4 +13,4 @@
 
 ---
 
-ClaudeOS v7.5 は、AI Dev Factory・優先順位AI・GitHub Projects連携・GitHub Actions CI Manager に加え、Auto Loop Intelligence・可視化・ドキュメント自動更新・CodeRabbit + Codex 二重レビュー統合を実装した、完全自律 AI 開発運用基盤である。
+ClaudeOS v8 は、AI Dev Factory・優先順位AI・GitHub Projects連携・GitHub Actions CI Manager に加え、Auto Loop Intelligence・可視化・ドキュメント自動更新・CodeRabbit + Codex 二重レビュー統合を実装した、完全自律 AI 開発運用基盤である。
