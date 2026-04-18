@@ -46,6 +46,7 @@
 37. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#172] v3.2.22 state.json.example スキーマ整合修正 (message_bus 構造 / debug 型) + scripts/validate-state-example.js + CI バリデーションステップ (Issue #172) (PR #173)
 38. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#174] v3.2.23 cron-launcher.sh SIGTTOU 停止バグ修正 — timeout --foreground (3箇所) + tmux pipe-pane 削除 / 本番サーバー検証済み (Issue #174) (PR #175)
 39. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#176] v3.2.24 Memory MCP 退避機能 — memory-mcp-evacuation.md + pre-compact.js evacuation JSON + hooks.json PreCompact + 08_AgentTeams対応表クリーンアップ (Issue #176)
+40. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#178] v3.2.25 Loop レポート reports/ 統合 — build-loop / improve-loop Output 節を reports/.loop-*.md に統一 / テンプレ同期 / reports/README.md ✅ 更新 (Issue #178)
 
 ## Auto Extracted From Agent Teams Matrix
 

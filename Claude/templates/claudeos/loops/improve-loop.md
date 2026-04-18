@@ -13,3 +13,7 @@
 ## 禁止
 
 - 無断の破壊的変更
+
+## Output
+
+`reports/.loop-improve-report.md`

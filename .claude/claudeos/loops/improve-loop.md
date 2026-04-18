@@ -32,8 +32,7 @@
 
 ## Output
 
-- improved code
-- docs
+`reports/.loop-improve-report.md`
 
 ---
 

@@ -2,6 +2,31 @@
 
 # CHANGELOG
 
+## [v3.2.25] - 2026-04-18 — Loop レポート reports/ 統合 — build / improve 出力先統一
+
+### 🎯 概要
+
+`reports/README.md` で「別 Issue」として残されていた Build / Improve ループの出力先を `reports/` へ統合。
+全 4 ループ（monitor / build / verify / improve）の Output 節が `reports/.loop-*.md` に統一された。
+外部コードレビュー評価 #17 の独立 Issue 候補を完全解消（Issue #178）。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `.claude/claudeos/loops/build-loop.md` | Output 節を `reports/.loop-build-report.md` に更新 |
+| `.claude/claudeos/loops/improve-loop.md` | Output 節を `reports/.loop-improve-report.md` に更新 |
+| `Claude/templates/claudeos/loops/build-loop.md` | Output 節追加（テンプレ同期） |
+| `Claude/templates/claudeos/loops/improve-loop.md` | Output 節追加（テンプレ同期） |
+| `reports/README.md` | build / improve 行を ⏳ → ✅ に更新、完了注記追加 |
+
+### ✅ Verify
+
+- CI: test-and-validate / PSScriptAnalyzer / Secrets scan — 全 pass
+- STABLE N=2 達成
+
+---
+
 ## [v3.2.24] - 2026-04-18 — Memory MCP 退避機能 + AgentTeams ドキュメントクリーンアップ
 
 ### 🎯 概要
