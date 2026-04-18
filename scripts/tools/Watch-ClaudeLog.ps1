@@ -5,7 +5,7 @@
     Linux 側の cron-launcher.sh が出力するログファイルを自動検出し
     Windows Terminal の新規タブで tail -f を開始する。
     cron 実行前に起動しておくと、発火を検知して自動でログ表示を開始する。
-    ClaudeOS v3.2.16
+    ClaudeOS v3.2.31
 .PARAMETER NewTab
     Windows Terminal の新規タブで開く（既定: 現在のウィンドウで実行）。
 .PARAMETER PollIntervalSeconds
@@ -182,6 +182,15 @@ function Open-SessionInfoTab {
 Write-WaitHeader
 
 $knownLog = Get-LatestLog
+# 起動時に15分以内のログがある場合は実行中と見なして即監視
+if ($knownLog -match 'cron-(\d{8}-\d{6})\.log$') {
+    $logTime = [datetime]::MinValue
+    $parsed  = [datetime]::TryParseExact($Matches[1], 'yyyyMMdd-HHmmss', $null,
+        [System.Globalization.DateTimeStyles]::None, [ref]$logTime)
+    if ($parsed -and ((Get-Date) - $logTime -lt [timespan]::FromMinutes(15))) {
+        $knownLog = ''  # 新規扱いにして直後のループで検出させる
+    }
+}
 $dotCount = 0
 
 while ($true) {

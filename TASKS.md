@@ -52,6 +52,7 @@
 43. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#182] v3.2.28 CronManager / LogManager ユニットテスト追加 — CronManager.Tests.ps1 27件 / LogManager.Tests.ps1 11件 / 515 PASS
 44. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#183] v3.2.29 Phase 2 ユニットテスト追加 — MenuCommon.Tests.ps1 19件 / SSHHelper.Tests.ps1 7件 / SessionTabManager.Tests.ps1 15件 / 556 PASS
 45. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#184] v3.2.30 Phase 3 ユニットテスト追加 — StatuslineManager.Tests.ps1 7件 / McpHealthCheck.Tests.ps1 6件 (InModuleScope) / 569 PASS
+46. [DONE] [Priority:P1][Owner:Developer][Source:GitHub#185+#186] v3.2.31 Watch-ClaudeLog 起動時セッション検出修正 + cron-launcher.sh tmux -e 明示 env var 渡し / PROMPT_ARG サイドカーファイル化 / サーバー反映済み
 
 ## Auto Extracted From Agent Teams Matrix
 
@@ -59,6 +60,12 @@
 ## GitHub Issues Sync
 
 (No open issues)
+
+
+
+
+
+
 
 
 

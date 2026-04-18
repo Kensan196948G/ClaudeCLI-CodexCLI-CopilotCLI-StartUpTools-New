@@ -2,6 +2,25 @@
 
 # CHANGELOG
 
+## [v3.2.31] - 2026-04-18 — Watch-ClaudeLog 起動時セッション検出修正 + cron-launcher tmux -e 修正 (Issue #185 + #186)
+
+### 🎯 概要
+
+Watch-ClaudeLog.ps1 の起動時セッション検出漏れ (Issue #185) と cron-launcher.sh の tmux env var 継承バグ (Issue #186) を修正。本番サーバー反映済み。569/569 PASS 継続。
+
+### 変更ファイル
+
+| ファイル | 変更内容 |
+|---------|---------|
+| `scripts/tools/Watch-ClaudeLog.ps1` | 起動時に最新ログが15分以内なら即監視開始 (`TryParseExact` 使用) |
+| `Claude/templates/linux/cron-launcher.sh` | `tmux new-session -e` で env var 明示渡し + PROMPT_ARG サイドカーファイル化 |
+| `TASKS.md` | エントリ 46 追加 |
+
+### CI
+
+- 569/569 PASS
+- PSScriptAnalyzer 警告 0 件
+
 ## [v3.2.30] - 2026-04-18 — Phase 3 ユニットテスト追加 — StatuslineManager / McpHealthCheck (Issue #184)
 
 ### 🎯 概要

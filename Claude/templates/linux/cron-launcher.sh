@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # cron-launcher.sh - Linux 側で ClaudeCode を cron から起動するラッパ
-# ClaudeOS v3.2.16
+# ClaudeOS v3.2.31
 #
 # Usage: cron-launcher.sh <project> <duration-minutes>
 #
@@ -102,7 +102,7 @@ finalize() {
   if command -v tmux >/dev/null 2>&1; then
     tmux kill-session -t "claudeos-${SAFE_PROJECT}" 2>/dev/null || true
   fi
-  rm -f "$CLAUDE_WRAPPER" "$CLAUDE_EXIT_FILE"
+  rm -f "$CLAUDE_WRAPPER" "$CLAUDE_EXIT_FILE" "${CLAUDE_WRAPPER%.sh}.prompt"
 
   # --- v3.2.0: HTML レポートメール送信 ---
   # 明示的トグル CLAUDEOS_EMAIL_ENABLED=1 が必要。誤送信防止のため既定 off。
@@ -141,13 +141,19 @@ if [[ -f "$PROJECT_DIR/.claude/START_PROMPT.md" ]]; then
   PROMPT_ARG="$(cat "$PROJECT_DIR/.claude/START_PROMPT.md")"
 fi
 
-# wrapper script: env var 経由で引数を安全に渡す（tmux new-session での引用符崩れ対策）
+# PROMPT_ARG をサイドカーファイルへ書き出す（tmux env var 継承バグ / 長大引数問題を回避）
+PROMPT_FILE="${CLAUDE_WRAPPER%.sh}.prompt"
+printf '%s' "$PROMPT_ARG" > "$PROMPT_FILE"
+
+# wrapper script: -e フラグ経由で env var を渡す（tmux サーバーのグローバル環境に依存しない）
 # set -e を使わず claude_exit に明示的に格納する（非0終了でも wait-for -S を必ず実行するため）
 cat > "$CLAUDE_WRAPPER" <<'WRAPPER_EOF'
 #!/usr/bin/env bash
 claude_exit=0
-if [[ -n "${_CLAUDEOS_PROMPT_ARG:-}" ]]; then
-  timeout --foreground "${_CLAUDEOS_DURATION_SEC}s" claude --dangerously-skip-permissions "${_CLAUDEOS_PROMPT_ARG}" || claude_exit=$?
+_prompt_file="${_CLAUDEOS_PROMPT_FILE:-}"
+if [[ -f "$_prompt_file" ]] && [[ -s "$_prompt_file" ]]; then
+  _prompt_content="$(cat "$_prompt_file")"
+  timeout --foreground "${_CLAUDEOS_DURATION_SEC}s" claude --dangerously-skip-permissions "$_prompt_content" || claude_exit=$?
 else
   timeout --foreground "${_CLAUDEOS_DURATION_SEC}s" claude --dangerously-skip-permissions || claude_exit=$?
 fi
@@ -157,18 +163,21 @@ tmux wait-for -S "${_CLAUDEOS_TMUX_DONE}"
 WRAPPER_EOF
 chmod +x "$CLAUDE_WRAPPER"
 
-export _CLAUDEOS_PROMPT_ARG="$PROMPT_ARG"
-export _CLAUDEOS_DURATION_SEC="$DURATION_SEC"
-export _CLAUDEOS_EXIT_FILE="$CLAUDE_EXIT_FILE"
-export _CLAUDEOS_TMUX_DONE="done-${SAFE_PROJECT}"
+_TMUX_DONE="done-${SAFE_PROJECT}"
 
 if command -v tmux >/dev/null 2>&1 && [[ "${CLAUDEOS_TMUX:-1}" == "1" ]]; then
   # Claude を tmux セッション内で起動（TTY あり → attach で UI 閲覧可能）
+  # -e で env var を明示渡し（tmux サーバーのグローバル環境に依存しない）
   tmux kill-session -t "$TMUX_SESSION" 2>/dev/null || true
-  tmux new-session -d -s "$TMUX_SESSION" -x 220 -y 50 "$CLAUDE_WRAPPER"
+  tmux new-session -d -s "$TMUX_SESSION" -x 220 -y 50 \
+    -e "_CLAUDEOS_DURATION_SEC=$DURATION_SEC" \
+    -e "_CLAUDEOS_EXIT_FILE=$CLAUDE_EXIT_FILE" \
+    -e "_CLAUDEOS_TMUX_DONE=$_TMUX_DONE" \
+    -e "_CLAUDEOS_PROMPT_FILE=$PROMPT_FILE" \
+    "$CLAUDE_WRAPPER"
   echo "[cron-launcher] tmux attach -t $TMUX_SESSION  (UI閲覧用)" >> "$LOG_FILE"
   # tmux セッション終了まで待機
-  tmux wait-for "${_CLAUDEOS_TMUX_DONE}"
+  tmux wait-for "$_TMUX_DONE"
 else
   # tmux 無効時は従来通り TTY なし実行
   timeout --foreground "${DURATION_SEC}s" claude --dangerously-skip-permissions ${PROMPT_ARG:+"$PROMPT_ARG"} >> "$LOG_FILE" 2>&1
