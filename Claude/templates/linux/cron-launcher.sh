@@ -147,9 +147,9 @@ cat > "$CLAUDE_WRAPPER" <<'WRAPPER_EOF'
 #!/usr/bin/env bash
 claude_exit=0
 if [[ -n "${_CLAUDEOS_PROMPT_ARG:-}" ]]; then
-  timeout "${_CLAUDEOS_DURATION_SEC}s" claude --dangerously-skip-permissions "${_CLAUDEOS_PROMPT_ARG}" || claude_exit=$?
+  timeout --foreground "${_CLAUDEOS_DURATION_SEC}s" claude --dangerously-skip-permissions "${_CLAUDEOS_PROMPT_ARG}" || claude_exit=$?
 else
-  timeout "${_CLAUDEOS_DURATION_SEC}s" claude --dangerously-skip-permissions || claude_exit=$?
+  timeout --foreground "${_CLAUDEOS_DURATION_SEC}s" claude --dangerously-skip-permissions || claude_exit=$?
 fi
 echo "$claude_exit" > "${_CLAUDEOS_EXIT_FILE}"
 # 終了コード書き込み後に親 shell へ通知（失敗時もここまで必ず到達する）
@@ -166,14 +166,12 @@ if command -v tmux >/dev/null 2>&1 && [[ "${CLAUDEOS_TMUX:-1}" == "1" ]]; then
   # Claude を tmux セッション内で起動（TTY あり → attach で UI 閲覧可能）
   tmux kill-session -t "$TMUX_SESSION" 2>/dev/null || true
   tmux new-session -d -s "$TMUX_SESSION" -x 220 -y 50 "$CLAUDE_WRAPPER"
-  # tmux pipe-pane でセッション出力をログファイルへも書き込む
-  tmux pipe-pane -t "$TMUX_SESSION" -o "cat >> '$LOG_FILE'"
   echo "[cron-launcher] tmux attach -t $TMUX_SESSION  (UI閲覧用)" >> "$LOG_FILE"
   # tmux セッション終了まで待機
   tmux wait-for "${_CLAUDEOS_TMUX_DONE}"
 else
   # tmux 無効時は従来通り TTY なし実行
-  timeout "${DURATION_SEC}s" claude --dangerously-skip-permissions ${PROMPT_ARG:+"$PROMPT_ARG"} >> "$LOG_FILE" 2>&1
+  timeout --foreground "${DURATION_SEC}s" claude --dangerously-skip-permissions ${PROMPT_ARG:+"$PROMPT_ARG"} >> "$LOG_FILE" 2>&1
 fi
 
 # wrapper が書いた終了コードを読み取り、EXIT トラップへ伝播
