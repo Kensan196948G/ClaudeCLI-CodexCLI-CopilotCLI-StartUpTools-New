@@ -100,12 +100,21 @@ function Show-SessionFrame {
     )
     Clear-Host
     # DateTimeOffset でタイムゾーン情報を保持（Linux `date -Iseconds` はタイムゾーン付きを返す）
-    $start     = [datetimeoffset]::Parse($Session.start_time)
-    $end       = [datetimeoffset]::Parse($Session.end_time_planned)
-    $now       = [datetimeoffset]::Now
-    $elapsed   = $now - $start
-    $remaining = $end - $now
-    $duration  = [TimeSpan]::FromMinutes($Session.max_duration_minutes)
+    $start    = [datetimeoffset]::Parse($Session.start_time)
+    $duration = [TimeSpan]::FromMinutes($Session.max_duration_minutes)
+    $now      = [datetimeoffset]::Now
+    $elapsed  = $now - $start
+
+    # end_time_planned ではなく start_time + max_duration_minutes を信頼できる終了時刻として使う。
+    # end_time_planned は Linux 側の TZ オフセット不整合で UTC ズレを起こす場合があるため。
+    $endComputed = $start + $duration
+    $remaining   = $endComputed - $now
+
+    # end_time_planned と計算値の乖離を検出（5 分超なら警告）
+    $endRaw = [datetimeoffset]::Parse($Session.end_time_planned)
+    $drift  = [Math]::Abs(($endRaw - $endComputed).TotalMinutes)
+    $showDriftWarn = $drift -gt 5
+
     $statusColor = Get-StatusColor -Status $Session.status
 
     Write-Host ''
@@ -117,9 +126,12 @@ function Show-SessionFrame {
     Write-Host ("   Host       : " + $LinuxHost) -ForegroundColor DarkGray
     Write-Host ("   Trigger    : " + $Session.trigger) -ForegroundColor Gray
     Write-Host ''
-    Write-Host ("   開始時刻   : " + $start.ToString('yyyy-MM-dd HH:mm:ss')) -ForegroundColor White
-    Write-Host ("   終了予定   : " + $end.ToString('yyyy-MM-dd HH:mm:ss')) -ForegroundColor White
+    Write-Host ("   開始時刻   : " + $start.ToLocalTime().ToString('yyyy-MM-dd HH:mm:ss')) -ForegroundColor White
+    Write-Host ("   終了予定   : " + $endComputed.ToLocalTime().ToString('yyyy-MM-dd HH:mm:ss')) -ForegroundColor White
     Write-Host ("   作業時間   : " + ("{0}h {1:00}m" -f [int]$duration.TotalHours, $duration.Minutes)) -ForegroundColor White
+    if ($showDriftWarn) {
+        Write-Host ("   ⚠ end_time_planned ズレ検出: JSON=$($endRaw.ToString('HH:mm:sszzz')) / 計算値=$($endComputed.ToString('HH:mm:sszzz')) / 差={0:F0}分" -f $drift) -ForegroundColor Red
+    }
     Write-Host ''
     Write-Host ("   経過       : " + (Format-Duration -Span $elapsed)) -ForegroundColor Yellow
     Write-Host ("   残り       : " + (Format-Duration -Span $remaining)) -ForegroundColor Yellow
