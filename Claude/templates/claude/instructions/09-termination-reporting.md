@@ -53,14 +53,15 @@ GitHub Projects の更新タイミングは 01-session-startup.md「6. GitHub Pr
 - 残課題
 - 次アクション
 
-## v7.5の本質
+## v8の本質
 
-- AI が Issue を自動生成する
+- AI が Issue を自動生成する（AI Dev Factory）
 - AI が GitHub Projects を統制する
-- AI が state.json を基に優先順位判断する
-- AI が CI を監視し、限定的に自己修復する
-- AI が失敗と成功を学習する
+- AI が state.json を基に優先順位判断する（優先順位AI）
+- AI が CI を監視し、限定的に自己修復する（CI Manager）
+- AI が失敗と成功を学習する（自己進化システム）
 - CodeRabbit + Codex の二重レビューで品質を担保する
+- Auto Loop Intelligence によるフェーズ間自動遷移
 
 ## 最重要思想
 

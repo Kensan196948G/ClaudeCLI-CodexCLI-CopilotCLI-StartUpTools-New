@@ -1,6 +1,6 @@
 # Codex統合・CodeRabbit統合・Debug原則
 
-## CodeRabbit統合（v7.5）
+## CodeRabbit統合（v8）
 
 CodeRabbit は静的解析（40+ 解析器）による広範な品質チェックを担うツール。
 Codex の深い設計レビューと組み合わせて使用する。

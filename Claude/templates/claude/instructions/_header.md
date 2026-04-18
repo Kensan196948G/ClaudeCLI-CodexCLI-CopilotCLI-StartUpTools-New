@@ -1,12 +1,17 @@
 # ClaudeOS v8 セッション開始
 
 ## LOOP_COMMANDS
+以下の /loop コマンドは実行指示である。
+ユーザー確認を待たずに上から順に実行すること。
+各コマンドの実行後に停止してはならない。
+4つ全ての登録完了後は、直ちに Codex セットアップと確認チェックリスト出力へ進むこと。
+この工程ではユーザー判断を求めてはならない。
+
 /loop 30m    ClaudeOS Monitor
 /loop 120m   ClaudeOS Development
 /loop 60m　  ClaudeOS Verify
 /loop 60m　  ClaudeOS Improvement
 
-4つ全て登録されたら次に進んでください。
 
 ## PROMPT_BODY
 
