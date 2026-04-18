@@ -56,6 +56,8 @@
 47. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#188] v3.2.32 tmux ゴーストセッション修正 — Open-TmuxAttachTab: new-session -A → attach-session -t (Issue #188) (PR #189)
 48. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.33 Phase 4 ユニットテスト追加 — AgentTeams.Tests.ps1 19件 / IssueSyncManager.Tests.ps1 24件 / SelfEvolution.Tests.ps1 17件 / WorktreeManager.Tests.ps1 3件 / ArchitectureCheck.Tests.ps1 18件 / 計 81件 / 650 PASS (PR #190)
 49. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.34 Phase 4 テストファイル UTF-8 BOM 追加 — AgentTeams.Tests.ps1 / ArchitectureCheck.Tests.ps1 / IssueSyncManager.Tests.ps1 BOM 追加 / PSScriptAnalyzer 警告ゼロ回復 / 650 PASS (PR #193)
+50. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.35 AgentTeams.psm1 モノリス分割 — 506L → AgentDefinition.ps1 / AgentTeamBuilder.ps1 / AgentCapabilityMatrix.ps1 + psm1 薄型 dot-source オーケストレーター化 / 650 PASS (commit 733b11d)
+51. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.36 Watch-SessionInfoSSH TZ オフセット不整合修正 — end_time_planned の TZ ズレで残り時間が 1 時間超過する問題を start_time + max_duration_minutes 計算に切替 / ToLocalTime() 表示統一 / ドリフト警告追加 / 650 PASS (commit d09fad7)
 
 ## Auto Extracted From Agent Teams Matrix
 
@@ -63,6 +65,9 @@
 ## GitHub Issues Sync
 
 (No open issues)
+
+
+
 
 
 

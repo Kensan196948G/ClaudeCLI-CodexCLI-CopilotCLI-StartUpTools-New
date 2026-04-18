@@ -7,8 +7,8 @@
 > **📌 v3.1.0 で Claude Code 専用ツールに整理**
 > v3.1.0 より、Codex CLI / GitHub Copilot CLI の起動メニュー (S2/S3/L2/L3) は削除されました。本ツールは **Claude Code 専用の自律開発ランチャー** として位置づけを明確化し、Linux crontab 連携・セッション情報タブ・Statusline グローバル適用などの新機能に投資が集中しています。
 
-> **🧪 v3.2.34 — Phase 4 テストファイル UTF-8 BOM 追加 (PSScriptAnalyzer 警告解消)**
-> v3.2.33 で追加した Phase 4 テストファイル 3 件に UTF-8 BOM を追加し `PSUseBOMForUnicodeEncodedFile` 警告を解消。PSScriptAnalyzer 警告 0 件 / 650/650 PASS 達成。詳細は [`CHANGELOG.md`](./CHANGELOG.md) v3.2.34 節を参照。
+> **🔧 v3.2.36 — Watch-SessionInfoSSH TZ オフセット不整合修正**
+> Linux の `end_time_planned` が TZ オフセット不整合で 1 時間超過して表示される問題を修正。`start_time + max_duration_minutes` を信頼できる終了時刻として使用し、`ToLocalTime()` で表示を統一。TZ ズレ検出警告 (5 分超) も追加。v3.2.35: AgentTeams.psm1 を 3 サブファイルに分割 (506L → モジュール化)。詳細は [`CHANGELOG.md`](./CHANGELOG.md) を参照。
 
 > **📨 v3.2.0 — Cron HTML メールレポート (Visual Recap Mail)**
 > Cron で起動された ClaudeCode セッションの完了時に、**HTML 形式のレポートメール** を Gmail SMTP 経由で送信。アイコン+色付き表組み+実行サマリ(Monitor/Development/Verify/Improvement の出現回数/エラー検出/STABLE 達成)+次フェーズ提案を含む。送信先は `CLAUDEOS_DEFAULT_TO`(未設定時 `CLAUDEOS_SMTP_USER`)で指定し、SMTP 認証情報は `~/.env-claudeos` の Linux 環境変数で管理(config.json には書かない設計)。詳細は [`docs/common/16_HTMLメールレポート設定.md`](./docs/common/16_HTMLメールレポート設定.md) を参照。
@@ -27,8 +27,8 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.2.34** (Phase 4 テスト BOM 修正) — 旧: v3.2.33 (Phase 4 ユニットテスト + SelfEvolution バグ修正) / v3.2.32 (tmux ゴーストセッション修正) |
-| テスト | **477件** — Pester (Unit 17 / Integration 11 / Smoke 1) |
+| バージョン | **v3.2.36** (Watch-SessionInfoSSH TZ 修正) — 旧: v3.2.35 (AgentTeams 分割) / v3.2.34 (Phase 4 テスト BOM 修正) |
+| テスト | **650件** — Pester (Unit 17 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |
 | Agents | **25体** の特化サブエージェント (2026Q2 棚卸し後、追加復元済み) |
@@ -93,7 +93,7 @@
 | 動詞 | コマンド | 目的 |
 |---|---|---|
 | **lint** | `Invoke-ScriptAnalyzer -Path . -Recurse -Severity Error` | PSScriptAnalyzer による静的解析（Error 粒度で CI ゲート、Warning は非ブロッキング） |
-| **test** | `Invoke-Pester .\tests -CI` | Pester 全テスト（現在 477 件 / Unit + E2E）。`-CI` で `testResults.xml` 生成 |
+| **test** | `Invoke-Pester .\tests -CI` | Pester 全テスト（現在 650 件 / Unit + E2E）。`-CI` で `testResults.xml` 生成 |
 | **build** | `.\scripts\main\Start-ClaudeOS.ps1 -DryRun` | ブートシーケンス検証（Step 1 〜 9 を実行せず設定のみ確認） |
 | **security** | `.\scripts\test\Test-McpHealth.ps1` + `gitleaks detect --source .`（CI と同等目的） | MCP サーバーヘルス + secret 漏洩スキャン（CI では [`security-scan.yml`](./.github/workflows/security-scan.yml) が gitleaks 実行） |
 
@@ -230,7 +230,7 @@ flowchart TD
 | 🐍 PTY Bridge | 🔧 共通 | SSH経由の Claude Code 操作を堅牢にサポート |
 | ⚙️ 一元設定 | 🔧 共通 | `config/config.json` で対応ツールを一元管理 |
 | 🩺 診断ツール | 🔧 共通 | `Test-AllTools.ps1` で環境を一括チェック |
-| ⚡ CI/CD | 🔧 共通 | GitHub Actions による自動テスト (Pester 477件 — 17 test files) |
+| ⚡ CI/CD | 🔧 共通 | GitHub Actions による自動テスト (Pester 650件 — 17 test files) |
 | 🧠 ClaudeOS カーネル | ⭐ Claude 専用 | 25体のエージェント + 4フック + 34コマンド |
 | 🔌 MCP ヘルスチェック | ⭐ Claude 専用 | `McpHealthCheck.psm1` で4サーバーの起動・接続・状態診断 |
 | 🤖 Agent Teams ランタイム | ⭐ Claude 専用 | `AgentTeams.psm1` でタスク分析→Team自動構成→能力マトリクス→可視化 |
@@ -505,7 +505,7 @@ scripts/helpers/     PTY bridge 等のヘルパー
 scripts/templates/   各ツール向けテンプレート
 scripts/test/        診断スクリプト
 scripts/tools/       TASKS同期・バックログ管理
-tests/               Pester テスト (17 files / 477件)
+tests/               Pester テスト (17 files / 650件)
 Claude/              ClaudeOS 互換ポリシー群
 Codex/               Codex AGENTS.md
 .claude/claudeos/    ClaudeOS カーネル（198ファイル、配備先 — 編集元は Claude/templates/claudeos/）
