@@ -2,6 +2,30 @@
 
 # CHANGELOG
 
+## [v3.2.27] - 2026-04-18 — PSScriptAnalyzer 警告ゼロ達成 (BOM + UnusedParam 修正)
+
+### 🎯 概要
+
+v3.2.17 追加の `Watch-ClaudeLog.ps1` / `Watch-SessionInfoSSH.ps1` に UTF-8 BOM を追加（`PSUseBOMForUnicodeEncodedFile` 残存 2 件解消）。
+`Diagnostics.Tests.ps1` の Pester Mock `param()` 宣言パラメータに `$null = $Param` 参照を追加し `PSReviewUnusedParameter` 12 件を解消。
+`PSAvoidUsingWriteHost` を除く全警告がゼロになった。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/tools/Watch-ClaudeLog.ps1` | UTF-8 BOM 追加 |
+| `scripts/tools/Watch-SessionInfoSSH.ps1` | UTF-8 BOM 追加 |
+| `tests/integration/Diagnostics.Tests.ps1` | Mock param() に $null = $Param 追加 (12 箇所) |
+
+### ✅ Verify
+
+- PSScriptAnalyzer: 0 警告 (WriteHost 除く)
+- CI: 477/477 PASS
+- STABLE N=2 達成
+
+---
+
 ## [v3.2.26] - 2026-04-18 — tests/ サブディレクトリ分類 — unit / integration / smoke
 
 ### 🎯 概要
