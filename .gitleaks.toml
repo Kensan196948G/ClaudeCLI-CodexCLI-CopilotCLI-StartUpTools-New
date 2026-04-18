@@ -1,0 +1,7 @@
+title = "ClaudeCode-StartUpTools-New gitleaks config"
+
+[allowlist]
+description = "Unit test fixtures contain intentional fake secrets for ArchitectureCheck rule testing"
+paths = [
+    '''tests/unit/ArchitectureCheck\.Tests\.ps1'''
+]

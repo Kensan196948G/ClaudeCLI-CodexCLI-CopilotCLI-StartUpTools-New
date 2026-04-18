@@ -68,8 +68,9 @@ function Save-EvolutionRecord {
         next_actions = $NextActions
     }
 
-    $storePath = if ($StorePath) { $StorePath } else { Get-EvolutionStorePath }
-    $fileName  = "evolution_${dateStr}_${sessionId}.json"
+    $resolvedBase = if ($StorePath) { $StorePath } else { $script:DefaultEvolutionDir }
+    $storePath    = Get-EvolutionStorePath -BasePath $resolvedBase
+    $fileName     = "evolution_${dateStr}_${sessionId}.json"
     $filePath  = Join-Path $storePath $fileName
 
     $record | ConvertTo-Json -Depth 5 | Set-Content -Path $filePath -Encoding UTF8
