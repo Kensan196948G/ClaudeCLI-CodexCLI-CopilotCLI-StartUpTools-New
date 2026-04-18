@@ -4,7 +4,7 @@
 # ============================================================
 
 BeforeAll {
-    Import-Module "$PSScriptRoot\..\scripts\lib\LauncherCommon.psm1" -Force -DisableNameChecking
+    Import-Module "$PSScriptRoot\..\..\scripts\lib\LauncherCommon.psm1" -Force -DisableNameChecking
 }
 
 Describe 'Find-AvailableDriveLetter' {

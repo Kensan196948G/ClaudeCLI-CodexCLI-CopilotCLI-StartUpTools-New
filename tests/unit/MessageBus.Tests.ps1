@@ -5,7 +5,7 @@
 # ============================================================
 
 BeforeAll {
-    $script:RepoRoot  = Split-Path -Parent $PSScriptRoot
+    $script:RepoRoot  = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
     $script:ModulePath = Join-Path $script:RepoRoot 'scripts\lib\MessageBus.psm1'
     Import-Module $script:ModulePath -Force
 

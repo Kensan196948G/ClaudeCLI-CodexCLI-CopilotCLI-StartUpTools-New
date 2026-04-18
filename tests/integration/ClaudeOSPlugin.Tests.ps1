@@ -1,5 +1,5 @@
 ﻿BeforeAll {
-    $script:RepoRoot = Split-Path -Parent $PSScriptRoot
+    $script:RepoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
     $script:PluginRoot = Join-Path $script:RepoRoot '.claude\claudeos'
 }
 
