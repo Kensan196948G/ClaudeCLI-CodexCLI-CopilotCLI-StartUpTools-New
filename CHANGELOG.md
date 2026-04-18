@@ -2,6 +2,26 @@
 
 # CHANGELOG
 
+## [v3.2.28] - 2026-04-18 — CronManager / LogManager ユニットテスト追加 (Issue #182)
+
+### 🎯 概要
+
+未テスト lib モジュール解消 Phase 1。`CronManager.psm1` 純粋ロジック関数 4 種 + `Get-ClaudeOSCronEntry` (Mock 使用) を 27 テスト、`LogManager.psm1` `Get-LogSummary` / `Invoke-LogRotation` を 11 テストでカバー。既存 477 + 新規 38 = 515 PASS。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `tests/unit/CronManager.Tests.ps1` | 新規追加 — 27 テスト (Format-CronExpression / Get-DayOfWeekLabel / New-CronEntryId / Format-CronEntryForDisplay / Get-ClaudeOSCronEntry) |
+| `tests/unit/LogManager.Tests.ps1` | 新規追加 — 11 テスト (Get-LogSummary / Invoke-LogRotation) |
+
+### ✅ テスト結果
+
+- CI: 515/515 PASS
+- STABLE N=2
+
+---
+
 ## [v3.2.27] - 2026-04-18 — PSScriptAnalyzer 警告ゼロ達成 (BOM + UnusedParam 修正)
 
 ### 🎯 概要
