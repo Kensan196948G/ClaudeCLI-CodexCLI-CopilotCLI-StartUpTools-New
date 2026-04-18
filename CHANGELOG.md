@@ -2,6 +2,28 @@
 
 # CHANGELOG
 
+## [v3.2.29] - 2026-04-18 — Phase 2 ユニットテスト追加 — MenuCommon / SSHHelper / SessionTabManager (Issue #183)
+
+### 🎯 概要
+
+未テスト lib モジュール解消 Phase 2。`MenuCommon.psm1` 純粋関数 3 種 19 テスト、`SSHHelper.psm1` `ConvertTo-EscapedSSHArgument` 7 テスト、`SessionTabManager.psm1` `Get-SessionDir` / `New-SessionId` / `New-SessionInfo` / `Get-ActiveSession` 等 15 テストを追加。既存 515 + 新規 41 = 556 PASS。PSScriptAnalyzer 警告 0 件継続。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `tests/unit/MenuCommon.Tests.ps1` | 新規追加 — 19 テスト (ConvertTo-MenuRecentToolFilter / ConvertTo-MenuRecentSortMode / Get-MenuRecentFilterSummary) |
+| `tests/unit/SSHHelper.Tests.ps1` | 新規追加 — 7 テスト (ConvertTo-EscapedSSHArgument・エスケープ境界値) |
+| `tests/unit/SessionTabManager.Tests.ps1` | 新規追加 — 15 テスト (Get-SessionDir / New-SessionId / New-SessionInfo / Save-SessionInfo / Get-SessionInfo / Get-ActiveSession) |
+
+### ✅ テスト結果
+
+- CI: 556/556 PASS
+- PSScriptAnalyzer: 0 warnings
+- STABLE N=2
+
+---
+
 ## [v3.2.28] - 2026-04-18 — CronManager / LogManager ユニットテスト追加 (Issue #182)
 
 ### 🎯 概要
