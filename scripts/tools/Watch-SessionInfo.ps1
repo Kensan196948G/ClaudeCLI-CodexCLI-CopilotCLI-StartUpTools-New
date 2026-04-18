@@ -43,13 +43,15 @@ function Show-SessionFrame {
     param([pscustomobject]$Session)
 
     Clear-Host
-    $start = [datetime]::Parse($Session.start_time)
-    $end = [datetime]::Parse($Session.end_time_planned)
-    $now = Get-Date
-
-    $elapsed = $now - $start
-    $remaining = $end - $now
+    # Use DateTimeOffset to preserve TZ info from Linux `date -Iseconds` output.
+    # Compute end from start + max_duration_minutes to avoid end_time_planned TZ drift.
+    $start    = [datetimeoffset]::Parse($Session.start_time)
     $duration = [TimeSpan]::FromMinutes($Session.max_duration_minutes)
+    $now      = [datetimeoffset]::Now
+
+    $elapsed       = $now - $start
+    $endComputed   = $start + $duration
+    $remaining     = $endComputed - $now
 
     $statusColor = Get-StatusColor -Status $Session.status
     $title = "Claude Session Info — $($Session.project)"
@@ -62,8 +64,8 @@ function Show-SessionFrame {
     Write-Host ("   Session ID : " + $Session.sessionId) -ForegroundColor DarkGray
     Write-Host ("   Trigger    : " + $Session.trigger) -ForegroundColor Gray
     Write-Host ""
-    Write-Host ("   開始時刻   : " + $start.ToString('yyyy-MM-dd HH:mm:ss')) -ForegroundColor White
-    Write-Host ("   終了予定   : " + $end.ToString('yyyy-MM-dd HH:mm:ss')) -ForegroundColor White
+    Write-Host ("   開始時刻   : " + $start.ToLocalTime().ToString('yyyy-MM-dd HH:mm:ss')) -ForegroundColor White
+    Write-Host ("   終了予定   : " + $endComputed.ToLocalTime().ToString('yyyy-MM-dd HH:mm:ss')) -ForegroundColor White
     Write-Host ("   作業時間   : " + ("{0}h {1:00}m ({2} 分)" -f [int]$duration.TotalHours, $duration.Minutes, $Session.max_duration_minutes)) -ForegroundColor White
     Write-Host ""
     Write-Host ("   経過       : " + (Format-Duration -Span $elapsed)) -ForegroundColor Yellow
