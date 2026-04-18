@@ -41,8 +41,8 @@ Describe 'Get-DriveMappingReport' {
         Mock Test-Path { $false }
         Mock Get-ChildItem { @() }
         Mock Get-ItemProperty { [pscustomobject]@{} }
-        Mock Get-SmbMapping { param($ErrorAction) $null }
-        Mock Get-PSDrive { param($Name, $ErrorAction) $null }
+        Mock Get-SmbMapping { param($ErrorAction) $null = $ErrorAction; $null }
+        Mock Get-PSDrive { param($Name, $ErrorAction) $null = $Name; $null = $ErrorAction; $null }
         Mock Get-NetUseLine { $null }
 
         $configInfo = [pscustomobject]@{
@@ -92,8 +92,8 @@ Describe 'Get-DriveMappingReport' {
         Mock Test-Path { $false }
         Mock Get-ChildItem { @() }
         Mock Get-ItemProperty { [pscustomobject]@{} }
-        Mock Get-SmbMapping { param($ErrorAction) $null }
-        Mock Get-PSDrive { param($Name, $ErrorAction) $null }
+        Mock Get-SmbMapping { param($ErrorAction) $null = $ErrorAction; $null }
+        Mock Get-PSDrive { param($Name, $ErrorAction) $null = $Name; $null = $ErrorAction; $null }
         Mock Get-NetUseLine { 'System error 1219 has occurred. credential conflict' }
 
         $configInfo = [pscustomobject]@{
@@ -112,8 +112,8 @@ Describe 'Get-DriveMappingReport' {
         Mock Test-Path { $false }
         Mock Get-ChildItem { @() }
         Mock Get-ItemProperty { [pscustomobject]@{} }
-        Mock Get-SmbMapping { param($ErrorAction) $null }
-        Mock Get-PSDrive { param($Name, $ErrorAction) $null }
+        Mock Get-SmbMapping { param($ErrorAction) $null = $ErrorAction; $null }
+        Mock Get-PSDrive { param($Name, $ErrorAction) $null = $Name; $null = $ErrorAction; $null }
         Mock Get-NetUseLine { 'System error 53 has occurred. The network path was not found.' }
 
         $configInfo = [pscustomobject]@{
@@ -132,8 +132,8 @@ Describe 'Get-DriveMappingReport' {
         Mock Test-Path { $false }
         Mock Get-ChildItem { @() }
         Mock Get-ItemProperty { [pscustomobject]@{ RemotePath = '\\server\share' } }
-        Mock Get-SmbMapping { param($ErrorAction) $null }
-        Mock Get-PSDrive { param($Name, $ErrorAction) $null }
+        Mock Get-SmbMapping { param($ErrorAction) $null = $ErrorAction; $null }
+        Mock Get-PSDrive { param($Name, $ErrorAction) $null = $Name; $null = $ErrorAction; $null }
         Mock Get-NetUseLine { $null }
         Mock Resolve-DnsName { [pscustomobject]@{ Name = 'server' } }
         Mock Test-Connection { $true }
