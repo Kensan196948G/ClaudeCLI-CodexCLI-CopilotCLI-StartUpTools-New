@@ -7,8 +7,8 @@
 > **📌 v3.1.0 で Claude Code 専用ツールに整理**
 > v3.1.0 より、Codex CLI / GitHub Copilot CLI の起動メニュー (S2/S3/L2/L3) は削除されました。本ツールは **Claude Code 専用の自律開発ランチャー** として位置づけを明確化し、Linux crontab 連携・セッション情報タブ・Statusline グローバル適用などの新機能に投資が集中しています。
 
-> **🔧 v3.2.31 — Watch-ClaudeLog 起動時セッション検出修正 + cron-launcher tmux -e 修正**
-> Watch-ClaudeLog.ps1 起動時15分以内のセッションを即検出 + cron-launcher.sh tmux -e 明示渡し + PROMPT_ARG サイドカーファイル化。569/569 PASS 継続。詳細は [`CHANGELOG.md`](./CHANGELOG.md) v3.2.31 節を参照。
+> **🔧 v3.2.32 — Watch-ClaudeLog tmux ゴーストセッション修正**
+> `Open-TmuxAttachTab` を `tmux attach-session -t` に変更し、セッション終了後のゴーストセッション生成を防止。569/569 PASS 継続。詳細は [`CHANGELOG.md`](./CHANGELOG.md) v3.2.32 節を参照。
 
 > **📨 v3.2.0 — Cron HTML メールレポート (Visual Recap Mail)**
 > Cron で起動された ClaudeCode セッションの完了時に、**HTML 形式のレポートメール** を Gmail SMTP 経由で送信。アイコン+色付き表組み+実行サマリ(Monitor/Development/Verify/Improvement の出現回数/エラー検出/STABLE 達成)+次フェーズ提案を含む。送信先は `CLAUDEOS_DEFAULT_TO`(未設定時 `CLAUDEOS_SMTP_USER`)で指定し、SMTP 認証情報は `~/.env-claudeos` の Linux 環境変数で管理(config.json には書かない設計)。詳細は [`docs/common/16_HTMLメールレポート設定.md`](./docs/common/16_HTMLメールレポート設定.md) を参照。
@@ -27,7 +27,7 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.2.31** (Watch-ClaudeLog 起動時検出修正 + tmux -e 修正) — 旧: v3.2.30 (Phase 3 ユニットテスト) / v3.2.29 (Phase 2 ユニットテスト) |
+| バージョン | **v3.2.32** (tmux ゴーストセッション修正) — 旧: v3.2.31 (Watch-ClaudeLog 起動時検出修正) / v3.2.30 (Phase 3 ユニットテスト) |
 | テスト | **569件** — (Pester, CI) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |
