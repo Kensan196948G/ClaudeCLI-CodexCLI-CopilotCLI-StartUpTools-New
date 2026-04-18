@@ -53,6 +53,7 @@
 44. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#183] v3.2.29 Phase 2 ユニットテスト追加 — MenuCommon.Tests.ps1 19件 / SSHHelper.Tests.ps1 7件 / SessionTabManager.Tests.ps1 15件 / 556 PASS
 45. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#184] v3.2.30 Phase 3 ユニットテスト追加 — StatuslineManager.Tests.ps1 7件 / McpHealthCheck.Tests.ps1 6件 (InModuleScope) / 569 PASS
 46. [DONE] [Priority:P1][Owner:Developer][Source:GitHub#185+#186] v3.2.31 Watch-ClaudeLog 起動時セッション検出修正 + cron-launcher.sh tmux -e 明示 env var 渡し / PROMPT_ARG サイドカーファイル化 / サーバー反映済み
+47. [Priority:P2][Owner:Developer][Source:GitHub#188] v3.2.32 tmux ゴーストセッション修正 — Open-TmuxAttachTab: new-session -A → attach-session -t (Issue #188)
 
 ## Auto Extracted From Agent Teams Matrix
 

@@ -139,8 +139,8 @@ function Open-TmuxAttachTab {
     }
     $safeProject = $parts[2]
     $tmuxSession  = "claudeos-$safeProject"
-    # tmux new-session -A: attach-or-create（セッション未作成時に自動生成）
-    $sshCmd       = "ssh -t $SshTarget tmux new-session -A -s $tmuxSession"
+    # attach-session: セッションが存在しなければエラー終了 (new-session -A はゴーストセッションを作るため使わない)
+    $sshCmd       = "ssh -t $SshTarget tmux attach-session -t $tmuxSession"
     $psExe        = (Get-Process -Id $PID).Path
     $psArgs = @(
         '-NoExit', '-NoProfile', '-ExecutionPolicy', 'Bypass',
@@ -148,7 +148,7 @@ function Open-TmuxAttachTab {
     )
     $wtArgs = @('-w', '0', 'new-tab', '--title', 'Claude-UI', '--', $psExe) + $psArgs
     Start-Process -FilePath $wtExe.Source -ArgumentList $wtArgs -WindowStyle Hidden
-    Write-Host "  Claude UI タブを開きました: tmux new-session -A -s $tmuxSession" -ForegroundColor Magenta
+    Write-Host "  Claude UI タブを開きました: tmux attach-session -t $tmuxSession" -ForegroundColor Magenta
 }
 
 function Open-SessionInfoTab {
