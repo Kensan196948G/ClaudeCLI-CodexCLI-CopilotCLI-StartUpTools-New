@@ -2,6 +2,56 @@
 
 # CHANGELOG
 
+## [v3.2.34] - 2026-04-18 — Phase 4 テストファイル UTF-8 BOM 追加 (PSScriptAnalyzer 警告解消)
+
+### 🎯 概要
+
+v3.2.33 で追加した Phase 4 ユニットテストファイル 3 件 (`AgentTeams.Tests.ps1` / `ArchitectureCheck.Tests.ps1` / `IssueSyncManager.Tests.ps1`) に UTF-8 BOM が欠落しており、`PSUseBOMForUnicodeEncodedFile` 警告が 3 件発生していた。BOM を追加して警告 0 件を回復。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `tests/unit/AgentTeams.Tests.ps1` | UTF-8 BOM 追加 |
+| `tests/unit/ArchitectureCheck.Tests.ps1` | UTF-8 BOM 追加 |
+| `tests/unit/IssueSyncManager.Tests.ps1` | UTF-8 BOM 追加 |
+| `CHANGELOG.md` | v3.2.33 / v3.2.34 エントリ追加 |
+| `README.md` | バージョン v3.2.34 / テスト件数 650 件 更新 |
+| `TASKS.md` | エントリ 49 追加 |
+
+### ✅ テスト結果
+
+- 650/650 PASS
+- PSScriptAnalyzer 警告 0 件
+
+---
+
+## [v3.2.33] - 2026-04-18 — Phase 4 ユニットテスト追加 + SelfEvolution バグ修正 (Issue #183 + #184)
+
+### 🎯 概要
+
+未テスト lib モジュール解消 Phase 4。AgentTeams / IssueSyncManager / SelfEvolution / WorktreeManager / ArchitectureCheck の 5 モジュールに計 81 テストを追加。合計 650/650 PASS。また `Save-EvolutionRecord` が明示 `$StorePath` 指定時にディレクトリ未作成のまま `Set-Content` を呼び失敗するバグを修正。`.gitleaks.toml` を追加してテストフィクスチャの false positive を抑制。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `tests/unit/AgentTeams.Tests.ps1` | 新規追加 — 19 テスト |
+| `tests/unit/IssueSyncManager.Tests.ps1` | 新規追加 — 24 テスト |
+| `tests/unit/SelfEvolution.Tests.ps1` | 新規追加 — 17 テスト |
+| `tests/unit/WorktreeManager.Tests.ps1` | 新規追加 — 3 テスト |
+| `tests/unit/ArchitectureCheck.Tests.ps1` | 新規追加 — 18 テスト |
+| `scripts/lib/SelfEvolution.psm1` | `Save-EvolutionRecord`: `$StorePath` 指定時も `Get-EvolutionStorePath` を経由する 2 ステップ変数割り当てに修正 |
+| `.gitleaks.toml` | 新規追加 — `ArchitectureCheck.Tests.ps1` フィクスチャへの allowlist |
+| `TASKS.md` | エントリ 48 追加 |
+
+### ✅ テスト結果
+
+- 650/650 PASS (既存 569 + 新規 81)
+- PSScriptAnalyzer 警告 0 件 → 警告 3 件 (BOM 欠落。v3.2.34 で解消)
+
+---
+
 ## [v3.2.32] - 2026-04-18 — Watch-ClaudeLog tmux ゴーストセッション修正 (Issue #188)
 
 ### 🎯 概要
