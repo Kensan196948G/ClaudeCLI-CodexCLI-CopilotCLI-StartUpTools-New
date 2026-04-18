@@ -22,17 +22,24 @@ $ConfigPath = Get-StartupConfigPath -StartupRoot $ScriptRoot
 $Config = Import-LauncherConfig -ConfigPath $ConfigPath
 $LinuxHost = $Config.linuxHost
 
+$LinuxUser = 'kensan'
+if ($Config.PSObject.Properties.Name -contains 'linuxUser') { $LinuxUser = $Config.linuxUser }
+
 if ([string]::IsNullOrWhiteSpace($LinuxHost) -or $LinuxHost -eq '<your-linux-host>') {
     Write-Host "[ERROR] config.json の linuxHost が未設定です。" -ForegroundColor Red
     exit 1
 }
 
 # CronManager 設定を config から反映
+$launcherPath = '/home/kensan/.claudeos/cron-launcher.sh'
+$logsDir      = '/home/kensan/.claudeos/logs'
 if ($Config.PSObject.Properties.Name -contains 'cron') {
     $cronConfig = $Config.cron
     $prefix = if ($cronConfig.PSObject.Properties.Name -contains 'entryPrefix') { $cronConfig.entryPrefix } else { 'CLAUDEOS' }
-    $launcher = if ($cronConfig.PSObject.Properties.Name -contains 'launcherPath') { $cronConfig.launcherPath } else { '/home/kensan/.claudeos/cron-launcher.sh' }
-    $logs = if ($cronConfig.PSObject.Properties.Name -contains 'logsDir') { $cronConfig.logsDir } else { '/home/kensan/.claudeos/logs' }
+    $launcher = if ($cronConfig.PSObject.Properties.Name -contains 'launcherPath') { $cronConfig.launcherPath } else { $launcherPath }
+    $logs = if ($cronConfig.PSObject.Properties.Name -contains 'logsDir') { $cronConfig.logsDir } else { $logsDir }
+    $launcherPath = $launcher
+    $logsDir      = $logs
     Set-CronManagerConfig -EntryPrefix $prefix -LauncherPath $launcher -LogsDir $logs
 }
 
@@ -43,15 +50,16 @@ $defaultDuration = if ($Config.PSObject.Properties.Name -contains 'cron' -and $C
 function Show-CronMenu {
     Clear-Host
     Write-Host ""
-    Write-Host "  =========================================" -ForegroundColor Cyan
-    Write-Host "   Cron 登録・編集・削除 (Linux: $LinuxHost)" -ForegroundColor Cyan
-    Write-Host "  =========================================" -ForegroundColor Cyan
+    Write-Host "  =============================================" -ForegroundColor Cyan
+    Write-Host "   Cron 登録・編集・削除・テスト (Linux: $LinuxHost)" -ForegroundColor Cyan
+    Write-Host "  =============================================" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "    [1] 新規登録" -ForegroundColor Yellow
     Write-Host "    [2] 一覧" -ForegroundColor Yellow
     Write-Host "    [3] 編集" -ForegroundColor Yellow
     Write-Host "    [4] 削除 (ID 指定)" -ForegroundColor Yellow
     Write-Host "    [5] 全解除" -ForegroundColor Yellow
+    Write-Host "    [6] 今すぐ実行" -ForegroundColor Green
     Write-Host "    [0] 戻る" -ForegroundColor Gray
     Write-Host ""
 }
@@ -201,6 +209,104 @@ function Invoke-RemoveAll {
     }
 }
 
+function Invoke-CronTest {
+    $entries = Get-ClaudeOSCronEntry -LinuxHost $LinuxHost
+    Write-Host ""
+
+    $project  = $null
+    $entryDuration = $null
+
+    if ($entries.Count -gt 0) {
+        Write-Host "  -- 実行対象プロジェクト --" -ForegroundColor Cyan
+        Write-Host "    [0] プロジェクト一覧から選択" -ForegroundColor DarkGray
+        for ($i = 0; $i -lt $entries.Count; $i++) {
+            Write-Host ("    [{0}] {1}" -f ($i + 1), (Format-CronEntryForDisplay -Entry $entries[$i])) -ForegroundColor White
+        }
+        Write-Host ""
+        $sel = Read-Host "  番号を入力 (0=プロジェクト一覧から選択)"
+        if ($sel -eq '0') {
+            $project = Select-Project
+        } elseif ($sel -match '^\d+$') {
+            $n = [int]$sel - 1
+            if ($n -ge 0 -and $n -lt $entries.Count) {
+                $project = $entries[$n].Project
+                if ($entries[$n].PSObject.Properties.Name -contains 'DurationMinutes') {
+                    $entryDuration = [int]$entries[$n].DurationMinutes
+                }
+            } else {
+                Write-Host "  無効な番号です" -ForegroundColor Red
+                return
+            }
+        } else {
+            Write-Host "  無効な入力です" -ForegroundColor Red
+            return
+        }
+    } else {
+        Write-Host "  登録済みの Cron エントリがありません。プロジェクト一覧から選択します。" -ForegroundColor Yellow
+        $project = Select-Project
+    }
+
+    if ([string]::IsNullOrWhiteSpace($project)) { return }
+
+    $suggestedDuration = if ($null -ne $entryDuration) { $entryDuration } else { $defaultDuration }
+    $durationInput = Read-Host "  実行時間 (分、Enter で $suggestedDuration)"
+    $duration = if ([string]::IsNullOrWhiteSpace($durationInput)) { $suggestedDuration } else { [int]$durationInput }
+
+    Write-Host ""
+    Write-Host "  == 実行確認 ==" -ForegroundColor Yellow
+    Write-Host "    プロジェクト  : $project"
+    Write-Host "    実行時間      : $duration 分"
+    Write-Host "    START_PROMPT  : プロジェクト .claude/START_PROMPT.md を参照"
+    Write-Host "    ランチャー    : $launcherPath"
+    Write-Host ""
+    $confirm = Read-Host "  今すぐ実行しますか? [y/N]"
+    if ($confirm -notmatch '^[yY]') {
+        Write-Host "  キャンセルしました" -ForegroundColor Yellow
+        return
+    }
+
+    # SSH でバックグラウンド起動 (nohup で SSH 切断後も継続)
+    $sshExe    = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { 'ssh' }
+    $sshTarget = "${LinuxUser}@${LinuxHost}"
+    # `$(date ...) は PowerShell 側で展開させず bash に渡す (`$ でエスケープ)
+    $logPattern = "$logsDir/cron-`$(date +%Y%m%d-%H%M%S).log"
+    $sshCmd    = "nohup bash $launcherPath '$project' $duration >> $logPattern 2>&1 &"
+
+    Write-Host ""
+    Write-Host "  [起動中] $project ($duration 分) ..." -ForegroundColor Cyan
+    & $sshExe -T -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMaster=no `
+        $sshTarget $sshCmd 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  [ERROR] SSH 実行に失敗しました (exit=$LASTEXITCODE)" -ForegroundColor Red
+        return
+    }
+    Write-Host "  [OK] バックグラウンド起動完了" -ForegroundColor Green
+
+    # ライブログ監視タブを開く (Watch-ClaudeLog.ps1 がログ検出後にセッション情報タブも自動展開)
+    $watchScript = Join-Path $ScriptRoot 'scripts\tools\Watch-ClaudeLog.ps1'
+    $psExe = (Get-Process -Id $PID).Path
+    $wtExe = Get-Command wt.exe -ErrorAction SilentlyContinue
+
+    if ($wtExe -and (Test-Path $watchScript)) {
+        $psArgs = @(
+            '-NoExit', '-NoProfile', '-ExecutionPolicy', 'Bypass',
+            '-File', $watchScript,
+            '-WithSessionInfoTab'
+        )
+        $wtArgs = @('-w', '0', 'new-tab', '--title', 'Claude-Live-Log', '--', $psExe) + $psArgs
+        Start-Process -FilePath $wtExe.Source -ArgumentList $wtArgs -WindowStyle Hidden
+        Write-Host "  [OK] ライブログ監視タブを開きました" -ForegroundColor Cyan
+        Write-Host "       ログ検出後にセッション情報タブが自動で開きます" -ForegroundColor DarkGray
+    } else {
+        if (-not $wtExe) {
+            Write-Host "  [INFO] wt.exe 非検出: タブを自動で開けません" -ForegroundColor Yellow
+        } elseif (-not (Test-Path $watchScript)) {
+            Write-Host "  [WARN] Watch-ClaudeLog.ps1 が見つかりません: $watchScript" -ForegroundColor Yellow
+        }
+        Write-Host "  ログ確認: ssh $sshTarget 'ls -t $logsDir/cron-*.log | head -1'" -ForegroundColor DarkGray
+    }
+}
+
 if ($NonInteractive) { exit 0 }
 
 while ($true) {
@@ -212,6 +318,7 @@ while ($true) {
         '3' { Invoke-Edit; Read-Host "  Enter で戻ります" | Out-Null }
         '4' { Invoke-Remove; Read-Host "  Enter で戻ります" | Out-Null }
         '5' { Invoke-RemoveAll; Read-Host "  Enter で戻ります" | Out-Null }
+        '6' { Invoke-CronTest; Read-Host "  Enter で戻ります" | Out-Null }
         '0' { exit 0 }
         default {
             Write-Host "  無効な入力" -ForegroundColor Red

@@ -34,6 +34,9 @@ REPORT_SCRIPT="${CLAUDEOS_REPORT_SCRIPT:-$CLAUDEOS_HOME/report-and-mail.py}"
 mkdir -p "$SESSIONS_DIR" "$LOGS_DIR"
 chmod 700 "$CLAUDEOS_HOME" "$SESSIONS_DIR" "$LOGS_DIR" 2>/dev/null || true
 
+# Load optional env overrides (SMTP credentials, EMAIL_ENABLED, etc.)
+[[ -f "$HOME/.env-claudeos" ]] && source "$HOME/.env-claudeos"
+
 if [[ ! -d "$PROJECT_DIR" ]]; then
   echo "[ERROR] プロジェクトディレクトリが存在しません: $PROJECT_DIR" >&2
   exit 3
@@ -98,9 +101,10 @@ finalize() {
 
   echo "[cron-launcher] session finished status=$final_status exit=$exit_code at $now" >> "$LOG_FILE"
 
-  # tmux セッションを終了・一時ファイルを削除
+  # tmux セッションを終了・一時ファイルを削除（keeper も確実に落とす）
   if command -v tmux >/dev/null 2>&1; then
     tmux kill-session -t "claudeos-${SAFE_PROJECT}" 2>/dev/null || true
+    tmux kill-session -t "_keeper_${SAFE_PROJECT}" 2>/dev/null || true
   fi
   rm -f "$CLAUDE_WRAPPER" "$CLAUDE_EXIT_FILE" "${CLAUDE_WRAPPER%.sh}.prompt"
 
@@ -127,7 +131,8 @@ finalize() {
 }
 trap finalize EXIT
 
-echo "[cron-launcher] $(date -Iseconds) project=$PROJECT duration=${DURATION_MIN}m session=$SESSION_ID" | tee -a "$LOG_FILE"
+# nohup 経由の場合 stdout が同ファイルにリダイレクトされるため tee は使わない（重複ログ防止）
+echo "[cron-launcher] $(date -Iseconds) project=$PROJECT duration=${DURATION_MIN}m session=$SESSION_ID" >> "$LOG_FILE"
 
 cd "$PROJECT_DIR"
 
@@ -169,15 +174,26 @@ if command -v tmux >/dev/null 2>&1 && [[ "${CLAUDEOS_TMUX:-1}" == "1" ]]; then
   # Claude を tmux セッション内で起動（TTY あり → attach で UI 閲覧可能）
   # -e で env var を明示渡し（tmux サーバーのグローバル環境に依存しない）
   tmux kill-session -t "$TMUX_SESSION" 2>/dev/null || true
+
+  # keeper session: claude が瞬時に終了してもサーバーを DURATION_SEC+120 秒保持する
+  # (tmux exit-empty がデフォルト on のため、セッション 0 になるとサーバーが消え
+  #  wait-for が "no server running" で失敗するレースコンディションを防ぐ)
+  _KEEPER_SESSION="_keeper_${SAFE_PROJECT}"
+  tmux kill-session -t "$_KEEPER_SESSION" 2>/dev/null || true
+  tmux new-session -d -s "$_KEEPER_SESSION" "sleep $((DURATION_SEC + 120))" 2>>"$LOG_FILE" || true
+
   tmux new-session -d -s "$TMUX_SESSION" -x 220 -y 50 \
     -e "_CLAUDEOS_DURATION_SEC=$DURATION_SEC" \
     -e "_CLAUDEOS_EXIT_FILE=$CLAUDE_EXIT_FILE" \
     -e "_CLAUDEOS_TMUX_DONE=$_TMUX_DONE" \
     -e "_CLAUDEOS_PROMPT_FILE=$PROMPT_FILE" \
-    "$CLAUDE_WRAPPER"
+    "$CLAUDE_WRAPPER" 2>>"$LOG_FILE"
   echo "[cron-launcher] tmux attach -t $TMUX_SESSION  (UI閲覧用)" >> "$LOG_FILE"
-  # tmux セッション終了まで待機
-  tmux wait-for "$_TMUX_DONE"
+  # tmux セッション終了まで待機（タイムアウト付き: keeper消滅後の二重防護）
+  if ! timeout $((DURATION_SEC + 60)) tmux wait-for "$_TMUX_DONE" 2>>"$LOG_FILE"; then
+    echo "[cron-launcher] tmux wait-for ended (timeout or race condition recovered)" >> "$LOG_FILE"
+  fi
+  tmux kill-session -t "$_KEEPER_SESSION" 2>/dev/null || true
 else
   # tmux 無効時は従来通り TTY なし実行
   timeout --foreground "${DURATION_SEC}s" claude --dangerously-skip-permissions ${PROMPT_ARG:+"$PROMPT_ARG"} >> "$LOG_FILE" 2>&1
