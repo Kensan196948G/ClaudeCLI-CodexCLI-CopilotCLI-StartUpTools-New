@@ -44,6 +44,7 @@
 35. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.20 CI testResults.xml 移行 (reports/) + .codex/config.toml.example テンプレ化 + ONBOARDING.md 刷新 + 外部レビュー即時対応 3 件 (PR #170)
 36. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.21 state.schema.json 拡張 (frontier / message_bus / learning / debug / onboarding / improvement) + docs/common/18_ARCHITECTURE.md Agent 数修正 (25体) + scripts/update-readme-stats.js + CI README 自動整合ゲート (PR #171)
 37. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#172] v3.2.22 state.json.example スキーマ整合修正 (message_bus 構造 / debug 型) + scripts/validate-state-example.js + CI バリデーションステップ (Issue #172) (PR #173)
+38. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#174] v3.2.23 cron-launcher.sh SIGTTOU 停止バグ修正 — timeout --foreground (3箇所) + tmux pipe-pane 削除 / 本番サーバー検証済み (Issue #174) (PR #175)
 
 ## Auto Extracted From Agent Teams Matrix
 

@@ -2,6 +2,34 @@
 
 # CHANGELOG
 
+## [v3.2.23] - 2026-04-18 — cron-launcher.sh SIGTTOU 停止バグ修正
+
+### 🎯 概要
+
+cron 経由で起動した Claude が tmux セッション内で `Tl`（SIGTTOU 停止）状態になり実行されないバグを修正。
+2 件の根本原因を特定し、本番サーバーで検証済みの修正をリポジトリテンプレートへ同期。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `Claude/templates/linux/cron-launcher.sh` | `timeout --foreground` 追加 (3 箇所) — GNU timeout の `setpgid(0,0)` を無効化し SIGTTOU を防止 |
+| `Claude/templates/linux/cron-launcher.sh` | `tmux pipe-pane` 2 行削除 — PTY ストリーム横断による DA クエリ応答破壊を修正 |
+
+### 🐛 根本原因
+
+| バグ | 原因 | 修正 |
+|---|---|---|
+| `Tl` 停止 (SIGTTOU) | `timeout` が `setpgid(0,0)` で子プロセスを新 PGID へ移動 → Claude が前景グループ外になり `tcsetattr()` 呼出で SIGTTOU 受信 | `timeout --foreground` で `setpgid(0,0)` 抑制 |
+| TUI 初期化失敗 | `pipe-pane` が PTY ストリームを横断し DA クエリへの応答を破壊 | `pipe-pane` 行を削除 |
+
+### ✅ Verify
+
+- CI: test-and-validate / PSScriptAnalyzer / Secrets scan / CodeRabbit — 全 pass
+- 本番サーバー: Claude PID `Tl` → `Sl+` 遷移確認済み
+
+---
+
 ## [v3.2.22] - 2026-04-17 — state.json.example スキーマ整合 / CI example バリデーション
 
 ### 🎯 概要
