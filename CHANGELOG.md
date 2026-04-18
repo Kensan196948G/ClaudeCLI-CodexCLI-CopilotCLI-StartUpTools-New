@@ -2,6 +2,27 @@
 
 # CHANGELOG
 
+## [v3.2.30] - 2026-04-18 — Phase 3 ユニットテスト追加 — StatuslineManager / McpHealthCheck (Issue #184)
+
+### 🎯 概要
+
+未テスト lib モジュール解消 Phase 3。`StatuslineManager.psm1` `Get-GlobalStatusLineConfig` 7 テスト ($TestDrive 隔離)、`McpHealthCheck.psm1` `ConvertTo-McpProcessArgumentString` 6 テスト (InModuleScope でプライベート関数を直接検証)。既存 556 + 新規 13 = 569 PASS。PSScriptAnalyzer 警告 0 件継続。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `tests/unit/StatuslineManager.Tests.ps1` | 新規追加 — 7 テスト (Get-GlobalStatusLineConfig: found/path/statusLine/throw 境界値) |
+| `tests/unit/McpHealthCheck.Tests.ps1` | 新規追加 — 6 テスト (ConvertTo-McpProcessArgumentString: 空/単純/スペース/ダブルクォート/混合) |
+
+### ✅ テスト結果
+
+- CI: 569/569 PASS
+- PSScriptAnalyzer: 0 warnings
+- STABLE N=2
+
+---
+
 ## [v3.2.29] - 2026-04-18 — Phase 2 ユニットテスト追加 — MenuCommon / SSHHelper / SessionTabManager (Issue #183)
 
 ### 🎯 概要
