@@ -7,8 +7,8 @@
 > **📌 v3.1.0 で Claude Code 専用ツールに整理**
 > v3.1.0 より、Codex CLI / GitHub Copilot CLI の起動メニュー (S2/S3/L2/L3) は削除されました。本ツールは **Claude Code 専用の自律開発ランチャー** として位置づけを明確化し、Linux crontab 連携・セッション情報タブ・Statusline グローバル適用などの新機能に投資が集中しています。
 
-> **🧪 v3.2.33 — Phase 4 ユニットテスト追加 + SelfEvolution バグ修正**
-> `AgentTeams.Tests.ps1` 19件 / `IssueSyncManager.Tests.ps1` 24件 / `SelfEvolution.Tests.ps1` 17件 / `WorktreeManager.Tests.ps1` 3件 / `ArchitectureCheck.Tests.ps1` 18件 の計 81件を追加。`Save-EvolutionRecord` の StorePath 未作成バグを修正。650/650 PASS 達成。詳細は [`CHANGELOG.md`](./CHANGELOG.md) v3.2.33 節を参照。
+> **🧪 v3.2.34 — Phase 4 テストファイル UTF-8 BOM 追加 (PSScriptAnalyzer 警告解消)**
+> v3.2.33 で追加した Phase 4 テストファイル 3 件に UTF-8 BOM を追加し `PSUseBOMForUnicodeEncodedFile` 警告を解消。PSScriptAnalyzer 警告 0 件 / 650/650 PASS 達成。詳細は [`CHANGELOG.md`](./CHANGELOG.md) v3.2.34 節を参照。
 
 > **📨 v3.2.0 — Cron HTML メールレポート (Visual Recap Mail)**
 > Cron で起動された ClaudeCode セッションの完了時に、**HTML 形式のレポートメール** を Gmail SMTP 経由で送信。アイコン+色付き表組み+実行サマリ(Monitor/Development/Verify/Improvement の出現回数/エラー検出/STABLE 達成)+次フェーズ提案を含む。送信先は `CLAUDEOS_DEFAULT_TO`(未設定時 `CLAUDEOS_SMTP_USER`)で指定し、SMTP 認証情報は `~/.env-claudeos` の Linux 環境変数で管理(config.json には書かない設計)。詳細は [`docs/common/16_HTMLメールレポート設定.md`](./docs/common/16_HTMLメールレポート設定.md) を参照。
@@ -27,7 +27,7 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.2.33** (Phase 4 ユニットテスト + SelfEvolution バグ修正) — 旧: v3.2.32 (tmux ゴーストセッション修正) / v3.2.31 (Watch-ClaudeLog 起動時検出修正) |
+| バージョン | **v3.2.34** (Phase 4 テスト BOM 修正) — 旧: v3.2.33 (Phase 4 ユニットテスト + SelfEvolution バグ修正) / v3.2.32 (tmux ゴーストセッション修正) |
 | テスト | **650件** — (Pester, CI) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |
