@@ -379,7 +379,7 @@ Windows 側 `~/.claude/settings.json` の `statusLine` セクションを Linux 
 
 > **本セクションの全機能は Claude Code 上でのみ動作します。** Codex CLI / GitHub Copilot CLI には適用されません。`Start-ClaudeOS.ps1` および `.claude/claudeos/` 配下のカーネル文書群が前提です。
 
-### v7.5 新機能
+### v8 新機能
 
 | 機能 | 説明 |
 |------|------|
