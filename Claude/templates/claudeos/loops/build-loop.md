@@ -12,3 +12,7 @@
 ## 禁止
 
 - main への直接 push
+
+## Output
+
+`reports/.loop-build-report.md`

@@ -40,8 +40,7 @@
 
 ## Output
 
-- code changes
-- commits
+`reports/.loop-build-report.md`
 
 ---
 
