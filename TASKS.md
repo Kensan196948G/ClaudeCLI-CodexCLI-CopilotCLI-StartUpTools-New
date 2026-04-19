@@ -60,6 +60,7 @@
 51. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.36 Watch-SessionInfoSSH TZ オフセット不整合修正 — end_time_planned の TZ ズレで残り時間が 1 時間超過する問題を start_time + max_duration_minutes 計算に切替 / ToLocalTime() 表示統一 / ドリフト警告追加 / 650 PASS (commit d09fad7)
 52. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.37 scripts/lib 全ファイル UTF-8 BOM 追加 — AgentTeams 分割 3 ファイルを含む 11 ファイルに BOM 欠落 / PSScriptAnalyzer 警告 0 件回復 / 650 PASS / STABLE N=2 達成 (commit b5cc9c8)
 53. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.38 SessionLogger / TemplateSyncManager ユニットテスト追加 (SessionLogger 14件 / TemplateSyncManager 16件 / 計 30件 / 680 PASS) + Watch-SessionInfo.ps1 TZ フィックス (end_time_planned → start_time + max_duration_minutes 方式) / STABLE N=2 達成 (commit ebe2045)
+54. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.2.39 Session Info タブ 3 点修正 — Format-Duration の [int]$Span.TotalHours 銀行丸めで残り時間が +1h ズレる表示バグを [int][Math]::Floor に変更 / Watch-SessionInfo.ps1 / Watch-SessionInfoSSH.ps1 / Watch-ClaudeLog.ps1 に QuickEdit 無効化 P/Invoke 追加（クリック凍結防止）/ Session Info タブに `Enterキーで更新可能` + 動的生成再起動コマンド常時表示 / README v3.2.37 → v3.2.39、テスト件数 650 → 680 に揃える / 680 PASS / PSScriptAnalyzer 0 件
 
 ## Auto Extracted From Agent Teams Matrix
 
@@ -67,6 +68,9 @@
 ## GitHub Issues Sync
 
 (No open issues)
+
+
+
 
 
 
