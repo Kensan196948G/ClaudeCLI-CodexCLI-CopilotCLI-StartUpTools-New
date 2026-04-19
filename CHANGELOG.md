@@ -2,6 +2,38 @@
 
 # CHANGELOG
 
+## [v3.2.39] - 2026-04-19 — Session Info タブ 3 点修正 (残り時間表示 / 凍結耐性 / UI 補足)
+
+### 🎯 概要
+
+cron 監視タブ群で表面化していた 3 種類の UX 問題を同時修正。
+
+1. **残り時間表示の +1h ズレ**（ロジックバグ）: `Format-Duration` の `[int]$Span.TotalHours` が .NET の銀行丸め（`MidpointRounding.ToEven`）により時間成分を繰り上げ、「経過 00:04:06 + 残り 05:55:53 = 6h」のように合計が `作業時間`（5h）と一致しない現象。`[int][Math]::Floor($Span.TotalHours)` で明示的切り捨てに変更。v3.2.38 の TZ 修正でも残存していた独立バグ。
+2. **クリック凍結**（UX 問題）: Windows conhost の QuickEdit モードがタブ内の範囲選択で stdout をブロックし、監視タブが固まったように見える現象。`kernel32!SetConsoleMode` を P/Invoke 経由で呼び `ENABLE_QUICK_EDIT_MODE (0x40)` をクリア、`ENABLE_EXTENDED_FLAGS (0x80)` を付与。Windows Terminal の独自選択機構は conhost フラグ非依存なのでコピペ操作は従来通り動作する。
+3. **復旧操作の可視化**（UI 補足）: `Ctrl+C でこのタブを閉じる` 行の下に `Enterキーで更新可能` と **動的生成した再起動コマンド** を常時表示。`$PSCommandPath` + 実行時パラメータから自動生成するため、別セッション / 別プロジェクトでも常に正しい再起動コマンドが出る。凍結時のフォールバック手段を画面内に常設することで「ドキュメントを探し回らない運用 UI」を実現。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/tools/Watch-SessionInfoSSH.ps1` | `Format-Duration` / `作業時間` 行: `[int]` → `[int][Math]::Floor` / QuickEdit 無効化 P/Invoke / `Enterキーで更新可能` + 再起動コマンド表示 |
+| `scripts/tools/Watch-SessionInfo.ps1` | 同上（非 SSH 版） |
+| `scripts/tools/Watch-ClaudeLog.ps1` | QuickEdit 無効化 P/Invoke 追加 |
+| `README.md` | バージョン v3.2.37 → v3.2.39、主要箇所のテスト件数 650 → 680 件に更新 |
+| `CHANGELOG.md` | v3.2.39 エントリ追加 |
+| `TASKS.md` | エントリ 54 (v3.2.39) 追加 |
+
+### ✅ テスト結果
+
+- 680/680 PASS (Pester, 139s)
+- PSScriptAnalyzer 警告 0 件（空 catch は `$null = $_` で明示的無視を表現）
+
+### 📝 補足: v3.2.38 の CHANGELOG ギャップ
+
+本エントリ作成時、v3.2.38 の CHANGELOG エントリが欠落していることを検出（TASKS.md エントリ 53 は存在）。スコープ外のため本 commit では backfill せず、別途 docs(changelog): v3.2.38 backfill として対応候補とする。
+
+---
+
 ## [v3.2.37] - 2026-04-18 — scripts/lib 全ファイル UTF-8 BOM 追加 (PSScriptAnalyzer 警告ゼロ回復)
 
 ### 🎯 概要

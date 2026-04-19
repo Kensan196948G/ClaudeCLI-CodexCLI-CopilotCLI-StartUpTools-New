@@ -24,6 +24,35 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# Disable conhost QuickEdit: accidental click-select otherwise blocks stdout
+# until Enter/Esc, freezing this monitoring tab. Windows Terminal selection is
+# independent of this flag so copy/paste still works in WT.
+if (-not ('ClaudeConsoleMode' -as [type])) {
+    try {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class ClaudeConsoleMode {
+    [DllImport("kernel32.dll", SetLastError=true)]
+    private static extern IntPtr GetStdHandle(int n);
+    [DllImport("kernel32.dll", SetLastError=true)]
+    private static extern bool GetConsoleMode(IntPtr h, out uint m);
+    [DllImport("kernel32.dll", SetLastError=true)]
+    private static extern bool SetConsoleMode(IntPtr h, uint m);
+    public static void DisableQuickEdit() {
+        IntPtr h = GetStdHandle(-10);
+        uint m;
+        if (!GetConsoleMode(h, out m)) { return; }
+        // ENABLE_EXTENDED_FLAGS(0x80) must be set for the change to stick.
+        m = (m | 0x80u) & ~0x40u;
+        SetConsoleMode(h, m);
+    }
+}
+'@ -ErrorAction SilentlyContinue
+    } catch { $null = $_ }
+}
+try { [ClaudeConsoleMode]::DisableQuickEdit() } catch { $null = $_ }
+
 $ScriptRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Import-Module (Join-Path $ScriptRoot 'scripts\lib\LauncherCommon.psm1') -Force -DisableNameChecking
 Import-Module (Join-Path $ScriptRoot 'scripts\lib\Config.psm1') -Force -DisableNameChecking

@@ -18,13 +18,43 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# Disable conhost QuickEdit: accidental click-select otherwise blocks stdout
+# until Enter/Esc, freezing this monitoring tab. Windows Terminal selection is
+# independent of this flag so copy/paste still works in WT.
+if (-not ('ClaudeConsoleMode' -as [type])) {
+    try {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class ClaudeConsoleMode {
+    [DllImport("kernel32.dll", SetLastError=true)]
+    private static extern IntPtr GetStdHandle(int n);
+    [DllImport("kernel32.dll", SetLastError=true)]
+    private static extern bool GetConsoleMode(IntPtr h, out uint m);
+    [DllImport("kernel32.dll", SetLastError=true)]
+    private static extern bool SetConsoleMode(IntPtr h, uint m);
+    public static void DisableQuickEdit() {
+        IntPtr h = GetStdHandle(-10);
+        uint m;
+        if (!GetConsoleMode(h, out m)) { return; }
+        // ENABLE_EXTENDED_FLAGS(0x80) must be set for the change to stick.
+        m = (m | 0x80u) & ~0x40u;
+        SetConsoleMode(h, m);
+    }
+}
+'@ -ErrorAction SilentlyContinue
+    } catch { $null = $_ }
+}
+try { [ClaudeConsoleMode]::DisableQuickEdit() } catch { $null = $_ }
+
 $ScriptRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Import-Module (Join-Path $ScriptRoot 'scripts\lib\SessionTabManager.psm1') -Force -DisableNameChecking
 
 function Format-Duration {
     param([TimeSpan]$Span)
     if ($Span.TotalSeconds -lt 0) { return '00:00:00' }
-    return "{0:00}:{1:00}:{2:00}" -f [int]$Span.TotalHours, $Span.Minutes, $Span.Seconds
+    # [int] は銀行丸めで繰上げてしまうため Math.Floor で切り捨てる
+    return "{0:00}:{1:00}:{2:00}" -f [int][Math]::Floor($Span.TotalHours), $Span.Minutes, $Span.Seconds
 }
 
 function Get-StatusColor {
@@ -66,7 +96,7 @@ function Show-SessionFrame {
     Write-Host ""
     Write-Host ("   開始時刻   : " + $start.ToLocalTime().ToString('yyyy-MM-dd HH:mm:ss')) -ForegroundColor White
     Write-Host ("   終了予定   : " + $endComputed.ToLocalTime().ToString('yyyy-MM-dd HH:mm:ss')) -ForegroundColor White
-    Write-Host ("   作業時間   : " + ("{0}h {1:00}m ({2} 分)" -f [int]$duration.TotalHours, $duration.Minutes, $Session.max_duration_minutes)) -ForegroundColor White
+    Write-Host ("   作業時間   : " + ("{0}h {1:00}m ({2} 分)" -f [int][Math]::Floor($duration.TotalHours), $duration.Minutes, $Session.max_duration_minutes)) -ForegroundColor White
     Write-Host ""
     Write-Host ("   経過       : " + (Format-Duration -Span $elapsed)) -ForegroundColor Yellow
     Write-Host ("   残り       : " + (Format-Duration -Span $remaining)) -ForegroundColor Yellow
@@ -76,6 +106,11 @@ function Show-SessionFrame {
     Write-Host ("  " + "-" * 52) -ForegroundColor DarkGray
     Write-Host ("   Last update: " + $now.ToString('yyyy-MM-dd HH:mm:ss')) -ForegroundColor DarkGray
     Write-Host ("   Ctrl+C でこのタブを閉じる（セッション本体は継続）") -ForegroundColor DarkGray
+    Write-Host ("   Enterキーで更新可能") -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host ("   再起動コマンド（コピペ可）:") -ForegroundColor DarkGray
+    $restartCmd = '& "{0}" -SessionId "{1}"' -f $PSCommandPath, $SessionId
+    Write-Host ("   " + $restartCmd) -ForegroundColor Gray
     Write-Host ""
 }
 
