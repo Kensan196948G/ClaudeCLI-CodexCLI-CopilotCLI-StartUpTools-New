@@ -9,7 +9,6 @@
 |---|---|---|
 | `Claude/templates/claudeos/` (本ディレクトリ) | **正本・編集元** | ✅ ここを編集する |
 | `.claude/claudeos/` | 配備先（runtime copy） | ❌ 直接編集禁止 |
-| `scripts/templates/claudeos/` | Legacy（旧版） | ⚠️ 統合待ち、編集不要 |
 
 ## 同期方法
 

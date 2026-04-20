@@ -169,16 +169,10 @@ function Sync-LauncherClaudeGlobalConfig {
         -TargetPath (Join-Path $ProjectDir 'CLAUDE.md') `
         -Label 'CLAUDE.md'
 
-    # v3.2.44: Claude/templates/claudeos/ を .claude/claudeos/ の正本として採用
-    # (以前は scripts/templates/claudeos/ を使用していたが、agents / skills / commands 等の
-    #  完全版テンプレートは Claude/templates/claudeos/ 側にあるため正本を切替)
-    $claudeosSource = Join-Path $StartupRoot 'Claude\templates\claudeos'
-    if (-not (Test-Path $claudeosSource)) {
-        # 後方互換 fallback
-        $claudeosSource = Join-Path $StartupRoot 'scripts\templates\claudeos'
-    }
+    # v3.2.45: Claude/templates/claudeos/ を .claude/claudeos/ の正本として一本化
+    # (scripts/templates/claudeos/ は削除済み、fallback も廃止)
     Sync-ProjectTemplateDirectory `
-        -TemplateDir $claudeosSource `
+        -TemplateDir (Join-Path $StartupRoot 'Claude\templates\claudeos') `
         -TargetDir (Join-Path $ProjectDir '.claude\claudeos') `
         -Label '.claude/claudeos'
 
