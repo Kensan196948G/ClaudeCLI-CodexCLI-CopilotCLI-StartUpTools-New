@@ -22,9 +22,9 @@
 
 | パス | 分類 | 備考 |
 |---|---|---|
-| `Claude/templates/claudeos/` (214 files) | **正本** | ClaudeOS カーネルの編集元。ここを変更する |
-| `.claude/claudeos/` (198 files) | **配備先** | `Claude/templates/claudeos/` から同期。直接編集禁止 |
-| `scripts/templates/claudeos/` (29 files) | **Legacy** | 旧版テンプレート群。`Claude/templates/claudeos/` に統合予定 |
+| `Claude/templates/claudeos/` | **正本** | ClaudeOS カーネルの唯一の編集元 |
+| `.claude/claudeos/` | **配備先** | `Claude/templates/claudeos/` から同期。直接編集禁止 |
+| ~~`scripts/templates/claudeos/`~~ | 削除済 (v3.2.45) | `Claude/templates/claudeos/` に一本化完了 |
 
 > **同期コマンド（参考）**: `.\scripts\tools\Sync-Templates.ps1` または手動コピー後に diff 確認
 
@@ -134,7 +134,7 @@ Invoke-Pester .\tests -CI で検証
 
 | 対象 | 状態 | アクション |
 |---|---|---|
-| `scripts/templates/claudeos/` | 旧版29ファイル | `Claude/templates/claudeos/` への差分統合後、削除 |
+| ~~`scripts/templates/claudeos/`~~ | 削除済 (v3.2.45) | ✅ `Claude/templates/claudeos/` に一本化完了 |
 | `Start-CodexCLI.ps1` | 無効化済み | legacy/ へ退避 または削除 |
 | `Start-CopilotCLI.ps1` | 無効化済み | legacy/ へ退避 または削除 |
 | `docs/codex/`, `docs/copilot/` | 参照のみ | アーカイブ明示 |
