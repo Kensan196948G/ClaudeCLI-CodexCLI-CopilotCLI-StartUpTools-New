@@ -37,13 +37,16 @@ chmod 700 "$CLAUDEOS_HOME" "$SESSIONS_DIR" "$LOGS_DIR" 2>/dev/null || true
 # Load optional env overrides (SMTP credentials, EMAIL_ENABLED, etc.)
 [[ -f "$HOME/.env-claudeos" ]] && source "$HOME/.env-claudeos"
 
+# cron の最小 PATH には claude (~/.local/bin) などが含まれないため明示的に注入
+export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:$HOME/.bun/bin:$PATH"
+
 if [[ ! -d "$PROJECT_DIR" ]]; then
   echo "[ERROR] プロジェクトディレクトリが存在しません: $PROJECT_DIR" >&2
   exit 3
 fi
 
 DURATION_SEC=$((DURATION_MIN * 60))
-SAFE_PROJECT=$(echo "$PROJECT" | tr -c 'A-Za-z0-9_-' '_')
+SAFE_PROJECT=$(printf '%s' "$PROJECT" | tr -c 'A-Za-z0-9_-' '_')
 STAMP=$(date +'%Y%m%d-%H%M%S')
 SESSION_ID="${STAMP}-${SAFE_PROJECT}"
 SESSION_FILE="$SESSIONS_DIR/${SESSION_ID}.json"
