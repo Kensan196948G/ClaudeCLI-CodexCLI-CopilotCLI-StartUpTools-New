@@ -184,6 +184,12 @@ function Sync-LauncherClaudeGlobalConfig {
         -TargetDir (Join-Path $ProjectDir '.claude\agents') `
         -Label '.claude/agents'
 
+    # v3.2.50 (E-2): slash commands を runtime 有効化 (39 ファイル)
+    Sync-ProjectTemplateDirectory `
+        -TemplateDir (Join-Path $StartupRoot 'Claude\templates\claudeos\commands') `
+        -TargetDir (Join-Path $ProjectDir '.claude\commands') `
+        -Label '.claude/commands'
+
     $settingsTemplatePath = Join-Path $StartupRoot 'scripts\templates\claude-settings.json'
     Initialize-ProjectTemplate `
         -TemplatePath $settingsTemplatePath `
