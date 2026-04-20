@@ -1,9 +1,18 @@
 @echo off
 cd /d "%~dp0"
+chcp 65001 >nul
 title AI CLI Universal Startup Tool
-where pwsh >nul 2>&1
-if %ERRORLEVEL% == 0 (
-    pwsh.exe -NoProfile -ExecutionPolicy Bypass -File "scripts\main\Start-Menu.ps1"
+
+rem PowerShell 7 (pwsh) を優先。PATH 不通でも既知インストール先を検査する。
+set "PWSH_EXE="
+where pwsh >nul 2>&1 && set "PWSH_EXE=pwsh.exe"
+if not defined PWSH_EXE if exist "C:\Program Files\PowerShell\7\pwsh.exe" set "PWSH_EXE=C:\Program Files\PowerShell\7\pwsh.exe"
+if not defined PWSH_EXE if exist "%ProgramFiles%\PowerShell\7\pwsh.exe" set "PWSH_EXE=%ProgramFiles%\PowerShell\7\pwsh.exe"
+if not defined PWSH_EXE if exist "%LOCALAPPDATA%\Microsoft\PowerShell\7\pwsh.exe" set "PWSH_EXE=%LOCALAPPDATA%\Microsoft\PowerShell\7\pwsh.exe"
+
+if defined PWSH_EXE (
+    "%PWSH_EXE%" -NoProfile -ExecutionPolicy Bypass -File "scripts\main\Start-Menu.ps1"
 ) else (
+    echo [WARN] PowerShell 7 (pwsh) not found. Using Windows PowerShell 5.1 fallback.
     powershell.exe -NoProfile -ExecutionPolicy Bypass -File "scripts\main\Start-Menu.ps1"
 )
