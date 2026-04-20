@@ -3,7 +3,7 @@ cd /d "%~dp0"
 chcp 65001 >nul
 title AI CLI Universal Startup Tool
 
-rem PowerShell 7 (pwsh) を優先。PATH 不通でも既知インストール先を検査する。
+rem Prefer PowerShell 7 (pwsh). Check known install paths when PATH lookup fails.
 set "PWSH_EXE="
 where pwsh >nul 2>&1 && set "PWSH_EXE=pwsh.exe"
 if not defined PWSH_EXE if exist "C:\Program Files\PowerShell\7\pwsh.exe" set "PWSH_EXE=C:\Program Files\PowerShell\7\pwsh.exe"
