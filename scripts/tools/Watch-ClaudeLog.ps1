@@ -5,7 +5,9 @@
     Linux 側の cron-launcher.sh が出力するログファイルを自動検出し
     Windows Terminal の新規タブで tail -f を開始する。
     cron 実行前に起動しておくと、発火を検知して自動でログ表示を開始する。
-    ClaudeOS v3.2.31
+    v3.2.41 から tail -F をバックグラウンド Job 化し、ライブ表示中にも
+    次の cron 発火を検出 → 自動で次セッションへ切り替える (マルチ発火対応)。
+    ClaudeOS v3.2.41
 .PARAMETER NewTab
     Windows Terminal の新規タブで開く（既定: 現在のウィンドウで実行）。
 .PARAMETER PollIntervalSeconds
@@ -243,15 +245,50 @@ while ($true) {
         }
 
         Write-Host ''
-        # tail -F でリアルタイム表示 — -F はログローテーション (inode 変化) に追従
-        ssh $SshTarget "tail -n 50 -F '$latest'"
-        $sshExitCode = $LASTEXITCODE
-        Write-Host ''
-        if ($sshExitCode -ne 0) {
-            Write-Host "  [WARN] SSH が終了コード $sshExitCode で切断されました。次のポーリングへ戻ります..." -ForegroundColor Yellow
-        } else {
-            Write-Host '  セッション終了を検知しました。次の cron 発火を待機します...' -ForegroundColor Yellow
+        # tail -F をバックグラウンド Job で起動し、メインスレッドで次ログ出現を監視する。
+        # これにより tail -F が永続ブロックしても次の cron 発火を取りこぼさない (v3.2.41)。
+        # stdbuf -oL で tail の line-buffering を強制し、リアルタイム出力を担保する。
+        $tailJob = Start-Job -ArgumentList $SshTarget, $latest -ScriptBlock {
+            param($target, $path)
+            ssh $target "stdbuf -oL tail -n 50 -F '$path'"
         }
+
+        try {
+            while ($true) {
+                # tail の出力を受信してコンソール表示 (非ブロッキング)
+                Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object {
+                    Write-Host $_
+                }
+
+                # tail Job が落ちた (SSH 切断等) なら抜ける
+                if ($tailJob.State -ne 'Running') { break }
+
+                Start-Sleep -Seconds $PollIntervalSeconds
+
+                # より新しいログが出現したら切り替え
+                $newer = Get-LatestLog
+                if ($newer -and $newer -ne $latest) {
+                    # 残出力を flush
+                    Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object {
+                        Write-Host $_
+                    }
+                    Write-Host ''
+                    Write-Host "  より新しいセッション検出: $newer" -ForegroundColor Yellow
+                    Write-Host '  次のセッションへ切り替えます...' -ForegroundColor Yellow
+                    break
+                }
+            }
+        }
+        finally {
+            Stop-Job $tailJob -ErrorAction SilentlyContinue
+            Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object {
+                Write-Host $_
+            }
+            Remove-Job $tailJob -Force -ErrorAction SilentlyContinue
+        }
+
+        Write-Host ''
+        Write-Host '  現セッションの監視を終了しました。次の cron 発火を待機します...' -ForegroundColor Yellow
         Write-Host ''
         $knownLog = $latest
         $dotCount = 0
