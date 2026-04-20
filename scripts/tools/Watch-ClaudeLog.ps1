@@ -9,7 +9,10 @@
     次の cron 発火を検出 → 自動で次セッションへ切り替える (マルチ発火対応)。
     v3.2.42 で spawn タブを強制 pwsh 7 化 + Start-Job 内 UTF-8 化 (文字化け解消)。
     v3.2.46 で wt new-tab に -p "PowerShell" を付与してタブアイコンを PS 化。
-    ClaudeOS v3.2.46
+    v3.2.47 で WT settings.json から pwsh profile 名を動的検出 + GUID fallback
+    (ユーザー環境で profile 名が "PowerShell version 7" / "PowerShell 7" 等の
+    場合にも確実にアイコンが PS 7 になるよう改善)。
+    ClaudeOS v3.2.47
 .PARAMETER NewTab
     Windows Terminal の新規タブで開く（既定: 現在のウィンドウで実行）。
 .PARAMETER PollIntervalSeconds
@@ -100,10 +103,36 @@ function Get-PwshExe {
 }
 $PwshExe = Get-PwshExe
 
-# wt.exe に渡す profile 名 (タブアイコン・配色を PowerShell 化する)。
-# 指定 profile がユーザー WT 設定になければ wt は既定 profile へ fallback するため安全。
-# AI_STARTUP_WT_PROFILE で上書き可能。
-$WtProfileName = if ($env:AI_STARTUP_WT_PROFILE) { $env:AI_STARTUP_WT_PROFILE } else { 'PowerShell' }
+# wt.exe に渡す profile 識別子 (タブアイコン・配色を PowerShell 7 化する)。
+#
+# WT settings.json の profile 名は環境ごとに異なるため動的検出が必要:
+#   - stable Microsoft 自動生成: "PowerShell version 7"
+#   - Preview Microsoft 自動生成: "PowerShell 7"
+#   - ユーザー手動追加: 任意 ("PowerShell", "pwsh" 等)
+#
+# 検出順:
+#   1. 環境変数 AI_STARTUP_WT_PROFILE (明示指定)
+#   2. WT settings.json から pwsh.exe を commandline に持つ profile 名
+#   3. Microsoft fragment 由来の PS 7 固定 GUID (pwsh.exe パスから決定的に計算される)
+function Get-WtPwshProfile {
+    $settingsPaths = @(
+        "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json",
+        "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState\settings.json"
+    )
+    foreach ($p in $settingsPaths) {
+        if (-not (Test-Path $p)) { continue }
+        try {
+            $s = Get-Content $p -Raw -Encoding UTF8 | ConvertFrom-Json
+            $profiles = @($s.profiles.list) | Where-Object {
+                $_.commandline -and $_.commandline -match 'pwsh\.exe' -and -not $_.hidden
+            }
+            if ($profiles.Count -gt 0 -and $profiles[0].name) { return $profiles[0].name }
+        } catch { $null = $_ }
+    }
+    # Microsoft fragment 経由で pwsh.exe から生成される固定 GUID
+    return '{574e775e-4f2a-5b96-ac1e-a2962a402336}'
+}
+$WtProfileName = if ($env:AI_STARTUP_WT_PROFILE) { $env:AI_STARTUP_WT_PROFILE } else { Get-WtPwshProfile }
 
 # NewTab モード: 自身を新しい Windows Terminal タブで再起動
 if ($NewTab) {
