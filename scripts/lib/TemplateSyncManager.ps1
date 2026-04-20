@@ -196,6 +196,15 @@ function Sync-LauncherClaudeGlobalConfig {
         -TargetDir (Join-Path $ProjectDir '.claude\skills') `
         -Label '.claude/skills'
 
+    # v3.2.52 (E-4): hooks 定義と hook scripts を .claude/ に配置。
+    # 注: 現状 hook scripts は stub (console.log のみ)。完全な runtime 有効化には
+    # (1) 実装を詰める、(2) settings.json の hooks セクションで登録、の両方が必要。
+    # 本 PR ではファイル配置までを担当し、runtime 登録は settings.json 統合 (F) 側で扱う。
+    Sync-ProjectTemplateDirectory `
+        -TemplateDir (Join-Path $StartupRoot 'Claude\templates\claudeos\hooks') `
+        -TargetDir (Join-Path $ProjectDir '.claude\hooks') `
+        -Label '.claude/hooks'
+
     $settingsTemplatePath = Join-Path $StartupRoot 'scripts\templates\claude-settings.json'
     Initialize-ProjectTemplate `
         -TemplatePath $settingsTemplatePath `
