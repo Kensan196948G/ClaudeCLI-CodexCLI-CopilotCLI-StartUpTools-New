@@ -176,6 +176,14 @@ function Sync-LauncherClaudeGlobalConfig {
         -TargetDir (Join-Path $ProjectDir '.claude\claudeos') `
         -Label '.claude/claudeos'
 
+    # v3.2.49 (E-1): Agent Teams を runtime 有効化。
+    # Claude Code は .claude/agents/ のみを自動 discovery するため、
+    # .claude/claudeos/agents/ とは別に標準 path にも同期する。
+    Sync-ProjectTemplateDirectory `
+        -TemplateDir (Join-Path $StartupRoot 'Claude\templates\claudeos\agents') `
+        -TargetDir (Join-Path $ProjectDir '.claude\agents') `
+        -Label '.claude/agents'
+
     $settingsTemplatePath = Join-Path $StartupRoot 'scripts\templates\claude-settings.json'
     Initialize-ProjectTemplate `
         -TemplatePath $settingsTemplatePath `
