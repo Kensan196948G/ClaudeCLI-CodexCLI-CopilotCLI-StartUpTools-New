@@ -422,6 +422,30 @@ chmod +x $(ConvertTo-BashSingleQuoted -Value $remoteBootstrap)
         exit 0
     }
 
+    # v3.2.44: Claude/templates/claudeos/ 全体を .claude/claudeos/ に bulk sync (scp -r)
+    # ~345 ファイル (agents / skills / commands / rules / 等) を一括転送する。
+    # 既存の 6 ファイル .claude/commands/ deploy は Claude Code slash command として
+    # 別途必要なので保持 (下で heredoc から実行)。
+    $claudeosSource = Join-Path $ScriptRoot 'Claude\templates\claudeos'
+    if (Test-Path $claudeosSource) {
+        Write-Info "Syncing .claude/claudeos/ (bulk scp -r)"
+        $scpExe = if ($env:AI_STARTUP_SCP_EXE) { $env:AI_STARTUP_SCP_EXE } else { 'scp' }
+        $sshExeForMkdir = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { 'ssh' }
+
+        # 事前に .claude/ 親ディレクトリを確保
+        & $sshExeForMkdir -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMaster=no `
+            $linuxHost "mkdir -p '$linuxProject/.claude'" 2>$null
+
+        # scp -r: 既存の .claude/claudeos/ 内容を上書きする (テンプレートが正本)
+        & $scpExe -r -q -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMaster=no `
+            $claudeosSource "${linuxHost}:$linuxProject/.claude/" 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Ok ".claude/claudeos/ synced from Claude/templates/claudeos/"
+        } else {
+            Write-Warn "scp -r exit=$LASTEXITCODE — .claude/claudeos/ bulk sync をスキップ"
+        }
+    }
+
     Write-Info "Connecting via SSH: $linuxHost"
     $deployExitCode = Invoke-ClaudeSshViaStdin -LinuxHost $linuxHost -ScriptText $deployScript
     if ($deployExitCode -ne 0) {
