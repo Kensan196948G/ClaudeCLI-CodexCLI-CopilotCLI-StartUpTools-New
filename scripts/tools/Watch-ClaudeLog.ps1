@@ -12,7 +12,9 @@
     v3.2.47 で WT settings.json から pwsh profile 名を動的検出 + GUID fallback
     (ユーザー環境で profile 名が "PowerShell version 7" / "PowerShell 7" 等の
     場合にも確実にアイコンが PS 7 になるよう改善)。
-    ClaudeOS v3.2.47
+    v3.2.48 で profile 識別子を GUID 優先に変更 (空白を含む profile 名が
+    Start-Process -ArgumentList で split される問題を回避)。
+    ClaudeOS v3.2.48
 .PARAMETER NewTab
     Windows Terminal の新規タブで開く（既定: 現在のウィンドウで実行）。
 .PARAMETER PollIntervalSeconds
@@ -105,15 +107,17 @@ $PwshExe = Get-PwshExe
 
 # wt.exe に渡す profile 識別子 (タブアイコン・配色を PowerShell 7 化する)。
 #
-# WT settings.json の profile 名は環境ごとに異なるため動的検出が必要:
-#   - stable Microsoft 自動生成: "PowerShell version 7"
-#   - Preview Microsoft 自動生成: "PowerShell 7"
-#   - ユーザー手動追加: 任意 ("PowerShell", "pwsh" 等)
+# GUID を優先返却する理由 (v3.2.48):
+#   profile 名は "PowerShell version 7" のように空白を含むことがあり、
+#   Start-Process -ArgumentList の配列要素は自動クォートされないため
+#   wt.exe 側で `-p PowerShell` + `version` + `7 ...` に split されて失敗する
+#   (ERROR 0x80070002: 指定されたファイルが見つかりません)。
+#   GUID (`{574e775e-...}`) は空白を含まないためこの問題を回避できる。
 #
 # 検出順:
-#   1. 環境変数 AI_STARTUP_WT_PROFILE (明示指定)
-#   2. WT settings.json から pwsh.exe を commandline に持つ profile 名
-#   3. Microsoft fragment 由来の PS 7 固定 GUID (pwsh.exe パスから決定的に計算される)
+#   1. 環境変数 AI_STARTUP_WT_PROFILE (明示指定; 名前でも GUID でも可)
+#   2. WT settings.json から pwsh.exe を commandline に持つ profile の GUID
+#   3. Microsoft fragment 由来の PS 7 固定 GUID (pwsh.exe パスから決定的)
 function Get-WtPwshProfile {
     $settingsPaths = @(
         "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json",
@@ -126,7 +130,11 @@ function Get-WtPwshProfile {
             $profiles = @($s.profiles.list) | Where-Object {
                 $_.commandline -and $_.commandline -match 'pwsh\.exe' -and -not $_.hidden
             }
-            if ($profiles.Count -gt 0 -and $profiles[0].name) { return $profiles[0].name }
+            if ($profiles.Count -gt 0) {
+                # GUID 優先 (空白なし、シェル安全)
+                if ($profiles[0].guid) { return $profiles[0].guid }
+                if ($profiles[0].name) { return $profiles[0].name }
+            }
         } catch { $null = $_ }
     }
     # Microsoft fragment 経由で pwsh.exe から生成される固定 GUID
