@@ -8,7 +8,8 @@
     v3.2.41 から tail -F をバックグラウンド Job 化し、ライブ表示中にも
     次の cron 発火を検出 → 自動で次セッションへ切り替える (マルチ発火対応)。
     v3.2.42 で spawn タブを強制 pwsh 7 化 + Start-Job 内 UTF-8 化 (文字化け解消)。
-    ClaudeOS v3.2.42
+    v3.2.46 で wt new-tab に -p "PowerShell" を付与してタブアイコンを PS 化。
+    ClaudeOS v3.2.46
 .PARAMETER NewTab
     Windows Terminal の新規タブで開く（既定: 現在のウィンドウで実行）。
 .PARAMETER PollIntervalSeconds
@@ -99,6 +100,11 @@ function Get-PwshExe {
 }
 $PwshExe = Get-PwshExe
 
+# wt.exe に渡す profile 名 (タブアイコン・配色を PowerShell 化する)。
+# 指定 profile がユーザー WT 設定になければ wt は既定 profile へ fallback するため安全。
+# AI_STARTUP_WT_PROFILE で上書き可能。
+$WtProfileName = if ($env:AI_STARTUP_WT_PROFILE) { $env:AI_STARTUP_WT_PROFILE } else { 'PowerShell' }
+
 # NewTab モード: 自身を新しい Windows Terminal タブで再起動
 if ($NewTab) {
     $psExe  = $PwshExe
@@ -119,7 +125,7 @@ if ($NewTab) {
     if ($WithSessionInfoTab) { $psArgs += '-WithSessionInfoTab' }
 
     if ($wtExe) {
-        $wtArgs = @('-w', '0', 'new-tab', '--title', 'Claude-Live-Log', '--', $psExe) + $psArgs
+        $wtArgs = @('-w', '0', 'new-tab', '-p', $WtProfileName, '--title', 'Claude-Live-Log', '--', $psExe) + $psArgs
         Start-Process -FilePath $wtExe.Source -ArgumentList $wtArgs -WindowStyle Hidden
         Write-Host '[INFO] Claude-Live-Log タブを開きました。' -ForegroundColor Cyan
     } else {
@@ -194,7 +200,7 @@ function Open-TmuxAttachTab {
         '-NoExit', '-NoProfile', '-ExecutionPolicy', 'Bypass',
         '-Command', $sshCmd
     )
-    $wtArgs = @('-w', '0', 'new-tab', '--title', 'Claude-UI', '--', $psExe) + $psArgs
+    $wtArgs = @('-w', '0', 'new-tab', '-p', $script:WtProfileName, '--title', 'Claude-UI', '--', $psExe) + $psArgs
     Start-Process -FilePath $wtExe.Source -ArgumentList $wtArgs -WindowStyle Hidden
     Write-Host "  Claude UI タブを開きました: tmux attach-session -t $tmuxSession" -ForegroundColor Magenta
 }
@@ -220,7 +226,7 @@ function Open-SessionInfoTab {
         '-LinuxUser', $LinuxUser,
         '-SessionsDir', $SessionsDir
     )
-    $wtArgs = @('-w', '0', 'new-tab', '--title', 'Session-Info', '--', $psExe) + $psArgs
+    $wtArgs = @('-w', '0', 'new-tab', '-p', $script:WtProfileName, '--title', 'Session-Info', '--', $psExe) + $psArgs
     Start-Process -FilePath $wtExe.Source -ArgumentList $wtArgs -WindowStyle Hidden
     Write-Host "  Session Info タブを開きました: $SessionId" -ForegroundColor Cyan
 }
