@@ -444,6 +444,17 @@ chmod +x $(ConvertTo-BashSingleQuoted -Value $remoteBootstrap)
         } else {
             Write-Warn "scp -r exit=$LASTEXITCODE — .claude/claudeos/ bulk sync をスキップ"
         }
+
+        # v3.2.49 (E-1): Agent Teams を runtime 有効化。
+        # Claude Code は .claude/agents/ のみを自動 discovery するため、scp 済みの
+        # .claude/claudeos/agents/ を .claude/agents/ にも複製する。
+        & $sshExeForMkdir -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMaster=no `
+            $linuxHost "mkdir -p '$linuxProject/.claude/agents' && cp -rf '$linuxProject/.claude/claudeos/agents/.' '$linuxProject/.claude/agents/' 2>/dev/null" 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Ok ".claude/agents/ activated (Agent Teams runtime)"
+        } else {
+            Write-Warn ".claude/agents/ activation exit=$LASTEXITCODE — Agent Teams は reference のみ"
+        }
     }
 
     Write-Info "Connecting via SSH: $linuxHost"
