@@ -469,6 +469,13 @@ chmod +x $(ConvertTo-BashSingleQuoted -Value $remoteBootstrap)
         if ($LASTEXITCODE -eq 0) {
             Write-Ok ".claude/skills/ activated (64 skills runtime)"
         }
+
+        # v3.2.52 (E-4): hooks 定義と hook scripts を配置 (runtime 登録は F 側)
+        & $sshExeForMkdir -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMaster=no `
+            $linuxHost "mkdir -p '$linuxProject/.claude/hooks' && cp -rf '$linuxProject/.claude/claudeos/hooks/.' '$linuxProject/.claude/hooks/' 2>/dev/null" 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Ok ".claude/hooks/ placed (runtime 登録は settings.json で別途実施)"
+        }
     }
 
     Write-Info "Connecting via SSH: $linuxHost"
