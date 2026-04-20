@@ -7,7 +7,8 @@
     cron 実行前に起動しておくと、発火を検知して自動でログ表示を開始する。
     v3.2.41 から tail -F をバックグラウンド Job 化し、ライブ表示中にも
     次の cron 発火を検出 → 自動で次セッションへ切り替える (マルチ発火対応)。
-    ClaudeOS v3.2.41
+    v3.2.42 で spawn タブを強制 pwsh 7 化 + Start-Job 内 UTF-8 化 (文字化け解消)。
+    ClaudeOS v3.2.42
 .PARAMETER NewTab
     Windows Terminal の新規タブで開く（既定: 現在のウィンドウで実行）。
 .PARAMETER PollIntervalSeconds
@@ -82,9 +83,25 @@ if ([string]::IsNullOrWhiteSpace($LinuxHost) -or $LinuxHost -eq '<your-linux-hos
     exit 1
 }
 
+# spawn タブ用の PowerShell exe 解決: PowerShell 7 (pwsh.exe) を最優先。
+# PATH 不通でも既知インストール先を検査し、最終 fallback は親プロセス。
+function Get-PwshExe {
+    $cmd = Get-Command pwsh -ErrorAction SilentlyContinue
+    if ($cmd -and $cmd.Source) { return $cmd.Source }
+    foreach ($p in @(
+        'C:\Program Files\PowerShell\7\pwsh.exe',
+        "$env:ProgramFiles\PowerShell\7\pwsh.exe",
+        "$env:LOCALAPPDATA\Microsoft\PowerShell\7\pwsh.exe"
+    )) {
+        if ($p -and (Test-Path $p)) { return $p }
+    }
+    return (Get-Process -Id $PID).Path
+}
+$PwshExe = Get-PwshExe
+
 # NewTab モード: 自身を新しい Windows Terminal タブで再起動
 if ($NewTab) {
-    $psExe  = (Get-Process -Id $PID).Path
+    $psExe  = $PwshExe
     $wtExe  = Get-Command wt.exe -ErrorAction SilentlyContinue
     $myPath = $PSCommandPath
 
@@ -172,7 +189,7 @@ function Open-TmuxAttachTab {
     $tmuxSession  = "claudeos-$safeProject"
     # attach-session: セッションが存在しなければエラー終了 (new-session -A はゴーストセッションを作るため使わない)
     $sshCmd       = "ssh -t $SshTarget tmux attach-session -t $tmuxSession"
-    $psExe        = (Get-Process -Id $PID).Path
+    $psExe        = $script:PwshExe
     $psArgs = @(
         '-NoExit', '-NoProfile', '-ExecutionPolicy', 'Bypass',
         '-Command', $sshCmd
@@ -189,7 +206,7 @@ function Open-SessionInfoTab {
         Write-Host '  [INFO] wt.exe が非検出のため Session Info タブを開けません。' -ForegroundColor Yellow
         return
     }
-    $psExe    = (Get-Process -Id $PID).Path
+    $psExe    = $script:PwshExe
     $siScript = Join-Path $PSScriptRoot 'Watch-SessionInfoSSH.ps1'
     if (-not (Test-Path $siScript)) {
         Write-Host "  [WARN] Watch-SessionInfoSSH.ps1 が見つかりません: $siScript" -ForegroundColor Yellow
@@ -250,6 +267,11 @@ while ($true) {
         # stdbuf -oL で tail の line-buffering を強制し、リアルタイム出力を担保する。
         $tailJob = Start-Job -ArgumentList $SshTarget, $latest -ScriptBlock {
             param($target, $path)
+            # Job は新規 runspace のため親 console のエンコーディング継承なし。
+            # 明示的に UTF-8 化しないと ssh 経由の日本語出力 (例: "UI閲覧用") が文字化ける (v3.2.42)。
+            [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+            [Console]::InputEncoding  = [System.Text.Encoding]::UTF8
+            $OutputEncoding = [System.Text.Encoding]::UTF8
             ssh $target "stdbuf -oL tail -n 50 -F '$path'"
         }
 
