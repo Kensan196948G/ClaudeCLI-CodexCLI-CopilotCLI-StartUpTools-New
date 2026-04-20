@@ -462,6 +462,13 @@ chmod +x $(ConvertTo-BashSingleQuoted -Value $remoteBootstrap)
         if ($LASTEXITCODE -eq 0) {
             Write-Ok ".claude/commands/ activated (39 slash commands runtime)"
         }
+
+        # v3.2.51 (E-3): skills を runtime 有効化 (64 skill ディレクトリ)
+        & $sshExeForMkdir -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMaster=no `
+            $linuxHost "mkdir -p '$linuxProject/.claude/skills' && cp -rf '$linuxProject/.claude/claudeos/skills/.' '$linuxProject/.claude/skills/' 2>/dev/null" 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Ok ".claude/skills/ activated (64 skills runtime)"
+        }
     }
 
     Write-Info "Connecting via SSH: $linuxHost"

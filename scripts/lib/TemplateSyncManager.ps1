@@ -190,6 +190,12 @@ function Sync-LauncherClaudeGlobalConfig {
         -TargetDir (Join-Path $ProjectDir '.claude\commands') `
         -Label '.claude/commands'
 
+    # v3.2.51 (E-3): skills を runtime 有効化 (64 skill ディレクトリ)
+    Sync-ProjectTemplateDirectory `
+        -TemplateDir (Join-Path $StartupRoot 'Claude\templates\claudeos\skills') `
+        -TargetDir (Join-Path $ProjectDir '.claude\skills') `
+        -Label '.claude/skills'
+
     $settingsTemplatePath = Join-Path $StartupRoot 'scripts\templates\claude-settings.json'
     Initialize-ProjectTemplate `
         -TemplatePath $settingsTemplatePath `
