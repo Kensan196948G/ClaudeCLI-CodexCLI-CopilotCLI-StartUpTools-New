@@ -455,6 +455,13 @@ chmod +x $(ConvertTo-BashSingleQuoted -Value $remoteBootstrap)
         } else {
             Write-Warn ".claude/agents/ activation exit=$LASTEXITCODE — Agent Teams は reference のみ"
         }
+
+        # v3.2.50 (E-2): slash commands を runtime 有効化 (39 ファイル)
+        & $sshExeForMkdir -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMaster=no `
+            $linuxHost "mkdir -p '$linuxProject/.claude/commands' && cp -rf '$linuxProject/.claude/claudeos/commands/.' '$linuxProject/.claude/commands/' 2>/dev/null" 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Ok ".claude/commands/ activated (39 slash commands runtime)"
+        }
     }
 
     Write-Info "Connecting via SSH: $linuxHost"
