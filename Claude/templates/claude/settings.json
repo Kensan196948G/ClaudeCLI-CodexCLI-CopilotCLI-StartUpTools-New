@@ -1,5 +1,24 @@
 {
+  "respectGitignore": true,
   "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    "ENABLE_TOOL_SEARCH": "true",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "50",
+    "CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION": "true"
+  },
+  "includeCoAuthoredBy": true,
+  "outputStyle": "Explanatory",
+  "language": "日本語",
+  "spinnerTipsEnabled": true,
+  "alwaysThinkingEnabled": true,
+  "promptSuggestionEnabled": true,
+  "autoUpdatesChannel": "latest",
+  "prefersReducedMotion": false,
+  "terminal": {
+    "mode": "auto"
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "python3 .claude/statusline.py"
   }
 }

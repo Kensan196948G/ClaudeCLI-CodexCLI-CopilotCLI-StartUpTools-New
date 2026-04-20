@@ -205,7 +205,8 @@ function Sync-LauncherClaudeGlobalConfig {
         -TargetDir (Join-Path $ProjectDir '.claude\hooks') `
         -Label '.claude/hooks'
 
-    $settingsTemplatePath = Join-Path $StartupRoot 'scripts\templates\claude-settings.json'
+    # v3.2.53 (F): settings.json は Claude/templates/claude/settings.json に一本化
+    $settingsTemplatePath = Join-Path $StartupRoot 'Claude\templates\claude\settings.json'
     Initialize-ProjectTemplate `
         -TemplatePath $settingsTemplatePath `
         -TargetPath (Join-Path $ProjectDir '.claude\settings.json') `
