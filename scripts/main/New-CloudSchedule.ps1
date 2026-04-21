@@ -296,14 +296,45 @@ function Invoke-CloudRegisterAll {
 }
 
 # ─────────────────────────────────────────────────
-# [4] 削除 / 無効化（Trigger ID 指定）
+# [4] 削除 / 無効化（ID 指定 or 全削除）
 # ─────────────────────────────────────────────────
 function Invoke-CloudDelete {
     Invoke-CloudList
     Write-Host ""
-    $id = (Read-Host "  削除する Trigger ID を入力 (空 Enter でキャンセル)").Trim()
-    if ([string]::IsNullOrWhiteSpace($id)) { Write-Host "  キャンセルしました。" -ForegroundColor Yellow; return }
+    Write-Host "    [A] 全削除（全トリガーを無効化）" -ForegroundColor Red
+    Write-Host "    [ID] Trigger ID を指定して削除" -ForegroundColor Yellow
+    Write-Host "    [Enter] キャンセル" -ForegroundColor Gray
+    Write-Host ""
+    $input = (Read-Host "  入力 (A / Trigger ID)").Trim()
 
+    if ([string]::IsNullOrWhiteSpace($input)) { Write-Host "  キャンセルしました。" -ForegroundColor Yellow; return }
+
+    # ── 全削除 ──
+    if ($input -eq 'A' -or $input -eq 'a') {
+        $confirm = Read-Host "  全トリガーを無効化します。本当によろしいですか? [y/N]"
+        if ($confirm -notmatch '^[yY]') { Write-Host "  キャンセルしました。" -ForegroundColor Yellow; return }
+
+        Write-Host ""
+        Write-Host "  全削除処理中（claude API 経由）..." -ForegroundColor Red
+        $prompt = @"
+Use RemoteTrigger with action='list' to get all trigger IDs.
+Then for each trigger, call RemoteTrigger with action='update', trigger_id=<id>, body={"enabled": false} to disable it.
+After finishing all, output ONE line: DONE_ALL=<count> where count is the number of triggers disabled.
+"@
+        $output = Invoke-CloudCLI $prompt
+
+        $doneLine = $output | Where-Object { $_ -match '^DONE_ALL=' } | Select-Object -First 1
+        if ($doneLine) {
+            $count = ($doneLine -replace '^DONE_ALL=', '').Trim()
+            Write-Host "  [OK] $count 件を無効化しました。" -ForegroundColor Green
+        } else {
+            $output | Where-Object { $_.Trim() } | ForEach-Object { Write-Host "  $_" }
+        }
+        return
+    }
+
+    # ── ID 指定削除 ──
+    $id = $input
     $confirm = Read-Host "  '$id' を削除しますか? [y/N]"
     if ($confirm -notmatch '^[yY]') { Write-Host "  キャンセルしました。" -ForegroundColor Yellow; return }
 
@@ -311,14 +342,13 @@ function Invoke-CloudDelete {
     Write-Host "  削除処理中..." -ForegroundColor Cyan
     $prompt = @"
 Use RemoteTrigger with action='update', trigger_id='$id', body={"enabled": false}.
-This disables the trigger. After the call output ONE line: DONE
+After the call output ONE line: DONE
 "@
     $output = Invoke-CloudCLI $prompt
 
     if ($output -match 'DONE') {
         Write-Host "  [OK] 無効化しました: $id" -ForegroundColor Green
     } else {
-        Write-Host "  処理結果:" -ForegroundColor DarkGray
         $output | Where-Object { $_.Trim() } | ForEach-Object { Write-Host "  $_" }
     }
 }
@@ -362,7 +392,7 @@ function Show-CloudScheduleMenu {
     Write-Host "    [1] 一覧表示" -ForegroundColor Yellow
     Write-Host "    [2] 新規登録（プリセット or カスタム）" -ForegroundColor Yellow
     Write-Host "    [3] 全 4 標準ループを一括登録" -ForegroundColor Green
-    Write-Host "    [4] 削除 / 無効化（Trigger ID 指定）" -ForegroundColor Yellow
+    Write-Host "    [4] 削除 / 無効化（ID 指定 or 全削除）" -ForegroundColor Yellow
     Write-Host "    [5] 今すぐ実行（Trigger ID 指定）" -ForegroundColor Green
     Write-Host "    [0] 戻る" -ForegroundColor Gray
     Write-Host ""
