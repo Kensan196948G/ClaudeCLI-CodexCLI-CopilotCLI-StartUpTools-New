@@ -88,6 +88,7 @@
 79. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.2.64 管理操作（OFFA/ONA/DELA）をプロジェクトスコープに限定 — 全一括操作が全プロジェクトに影響する問題修正 / 確認ダイアログにプロジェクト名明示 / $script:RepoUrl フィルタ追加
 80. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#226] v3.2.65 New-CloudSchedule.ps1 ユニットテスト追加 — Build-CreatePrompt / New-LoopPreset の 23 テストケース / dot-source exit→return パッチ戦略 / PSScriptAnalyzer 0警告
 81. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#228] v3.2.66 WorktreeManager.psm1 テストカバレッジ拡充 — Get-WorktreeSummary 9件（Mock -ModuleName WorktreeManager）/ Get-WorktreeBasePath edge cases +2件 = 計 14 テストケース / PSScriptAnalyzer 0警告 / STABLE N=3達成
+82. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#230] v3.2.67 RecentProjects.ps1 ユニットテスト追加 — Get-RecentProject 9件（legacy/object 正規化・エラー抑制・env var展開）/ Update-RecentProject 4件（先頭挿入・重複削除・MaxHistory）/ Test-RecentProjectsEnabled 3件 = 計 17 テストケース / PSScriptAnalyzer 0警告
 
 ## Auto Extracted From Agent Teams Matrix
 
