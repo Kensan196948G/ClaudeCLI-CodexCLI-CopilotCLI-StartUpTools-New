@@ -212,9 +212,9 @@ function Show-Menu {
     Write-Host "    9.  Agent Teams ランタイム" -ForegroundColor Magenta
     Write-Host "    10. Worktree Manager" -ForegroundColor Magenta
     Write-Host "    11. Architecture Check" -ForegroundColor Magenta
-    Write-Host "    12. Cloud スケジュール 登録・削除・実行 [S1専用 / Anthropicクラウド]" -ForegroundColor Magenta
-    Write-Host "    13. Statusline 設定" -ForegroundColor Magenta
-    Write-Host "    14. Claude ログ監視タブを開く" -ForegroundColor Magenta
+    Write-Host "    12. Statusline 設定" -ForegroundColor Magenta
+    Write-Host "    13. Claude ログ監視タブを開く" -ForegroundColor Magenta
+    Write-Host "    14. Cloud スケジュール 登録・削除・実行 [S1専用 / Anthropicクラウド]" -ForegroundColor Magenta
     Write-Host "    15. Cron スケジュール 登録・編集・削除 [S1専用 / 5h強制終了]" -ForegroundColor Magenta
     Write-Host ""
 
@@ -297,14 +297,14 @@ while ($true) {
         "9"  { Invoke-MenuScript -File "scripts\test\Test-AgentTeams.ps1" }
         "10" { Invoke-MenuScript -File "scripts\test\Test-WorktreeManager.ps1" }
         "11" { Invoke-MenuScript -File "scripts\test\Test-ArchitectureCheck.ps1" }
-        "12" { Invoke-MenuScript -File "scripts\main\New-CloudSchedule.ps1" }
-        "13" { Invoke-MenuScript -File "scripts\main\Set-Statusline.ps1" }
-        "14" {
+        "12" { Invoke-MenuScript -File "scripts\main\Set-Statusline.ps1" }
+        "13" {
             $watchScript = Join-Path $ProjectRoot "scripts\tools\Watch-ClaudeLog.ps1"
             & $ShellExe -NoProfile -ExecutionPolicy Bypass -File $watchScript -NewTab -WithSessionInfoTab
             Write-Host ""
             Read-Host "  Enterキーでメニューに戻ります"
         }
+        "14" { Invoke-MenuScript -File "scripts\main\New-CloudSchedule.ps1" }
         "15" { Invoke-MenuScript -File "scripts\main\New-CronSchedule.ps1" }
         "0"  { exit 0 }
         default {
