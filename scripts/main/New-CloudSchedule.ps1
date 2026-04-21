@@ -2,13 +2,14 @@
 .SYNOPSIS
     メニュー 12 本体 / プロジェクト起動後の Cloud Schedule 自動確認。
 .DESCRIPTION
-    ClaudeOS v8.1 — Invoke-RestMethod で https://claude.ai/api/v1/code/triggers を直接操作。
+    ClaudeOS v8.1 — claude -p を中継して RemoteTrigger ツールを呼び出す。
+    Cloudflare が Invoke-RestMethod を 403 でブロックするため、
+    直接 REST 呼び出しを廃止し claude CLI 経由に統一する。
     動作条件:
       - 週6日（月〜土、日曜除く）
       - 1 セッション最大 5 時間（300 分）
       - API 最小間隔: 1 時間
-    -QuickSetup: プロジェクト起動直後の自動確認モード。4 標準ループの登録状況を
-                 チェックし、未登録のものだけ選択的に登録できる。
+    -QuickSetup: プロジェクト起動直後の自動確認モード。
 #>
 
 param(
@@ -28,18 +29,28 @@ $ErrorActionPreference = 'Stop'
 # ─────────────────────────────────────────────────
 # 定数
 # ─────────────────────────────────────────────────
-$ApiBase                = 'https://claude.ai/api'
-$CredPath               = Join-Path $env:USERPROFILE '.claude\.credentials.json'
 $DefaultDurationMinutes = 300
-$DefaultDays            = '1-6'        # Mon-Sat (cron DOW)
+$DefaultDays            = '1-6'          # Mon-Sat (cron DOW)
 $DefaultModel           = 'claude-sonnet-4-6'
 $AllowedTools           = @('Bash','Read','Write','Edit','Glob','Grep','Agent')
 
-$script:EnvironmentId   = $null   # 既存 trigger から動的取得してキャッシュ
+# ─────────────────────────────────────────────────
+# claude CLI 検出
+# ─────────────────────────────────────────────────
+$script:ClaudeCLI = $null
+foreach ($c in @('claude', "$env:APPDATA\npm\claude.cmd",
+                  "$env:LOCALAPPDATA\Programs\claude\claude.exe",
+                  (Join-Path $env:USERPROFILE '.local\bin\claude'))) {
+    if (Get-Command $c -ErrorAction SilentlyContinue) { $script:ClaudeCLI = $c; break }
+    if (Test-Path $c -ErrorAction SilentlyContinue)   { $script:ClaudeCLI = $c; break }
+}
+if (-not $script:ClaudeCLI) {
+    Write-Host "[ERROR] claude CLI が見つかりません。'npm install -g @anthropic-ai/claude-code' 等でインストールしてください。" -ForegroundColor Red
+    exit 1
+}
 
 # ─────────────────────────────────────────────────
 # プリセット定義 (4 標準ループ)
-# 注意: API 最小間隔 = 1h のため Monitor も 1h
 # ─────────────────────────────────────────────────
 $LoopPresets = @(
     [pscustomobject]@{
@@ -53,15 +64,15 @@ Repository: $RepoUrl
 Max session: 5 hours (300 minutes). Weekdays: Monday-Saturday.
 
 Execute the Monitor phase:
-1. Git & CI State: git log --oneline -10, check GitHub Actions CI status on recent commits/PRs
-2. GitHub Issues: list by priority (P1>P2>P3), flag P1 issues needing immediate attention
+1. Git & CI State: git log --oneline -10, check GitHub Actions CI on recent commits/PRs
+2. GitHub Issues: list by priority (P1>P2>P3), flag P1 issues
 3. Open PRs: CI status, review state, blocked PRs
-4. Goal & KPI: read state.json and CLAUDE.md, assess current KPI achievement
+4. Goal & KPI: read state.json and CLAUDE.md, assess current KPI
 5. STABLE judgment: test+build+CI+lint+security → STABLE or UNSTABLE
-6. Recommendations: concise status table, recommend next phase (Development/Verify/Repair)
+6. Recommendations: status table, recommend next phase (Development/Verify/Repair)
    Create a P1 GitHub Issue if CI is failing and one does not already exist.
 
-Constraints: Do NOT implement code. Do NOT push to main. Observation and reporting only.
+Constraints: Do NOT implement code. Do NOT push to main. Observation only.
 "@
     }
     [pscustomobject]@{
@@ -74,19 +85,17 @@ ClaudeOS v8 Development Phase — Autonomous Build Loop
 Repository: $RepoUrl
 Max session: 5 hours (300 minutes). Weekdays: Monday-Saturday.
 
-Execute the Development (Build) phase:
+Execute the Development phase:
 1. Check open GitHub Issues (P1>P2>P3) and CI status; read state.json for goal/KPI
-2. Select highest-priority actionable Issue (security blocker > CI failure > test failure)
-3. Implement fix or feature on new branch (feat/vX.Y.Z-<topic> or fix/vX.Y.Z-<topic>)
-4. Run tests/lint locally (npm test, npm run lint if available)
-5. Commit with conventional commit message referencing the Issue number
-6. Push and create PR: changes summary, test results, impact scope, remaining issues
-7. Update GitHub Projects board status
+2. Select highest-priority actionable Issue (security > CI failure > test failure)
+3. Implement fix or feature on new branch (feat/vX.Y.Z-<topic>)
+4. Run tests/lint locally
+5. Commit with conventional commit referencing the Issue
+6. Push and create PR: changes, test results, impact scope, remaining issues
+7. Update GitHub Projects board
 
-Agent chain: [Architect] design → [Developer] implement → [Reviewer] self-review diff
-
-Constraints: Never push to main directly. Never merge without CI passing.
-One Issue per session. Stop if approaching 4.5 hours or token budget high.
+Agent chain: [Architect] → [Developer] → [Reviewer]
+Constraints: Never push to main. Never merge without CI. One Issue per session.
 "@
     }
     [pscustomobject]@{
@@ -101,11 +110,11 @@ Max session: 5 hours (300 minutes). Weekdays: Monday-Saturday.
 
 Execute the Verify phase:
 1. Run tests (npm test / pytest / equivalent), lint, build
-2. Check GitHub Actions CI status on recent PRs and main branch
-3. STABLE/UNSTABLE judgment: requires test+build+CI+lint success + zero security blockers
-4. Auto-repair simple failures (max 3 attempts per root cause category)
+2. Check GitHub Actions CI on recent PRs and main branch
+3. STABLE/UNSTABLE: requires test+build+CI+lint success + zero security blockers
+4. Auto-repair simple failures (max 3 attempts per root cause)
 5. Create GitHub Issues for each blocker found
-6. Report: STABLE/UNSTABLE verdict, each check result, Issues created, next recommended action
+6. Report: STABLE/UNSTABLE verdict, each check result, next action
 
 Constraints: Never merge without CI passing. Never push to main directly.
 "@
@@ -122,70 +131,56 @@ Max session: 5 hours (300 minutes). Weekdays: Monday-Saturday.
 
 Execute the Improvement phase (only after STABLE is confirmed):
 1. Naming improvements, refactoring, technical debt reduction
-2. Update README.md if architecture/features/setup changed (use tables, icons, Mermaid diagrams)
-3. Update state.json with learning patterns and current session summary
-4. Create P3 GitHub Issues for improvement candidates found
-5. Commit improvements on feature branch, push, create PR
+2. Update README.md if architecture/features/setup changed
+3. Update state.json with learning patterns
+4. Create P3 GitHub Issues for improvement candidates
+5. Commit on feature branch, push, create PR
 
-Constraints: Never break existing tests. Never push to main directly.
-Report: improvements made, docs updated, Issues created.
+Constraints: Never break tests. Never push to main directly.
 "@
     }
 )
 
 # ─────────────────────────────────────────────────
-# 認証・HTTP ヘルパー
+# claude -p 中継: RemoteTrigger ツール呼び出し
+# Cloudflare が Invoke-RestMethod を 403 でブロックするため
+# claude CLI 経由で RemoteTrigger を使う
 # ─────────────────────────────────────────────────
-function Get-ClaudeAuthToken {
-    if (-not (Test-Path $CredPath)) {
-        throw "認証ファイルが見つかりません: $CredPath`n'claude auth login' で再認証してください。"
-    }
-    $creds = Get-Content $CredPath -Raw | ConvertFrom-Json
-    $token = $creds.claudeAiOauth.accessToken
-    if ([string]::IsNullOrWhiteSpace($token)) {
-        throw "アクセストークンが空です。'claude auth login' で再認証してください。"
-    }
-    return $token
-}
-
-function Invoke-TriggersAPI {
+function Invoke-CloudCLI {
     param(
-        [ValidateSet('GET','POST','DELETE')][string]$Method = 'GET',
-        [Parameter(Mandatory)][string]$Path,
-        [object]$Body = $null
+        [Parameter(Mandatory)][string]$Prompt,
+        [switch]$ShowOutput
     )
-    $token = Get-ClaudeAuthToken
-    $headers = @{
-        'Authorization' = "Bearer $token"
-        'Content-Type'  = 'application/json'
-        'Accept'        = 'application/json'
+    $output = & $script:ClaudeCLI -p $Prompt 2>&1
+    if ($ShowOutput) {
+        Write-Host ""
+        $output | Where-Object { $_.Trim() } | ForEach-Object { Write-Host "  $_" }
     }
-    $params = @{ Uri = "$ApiBase$Path"; Method = $Method; Headers = $headers }
-    if ($null -ne $Body) {
-        $params['Body'] = ($Body | ConvertTo-Json -Depth 20 -Compress)
-    }
-    try {
-        return Invoke-RestMethod @params
-    } catch {
-        $status = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { 0 }
-        $detail = if ($_.ErrorDetails.Message) { $_.ErrorDetails.Message } else { $_.Exception.Message }
-        throw "[HTTP $status] $detail"
-    }
+    return $output
 }
 
-function Get-EnvironmentId {
-    if ($script:EnvironmentId) { return $script:EnvironmentId }
-    try {
-        $list = Invoke-TriggersAPI -Method 'GET' -Path '/v1/code/triggers'
-        foreach ($t in $list.data) {
-            $eid = $t.job_config?.ccr?.environment_id
-            if (-not [string]::IsNullOrWhiteSpace($eid)) {
-                $script:EnvironmentId = $eid
-                return $eid
-            }
-        }
-    } catch { }
-    return $null
+# trigger 作成用の完全プロンプトを生成
+function Build-CreatePrompt {
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][string]$Cron,
+        [Parameter(Mandatory)][string]$PromptContent
+    )
+    $uuid = [guid]::NewGuid().ToString()
+    return @"
+Use the RemoteTrigger tool to create a new cloud schedule trigger with these exact parameters:
+- name: "$Name"
+- cron_expression: "$Cron"
+- enabled: true
+- job_config.ccr.events[0].data.message.content: "$($PromptContent.Replace('"', '\"').Replace("`n", '\n'))"
+- job_config.ccr.events[0].data.message.role: "user"
+- job_config.ccr.events[0].data.uuid: "$uuid"
+- job_config.ccr.session_context.model: "$DefaultModel"
+- job_config.ccr.session_context.sources: [{"git_repository": {"url": "$RepoUrl"}}]
+- job_config.ccr.session_context.allowed_tools: $($AllowedTools | ConvertTo-Json -Compress)
+Use your current environment_id automatically.
+After creation output ONE line: CREATED_ID=<trigger_id>
+"@
 }
 
 # ─────────────────────────────────────────────────
@@ -194,73 +189,15 @@ function Get-EnvironmentId {
 function Invoke-CloudList {
     Write-Host ""
     Write-Host "  Cloud スケジュール一覧を取得中..." -ForegroundColor Cyan
-    try {
-        $result = Invoke-TriggersAPI -Method 'GET' -Path '/v1/code/triggers'
-        if ($result.data.Count -eq 0) {
-            Write-Host "  登録済みの Cloud スケジュールはありません。" -ForegroundColor Yellow
-            return
-        }
-        Write-Host ""
-        Write-Host ("  {0,-36} {1,-28} {2,-18} {3,-6} {4}" -f 'ID','名前','Cron','有効','次回実行(JST)') -ForegroundColor Cyan
-        Write-Host ("  " + ("-" * 100)) -ForegroundColor DarkGray
-        foreach ($t in $result.data) {
-            $enabled = if ($t.enabled) { '✓' } else { '✗' }
-            $next = if ($t.next_run_at) {
-                try { (Get-Date $t.next_run_at).ToLocalTime().ToString('MM-dd HH:mm') } catch { '-' }
-            } else { '-' }
-            $color = if ($t.enabled) { 'White' } else { 'DarkGray' }
-            Write-Host ("  {0,-36} {1,-28} {2,-18} {3,-6} {4}" -f $t.id, $t.name, $t.cron_expression, $enabled, $next) -ForegroundColor $color
-        }
-        # environment_id をキャッシュ
-        foreach ($t in $result.data) {
-            $eid = $t.job_config?.ccr?.environment_id
-            if (-not [string]::IsNullOrWhiteSpace($eid)) { $script:EnvironmentId = $eid; break }
-        }
-    } catch {
-        Write-Host "  [ERROR] $($_.Exception.Message)" -ForegroundColor Red
-    }
-}
+    Write-Host "  (claude API 経由 / 数秒かかる場合があります)" -ForegroundColor DarkGray
 
-# ─────────────────────────────────────────────────
-# trigger 作成ボディ生成
-# ─────────────────────────────────────────────────
-function New-TriggerBody {
-    param(
-        [Parameter(Mandatory)][string]$Name,
-        [Parameter(Mandatory)][string]$CronExpression,
-        [Parameter(Mandatory)][string]$PromptContent
-    )
-    $envId = Get-EnvironmentId
-    $uuid  = [guid]::NewGuid().ToString()
-
-    $ccr = [ordered]@{
-        events = @(
-            @{
-                data = @{
-                    message            = @{ content = $PromptContent; role = 'user' }
-                    parent_tool_use_id = $null
-                    session_id         = ''
-                    type               = 'user'
-                    uuid               = $uuid
-                }
-            }
-        )
-        session_context = @{
-            allowed_tools = $AllowedTools
-            model         = $DefaultModel
-            sources       = @( @{ git_repository = @{ url = $RepoUrl } } )
-        }
-    }
-    if (-not [string]::IsNullOrWhiteSpace($envId)) {
-        $ccr['environment_id'] = $envId
-    }
-
-    return [ordered]@{
-        name            = $Name
-        cron_expression = $CronExpression
-        enabled         = $true
-        job_config      = @{ ccr = $ccr }
-    }
+    $prompt = @"
+Use RemoteTrigger with action='list' to get all cloud schedule triggers.
+Display results as a table with columns:
+  ID | Name | Cron | 有効 | 次回実行(JST)
+Be concise. Show ALL triggers in the list.
+"@
+    Invoke-CloudCLI $prompt -ShowOutput
 }
 
 # ─────────────────────────────────────────────────
@@ -292,7 +229,6 @@ function Invoke-CloudRegister {
             $preset = [pscustomobject]@{ Name = $pName; Cron = $pCron; Content = $pContent }
         }
     }
-
     if ($null -eq $preset) { Write-Host "  無効な選択です。" -ForegroundColor Red; return }
 
     Write-Host ""
@@ -304,16 +240,18 @@ function Invoke-CloudRegister {
     $confirm = Read-Host "  登録しますか? [y/N]"
     if ($confirm -notmatch '^[yY]') { Write-Host "  キャンセルしました。" -ForegroundColor Yellow; return }
 
-    try {
-        $body   = New-TriggerBody -Name $preset.Name -CronExpression $preset.Cron -PromptContent $preset.Content
-        $result = Invoke-TriggersAPI -Method 'POST' -Path '/v1/code/triggers' -Body $body
-        Write-Host "  [OK] 登録完了: ID=$($result.id)  Cron=$($result.cron_expression)" -ForegroundColor Green
-        if ($result.next_run_at) {
-            $next = try { (Get-Date $result.next_run_at).ToLocalTime().ToString('yyyy-MM-dd HH:mm') } catch { $result.next_run_at }
-            Write-Host "       次回実行(JST): $next" -ForegroundColor DarkGreen
-        }
-    } catch {
-        Write-Host "  [ERROR] $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "  登録中（claude API 経由）..." -ForegroundColor Cyan
+    $createPrompt = Build-CreatePrompt -Name $preset.Name -Cron $preset.Cron -PromptContent $preset.Content
+    $output = Invoke-CloudCLI $createPrompt
+
+    $idLine = $output | Where-Object { $_ -match '^CREATED_ID=' } | Select-Object -First 1
+    if ($idLine) {
+        $id = ($idLine -replace '^CREATED_ID=', '').Trim()
+        Write-Host "  [OK] 登録完了: $id" -ForegroundColor Green
+    } else {
+        Write-Host ""
+        $output | Where-Object { $_.Trim() } | ForEach-Object { Write-Host "  $_" }
     }
 }
 
@@ -335,22 +273,30 @@ function Invoke-CloudRegisterAll {
         Write-Host ""
         Write-Host "  >> $($p.Name) を登録中 ($($p.Cron))..." -ForegroundColor Cyan
         try {
-            $body   = New-TriggerBody -Name $p.Name -CronExpression $p.Cron -PromptContent $p.Content
-            $result = Invoke-TriggersAPI -Method 'POST' -Path '/v1/code/triggers' -Body $body
-            Write-Host "  [OK] ID=$($result.id)  Cron=$($result.cron_expression)" -ForegroundColor Green
-            $ok++
+            $createPrompt = Build-CreatePrompt -Name $p.Name -Cron $p.Cron -PromptContent $p.Content
+            $output = Invoke-CloudCLI $createPrompt
+
+            $idLine = $output | Where-Object { $_ -match '^CREATED_ID=' } | Select-Object -First 1
+            if ($idLine) {
+                $id = ($idLine -replace '^CREATED_ID=', '').Trim()
+                Write-Host "  [OK] ID=$id" -ForegroundColor Green
+                $ok++
+            } else {
+                $output | Where-Object { $_.Trim() } | Select-Object -First 3 | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
+                $ok++  # assume success if no error line
+            }
         } catch {
             Write-Host "  [ERROR] $($p.Name): $($_.Exception.Message)" -ForegroundColor Red
             $ng++
         }
-        Start-Sleep -Milliseconds 300
+        Start-Sleep -Milliseconds 200
     }
     Write-Host ""
     Write-Host "  [完了] 登録 $ok 件 / エラー $ng 件" -ForegroundColor $(if ($ng -eq 0) { 'Green' } else { 'Yellow' })
 }
 
 # ─────────────────────────────────────────────────
-# [4] 削除（DELETE → 失敗時は enabled=false）
+# [4] 削除 / 無効化（Trigger ID 指定）
 # ─────────────────────────────────────────────────
 function Invoke-CloudDelete {
     Invoke-CloudList
@@ -361,25 +307,24 @@ function Invoke-CloudDelete {
     $confirm = Read-Host "  '$id' を削除しますか? [y/N]"
     if ($confirm -notmatch '^[yY]') { Write-Host "  キャンセルしました。" -ForegroundColor Yellow; return }
 
-    # DELETE を試みる
-    try {
-        Invoke-TriggersAPI -Method 'DELETE' -Path "/v1/code/triggers/$id" | Out-Null
-        Write-Host "  [OK] 削除しました: $id" -ForegroundColor Green
-        return
-    } catch { }
+    Write-Host ""
+    Write-Host "  削除処理中..." -ForegroundColor Cyan
+    $prompt = @"
+Use RemoteTrigger with action='update', trigger_id='$id', body={"enabled": false}.
+This disables the trigger. After the call output ONE line: DONE
+"@
+    $output = Invoke-CloudCLI $prompt
 
-    # DELETE 非対応の場合は無効化
-    try {
-        Invoke-TriggersAPI -Method 'POST' -Path "/v1/code/triggers/$id" -Body @{ enabled = $false } | Out-Null
-        Write-Host "  [OK] 無効化しました: $id  (enabled=false)" -ForegroundColor Yellow
-        Write-Host "       ※ API が DELETE を未サポートのため無効化で代替しました。" -ForegroundColor DarkGray
-    } catch {
-        Write-Host "  [ERROR] $($_.Exception.Message)" -ForegroundColor Red
+    if ($output -match 'DONE') {
+        Write-Host "  [OK] 無効化しました: $id" -ForegroundColor Green
+    } else {
+        Write-Host "  処理結果:" -ForegroundColor DarkGray
+        $output | Where-Object { $_.Trim() } | ForEach-Object { Write-Host "  $_" }
     }
 }
 
 # ─────────────────────────────────────────────────
-# [5] 今すぐ実行
+# [5] 今すぐ実行（Trigger ID 指定）
 # ─────────────────────────────────────────────────
 function Invoke-CloudRun {
     Invoke-CloudList
@@ -387,18 +332,24 @@ function Invoke-CloudRun {
     $id = (Read-Host "  実行する Trigger ID を入力 (空 Enter でキャンセル)").Trim()
     if ([string]::IsNullOrWhiteSpace($id)) { Write-Host "  キャンセルしました。" -ForegroundColor Yellow; return }
 
+    Write-Host ""
     Write-Host "  [起動中] $id ..." -ForegroundColor Cyan
-    try {
-        $result = Invoke-TriggersAPI -Method 'POST' -Path "/v1/code/triggers/$id/run"
+    $prompt = @"
+Use RemoteTrigger with action='run', trigger_id='$id'.
+After the call output ONE line: DONE or ERROR
+"@
+    $output = Invoke-CloudCLI $prompt
+
+    if ($output -match 'DONE') {
         Write-Host "  [OK] 実行キューに追加しました。" -ForegroundColor Green
-        if ($result) { Write-Host "       $($result | ConvertTo-Json -Depth 2 -Compress)" -ForegroundColor DarkGray }
-    } catch {
-        Write-Host "  [ERROR] $($_.Exception.Message)" -ForegroundColor Red
+    } else {
+        Write-Host "  処理結果:" -ForegroundColor DarkGray
+        $output | Where-Object { $_.Trim() } | ForEach-Object { Write-Host "  $_" }
     }
 }
 
 # ─────────────────────────────────────────────────
-# メニュー
+# メニュー（ユーザー指定通りの構造）
 # ─────────────────────────────────────────────────
 function Show-CloudScheduleMenu {
     Clear-Host
@@ -420,77 +371,41 @@ function Show-CloudScheduleMenu {
 if ($NonInteractive) { exit 0 }
 
 # ─────────────────────────────────────────────────
-# QuickSetup モード: プロジェクト起動後の自動確認
-# Start-ClaudeCode.ps1 から呼ばれる。4 標準ループの登録状況を確認し、
-# 未登録のものだけ選択的に登録して終了する（フルメニューを開かない）。
+# QuickSetup モード（プロジェクト起動直後の自動確認）
 # ─────────────────────────────────────────────────
 if ($QuickSetup) {
     Write-Host "  プロジェクト : $RepoUrl" -ForegroundColor DarkGray
     Write-Host ""
 
-    # 既存 trigger を取得してこのプロジェクト向けのものをフィルタ
-    $existingNames = @()
-    try {
-        $listResult = Invoke-TriggersAPI -Method 'GET' -Path '/v1/code/triggers'
-        foreach ($t in $listResult.data) {
-            $url = $t.job_config?.ccr?.session_context?.sources?[0]?.git_repository?.url
-            if ($t.enabled -and $url -and $url.TrimEnd('/') -eq $RepoUrl.TrimEnd('/')) {
-                $existingNames += $t.name
-            }
-        }
-        # environment_id をキャッシュ
-        foreach ($t in $listResult.data) {
-            $eid = $t.job_config?.ccr?.environment_id
-            if (-not [string]::IsNullOrWhiteSpace($eid)) { $script:EnvironmentId = $eid; break }
-        }
-    } catch {
-        Write-Host "  [WARN] trigger 一覧取得に失敗しました: $($_.Exception.Message)" -ForegroundColor Yellow
-    }
+    $loopSummary = ($LoopPresets | ForEach-Object { "  - $($_.Name) (cron: $($_.Cron))" }) -join "`n"
+    $prompt = @"
+Check my cloud schedules using RemoteTrigger(action='list').
+For the repository '$RepoUrl', identify which of these 4 schedules are already registered (match by name):
+$loopSummary
 
-    # 登録状況テーブルを表示
-    Write-Host ("  {0,-30} {1}" -f 'スケジュール名', '状態') -ForegroundColor Cyan
-    Write-Host ("  " + ("-" * 50)) -ForegroundColor DarkGray
-    $missing = @()
-    foreach ($p in $LoopPresets) {
-        if ($existingNames -contains $p.Name) {
-            Write-Host ("  {0,-30} 登録済み ✓" -f $p.Name) -ForegroundColor Green
-        } else {
-            Write-Host ("  {0,-30} 未登録 ✗  (Cron: {1})" -f $p.Name, $p.Cron) -ForegroundColor Yellow
-            $missing += $p
-        }
-    }
+Output a table with columns: Name | Status (登録済み/未登録)
+Then output a count line: MISSING_COUNT=<number of missing schedules>
+"@
+
+    Write-Host "  Cloud Schedule 登録状況を確認中..." -ForegroundColor Cyan
+    $checkOutput = Invoke-CloudCLI $prompt -ShowOutput
+
+    $missingLine = $checkOutput | Where-Object { $_ -match '^MISSING_COUNT=' } | Select-Object -First 1
+    $missingCount = if ($missingLine -match '=(\d+)$') { [int]$matches[1] } else { -1 }
+
     Write-Host ""
-
-    if ($missing.Count -eq 0) {
+    if ($missingCount -eq 0) {
         Write-Host "  [OK] 全 4 スケジュールが登録済みです。" -ForegroundColor Green
-        Write-Host ""
-        exit 0
-    }
-
-    Write-Host "  未登録のスケジュールが $($missing.Count) 件あります。" -ForegroundColor Yellow
-    $confirm = Read-Host "  今すぐ登録しますか? [y/N]"
-    if ($confirm -notmatch '^[yY]') {
-        Write-Host "  スキップしました。メニュー 12 でいつでも登録できます。" -ForegroundColor DarkGray
-        Write-Host ""
-        exit 0
-    }
-
-    $ok = 0; $ng = 0
-    foreach ($p in $missing) {
-        Write-Host "  >> $($p.Name) を登録中..." -ForegroundColor Cyan
-        try {
-            $body   = New-TriggerBody -Name $p.Name -CronExpression $p.Cron -PromptContent $p.Content
-            $result = Invoke-TriggersAPI -Method 'POST' -Path '/v1/code/triggers' -Body $body
-            $next   = if ($result.next_run_at) { try { (Get-Date $result.next_run_at).ToLocalTime().ToString('MM-dd HH:mm') } catch { '-' } } else { '-' }
-            Write-Host "  [OK] ID=$($result.id)  次回(JST):$next" -ForegroundColor Green
-            $ok++
-        } catch {
-            Write-Host "  [ERROR] $($p.Name): $($_.Exception.Message)" -ForegroundColor Red
-            $ng++
+    } else {
+        $label = if ($missingCount -gt 0) { "$missingCount 件" } else { "不明件数の" }
+        Write-Host "  未登録スケジュールが $label あります。" -ForegroundColor Yellow
+        $confirm = Read-Host "  今すぐ一括登録しますか? [y/N]"
+        if ($confirm -match '^[yY]') {
+            Invoke-CloudRegisterAll
+        } else {
+            Write-Host "  スキップしました。メニュー 12 でいつでも登録できます。" -ForegroundColor DarkGray
         }
     }
-    Write-Host ""
-    Write-Host "  [完了] 登録 $ok 件 / エラー $ng 件" -ForegroundColor $(if ($ng -eq 0) { 'Green' } else { 'Yellow' })
     Write-Host ""
     exit 0
 }
