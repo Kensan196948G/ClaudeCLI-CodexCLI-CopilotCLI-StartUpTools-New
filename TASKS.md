@@ -61,6 +61,26 @@
 52. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.37 scripts/lib 全ファイル UTF-8 BOM 追加 — AgentTeams 分割 3 ファイルを含む 11 ファイルに BOM 欠落 / PSScriptAnalyzer 警告 0 件回復 / 650 PASS / STABLE N=2 達成 (commit b5cc9c8)
 53. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.38 SessionLogger / TemplateSyncManager ユニットテスト追加 (SessionLogger 14件 / TemplateSyncManager 16件 / 計 30件 / 680 PASS) + Watch-SessionInfo.ps1 TZ フィックス (end_time_planned → start_time + max_duration_minutes 方式) / STABLE N=2 達成 (commit ebe2045)
 54. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.2.39 Session Info タブ 3 点修正 — Format-Duration の [int]$Span.TotalHours 銀行丸めで残り時間が +1h ズレる表示バグを [int][Math]::Floor に変更 / Watch-SessionInfo.ps1 / Watch-SessionInfoSSH.ps1 / Watch-ClaudeLog.ps1 に QuickEdit 無効化 P/Invoke 追加（クリック凍結防止）/ Session Info タブに `Enterキーで更新可能` + 動的生成再起動コマンド常時表示 / README v3.2.37 → v3.2.39、テスト件数 650 → 680 に揃える / 680 PASS / PSScriptAnalyzer 0 件
+55. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.40 cron-launcher PATH 注入 + SAFE_PROJECT 末尾アンダースコア解消 — cron-launcher.sh に PATH を注入してコマンド未検出修正 / CI SUCCESS (commit b5ef8b1, PR #196)
+56. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.41 Watch-ClaudeLog.ps1 マルチ発火対応 — tail -F を Start-Job 化してマルチ発火・多重起動問題解消 / CI SUCCESS (commit 38cfe89, PR #197)
+57. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.42 pwsh 7 強制 + Start-Job UTF-8 化 — タブ表示/文字化け修正 / CI SUCCESS (commit a25d52d, PR #198)
+58. [DONE] [Priority:P3][Owner:Developer][Source:Manual] v3.2.43 scripts/templates/CLAUDE-Back20260331.md 削除 — v2.4.0 時点の死蔵バックアップを削除 / CI SUCCESS (commit 08c1907, PR #199)
+59. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.44 Claude/templates/claudeos/ 全体を .claude/claudeos/ に deploy — ~345 ファイルを scp -r で一括転送 / CI SUCCESS (commit 6938bb2, PR #200)
+60. [DONE] [Priority:P3][Owner:Developer][Source:Manual] v3.2.45 scripts/templates/claudeos/ 削除・Claude/templates/claudeos/ に一本化 — 重複ディレクトリ整理 / CI SUCCESS (commit 7d9f6a2, PR #201)
+61. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.46 Watch-ClaudeLog spawn タブアイコンを PowerShell 化 — wt -p PowerShell でアイコン統一 / CI SUCCESS (commit 10289ec, PR #202)
+62. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.47 wt profile を動的検出 — "PowerShell version 7" / "PowerShell 7" 両対応 / CI SUCCESS (commit 9be5999, PR #203)
+63. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.48 wt profile は GUID を優先 — 空白入り名称による ArgList split 回避 / CI SUCCESS (commit 400ac1c, PR #204)
+64. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.49 Agent Teams runtime 有効化 (E-1) — .claude/agents/ にも配置して Claude Code 自動 discovery 有効化 / CI SUCCESS (commit a1c4b5d, PR #205)
+65. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.50 slash commands runtime 有効化 (E-2) — 39 commands を .claude/commands/ にも配置 / CI SUCCESS (commit 714e47e, PR #206)
+66. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.51 skills runtime 有効化 (E-3) — 64 skills を .claude/skills/ にも配置 / CI SUCCESS (commit ebb60dd, PR #207)
+67. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.52 hooks を .claude/hooks/ に配置 (E-4) — hook 定義と scripts のランタイム配置 / CI SUCCESS (commit b0db74c, PR #208)
+68. [DONE] [Priority:P3][Owner:Developer][Source:Manual] v3.2.53 settings.json を Claude/templates/claude/ に一本化 — 重複設定を整理 / CI SUCCESS (commit 4b8214b, PR #209)
+69. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.54 Agent ログフォーマットにアイコン + 日本語併記追加 — 👔💻🧪等のアイコンと英語名/日本語名併記を統一 / CI SUCCESS (commit 5b15d76, PR #210)
+70. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.55 start.bat を pure ASCII 化 — cmd.exe parse エラー修正 / CI SUCCESS (commit b0d05a1, PR #211)
+71. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.56 start.bat の if/else 括弧ネストを goto 化 — not was unexpected エラー完全解消 / CI SUCCESS (commit 5404f26, PR #212)
+72. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.2.57 /loop → Cloud Schedule 移行 — New-CloudSchedule.ps1 新規作成 / S1専用・週6日・300分制限 / Cloudflare 403 を claude -p 中継で回避 / CI SUCCESS (commit ee6f79b, PR #213)
+73. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.58 Cloud Schedule [4] 管理メニュー拡張 — OFF/ON/DEL/OFFA/ONA/DELA の6操作追加 / CI SUCCESS (commit 9b0e56a, PR #217)
+74. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.59 プロジェクト選択を Cloud Schedule から動的読み込みに変更 — RemoteTrigger + Cron バッジ表示 / [0]戻る追加 / CI SUCCESS (commit c5987fb, PR #218)
 
 ## Auto Extracted From Agent Teams Matrix
 

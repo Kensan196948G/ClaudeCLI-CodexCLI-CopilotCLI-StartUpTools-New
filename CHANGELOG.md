@@ -2,6 +2,231 @@
 
 # CHANGELOG
 
+## [v3.2.59] - 2026-04-21 — Cloud Schedule プロジェクト選択を動的読み込みに変更
+
+### 🎯 概要
+`Select-Project` をハードコード2件から RemoteTrigger 動的取得 + Cron 登録状況バッジ表示に変更。`[0] 戻る` 追加。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/main/New-CloudSchedule.ps1` | Select-Project: RemoteTrigger + CronManager からプロジェクト一覧取得、☁/⏱バッジ、[0]戻る |
+
+### ✅ テスト結果
+- CI SUCCESS / Security Scan SUCCESS (commit c5987fb)
+
+---
+
+## [v3.2.58] - 2026-04-21 — Cloud Schedule [4] を管理メニューに拡張
+
+### 🎯 概要
+`[4]` を「削除/無効化」から「管理（無効化/有効化/完全削除）」に拡張。6操作 (OFF/ON/DEL/OFFA/ONA/DELA) を追加。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/main/New-CloudSchedule.ps1` | Invoke-CloudManage: 無効化/有効化/完全削除を個別・全件で操作可能に |
+
+### ✅ テスト結果
+- CI SUCCESS / Security Scan SUCCESS / Copilot review SUCCESS (commit 9b0e56a)
+
+---
+
+## [v3.2.57] - 2026-04-21 — /loop → Cloud Schedule 移行 (S1専用・週6日・300分制限)
+
+### 🎯 概要
+セッション終了で消滅する `/loop` (session Cron) から Anthropic Cloud Schedule (RemoteTrigger) へ完全移行。`New-CloudSchedule.ps1` 新規作成。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `CLAUDE.md` | ステップ1: /loop → /schedule (Mon-Sat, 5h制限) |
+| `scripts/main/New-CloudSchedule.ps1` | 新規: claude -p 中継で Cloud Schedule 管理 (Cloudflare 403 回避) |
+| `scripts/main/Start-Menu.ps1` | メニュー14 Cloud Schedule / 15 Cron に整理 |
+| `scripts/main/Start-ClaudeCode.ps1` | 起動前 QuickSetup 自動確認挿入 |
+| `Claude/templates/claude/START_PROMPT.md` | /loop 廃止・Cloud Schedule 案内に更新 |
+| `README.md` | Mermaid図・メニュー説明を Cloud Schedule 対応に更新 |
+
+### ✅ テスト結果
+- CI SUCCESS / Security Scan SUCCESS (commit ee6f79b)
+
+---
+
+## [v3.2.56] - 2026-04-20 — start.bat の if/else 括弧ネストを goto 化
+
+### 🎯 概要
+cmd.exe の括弧ネスト制限 (`not was unexpected` エラー) を goto 構造で完全解消。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `start.bat` | if/else ネストを goto ラベルに変換 |
+
+### ✅ テスト結果
+- CI SUCCESS (commit 5404f26)
+
+---
+
+## [v3.2.55] - 2026-04-20 — start.bat pure ASCII 化
+
+### 🎯 概要
+start.bat を pure ASCII に変換して cmd.exe parse エラーを修正。
+
+### ✅ テスト結果
+- CI SUCCESS (commit b0d05a1)
+
+---
+
+## [v3.2.54] - 2026-04-20 — Agent ログフォーマット アイコン + 日本語併記追加
+
+### 🎯 概要
+Agent ログフォーマットにアイコン（👔💻🧪等）と英語名/日本語名の併記表記を導入。
+
+### ✅ テスト結果
+- CI SUCCESS (commit 5b15d76)
+
+---
+
+## [v3.2.53] - 2026-04-20 — settings.json を Claude/templates/claude/ に一本化
+
+### 🎯 概要
+重複していた settings.json を `Claude/templates/claude/` に統一。deploy パスを整理。
+
+### ✅ テスト結果
+- CI SUCCESS (commit 4b8214b)
+
+---
+
+## [v3.2.52] - 2026-04-20 — hooks を .claude/hooks/ に配置 (E-4)
+
+### 🎯 概要
+hook 定義と hook scripts を `.claude/hooks/` にも配置してランタイム有効化。
+
+### ✅ テスト結果
+- CI SUCCESS (commit b0db74c)
+
+---
+
+## [v3.2.51] - 2026-04-20 — skills runtime 有効化 — .claude/skills/ にも配置 (E-3)
+
+### 🎯 概要
+64 skills を `.claude/skills/` にも配置してランタイム有効化。
+
+### ✅ テスト結果
+- CI SUCCESS (commit ebb60dd)
+
+---
+
+## [v3.2.50] - 2026-04-20 — slash commands runtime 有効化 — .claude/commands/ にも配置 (E-2)
+
+### 🎯 概要
+39 slash commands を `.claude/commands/` にも配置してランタイム有効化。
+
+### ✅ テスト結果
+- CI SUCCESS (commit 714e47e)
+
+---
+
+## [v3.2.49] - 2026-04-20 — Agent Teams runtime 有効化 — .claude/agents/ にも配置 (E-1)
+
+### 🎯 概要
+Agent Teams を `.claude/agents/` にも配置して Claude Code の自動 discovery を有効化。
+
+### ✅ テスト結果
+- CI SUCCESS (commit a1c4b5d)
+
+---
+
+## [v3.2.48] - 2026-04-20 — wt profile は GUID を優先
+
+### 🎯 概要
+wt profile の空白入り名称で ArgList split が壊れる問題を GUID 優先で回避。
+
+### ✅ テスト結果
+- CI SUCCESS (commit 400ac1c)
+
+---
+
+## [v3.2.47] - 2026-04-20 — wt profile を動的検出
+
+### 🎯 概要
+"PowerShell version 7" / "PowerShell 7" 両対応の wt profile 動的検出を実装。
+
+### ✅ テスト結果
+- CI SUCCESS (commit 9be5999)
+
+---
+
+## [v3.2.46] - 2026-04-20 — Watch-ClaudeLog spawn タブアイコンを PowerShell 化
+
+### 🎯 概要
+Watch-ClaudeLog.ps1 で `wt -p PowerShell` を使用してタブアイコンを PowerShell に統一。
+
+### ✅ テスト結果
+- CI SUCCESS (commit 10289ec)
+
+---
+
+## [v3.2.45] - 2026-04-20 — scripts/templates/claudeos/ 削除・Claude/templates/claudeos/ に一本化
+
+### 🎯 概要
+旧 `scripts/templates/claudeos/` を削除し `Claude/templates/claudeos/` に統一。
+
+### ✅ テスト結果
+- CI SUCCESS (commit 7d9f6a2)
+
+---
+
+## [v3.2.44] - 2026-04-20 — Claude/templates/claudeos/ 全体を .claude/claudeos/ に deploy
+
+### 🎯 概要
+~345 ファイル (agents/skills/commands/rules 等) を `scp -r` で一括転送する bulk sync を実装。
+
+### ✅ テスト結果
+- CI SUCCESS (commit 6938bb2)
+
+---
+
+## [v3.2.43] - 2026-04-20 — scripts/templates/CLAUDE-Back20260331.md 削除
+
+### 🎯 概要
+v2.4.0 時点の死蔵バックアップファイルを削除。
+
+### ✅ テスト結果
+- CI SUCCESS (commit 08c1907)
+
+---
+
+## [v3.2.42] - 2026-04-20 — pwsh 7 強制 + Start-Job UTF-8 化
+
+### 🎯 概要
+pwsh 7 を強制起動し、Start-Job での UTF-8 出力を保証してタブ表示/文字化けを修正。
+
+### ✅ テスト結果
+- CI SUCCESS (commit a25d52d)
+
+---
+
+## [v3.2.41] - 2026-04-20 — Watch-ClaudeLog.ps1 マルチ発火対応
+
+### 🎯 概要
+`tail -F` を `Start-Job` 化してマルチ発火・多重起動問題を解消。
+
+### ✅ テスト結果
+- CI SUCCESS (commit 38cfe89)
+
+---
+
+## [v3.2.40] - 2026-04-20 — cron-launcher PATH 注入 + SAFE_PROJECT 末尾アンダースコア解消
+
+### 🎯 概要
+cron-launcher.sh に PATH を注入してコマンド未検出を修正。SAFE_PROJECT の末尾アンダースコアを解消。
+
+### ✅ テスト結果
+- CI SUCCESS (commit b5ef8b1)
+
+---
+
 ## [v3.2.39] - 2026-04-19 — Session Info タブ 3 点修正 (残り時間表示 / 凍結耐性 / UI 補足)
 
 ### 🎯 概要
