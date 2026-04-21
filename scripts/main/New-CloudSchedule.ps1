@@ -53,22 +53,46 @@ if (-not $script:ClaudeCLI) {
 # プロジェクト選択 UI
 # ─────────────────────────────────────────────────
 function Select-Project {
-    # 既知プロジェクトのベースリスト
-    $knownProjects = [System.Collections.Generic.List[pscustomobject]]::new()
-    $knownProjects.Add([pscustomobject]@{ Label = 'ClaudeCode-StartUpTools-New';     Url = 'https://github.com/Kensan196948G/ClaudeCode-StartUpTools-New' })
-    $knownProjects.Add([pscustomobject]@{ Label = 'Enterprise-AI-HelpDesk-System';   Url = 'https://github.com/Kensan196948G/Enterprise-AI-HelpDesk-System' })
+    $projects = [System.Collections.Generic.List[pscustomobject]]::new()
 
-    # 現在の作業ディレクトリから git remote を取得し先頭に追加
+    # ── 1. 登録済み Cloud Schedule から git URL を動的取得 ──
+    Write-Host ""
+    Write-Host "  登録済みプロジェクトを Cloud Schedule から取得中..." -ForegroundColor DarkGray
+    try {
+        $out = & $script:ClaudeCLI -p @"
+Use RemoteTrigger with action='list'.
+For each trigger, extract the git repository URL from job_config.ccr.session_context.sources[0].git_repository.url.
+Output each unique URL on its own line prefixed with REPO_URL: (no spaces after colon).
+Example: REPO_URL:https://github.com/user/repo
+"@ 2>&1
+        foreach ($line in $out) {
+            if ($line -match '^REPO_URL:(.+)$') {
+                $url = $matches[1].Trim().TrimEnd('/') -replace '\.git$', ''
+                if ($url -match 'github\.com' -and ($projects | Where-Object Url -eq $url).Count -eq 0) {
+                    $name = $url.Split('/')[-1]
+                    $projects.Add([pscustomobject]@{ Label = $name; Url = $url })
+                }
+            }
+        }
+    } catch { }
+
+    # ── 2. 現在の作業ディレクトリの git remote（未登録なら追加） ──
     try {
         $rawUrl = (& git remote get-url origin 2>$null) -join ''
         if ($rawUrl -match 'github\.com') {
             $rawUrl = $rawUrl.Trim() -replace '\.git$', '' -replace '^git@github\.com:', 'https://github.com/'
-            if ($knownProjects.Url -notcontains $rawUrl) {
+            if (($projects | Where-Object Url -eq $rawUrl).Count -eq 0) {
                 $name = $rawUrl.Split('/')[-1] + ' (現在のディレクトリ)'
-                $knownProjects.Insert(0, [pscustomobject]@{ Label = $name; Url = $rawUrl })
+                $projects.Insert(0, [pscustomobject]@{ Label = $name; Url = $rawUrl })
             }
         }
     } catch { }
+
+    # ── 3. フォールバック: API 失敗時のデフォルト2件 ──
+    if ($projects.Count -eq 0) {
+        $projects.Add([pscustomobject]@{ Label = 'ClaudeCode-StartUpTools-New';   Url = 'https://github.com/Kensan196948G/ClaudeCode-StartUpTools-New' })
+        $projects.Add([pscustomobject]@{ Label = 'Enterprise-AI-HelpDesk-System'; Url = 'https://github.com/Kensan196948G/Enterprise-AI-HelpDesk-System' })
+    }
 
     Clear-Host
     Write-Host ""
@@ -80,9 +104,9 @@ function Select-Project {
     Write-Host "  =============================================" -ForegroundColor Cyan
     Write-Host ""
 
-    for ($i = 0; $i -lt $knownProjects.Count; $i++) {
-        Write-Host ("    [{0}] {1}" -f ($i + 1), $knownProjects[$i].Label) -ForegroundColor White
-        Write-Host ("        {0}" -f $knownProjects[$i].Url) -ForegroundColor DarkGray
+    for ($i = 0; $i -lt $projects.Count; $i++) {
+        Write-Host ("    [{0}] {1}" -f ($i + 1), $projects[$i].Label) -ForegroundColor White
+        Write-Host ("        {0}" -f $projects[$i].Url) -ForegroundColor DarkGray
     }
     Write-Host "    [M] 手動入力（GitHub URL）" -ForegroundColor DarkGray
     Write-Host ""
@@ -91,8 +115,8 @@ function Select-Project {
 
     if ($sel -match '^\d+$') {
         $n = [int]$sel - 1
-        if ($n -ge 0 -and $n -lt $knownProjects.Count) {
-            return $knownProjects[$n].Url
+        if ($n -ge 0 -and $n -lt $projects.Count) {
+            return $projects[$n].Url
         }
     } elseif ($sel -match '^[Mm]$') {
         $url = (Read-Host "  GitHub URL を入力 (例: https://github.com/user/repo)").Trim()
@@ -101,7 +125,7 @@ function Select-Project {
     }
 
     Write-Host "  無効な選択です。デフォルトを使用します。" -ForegroundColor Yellow
-    return 'https://github.com/Kensan196948G/ClaudeCode-StartUpTools-New'
+    return $projects[0].Url
 }
 
 # ─────────────────────────────────────────────────
