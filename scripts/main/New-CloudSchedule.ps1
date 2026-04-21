@@ -567,6 +567,93 @@ After the call output ONE line: DONE or ERROR
 }
 
 # ─────────────────────────────────────────────────
+# [6] Cron 全プロジェクトを Cloud Schedule に一括同期
+# ─────────────────────────────────────────────────
+function Invoke-CronAllSync {
+    Write-Host ""
+    Write-Host "  Cron 登録済みプロジェクトを Cloud Schedule に一括同期します。" -ForegroundColor Cyan
+    Write-Host "  SSH 経由で Cron エントリを取得中..." -ForegroundColor DarkGray
+
+    # CronManager から Cron 登録済みプロジェクト一覧を取得
+    $cronProjects = @()
+    try {
+        $ScriptRootCS = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+        $cronMgr      = Join-Path $ScriptRootCS 'scripts\lib\CronManager.psm1'
+        $cfgPath      = Join-Path $ScriptRootCS 'config\config.json'
+        if ((Test-Path $cronMgr) -and (Test-Path $cfgPath)) {
+            Import-Module $cronMgr -Force -DisableNameChecking -ErrorAction SilentlyContinue
+            $cfg = Get-Content $cfgPath -Raw | ConvertFrom-Json
+            $linuxHost = $cfg.linuxHost
+            if ($linuxHost -and $linuxHost -ne '<your-linux-host>') {
+                $entries = Get-ClaudeOSCronEntry -LinuxHost $linuxHost -ErrorAction SilentlyContinue
+                $cronProjects = @($entries | Where-Object { -not [string]::IsNullOrWhiteSpace($_.Project) } | Select-Object -ExpandProperty Project -Unique)
+            }
+        }
+    } catch { }
+
+    if ($cronProjects.Count -eq 0) {
+        Write-Host "  [INFO] Cron 登録済みプロジェクトが見つかりませんでした。" -ForegroundColor Yellow
+        Write-Host "         (SSH 接続エラーまたは Cron エントリなし)" -ForegroundColor DarkGray
+        return
+    }
+
+    # GitHub owner を git remote から取得
+    $owner = ''
+    try {
+        $raw = (& git remote get-url origin 2>$null) -join ''
+        if ($raw -match 'github\.com[:/]([^/]+)/') { $owner = $matches[1] }
+    } catch { }
+
+    Write-Host ""
+    Write-Host "  -- Cron 登録済みプロジェクト ($($cronProjects.Count) 件) --" -ForegroundColor Cyan
+    $syncList = @()
+    foreach ($proj in $cronProjects) {
+        $url = if ($owner) { "https://github.com/$owner/$proj" } else { '' }
+        Write-Host ("    {0,-40} {1}" -f $proj, $(if ($url) { $url } else { '(URL 不明)' })) -ForegroundColor White
+        $syncList += [pscustomobject]@{ Project = $proj; Url = $url }
+    }
+
+    if (-not $owner) {
+        Write-Host ""
+        Write-Host "  GitHub owner が取得できませんでした。" -ForegroundColor Yellow
+        $owner = (Read-Host "  GitHub ユーザー名 / org 名を入力 (例: Kensan196948G)").Trim()
+        foreach ($item in $syncList) {
+            if ([string]::IsNullOrWhiteSpace($item.Url)) {
+                $item.Url = "https://github.com/$owner/$($item.Project)"
+            }
+        }
+    }
+
+    Write-Host ""
+    $confirm = Read-Host "  上記 $($syncList.Count) 件を Cloud Schedule に登録しますか? [y/N]"
+    if ($confirm -notmatch '^[yY]') { Write-Host "  キャンセルしました。" -ForegroundColor Yellow; return }
+
+    $psExe       = (Get-Process -Id $PID).Path
+    $cloudScript = $PSCommandPath  # 自分自身のスクリプト
+    $ok = 0; $ng = 0
+
+    foreach ($item in $syncList) {
+        Write-Host ""
+        Write-Host "  >> $($item.Project) ($($item.Url)) を登録中..." -ForegroundColor Cyan
+        if ([string]::IsNullOrWhiteSpace($item.Url)) {
+            Write-Host "  [SKIP] URL が空のためスキップ。" -ForegroundColor Yellow
+            $ng++
+            continue
+        }
+        try {
+            & $psExe -NoProfile -ExecutionPolicy Bypass -File $cloudScript -RepoUrl $item.Url -QuickSetup
+            $ok++
+        } catch {
+            Write-Host "  [ERROR] $($_.Exception.Message)" -ForegroundColor Red
+            $ng++
+        }
+    }
+
+    Write-Host ""
+    Write-Host "  [完了] 登録 $ok 件 / スキップ/エラー $ng 件" -ForegroundColor $(if ($ng -eq 0) { 'Green' } else { 'Yellow' })
+}
+
+# ─────────────────────────────────────────────────
 # メニュー（プロジェクト名をヘッダーに表示）
 # ─────────────────────────────────────────────────
 function Show-CloudScheduleMenu {
@@ -585,6 +672,7 @@ function Show-CloudScheduleMenu {
     Write-Host "    [3] 全 4 標準ループを一括登録" -ForegroundColor Green
     Write-Host "    [4] 管理（無効化 / 有効化 / 完全削除）" -ForegroundColor Yellow
     Write-Host "    [5] 今すぐ実行（Trigger ID 指定）" -ForegroundColor Green
+    Write-Host "    [6] Cron 全プロジェクトを Cloud Schedule に同期" -ForegroundColor Cyan
     Write-Host "    [P] プロジェクトを切り替え" -ForegroundColor Magenta
     Write-Host "    [0] 戻る" -ForegroundColor Gray
     Write-Host ""
@@ -644,6 +732,7 @@ while ($true) {
         '3' { Invoke-CloudRegisterAll; Read-Host "  Enter で戻ります" | Out-Null }
         '4' { Invoke-CloudManage;      Read-Host "  Enter で戻ります" | Out-Null }
         '5' { Invoke-CloudRun;         Read-Host "  Enter で戻ります" | Out-Null }
+        '6' { Invoke-CronAllSync;      Read-Host "  Enter で戻ります" | Out-Null }
         'P' {
             $newUrl = Select-Project
             if (-not [string]::IsNullOrWhiteSpace($newUrl) -and $newUrl -ne $RepoUrl) {
