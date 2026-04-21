@@ -84,6 +84,7 @@
 75. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.60 プロジェクト選択に戻る・Cron登録状況バッジを追加 — Select-Project: [0]戻る / ☁⏱バッジ表示 / 空URL戻り値対応 / CI SUCCESS (commit ce19dbd, PR #219)
 76. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.61 Cron登録後Cloud Schedule自動同期 / [6]一括同期 / owner抽出修正 — Invoke-CloudRegister後Invoke-CronAllSync呼出 / Show-CloudScheduleMenu [6]追加 / SSH URL正規表現修正 / CI SUCCESS (commit 5a0124d, PR #221)
 77. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.2.62 Cron全同期をプロジェクト選択画面に移動・空URL/関数順序バグ修正 — Select-Project に [S] + while ループ / Invoke-CronAllSync を Select-Project より前に移動 / 空URL exit 0 ガード / Show-CloudScheduleMenu から [6] 削除 / CI SUCCESS (commit e5ee3a0, PR #222)
+78. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.63 PSScriptAnalyzer 0警告達成・一覧表示プロジェクト別フィルタ改善 — 空catchブロック $null=$_ / UTF-8 BOM / New-LoopPreset 改名 / SuppressMessage 関数内移動 / Watch-ClaudeLog $using: / Invoke-CloudList プロジェクトフィルタ
 
 ## Auto Extracted From Agent Teams Matrix
 

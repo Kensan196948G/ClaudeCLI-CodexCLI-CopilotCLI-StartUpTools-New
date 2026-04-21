@@ -155,7 +155,7 @@ function Invoke-Register {
                 try {
                     $rawUrl = (& git remote get-url origin 2>$null) -join ''
                     if ($rawUrl -match 'github\.com[:/]([^/]+)/') { $owner = $matches[1] }
-                } catch { }
+                } catch { $null = $_ } # git remote failure is non-fatal
 
                 $githubUrl = if ($owner) { "https://github.com/$owner/$project" } else { '' }
 

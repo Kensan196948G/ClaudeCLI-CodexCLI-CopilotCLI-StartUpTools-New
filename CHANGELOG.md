@@ -2,6 +2,23 @@
 
 # CHANGELOG
 
+## [v3.2.63] - 2026-04-21 — PSScriptAnalyzer 0警告達成・一覧表示をプロジェクト別フィルタに改善
+
+### 🎯 概要
+`New-CloudSchedule.ps1` / `New-CronSchedule.ps1` / `Watch-ClaudeLog.ps1` に残存していた PSScriptAnalyzer 警告（`PSAvoidUsingEmptyCatchBlock` 7件・`PSUseShouldProcessForStateChangingFunctions` 1件・`PSUseSingularNouns` 1件・`PSUseBOMForUnicodeEncodedFile` 1件・`PSUseUsingScopeModifierInNewRunspaces` 1件）を全解消。`[1] 一覧表示` を現在選択中のプロジェクトのトリガーのみ表示するようプロンプトを修正。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/main/New-CloudSchedule.ps1` | 空catchブロック `$null = $_` 修正 / UTF-8 BOM 付与 / `New-LoopPresets` → `New-LoopPreset` 改名 / SuppressMessageAttribute を関数内に移動 / `$script:RepoUrl` 追加 / Invoke-CloudList プロジェクトフィルタ追加 |
+| `scripts/main/New-CronSchedule.ps1` | 空catchブロック `$null = $_` 修正 |
+| `scripts/tools/Watch-ClaudeLog.ps1` | Start-Job を `$using:` スコープ修飾子に変更 |
+
+### ✅ テスト結果
+- PSScriptAnalyzer 0 warnings (non-WriteHost)
+
+---
+
 ## [v3.2.62] - 2026-04-21 — Cron全同期をプロジェクト選択画面に移動・空URL/関数順序バグ修正
 
 ### 🎯 概要

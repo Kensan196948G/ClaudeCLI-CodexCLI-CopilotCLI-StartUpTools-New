@@ -308,14 +308,13 @@ while ($true) {
         # tail -F をバックグラウンド Job で起動し、メインスレッドで次ログ出現を監視する。
         # これにより tail -F が永続ブロックしても次の cron 発火を取りこぼさない (v3.2.41)。
         # stdbuf -oL で tail の line-buffering を強制し、リアルタイム出力を担保する。
-        $tailJob = Start-Job -ArgumentList $SshTarget, $latest -ScriptBlock {
-            param($target, $path)
+        $tailJob = Start-Job -ScriptBlock {
             # Job は新規 runspace のため親 console のエンコーディング継承なし。
             # 明示的に UTF-8 化しないと ssh 経由の日本語出力 (例: "UI閲覧用") が文字化ける (v3.2.42)。
             [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
             [Console]::InputEncoding  = [System.Text.Encoding]::UTF8
             $OutputEncoding = [System.Text.Encoding]::UTF8
-            ssh $target "stdbuf -oL tail -n 50 -F '$path'"
+            ssh $using:SshTarget "stdbuf -oL tail -n 50 -F '$($using:latest)'"
         }
 
         try {
