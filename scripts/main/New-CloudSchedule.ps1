@@ -93,12 +93,16 @@ Example: REPO_URL:https://github.com/user/repo
             $linuxHost = $cfg.linuxHost
             if ($linuxHost -and $linuxHost -ne '<your-linux-host>') {
                 $entries = Get-ClaudeOSCronEntry -LinuxHost $linuxHost -ErrorAction SilentlyContinue
+                # owner を git remote から1回だけ取得してループ内で使いまわす
+                $cronOwner = ''
+                try {
+                    $cronRemote = (& git remote get-url origin 2>$null) -join ''
+                    if ($cronRemote -match 'github\.com[:/]([^/]+)/') { $cronOwner = $matches[1] }
+                } catch { }
+
                 foreach ($e in @($entries)) {
                     if ([string]::IsNullOrWhiteSpace($e.Project)) { continue }
-                    # プロジェクト名から GitHub URL を推定 (owner は git remote から取得)
-                    $owner  = ''
-                    try { $owner = (& git remote get-url origin 2>$null) -join '' | Select-String -Pattern 'github\.com[:/]([^/]+)/' | ForEach-Object { $_.Matches[0].Groups[1].Value } } catch { }
-                    $guessUrl = if ($owner) { "https://github.com/$owner/$($e.Project)" } else { '' }
+                    $guessUrl = if ($cronOwner) { "https://github.com/$cronOwner/$($e.Project)" } else { '' }
 
                     # 既存エントリを Cron 有りにマーク or 新規追加
                     $existing = $projects | Where-Object { $_.Label -eq $e.Project -or ($guessUrl -and $_.Url -eq $guessUrl) } | Select-Object -First 1

@@ -141,6 +141,39 @@ function Invoke-Register {
         $entry = Add-ClaudeOSCronEntry -LinuxHost $LinuxHost -Project $project -DayOfWeek $dow -Time $time -DurationMinutes $duration
         Write-Host ""
         Write-Host "  [OK] Cron エントリを登録しました: ID=$($entry.Id)" -ForegroundColor Green
+
+        # ─── Cloud Schedule にも同期登録 ───
+        Write-Host ""
+        Write-Host "  Cloud Schedule (Anthropic クラウド) にも同期しますか?" -ForegroundColor Cyan
+        Write-Host "  ※ Cloud Schedule は永続動作 / Cron は 5h 強制終了の補完" -ForegroundColor DarkGray
+        $syncChoice = Read-Host "  Cloud Schedule に登録する? [y/N]"
+        if ($syncChoice -match '^[yY]') {
+            $cloudScript = Join-Path $ScriptRoot 'scripts\main\New-CloudSchedule.ps1'
+            if (Test-Path $cloudScript) {
+                # GitHub owner を git remote から取得
+                $owner = ''
+                try {
+                    $rawUrl = (& git remote get-url origin 2>$null) -join ''
+                    if ($rawUrl -match 'github\.com[:/]([^/]+)/') { $owner = $matches[1] }
+                } catch { }
+
+                $githubUrl = if ($owner) { "https://github.com/$owner/$project" } else { '' }
+
+                if ([string]::IsNullOrWhiteSpace($githubUrl)) {
+                    $githubUrl = (Read-Host "  GitHub URL を入力 (例: https://github.com/user/$project)").Trim()
+                }
+
+                if (-not [string]::IsNullOrWhiteSpace($githubUrl)) {
+                    Write-Host "  [Cloud] $githubUrl を QuickSetup で登録中..." -ForegroundColor Cyan
+                    $psExe = (Get-Process -Id $PID).Path
+                    & $psExe -NoProfile -ExecutionPolicy Bypass -File $cloudScript -RepoUrl $githubUrl -QuickSetup
+                } else {
+                    Write-Host "  [SKIP] GitHub URL が空のため Cloud Schedule 登録をスキップしました。" -ForegroundColor Yellow
+                }
+            } else {
+                Write-Host "  [WARN] New-CloudSchedule.ps1 が見つかりません。" -ForegroundColor Yellow
+            }
+        }
     }
     catch {
         Write-Host "  [ERROR] $($_.Exception.Message)" -ForegroundColor Red
