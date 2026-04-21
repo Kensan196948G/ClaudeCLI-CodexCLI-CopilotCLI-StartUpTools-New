@@ -7,8 +7,8 @@
 > **📌 v3.1.0 で Claude Code 専用ツールに整理**
 > v3.1.0 より、Codex CLI / GitHub Copilot CLI の起動メニュー (S2/S3/L2/L3) は削除されました。本ツールは **Claude Code 専用の自律開発ランチャー** として位置づけを明確化し、Linux crontab 連携・セッション情報タブ・Statusline グローバル適用などの新機能に投資が集中しています。
 
-> **☁️ v3.2.59 — Cloud Schedule プロジェクト選択 動的読み込み / Cron登録状況バッジ / 戻るボタン追加**
-> `[int]$Span.TotalHours` の .NET 銀行丸めで残り時間が +1h 繰り上がる表示バグを `[Math]::Floor` で修正。Windows conhost QuickEdit モードをタブ起動時に P/Invoke で無効化しクリック凍結を防止。画面下部に `Enterキーで更新可能` + 動的生成した再起動コマンドを常時表示。v3.2.38: SessionLogger / TemplateSyncManager ユニットテスト 30 件追加（Pester 680 件）。詳細は [`CHANGELOG.md`](./CHANGELOG.md) を参照。
+> **☁️ v3.2.62 — Cron全同期をプロジェクト選択画面に移動・空URL/関数順序バグ修正**
+> `[S] Cron全同期` を `Show-CloudScheduleMenu` から `Select-Project` に移動。PowerShell 関数定義順序バグ修正・`[0] 戻る` 時の空URL渡しバグ修正・`while($true)` ループで [S] 同期後にリスト再表示（☁バッジ更新）。v3.2.61: Cron登録後 Cloud Schedule 自動同期 / [6] 一括同期追加。v3.2.60: プロジェクト選択に戻る・Cron登録状況バッジ追加。詳細は [`CHANGELOG.md`](./CHANGELOG.md) を参照。
 
 > **📨 v3.2.0 — Cron HTML メールレポート (Visual Recap Mail)**
 > Cron で起動された ClaudeCode セッションの完了時に、**HTML 形式のレポートメール** を Gmail SMTP 経由で送信。アイコン+色付き表組み+実行サマリ(Monitor/Development/Verify/Improvement の出現回数/エラー検出/STABLE 達成)+次フェーズ提案を含む。送信先は `CLAUDEOS_DEFAULT_TO`(未設定時 `CLAUDEOS_SMTP_USER`)で指定し、SMTP 認証情報は `~/.env-claudeos` の Linux 環境変数で管理(config.json には書かない設計)。詳細は [`docs/common/16_HTMLメールレポート設定.md`](./docs/common/16_HTMLメールレポート設定.md) を参照。
@@ -27,7 +27,7 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.2.59** (Cloud Schedule 動的プロジェクト選択 / Cron バッジ / 戻るボタン) — 旧: v3.2.58 ([4]管理メニュー拡張) / v3.2.57 (Cloud Schedule 移行) |
+| バージョン | **v3.2.62** (Cron全同期→プロジェクト選択画面 / 空URL・関数順序バグ修正) — 旧: v3.2.61 (Cron登録後自動同期) / v3.2.60 (戻るボタン・Cronバッジ) |
 | テスト | **680件** — Pester (Unit 17 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |

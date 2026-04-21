@@ -81,6 +81,9 @@
 72. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.2.57 /loop → Cloud Schedule 移行 — New-CloudSchedule.ps1 新規作成 / S1専用・週6日・300分制限 / Cloudflare 403 を claude -p 中継で回避 / CI SUCCESS (commit ee6f79b, PR #213)
 73. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.58 Cloud Schedule [4] 管理メニュー拡張 — OFF/ON/DEL/OFFA/ONA/DELA の6操作追加 / CI SUCCESS (commit 9b0e56a, PR #217)
 74. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.59 プロジェクト選択を Cloud Schedule から動的読み込みに変更 — RemoteTrigger + Cron バッジ表示 / [0]戻る追加 / CI SUCCESS (commit c5987fb, PR #218)
+75. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.60 プロジェクト選択に戻る・Cron登録状況バッジを追加 — Select-Project: [0]戻る / ☁⏱バッジ表示 / 空URL戻り値対応 / CI SUCCESS (commit ce19dbd, PR #219)
+76. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.61 Cron登録後Cloud Schedule自動同期 / [6]一括同期 / owner抽出修正 — Invoke-CloudRegister後Invoke-CronAllSync呼出 / Show-CloudScheduleMenu [6]追加 / SSH URL正規表現修正 / CI SUCCESS (commit 5a0124d, PR #221)
+77. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.2.62 Cron全同期をプロジェクト選択画面に移動・空URL/関数順序バグ修正 — Select-Project に [S] + while ループ / Invoke-CronAllSync を Select-Project より前に移動 / 空URL exit 0 ガード / Show-CloudScheduleMenu から [6] 削除 / CI SUCCESS (commit e5ee3a0, PR #222)
 
 ## Auto Extracted From Agent Teams Matrix
 

@@ -2,6 +2,51 @@
 
 # CHANGELOG
 
+## [v3.2.62] - 2026-04-21 — Cron全同期をプロジェクト選択画面に移動・空URL/関数順序バグ修正
+
+### 🎯 概要
+`[S] Cron全プロジェクトをCloud Scheduleに同期` を `Show-CloudScheduleMenu` から `Select-Project` に移動。PowerShell関数定義順序バグ（`Invoke-CronAllSync` が `Select-Project` より後に定義されていた問題）を修正。`[0] 戻る` 選択時の空URL渡しバグ修正。`Select-Project` に `while($true)` ループを追加し [S] 同期後にリスト再表示（☁バッジ更新）を実現。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/main/New-CloudSchedule.ps1` | 関数定義順序修正 / Select-Project に [S] 同期 + while ループ / 空URL exit 0 ガード / Show-CloudScheduleMenu から [6] 削除 |
+
+### ✅ テスト結果
+- CI SUCCESS / Security Scan SUCCESS (commit e5ee3a0, PR #222)
+
+---
+
+## [v3.2.61] - 2026-04-21 — Cron登録後Cloud Schedule自動同期 / [6]一括同期 / owner抽出修正
+
+### 🎯 概要
+Cron登録直後に Cloud Schedule へ自動同期する機能を追加。`Show-CloudScheduleMenu` に `[6] Cron全プロジェクトをCloud Scheduleに同期` を追加。`Invoke-CronAllSync` 内の owner 抽出バグ（`git remote get-url origin` → SSH 形式URLで空文字になる問題）を正規表現で修正。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/main/New-CloudSchedule.ps1` | Invoke-CloudRegister: 登録後 Invoke-CronAllSync 呼出し / Show-CloudScheduleMenu: [6] 追加 / Invoke-CronAllSync: owner 抽出修正 |
+
+### ✅ テスト結果
+- CI SUCCESS / Security Scan SUCCESS (commit 5a0124d, PR #221)
+
+---
+
+## [v3.2.60] - 2026-04-21 — プロジェクト選択に戻る・Cron登録状況バッジを追加
+
+### 🎯 概要
+`Select-Project` に `[0] 戻る` オプションと Cron 登録状況バッジ（☁/⏱）を追加。Cron バッジは RemoteTrigger 動的取得と CronManager SSH 確認を組み合わせて表示。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/main/New-CloudSchedule.ps1` | Select-Project: [0]戻る追加 / ☁⏱バッジ表示 / 空URL戻り値対応 |
+
+### ✅ テスト結果
+- CI SUCCESS / Security Scan SUCCESS (commit ce19dbd, PR #219)
+
+---
+
 ## [v3.2.59] - 2026-04-21 — Cloud Schedule プロジェクト選択を動的読み込みに変更
 
 ### 🎯 概要
