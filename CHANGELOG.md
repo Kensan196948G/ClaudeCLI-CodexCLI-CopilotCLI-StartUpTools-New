@@ -2,6 +2,22 @@
 
 # CHANGELOG
 
+## [v3.2.66] - 2026-04-22 — WorktreeManager.psm1 テストカバレッジ拡充
+
+### 🎯 概要
+`scripts/lib/WorktreeManager.psm1`（375行・7関数）のテストが `Get-WorktreeBasePath` 3件のみだった問題を解消。`Get-WorktreeSummary`（`Mock -ModuleName WorktreeManager` でモック注入）と `Get-WorktreeBasePath` edge cases を追加し、14 テストケースに拡充。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `tests/unit/WorktreeManager.Tests.ps1` | `Get-WorktreeBasePath` edge cases +2件 / `Get-WorktreeSummary` 9件追加 = 計 14 テストケース |
+
+### ✅ テスト結果
+- Pester: 14/14 passed
+- PSScriptAnalyzer 0 warnings (PSUseBOMForUnicodeEncodedFile 対応済み)
+
+---
+
 ## [v3.2.65] - 2026-04-21 — New-CloudSchedule.ps1 ユニットテスト追加
 
 ### 🎯 概要
