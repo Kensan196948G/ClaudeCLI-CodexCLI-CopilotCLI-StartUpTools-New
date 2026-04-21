@@ -7,8 +7,8 @@
 > **📌 v3.1.0 で Claude Code 専用ツールに整理**
 > v3.1.0 より、Codex CLI / GitHub Copilot CLI の起動メニュー (S2/S3/L2/L3) は削除されました。本ツールは **Claude Code 専用の自律開発ランチャー** として位置づけを明確化し、Linux crontab 連携・セッション情報タブ・Statusline グローバル適用などの新機能に投資が集中しています。
 
-> **☁️ v3.2.64 — 管理操作（OFFA/ONA/DELA）をプロジェクトスコープに限定**
-> `[4] 管理` の全一括操作が全プロジェクトに作用していた問題を修正。現在選択中のプロジェクトのみを対象とするよう変更し、確認ダイアログにプロジェクト名を明示。v3.2.63: PSScriptAnalyzer 0警告達成 / `[1] 一覧表示` プロジェクト別フィルタ改善。詳細は [`CHANGELOG.md`](./CHANGELOG.md) を参照。
+> **🧪 v3.2.66 — WorktreeManager.psm1 テストカバレッジ拡充**
+> `Get-WorktreeSummary`（`Mock -ModuleName` 注入）と `Get-WorktreeBasePath` edge cases を追加し 14 テストケースに拡充。v3.2.65: New-CloudSchedule.ps1 ユニットテスト 23件追加（dot-source exit→return パッチ戦略）。詳細は [`CHANGELOG.md`](./CHANGELOG.md) を参照。
 
 > **📨 v3.2.0 — Cron HTML メールレポート (Visual Recap Mail)**
 > Cron で起動された ClaudeCode セッションの完了時に、**HTML 形式のレポートメール** を Gmail SMTP 経由で送信。アイコン+色付き表組み+実行サマリ(Monitor/Development/Verify/Improvement の出現回数/エラー検出/STABLE 達成)+次フェーズ提案を含む。送信先は `CLAUDEOS_DEFAULT_TO`(未設定時 `CLAUDEOS_SMTP_USER`)で指定し、SMTP 認証情報は `~/.env-claudeos` の Linux 環境変数で管理(config.json には書かない設計)。詳細は [`docs/common/16_HTMLメールレポート設定.md`](./docs/common/16_HTMLメールレポート設定.md) を参照。
@@ -27,8 +27,8 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.2.65** (New-CloudSchedule.ps1 ユニットテスト 23件追加) — 旧: v3.2.64 (管理OFFA/ONA/DELA操作をプロジェクトスコープに限定) |
-| テスト | **703件** — Pester (Unit 18 / Integration 11 / Smoke 1) |
+| バージョン | **v3.2.66** (WorktreeManager.psm1 テストカバレッジ拡充 14件) — 旧: v3.2.65 (New-CloudSchedule.ps1 ユニットテスト 23件追加) |
+| テスト | **714件** — Pester (Unit 18 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |
 | Agents | **25体** の特化サブエージェント (2026Q2 棚卸し後、追加復元済み) |
