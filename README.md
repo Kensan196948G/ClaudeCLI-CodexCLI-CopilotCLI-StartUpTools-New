@@ -27,7 +27,7 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.2.62** (Cron全同期→プロジェクト選択画面 / 空URL・関数順序バグ修正) — 旧: v3.2.61 (Cron登録後自動同期) / v3.2.60 (戻るボタン・Cronバッジ) |
+| バージョン | **v3.2.63** (PSScriptAnalyzer 0警告達成 / 一覧表示プロジェクト別フィルタ改善) — 旧: v3.2.62 (Cron全同期→プロジェクト選択画面 / 空URL・関数順序バグ修正) |
 | テスト | **680件** — Pester (Unit 17 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |
