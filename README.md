@@ -27,8 +27,8 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.2.64** (管理OFFA/ONA/DELA操作をプロジェクトスコープに限定) — 旧: v3.2.63 (PSScriptAnalyzer 0警告達成 / 一覧表示プロジェクト別フィルタ改善) |
-| テスト | **680件** — Pester (Unit 17 / Integration 11 / Smoke 1) |
+| バージョン | **v3.2.65** (New-CloudSchedule.ps1 ユニットテスト 23件追加) — 旧: v3.2.64 (管理OFFA/ONA/DELA操作をプロジェクトスコープに限定) |
+| テスト | **703件** — Pester (Unit 18 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |
 | Agents | **25体** の特化サブエージェント (2026Q2 棚卸し後、追加復元済み) |

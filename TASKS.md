@@ -86,6 +86,7 @@
 77. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.2.62 Cron全同期をプロジェクト選択画面に移動・空URL/関数順序バグ修正 — Select-Project に [S] + while ループ / Invoke-CronAllSync を Select-Project より前に移動 / 空URL exit 0 ガード / Show-CloudScheduleMenu から [6] 削除 / CI SUCCESS (commit e5ee3a0, PR #222)
 78. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.63 PSScriptAnalyzer 0警告達成・一覧表示プロジェクト別フィルタ改善 — 空catchブロック $null=$_ / UTF-8 BOM / New-LoopPreset 改名 / SuppressMessage 関数内移動 / Watch-ClaudeLog $using: / Invoke-CloudList プロジェクトフィルタ
 79. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.2.64 管理操作（OFFA/ONA/DELA）をプロジェクトスコープに限定 — 全一括操作が全プロジェクトに影響する問題修正 / 確認ダイアログにプロジェクト名明示 / $script:RepoUrl フィルタ追加
+80. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#226] v3.2.65 New-CloudSchedule.ps1 ユニットテスト追加 — Build-CreatePrompt / New-LoopPreset の 23 テストケース / dot-source exit→return パッチ戦略 / PSScriptAnalyzer 0警告
 
 ## Auto Extracted From Agent Teams Matrix
 
@@ -93,6 +94,15 @@
 ## GitHub Issues Sync
 
 (No open issues)
+
+
+
+
+
+
+
+
+
 
 
 

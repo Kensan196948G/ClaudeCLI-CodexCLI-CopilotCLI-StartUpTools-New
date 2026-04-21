@@ -2,6 +2,22 @@
 
 # CHANGELOG
 
+## [v3.2.65] - 2026-04-21 — New-CloudSchedule.ps1 ユニットテスト追加
+
+### 🎯 概要
+`scripts/main/New-CloudSchedule.ps1`（772行）に対するユニットテストがゼロだった問題を解消。`Build-CreatePrompt`（プロンプト文字列生成）と `New-LoopPreset`（4プリセット生成）を対象に 23 テストケースを追加。スクリプト（.ps1）を Pester から dot-source する際の `exit` 問題を `exit→return` パッチ戦略で解決。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `tests/unit/NewCloudSchedule.Tests.ps1` | 新規作成: `New-LoopPreset` 12件 + `Build-CreatePrompt` 11件 = 23 テストケース / UTF-8 BOM / PSScriptAnalyzer 0警告 |
+
+### ✅ テスト結果
+- Pester: 23/23 passed
+- PSScriptAnalyzer 0 warnings (non-WriteHost)
+
+---
+
 ## [v3.2.64] - 2026-04-21 — 管理操作（OFFA/ONA/DELA）をプロジェクトスコープに限定
 
 ### 🎯 概要
