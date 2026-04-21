@@ -15,15 +15,16 @@
 このファイルを読んだ時点で、以下を即座に実行してください。
 ユーザーの最初のメッセージ内容に関わらず、このセクションを最優先で処理します。
 
-### ステップ 1: ループコマンド登録
+### ステップ 1: クラウドスケジュール登録
 
-以下の 4 コマンドをこの順番で登録してください。
+以下の 4 スケジュールをこの順番で登録してください。
+週6日（月〜土・日曜除く）、1セッション最大 5 時間（300 分）制限で動作します。
 
 ```
-/loop 30m   ClaudeOS Monitor
-/loop 2h    ClaudeOS Development
-/loop 1h　  ClaudeOS Verify
-/loop 1h   ClaudeOS Improvement
+/schedule ClaudeOS Monitor every hour Monday through Saturday
+/schedule ClaudeOS Development every 2 hours Monday through Saturday
+/schedule ClaudeOS Verify every hour Monday through Saturday
+/schedule ClaudeOS Improvement every hour Monday through Saturday
 ```
 
 4 本すべての登録が完了するまで、通常の開発作業は開始しないでください。

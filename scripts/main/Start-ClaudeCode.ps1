@@ -192,6 +192,31 @@ try {
         exit 0
     }
 
+    # --- Cloud Schedule 確認・設定 (v3.2.57) ---
+    # プロジェクト起動後、/loop の代わりに Cloud Schedule を設定する。
+    $scheduleScript = Join-Path $ScriptRoot 'scripts\main\New-CloudSchedule.ps1'
+    if ((Test-Path $scheduleScript) -and -not $NonInteractive -and -not $DryRun) {
+        # ローカルモードの場合: プロジェクトディレクトリから git remote URL を取得
+        $projectGitUrl = ''
+        if ($Local) {
+            $localProjDir = Join-Path $Config.projectsDir $Project
+            if (Test-Path $localProjDir) {
+                $rawUrl = & git -C $localProjDir remote get-url origin 2>$null
+                if ($rawUrl) { $projectGitUrl = ($rawUrl -join '').Trim() }
+            }
+        }
+
+        Write-Host ''
+        Write-Host '=== Cloud Schedule 確認・設定 ===' -ForegroundColor Yellow
+        $psExe = (Get-Process -Id $PID).Path
+        $scheduleArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $scheduleScript, '-QuickSetup')
+        if (-not [string]::IsNullOrWhiteSpace($projectGitUrl)) {
+            $scheduleArgs += @('-RepoUrl', $projectGitUrl)
+        }
+        & $psExe @scheduleArgs
+        Write-Host ''
+    }
+
     # --- Session Info Tab (v3.1.0) ---
     # session.json を生成して、Windows Terminal に情報タブを 1 枚開く。
     $sessionDurationMin = 300

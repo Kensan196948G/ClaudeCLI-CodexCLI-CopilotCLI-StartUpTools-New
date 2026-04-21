@@ -110,7 +110,7 @@ graph TD
     A["start.bat"] --> B["Start-Menu.ps1"]
     B --> C["Start-ClaudeCode.ps1"]
     B --> F["Start-All.ps1"]
-    B --> NCS["🆕 New-CronSchedule.ps1"]
+    B --> NCS["☁️ New-CloudSchedule.ps1"]
     B --> SSL["🆕 Set-Statusline.ps1"]
     B --> G["Test-AllTools.ps1"]
 
@@ -124,10 +124,8 @@ graph TD
     J -->|SSH| L["linuxHost via SSH"]
     L --> M["claude_pty_bridge.py"]
 
-    NCS --> CMSSH["SSH crontab -l/-"]
-    CMSSH --> CRON["Linux crontab (CLAUDEOS:uuid)"]
-    CRON --> CL["cron-launcher.sh"]
-    CL --> SJ
+    NCS --> RT["RemoteTrigger API (claude.ai)"]
+    RT --> CS["☁️ Cloud Schedule (Mon-Sat, 1h+, 300min)"]
 
     C --> PLD["Pre-Launch Diagnostics"]
     PLD --> MCP_CHK["MCP Health Check"]
@@ -313,7 +311,7 @@ start.bat
 | `9` | Agent Teams ランタイム |
 | `10` | Worktree Manager |
 | `11` | Architecture Check |
-| `12` | 🆕 Cron 登録・編集・削除 (Linux crontab で週次自動起動 + 終了時に HTML メールレポート送信 — v3.2.0) |
+| `12` | ☁️ Cloud スケジュール 登録・削除・実行 (Anthropic Cloud Schedule — 週6日・最大5h・プロジェクト別管理 — v3.2.57) |
 | `13` | 🆕 Statusline 設定 (グローバル `~/.claude/settings.json` を Linux に一括適用) |
 
 > **v3.1.0 変更**: `S2` / `S3` / `L2` / `L3` (Codex CLI / GitHub Copilot CLI) は削除されました。
@@ -326,7 +324,7 @@ start.bat
 .\scripts\main\Start-ClaudeCode.ps1 -Project "my-project"
 
 # v3.1.0 新機能 🆕
-.\scripts\main\New-CronSchedule.ps1          # メニュー 12: Cron 登録・編集・削除
+.\scripts\main\New-CloudSchedule.ps1         # メニュー 12: Cloud スケジュール 登録・削除・実行
 .\scripts\main\Set-Statusline.ps1            # メニュー 13: Statusline グローバル適用
 .\scripts\main\Show-SessionInfoTab.ps1 -SessionId <sid>  # 情報タブを手動で開く
 
@@ -338,14 +336,15 @@ start.bat
 
 ### 🆕 v3.1.0 新機能の概要
 
-#### メニュー 12: Cron 登録・編集・削除
+#### メニュー 12: Cloud スケジュール 登録・削除・実行 (v3.2.57)
 
-Linux crontab に週次自動起動エントリを登録します。`CLAUDEOS:<uuid>` コメントで識別するため、他の cron エントリを壊さず安全に追加・削除できます。
+Anthropic Cloud Schedule (RemoteTrigger API) でプロジェクトごとの自律開発ループを永続管理します。セッション終了後も継続稼働します。
 
-- 登録フロー: プロジェクト番号 → 曜日（複数可）→ 時刻（HH:MM）→ 作業時間（分、既定 300）
-- 起動は Linux 側 `~/.claudeos/cron-launcher.sh` が `timeout` 付き auto mode で ClaudeCode を実行
-- セッションログは `~/.claudeos/logs/` に保存
-- **🆕 v3.2.0**: 終了時に `~/.claudeos/report-and-mail.py` が HTML レポートメールを **`CLAUDEOS_DEFAULT_TO` で指定したアドレス** に送信(`CLAUDEOS_EMAIL_ENABLED=1` で明示 opt-in、認証情報は `~/.env-claudeos` 経由、`config.json` には書かない設計)
+- **動作条件**: 週6日（月〜土）/ 1セッション最大5時間 / API最小間隔1時間
+- **標準ループ**: Monitor (1h) / Development (2h) / Verify (1h) / Improvement (1h) — Mon-Sat
+- **プロジェクト別管理**: 起動時にプロジェクト選択 UI を表示。`[P]` キーでセッション中に切り替え可能
+- **操作**: `[1]`一覧 / `[2]`個別登録 / `[3]`4ループ一括登録 / `[4]`削除・全削除 / `[5]`即時実行
+- `New-CronSchedule.ps1` (旧 Linux crontab 方式) は後方互換のため保持
 
 #### Session Info タブ (Windows Terminal)
 
@@ -366,9 +365,9 @@ Windows 側 `~/.claude/settings.json` の `statusLine` セクションを Linux 
 
 | Command | 用途 |
 |---------|------|
-| `/cron-register` | ClaudeCode 内から Cron 新規登録 |
-| `/cron-cancel [id|all]` | Cron 解除 |
-| `/cron-list` | 登録済みエントリ一覧 |
+| `/cron-register` | (旧) ClaudeCode 内から Linux crontab 新規登録 |
+| `/cron-cancel [id|all]` | (旧) Linux crontab Cron 解除 |
+| `/cron-list` | (旧) Linux crontab 登録済みエントリ一覧 |
 | `/work-time-set <分>` | 現セッションの作業時間を変更 |
 | `/work-time-reset` | 作業時間をデフォルト 5h に戻す |
 | `/session-info` | 現セッションの session.json 整形表示 |
