@@ -2,6 +2,23 @@
 
 # CHANGELOG
 
+## [v3.2.67] - 2026-04-22 — RecentProjects.ps1 ユニットテスト追加
+
+### 🎯 概要
+`scripts/lib/RecentProjects.ps1`（173行・3関数）のユニットテストがゼロだった問題を解消。
+`Get-RecentProject`（JSON 正規化・legacy/object 両形式・エラー抑制）、`Update-RecentProject`（先頭挿入・重複削除・MaxHistory 上限）、`Test-RecentProjectsEnabled`（Config 判定）を対象に 17 テストケースを追加。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `tests/unit/RecentProjects.Tests.ps1` | 新規作成: `Get-RecentProject` 9件 + `Update-RecentProject` 4件 + `Test-RecentProjectsEnabled` 3件 = 17 テストケース |
+
+### ✅ テスト結果
+- Pester: 17/17 passed
+- PSScriptAnalyzer 0 warnings
+
+---
+
 ## [v3.2.66] - 2026-04-22 — WorktreeManager.psm1 テストカバレッジ拡充
 
 ### 🎯 概要
