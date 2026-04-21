@@ -73,8 +73,10 @@ function Select-Project {
     Clear-Host
     Write-Host ""
     Write-Host "  =============================================" -ForegroundColor Cyan
-    Write-Host "   プロジェクト選択" -ForegroundColor Cyan
-    Write-Host "   Cloud Schedule を管理するリポジトリを選んでください" -ForegroundColor DarkCyan
+    Write-Host "   Cloud Schedule — プロジェクト選択" -ForegroundColor Cyan
+    Write-Host "   S1 (SSH/Linux) プロジェクト専用" -ForegroundColor DarkCyan
+    Write-Host "   ※ L1 (Local/Windows) は登録不要（手動起動のみ）" -ForegroundColor DarkGray
+    Write-Host "   ※ 5時間強制終了が必要な場合はメニュー 15 の Cron も併用" -ForegroundColor DarkGray
     Write-Host "  =============================================" -ForegroundColor Cyan
     Write-Host ""
 
@@ -448,7 +450,8 @@ function Show-CloudScheduleMenu {
     Write-Host ""
     Write-Host "  =============================================" -ForegroundColor Cyan
     Write-Host "   Cloud スケジュール 登録・削除・実行" -ForegroundColor Cyan
-    Write-Host "   週6日（月〜土） / 最大 $DefaultDurationMinutes 分 / 最小間隔 1h" -ForegroundColor DarkCyan
+    Write-Host "   S1 (SSH) 専用 / 週6日（月〜土） / 最小間隔 1h" -ForegroundColor DarkCyan
+    Write-Host "   ※ 5時間強制終了 → メニュー 15 の Cron を併用" -ForegroundColor DarkGray
     Write-Host "  ─────────────────────────────────────────────" -ForegroundColor DarkGray
     Write-Host "   プロジェクト: $script:RepoShortName" -ForegroundColor White
     Write-Host "  =============================================" -ForegroundColor Cyan
