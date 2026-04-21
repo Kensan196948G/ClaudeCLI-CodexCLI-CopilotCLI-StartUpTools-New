@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     メニュー 14 本体 / プロジェクト起動後の Cloud Schedule 自動確認。
 .DESCRIPTION
@@ -89,7 +89,7 @@ function Invoke-CronAllSync {
                 $cronProjects = @($entries | Where-Object { -not [string]::IsNullOrWhiteSpace($_.Project) } | Select-Object -ExpandProperty Project -Unique)
             }
         }
-    } catch { }
+    } catch { $null = $_ } # ssh/network failure is non-fatal
 
     if ($cronProjects.Count -eq 0) {
         Write-Host "  [INFO] Cron 登録済みプロジェクトが見つかりませんでした。" -ForegroundColor Yellow
@@ -101,7 +101,7 @@ function Invoke-CronAllSync {
     try {
         $raw = (& git remote get-url origin 2>$null) -join ''
         if ($raw -match 'github\.com[:/]([^/]+)/') { $owner = $matches[1] }
-    } catch { }
+    } catch { $null = $_ } # git remote failure is non-fatal
 
     Write-Host ""
     Write-Host "  -- Cron 登録済みプロジェクト ($($cronProjects.Count) 件) --" -ForegroundColor Cyan
@@ -184,7 +184,7 @@ Example: REPO_URL:https://github.com/user/repo
                     }
                 }
             }
-        } catch { }
+        } catch { $null = $_ } # cloud schedule unavailable is non-fatal
 
         # ── 2. Cron 登録済みプロジェクト（CronManager 経由、SSH）を取得してマージ ──
         try {
@@ -202,7 +202,7 @@ Example: REPO_URL:https://github.com/user/repo
                     try {
                         $cronRemote = (& git remote get-url origin 2>$null) -join ''
                         if ($cronRemote -match 'github\.com[:/]([^/]+)/') { $cronOwner = $matches[1] }
-                    } catch { }
+                    } catch { $null = $_ } # git remote failure is non-fatal
 
                     foreach ($e in @($entries)) {
                         if ([string]::IsNullOrWhiteSpace($e.Project)) { continue }
@@ -218,7 +218,7 @@ Example: REPO_URL:https://github.com/user/repo
                     }
                 }
             }
-        } catch { }
+        } catch { $null = $_ } # ssh/cron module unavailable is non-fatal
 
         # ── 3. 現在のディレクトリの git remote（未登録なら追加） ──
         try {
@@ -230,7 +230,7 @@ Example: REPO_URL:https://github.com/user/repo
                     $projects.Insert(0, [pscustomobject]@{ Label = $name; Url = $rawUrl; HasCloud = $false; HasCron = $false })
                 }
             }
-        } catch { }
+        } catch { $null = $_ } # git remote failure is non-fatal
 
         # ── 4. フォールバック ──
         if ($projects.Count -eq 0) {
@@ -294,7 +294,9 @@ Example: REPO_URL:https://github.com/user/repo
 # ─────────────────────────────────────────────────
 # プリセット生成（プロジェクト URL に依存するため関数化）
 # ─────────────────────────────────────────────────
-function New-LoopPresets {
+function New-LoopPreset {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '',
+        Justification = 'Factory function — returns in-memory array, no persistent state changed')]
     param([Parameter(Mandatory)][string]$Url)
     return @(
         [pscustomobject]@{
@@ -399,8 +401,9 @@ if ([string]::IsNullOrWhiteSpace($RepoUrl)) {
 }
 
 # プリセットをプロジェクト URL で生成
-$script:LoopPresets = New-LoopPresets -Url $RepoUrl
-$script:RepoShortName = $RepoUrl.Split('/')[-1]
+$script:LoopPresets    = New-LoopPreset -Url $RepoUrl
+$script:RepoShortName  = $RepoUrl.Split('/')[-1]
+$script:RepoUrl        = $RepoUrl
 
 # ─────────────────────────────────────────────────
 # Build-CreatePrompt
@@ -432,15 +435,19 @@ After creation output ONE line: CREATED_ID=<trigger_id>
 # [1] 一覧表示
 # ─────────────────────────────────────────────────
 function Invoke-CloudList {
+    param([string]$ProjectUrl = $script:RepoUrl, [string]$ProjectName = $script:RepoShortName)
     Write-Host ""
     Write-Host "  Cloud スケジュール一覧を取得中..." -ForegroundColor Cyan
     Write-Host "  (claude API 経由 / 数秒かかる場合があります)" -ForegroundColor DarkGray
 
     $prompt = @"
 Use RemoteTrigger with action='list' to get all cloud schedule triggers.
+Then display ONLY the triggers whose project matches '$ProjectName' (repository: $ProjectUrl).
+Filter by checking if the trigger's project field contains '$ProjectName' or the URL contains '$ProjectName'.
 Display results as a table with columns:
   ID | Name | Cron | 有効 | 次回実行(JST)
-Be concise. Show ALL triggers in the list, grouped by project if possible.
+Be concise. If no triggers exist for this project, say so clearly.
+Do NOT show triggers from other projects.
 "@
     Invoke-CloudCLI $prompt -ShowOutput
 }
@@ -744,8 +751,9 @@ while ($true) {
         'P' {
             $newUrl = Select-Project
             if (-not [string]::IsNullOrWhiteSpace($newUrl) -and $newUrl -ne $RepoUrl) {
-                $RepoUrl = $newUrl
-                $script:LoopPresets = New-LoopPresets -Url $RepoUrl
+                $RepoUrl              = $newUrl
+                $script:RepoUrl       = $RepoUrl
+                $script:LoopPresets   = New-LoopPreset -Url $RepoUrl
                 $script:RepoShortName = $RepoUrl.Split('/')[-1]
                 Write-Host "  プロジェクトを切り替えました: $script:RepoShortName" -ForegroundColor Green
             }
