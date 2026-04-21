@@ -7,8 +7,8 @@
 > **📌 v3.1.0 で Claude Code 専用ツールに整理**
 > v3.1.0 より、Codex CLI / GitHub Copilot CLI の起動メニュー (S2/S3/L2/L3) は削除されました。本ツールは **Claude Code 専用の自律開発ランチャー** として位置づけを明確化し、Linux crontab 連携・セッション情報タブ・Statusline グローバル適用などの新機能に投資が集中しています。
 
-> **🔧 v3.2.39 — Session Info タブ 3 点修正 (残り時間表示 / 凍結耐性 / UI 補足)**
-> `[int]$Span.TotalHours` の .NET 銀行丸めで残り時間が +1h 繰り上がる表示バグを `[Math]::Floor` で修正。Windows conhost QuickEdit モードをタブ起動時に P/Invoke で無効化しクリック凍結を防止。画面下部に `Enterキーで更新可能` + 動的生成した再起動コマンドを常時表示。v3.2.38: SessionLogger / TemplateSyncManager ユニットテスト 30 件追加（Pester 680 件）。詳細は [`CHANGELOG.md`](./CHANGELOG.md) を参照。
+> **🔧 v3.2.56 — start.bat if/else ネスト goto 化 (cmd.exe "not was unexpected" エラー完全解消)**
+> cmd.exe が `if (...) else (...)` ブロック内のリテラル `(pwsh)` を mis-parse して exit 255 するバグを `goto` パターンで根本修正。v3.2.55: start.bat pure ASCII 化（日本語コメント除去）。v3.2.54: Agent ログフォーマットにアイコン＋日本語併記追加。v3.2.52–49: hooks / skills / slash commands / Agent Teams を `.claude/` ランタイムディレクトリにも配置。詳細は [`CHANGELOG.md`](./CHANGELOG.md) を参照。
 
 > **📨 v3.2.0 — Cron HTML メールレポート (Visual Recap Mail)**
 > Cron で起動された ClaudeCode セッションの完了時に、**HTML 形式のレポートメール** を Gmail SMTP 経由で送信。アイコン+色付き表組み+実行サマリ(Monitor/Development/Verify/Improvement の出現回数/エラー検出/STABLE 達成)+次フェーズ提案を含む。送信先は `CLAUDEOS_DEFAULT_TO`(未設定時 `CLAUDEOS_SMTP_USER`)で指定し、SMTP 認証情報は `~/.env-claudeos` の Linux 環境変数で管理(config.json には書かない設計)。詳細は [`docs/common/16_HTMLメールレポート設定.md`](./docs/common/16_HTMLメールレポート設定.md) を参照。
@@ -27,7 +27,7 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.2.39** (Session Info タブ 3 点修正: 残り時間 / 凍結耐性 / UI 補足) — 旧: v3.2.38 (Pester 680 件) / v3.2.37 (scripts/lib BOM) |
+| バージョン | **v3.2.56** (start.bat goto化: cmd.exe parse エラー完全解消) — 旧: v3.2.55 (pure ASCII化) / v3.2.54 (Agent ログアイコン＋日本語) / v3.2.52–49 (.claude/ ランタイム配置) |
 | テスト | **680件** — Pester (Unit 17 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |
