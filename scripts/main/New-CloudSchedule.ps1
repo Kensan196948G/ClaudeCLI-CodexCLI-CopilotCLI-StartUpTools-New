@@ -1,17 +1,24 @@
 <#
 .SYNOPSIS
-    メニュー 12 本体。Claude Cloud スケジュール (RemoteTrigger) を対話的に登録・削除・実行する。
+    メニュー 12 本体 / プロジェクト起動後の Cloud Schedule 自動確認。
 .DESCRIPTION
-    ClaudeOS v8.1 — claude -p (AskUserQuestion ブロック問題) を排除し、
-    Invoke-RestMethod で https://claude.ai/api/v1/code/triggers を直接操作する。
+    ClaudeOS v8.1 — Invoke-RestMethod で https://claude.ai/api/v1/code/triggers を直接操作。
     動作条件:
       - 週6日（月〜土、日曜除く）
       - 1 セッション最大 5 時間（300 分）
       - API 最小間隔: 1 時間
+    -QuickSetup: プロジェクト起動直後の自動確認モード。4 標準ループの登録状況を
+                 チェックし、未登録のものだけ選択的に登録できる。
 #>
 
 param(
-    [switch]$NonInteractive
+    [switch]$NonInteractive,
+
+    # プロジェクト固有の git リモート URL（省略時はデフォルトプロジェクトを使用）
+    [string]$RepoUrl = 'https://github.com/Kensan196948G/ClaudeCode-StartUpTools-New',
+
+    # プロジェクト起動後の自動確認モード（Start-ClaudeCode.ps1 から呼ばれる）
+    [switch]$QuickSetup
 )
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -26,7 +33,6 @@ $CredPath               = Join-Path $env:USERPROFILE '.claude\.credentials.json'
 $DefaultDurationMinutes = 300
 $DefaultDays            = '1-6'        # Mon-Sat (cron DOW)
 $DefaultModel           = 'claude-sonnet-4-6'
-$RepoUrl                = 'https://github.com/Kensan196948G/ClaudeCode-StartUpTools-New'
 $AllowedTools           = @('Bash','Read','Write','Edit','Glob','Grep','Agent')
 
 $script:EnvironmentId   = $null   # 既存 trigger から動的取得してキャッシュ
@@ -413,6 +419,85 @@ function Show-CloudScheduleMenu {
 
 if ($NonInteractive) { exit 0 }
 
+# ─────────────────────────────────────────────────
+# QuickSetup モード: プロジェクト起動後の自動確認
+# Start-ClaudeCode.ps1 から呼ばれる。4 標準ループの登録状況を確認し、
+# 未登録のものだけ選択的に登録して終了する（フルメニューを開かない）。
+# ─────────────────────────────────────────────────
+if ($QuickSetup) {
+    Write-Host "  プロジェクト : $RepoUrl" -ForegroundColor DarkGray
+    Write-Host ""
+
+    # 既存 trigger を取得してこのプロジェクト向けのものをフィルタ
+    $existingNames = @()
+    try {
+        $listResult = Invoke-TriggersAPI -Method 'GET' -Path '/v1/code/triggers'
+        foreach ($t in $listResult.data) {
+            $url = $t.job_config?.ccr?.session_context?.sources?[0]?.git_repository?.url
+            if ($t.enabled -and $url -and $url.TrimEnd('/') -eq $RepoUrl.TrimEnd('/')) {
+                $existingNames += $t.name
+            }
+        }
+        # environment_id をキャッシュ
+        foreach ($t in $listResult.data) {
+            $eid = $t.job_config?.ccr?.environment_id
+            if (-not [string]::IsNullOrWhiteSpace($eid)) { $script:EnvironmentId = $eid; break }
+        }
+    } catch {
+        Write-Host "  [WARN] trigger 一覧取得に失敗しました: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+
+    # 登録状況テーブルを表示
+    Write-Host ("  {0,-30} {1}" -f 'スケジュール名', '状態') -ForegroundColor Cyan
+    Write-Host ("  " + ("-" * 50)) -ForegroundColor DarkGray
+    $missing = @()
+    foreach ($p in $LoopPresets) {
+        if ($existingNames -contains $p.Name) {
+            Write-Host ("  {0,-30} 登録済み ✓" -f $p.Name) -ForegroundColor Green
+        } else {
+            Write-Host ("  {0,-30} 未登録 ✗  (Cron: {1})" -f $p.Name, $p.Cron) -ForegroundColor Yellow
+            $missing += $p
+        }
+    }
+    Write-Host ""
+
+    if ($missing.Count -eq 0) {
+        Write-Host "  [OK] 全 4 スケジュールが登録済みです。" -ForegroundColor Green
+        Write-Host ""
+        exit 0
+    }
+
+    Write-Host "  未登録のスケジュールが $($missing.Count) 件あります。" -ForegroundColor Yellow
+    $confirm = Read-Host "  今すぐ登録しますか? [y/N]"
+    if ($confirm -notmatch '^[yY]') {
+        Write-Host "  スキップしました。メニュー 12 でいつでも登録できます。" -ForegroundColor DarkGray
+        Write-Host ""
+        exit 0
+    }
+
+    $ok = 0; $ng = 0
+    foreach ($p in $missing) {
+        Write-Host "  >> $($p.Name) を登録中..." -ForegroundColor Cyan
+        try {
+            $body   = New-TriggerBody -Name $p.Name -CronExpression $p.Cron -PromptContent $p.Content
+            $result = Invoke-TriggersAPI -Method 'POST' -Path '/v1/code/triggers' -Body $body
+            $next   = if ($result.next_run_at) { try { (Get-Date $result.next_run_at).ToLocalTime().ToString('MM-dd HH:mm') } catch { '-' } } else { '-' }
+            Write-Host "  [OK] ID=$($result.id)  次回(JST):$next" -ForegroundColor Green
+            $ok++
+        } catch {
+            Write-Host "  [ERROR] $($p.Name): $($_.Exception.Message)" -ForegroundColor Red
+            $ng++
+        }
+    }
+    Write-Host ""
+    Write-Host "  [完了] 登録 $ok 件 / エラー $ng 件" -ForegroundColor $(if ($ng -eq 0) { 'Green' } else { 'Yellow' })
+    Write-Host ""
+    exit 0
+}
+
+# ─────────────────────────────────────────────────
+# 通常メニューモード
+# ─────────────────────────────────────────────────
 while ($true) {
     Show-CloudScheduleMenu
     $choice = Read-Host "  番号を入力"

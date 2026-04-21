@@ -1,16 +1,10 @@
 # ClaudeOS v8 セッション開始
 
 ## LOOP_COMMANDS
-以下の /loop コマンドは実行指示である。
-ユーザー確認を待たずに上から順に実行すること。
-各コマンドの実行後に停止してはならない。
-4つ全ての登録完了後は、直ちに Codex セットアップと確認チェックリスト出力へ進むこと。
-この工程ではユーザー判断を求めてはならない。
-
-/loop 30m    ClaudeOS Monitor
-/loop 120m   ClaudeOS Development
-/loop 60m　  ClaudeOS Verify
-/loop 60m　  ClaudeOS Improvement
+# ClaudeOS v8.1: ループは Cloud Schedule（永続クラウドタスク）に移行済み。
+# セッション内での /loop 登録は不要。
+# スケジュール管理: スタートアップツール メニュー 12「Cloud スケジュール 登録・削除・実行」
+# このセッションは Monitor フェーズから自律開発を開始すること。
 
 
 ## PROMPT_BODY
@@ -45,17 +39,22 @@ Auto Mode による自律開発を実行してください。
 
 # セッション開始・前提条件
 
-## LOOP_COMMANDS
-以下の /loop コマンドは実行指示である。
-ユーザー確認を待たずに上から順に実行すること。
-各コマンドの実行後に停止してはならない。
-4つ全ての登録完了後は、直ちに Codex セットアップと確認チェックリスト出力へ進むこと。
-この工程ではユーザー判断を求めてはならない。
+## Cloud Schedule 設定（ループ移行済み）
 
-/loop 30m    ClaudeOS Monitor
-/loop 120m   ClaudeOS Development
-/loop 60m　  ClaudeOS Verify
-/loop 60m　  ClaudeOS Improvement
+ClaudeOS v8.1 では `/loop` セッションループを廃止し、
+Anthropic Cloud Schedule（永続クラウドタスク）に移行しました。
+
+**スケジュール管理**: スタートアップツール メニュー 12「Cloud スケジュール 登録・削除・実行」  
+**登録タイミング**: プロジェクト起動前に PowerShell から自動確認・設定されます。
+
+標準スケジュール（週6日 月〜土、1時間以上間隔）:
+
+| ループ | Cron | 役割 |
+|---|---|---|
+| ClaudeOS Monitor | `0 * * * 1-6` | 状態確認・Issue検出 |
+| ClaudeOS Development | `0 */2 * * 1-6` | 実装・PR作成 |
+| ClaudeOS Verify | `0 * * * 1-6` | CI確認・STABLE判定 |
+| ClaudeOS Improvement | `0 * * * 1-6` | リファクタ・docs更新 |
 
 ## Codex統合（必須）
 
