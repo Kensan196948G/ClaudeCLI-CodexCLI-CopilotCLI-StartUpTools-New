@@ -3,20 +3,20 @@
     メニュー 12 本体 / プロジェクト起動後の Cloud Schedule 自動確認。
 .DESCRIPTION
     ClaudeOS v8.1 — claude -p を中継して RemoteTrigger ツールを呼び出す。
-    Cloudflare が Invoke-RestMethod を 403 でブロックするため、
-    直接 REST 呼び出しを廃止し claude CLI 経由に統一する。
+    プロジェクトごとに Cloud Schedule を管理できる。
+    -RepoUrl 未指定時は起動時にプロジェクト選択 UI を表示。
     動作条件:
       - 週6日（月〜土、日曜除く）
       - 1 セッション最大 5 時間（300 分）
       - API 最小間隔: 1 時間
-    -QuickSetup: プロジェクト起動直後の自動確認モード。
 #>
 
 param(
     [switch]$NonInteractive,
 
-    # プロジェクト固有の git リモート URL（省略時はデフォルトプロジェクトを使用）
-    [string]$RepoUrl = 'https://github.com/Kensan196948G/ClaudeCode-StartUpTools-New',
+    # 空文字 = 起動時にプロジェクト選択 UI を表示
+    # 値あり = Start-ClaudeCode.ps1 から直接渡された URL（UI スキップ）
+    [string]$RepoUrl = '',
 
     # プロジェクト起動後の自動確認モード（Start-ClaudeCode.ps1 から呼ばれる）
     [switch]$QuickSetup
@@ -45,22 +45,77 @@ foreach ($c in @('claude', "$env:APPDATA\npm\claude.cmd",
     if (Test-Path $c -ErrorAction SilentlyContinue)   { $script:ClaudeCLI = $c; break }
 }
 if (-not $script:ClaudeCLI) {
-    Write-Host "[ERROR] claude CLI が見つかりません。'npm install -g @anthropic-ai/claude-code' 等でインストールしてください。" -ForegroundColor Red
+    Write-Host "[ERROR] claude CLI が見つかりません。'npm install -g @anthropic-ai/claude-code' でインストールしてください。" -ForegroundColor Red
     exit 1
 }
 
 # ─────────────────────────────────────────────────
-# プリセット定義 (4 標準ループ)
+# プロジェクト選択 UI
 # ─────────────────────────────────────────────────
-$LoopPresets = @(
-    [pscustomobject]@{
-        Label = 'Monitor     (1時間ごと ※API最小間隔)'
-        Name  = 'ClaudeOS Monitor'
-        Cron  = "0 * * * $DefaultDays"
-        Content = @"
+function Select-Project {
+    # 既知プロジェクトのベースリスト
+    $knownProjects = [System.Collections.Generic.List[pscustomobject]]::new()
+    $knownProjects.Add([pscustomobject]@{ Label = 'ClaudeCode-StartUpTools-New';     Url = 'https://github.com/Kensan196948G/ClaudeCode-StartUpTools-New' })
+    $knownProjects.Add([pscustomobject]@{ Label = 'Enterprise-AI-HelpDesk-System';   Url = 'https://github.com/Kensan196948G/Enterprise-AI-HelpDesk-System' })
+
+    # 現在の作業ディレクトリから git remote を取得し先頭に追加
+    try {
+        $rawUrl = (& git remote get-url origin 2>$null) -join ''
+        if ($rawUrl -match 'github\.com') {
+            $rawUrl = $rawUrl.Trim() -replace '\.git$', '' -replace '^git@github\.com:', 'https://github.com/'
+            if ($knownProjects.Url -notcontains $rawUrl) {
+                $name = $rawUrl.Split('/')[-1] + ' (現在のディレクトリ)'
+                $knownProjects.Insert(0, [pscustomobject]@{ Label = $name; Url = $rawUrl })
+            }
+        }
+    } catch { }
+
+    Clear-Host
+    Write-Host ""
+    Write-Host "  =============================================" -ForegroundColor Cyan
+    Write-Host "   プロジェクト選択" -ForegroundColor Cyan
+    Write-Host "   Cloud Schedule を管理するリポジトリを選んでください" -ForegroundColor DarkCyan
+    Write-Host "  =============================================" -ForegroundColor Cyan
+    Write-Host ""
+
+    for ($i = 0; $i -lt $knownProjects.Count; $i++) {
+        Write-Host ("    [{0}] {1}" -f ($i + 1), $knownProjects[$i].Label) -ForegroundColor White
+        Write-Host ("        {0}" -f $knownProjects[$i].Url) -ForegroundColor DarkGray
+    }
+    Write-Host "    [M] 手動入力（GitHub URL）" -ForegroundColor DarkGray
+    Write-Host ""
+
+    $sel = (Read-Host "  番号を選択").Trim()
+
+    if ($sel -match '^\d+$') {
+        $n = [int]$sel - 1
+        if ($n -ge 0 -and $n -lt $knownProjects.Count) {
+            return $knownProjects[$n].Url
+        }
+    } elseif ($sel -match '^[Mm]$') {
+        $url = (Read-Host "  GitHub URL を入力 (例: https://github.com/user/repo)").Trim()
+        $url = $url.TrimEnd('/') -replace '\.git$', ''
+        if (-not [string]::IsNullOrWhiteSpace($url)) { return $url }
+    }
+
+    Write-Host "  無効な選択です。デフォルトを使用します。" -ForegroundColor Yellow
+    return 'https://github.com/Kensan196948G/ClaudeCode-StartUpTools-New'
+}
+
+# ─────────────────────────────────────────────────
+# プリセット生成（プロジェクト URL に依存するため関数化）
+# ─────────────────────────────────────────────────
+function New-LoopPresets {
+    param([Parameter(Mandatory)][string]$Url)
+    return @(
+        [pscustomobject]@{
+            Label = 'Monitor     (1時間ごと ※API最小間隔)'
+            Name  = 'ClaudeOS Monitor'
+            Cron  = "0 * * * $DefaultDays"
+            Content = @"
 ClaudeOS v8 Monitor Phase — Autonomous Execution
 
-Repository: $RepoUrl
+Repository: $Url
 Max session: 5 hours (300 minutes). Weekdays: Monday-Saturday.
 
 Execute the Monitor phase:
@@ -74,15 +129,15 @@ Execute the Monitor phase:
 
 Constraints: Do NOT implement code. Do NOT push to main. Observation only.
 "@
-    }
-    [pscustomobject]@{
-        Label = 'Development (2時間ごと)'
-        Name  = 'ClaudeOS Development'
-        Cron  = "0 */2 * * $DefaultDays"
-        Content = @"
+        }
+        [pscustomobject]@{
+            Label = 'Development (2時間ごと)'
+            Name  = 'ClaudeOS Development'
+            Cron  = "0 */2 * * $DefaultDays"
+            Content = @"
 ClaudeOS v8 Development Phase — Autonomous Build Loop
 
-Repository: $RepoUrl
+Repository: $Url
 Max session: 5 hours (300 minutes). Weekdays: Monday-Saturday.
 
 Execute the Development phase:
@@ -97,15 +152,15 @@ Execute the Development phase:
 Agent chain: [Architect] → [Developer] → [Reviewer]
 Constraints: Never push to main. Never merge without CI. One Issue per session.
 "@
-    }
-    [pscustomobject]@{
-        Label = 'Verify      (1時間ごと)'
-        Name  = 'ClaudeOS Verify'
-        Cron  = "0 * * * $DefaultDays"
-        Content = @"
+        }
+        [pscustomobject]@{
+            Label = 'Verify      (1時間ごと)'
+            Name  = 'ClaudeOS Verify'
+            Cron  = "0 * * * $DefaultDays"
+            Content = @"
 ClaudeOS v8 Verify Phase — Autonomous Execution
 
-Repository: $RepoUrl
+Repository: $Url
 Max session: 5 hours (300 minutes). Weekdays: Monday-Saturday.
 
 Execute the Verify phase:
@@ -118,15 +173,15 @@ Execute the Verify phase:
 
 Constraints: Never merge without CI passing. Never push to main directly.
 "@
-    }
-    [pscustomobject]@{
-        Label = 'Improvement (1時間ごと)'
-        Name  = 'ClaudeOS Improvement'
-        Cron  = "0 * * * $DefaultDays"
-        Content = @"
+        }
+        [pscustomobject]@{
+            Label = 'Improvement (1時間ごと)'
+            Name  = 'ClaudeOS Improvement'
+            Cron  = "0 * * * $DefaultDays"
+            Content = @"
 ClaudeOS v8 Improvement Phase — Autonomous Execution
 
-Repository: $RepoUrl
+Repository: $Url
 Max session: 5 hours (300 minutes). Weekdays: Monday-Saturday.
 
 Execute the Improvement phase (only after STABLE is confirmed):
@@ -138,13 +193,27 @@ Execute the Improvement phase (only after STABLE is confirmed):
 
 Constraints: Never break tests. Never push to main directly.
 "@
-    }
-)
+        }
+    )
+}
 
 # ─────────────────────────────────────────────────
-# claude -p 中継: RemoteTrigger ツール呼び出し
-# Cloudflare が Invoke-RestMethod を 403 でブロックするため
-# claude CLI 経由で RemoteTrigger を使う
+# RepoUrl 確定（QuickSetup / NonInteractive 時はデフォルト）
+# ─────────────────────────────────────────────────
+if ([string]::IsNullOrWhiteSpace($RepoUrl)) {
+    if ($NonInteractive -or $QuickSetup) {
+        $RepoUrl = 'https://github.com/Kensan196948G/ClaudeCode-StartUpTools-New'
+    } else {
+        $RepoUrl = Select-Project
+    }
+}
+
+# プリセットをプロジェクト URL で生成
+$script:LoopPresets = New-LoopPresets -Url $RepoUrl
+$script:RepoShortName = $RepoUrl.Split('/')[-1]
+
+# ─────────────────────────────────────────────────
+# claude -p 中継（Cloudflare 対策: Invoke-RestMethod を使わない）
 # ─────────────────────────────────────────────────
 function Invoke-CloudCLI {
     param(
@@ -159,7 +228,6 @@ function Invoke-CloudCLI {
     return $output
 }
 
-# trigger 作成用の完全プロンプトを生成
 function Build-CreatePrompt {
     param(
         [Parameter(Mandatory)][string]$Name,
@@ -172,7 +240,7 @@ Use the RemoteTrigger tool to create a new cloud schedule trigger with these exa
 - name: "$Name"
 - cron_expression: "$Cron"
 - enabled: true
-- job_config.ccr.events[0].data.message.content: "$($PromptContent.Replace('"', '\"').Replace("`n", '\n'))"
+- job_config.ccr.events[0].data.message.content: "$($PromptContent.Replace('"','\"').Replace("`n",'\n'))"
 - job_config.ccr.events[0].data.message.role: "user"
 - job_config.ccr.events[0].data.uuid: "$uuid"
 - job_config.ccr.session_context.model: "$DefaultModel"
@@ -195,7 +263,7 @@ function Invoke-CloudList {
 Use RemoteTrigger with action='list' to get all cloud schedule triggers.
 Display results as a table with columns:
   ID | Name | Cron | 有効 | 次回実行(JST)
-Be concise. Show ALL triggers in the list.
+Be concise. Show ALL triggers in the list, grouped by project if possible.
 "@
     Invoke-CloudCLI $prompt -ShowOutput
 }
@@ -205,9 +273,10 @@ Be concise. Show ALL triggers in the list.
 # ─────────────────────────────────────────────────
 function Invoke-CloudRegister {
     Write-Host ""
+    Write-Host "  プロジェクト: $script:RepoShortName" -ForegroundColor DarkCyan
     Write-Host "  -- ClaudeOS 標準ループ (Mon-Sat / 最小間隔 1h) --" -ForegroundColor Cyan
-    for ($i = 0; $i -lt $LoopPresets.Count; $i++) {
-        Write-Host ("    [{0}] {1}" -f ($i + 1), $LoopPresets[$i].Label) -ForegroundColor White
+    for ($i = 0; $i -lt $script:LoopPresets.Count; $i++) {
+        Write-Host ("    [{0}] {1}" -f ($i + 1), $script:LoopPresets[$i].Label) -ForegroundColor White
     }
     Write-Host "    [5] カスタム入力 (Cron 直接指定)" -ForegroundColor DarkGray
     Write-Host ""
@@ -217,8 +286,8 @@ function Invoke-CloudRegister {
 
     if ($sel -match '^\d$') {
         $n = [int]$sel - 1
-        if ($n -ge 0 -and $n -lt $LoopPresets.Count) {
-            $preset = $LoopPresets[$n]
+        if ($n -ge 0 -and $n -lt $script:LoopPresets.Count) {
+            $preset = $script:LoopPresets[$n]
         } elseif ($sel -eq '5') {
             $pName    = (Read-Host "  名前 (例: ClaudeOS Monitor)").Trim()
             $pCron    = (Read-Host "  Cron 式 (例: 0 * * * 1-6)").Trim()
@@ -233,9 +302,9 @@ function Invoke-CloudRegister {
 
     Write-Host ""
     Write-Host "  == 登録確認 ==" -ForegroundColor Yellow
-    Write-Host "    名前 : $($preset.Name)"
-    Write-Host "    Cron : $($preset.Cron)"
-    Write-Host "    曜日 : 月〜土（日曜除く）"
+    Write-Host "    名前     : $($preset.Name)"
+    Write-Host "    Cron     : $($preset.Cron)"
+    Write-Host "    プロジェクト: $script:RepoShortName"
     Write-Host ""
     $confirm = Read-Host "  登録しますか? [y/N]"
     if ($confirm -notmatch '^[yY]') { Write-Host "  キャンセルしました。" -ForegroundColor Yellow; return }
@@ -247,10 +316,8 @@ function Invoke-CloudRegister {
 
     $idLine = $output | Where-Object { $_ -match '^CREATED_ID=' } | Select-Object -First 1
     if ($idLine) {
-        $id = ($idLine -replace '^CREATED_ID=', '').Trim()
-        Write-Host "  [OK] 登録完了: $id" -ForegroundColor Green
+        Write-Host "  [OK] 登録完了: $(($idLine -replace '^CREATED_ID=','').Trim())" -ForegroundColor Green
     } else {
-        Write-Host ""
         $output | Where-Object { $_.Trim() } | ForEach-Object { Write-Host "  $_" }
     }
 }
@@ -260,8 +327,9 @@ function Invoke-CloudRegister {
 # ─────────────────────────────────────────────────
 function Invoke-CloudRegisterAll {
     Write-Host ""
+    Write-Host "  プロジェクト: $script:RepoShortName" -ForegroundColor DarkCyan
     Write-Host "  以下の 4 スケジュールを一括登録します（Mon-Sat / 最大 $DefaultDurationMinutes 分）:" -ForegroundColor Cyan
-    foreach ($p in $LoopPresets) {
+    foreach ($p in $script:LoopPresets) {
         Write-Host ("    - {0,-30} Cron: {1}" -f $p.Name, $p.Cron) -ForegroundColor White
     }
     Write-Host ""
@@ -269,22 +337,20 @@ function Invoke-CloudRegisterAll {
     if ($confirm -notmatch '^[yY]') { Write-Host "  キャンセルしました。" -ForegroundColor Yellow; return }
 
     $ok = 0; $ng = 0
-    foreach ($p in $LoopPresets) {
+    foreach ($p in $script:LoopPresets) {
         Write-Host ""
-        Write-Host "  >> $($p.Name) を登録中 ($($p.Cron))..." -ForegroundColor Cyan
+        Write-Host "  >> $($p.Name) を登録中..." -ForegroundColor Cyan
         try {
             $createPrompt = Build-CreatePrompt -Name $p.Name -Cron $p.Cron -PromptContent $p.Content
             $output = Invoke-CloudCLI $createPrompt
 
             $idLine = $output | Where-Object { $_ -match '^CREATED_ID=' } | Select-Object -First 1
             if ($idLine) {
-                $id = ($idLine -replace '^CREATED_ID=', '').Trim()
-                Write-Host "  [OK] ID=$id" -ForegroundColor Green
-                $ok++
+                Write-Host "  [OK] ID=$(($idLine -replace '^CREATED_ID=','').Trim())" -ForegroundColor Green
             } else {
                 $output | Where-Object { $_.Trim() } | Select-Object -First 3 | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
-                $ok++  # assume success if no error line
             }
+            $ok++
         } catch {
             Write-Host "  [ERROR] $($p.Name): $($_.Exception.Message)" -ForegroundColor Red
             $ng++
@@ -305,12 +371,12 @@ function Invoke-CloudDelete {
     Write-Host "    [ID] Trigger ID を指定して削除" -ForegroundColor Yellow
     Write-Host "    [Enter] キャンセル" -ForegroundColor Gray
     Write-Host ""
-    $input = (Read-Host "  入力 (A / Trigger ID)").Trim()
+    $inputVal = (Read-Host "  入力 (A / Trigger ID)").Trim()
 
-    if ([string]::IsNullOrWhiteSpace($input)) { Write-Host "  キャンセルしました。" -ForegroundColor Yellow; return }
+    if ([string]::IsNullOrWhiteSpace($inputVal)) { Write-Host "  キャンセルしました。" -ForegroundColor Yellow; return }
 
     # ── 全削除 ──
-    if ($input -eq 'A' -or $input -eq 'a') {
+    if ($inputVal -eq 'A' -or $inputVal -eq 'a') {
         $confirm = Read-Host "  全トリガーを無効化します。本当によろしいですか? [y/N]"
         if ($confirm -notmatch '^[yY]') { Write-Host "  キャンセルしました。" -ForegroundColor Yellow; return }
 
@@ -319,14 +385,13 @@ function Invoke-CloudDelete {
         $prompt = @"
 Use RemoteTrigger with action='list' to get all trigger IDs.
 Then for each trigger, call RemoteTrigger with action='update', trigger_id=<id>, body={"enabled": false} to disable it.
-After finishing all, output ONE line: DONE_ALL=<count> where count is the number of triggers disabled.
+After finishing all, output ONE line: DONE_ALL=<count>
 "@
         $output = Invoke-CloudCLI $prompt
 
         $doneLine = $output | Where-Object { $_ -match '^DONE_ALL=' } | Select-Object -First 1
         if ($doneLine) {
-            $count = ($doneLine -replace '^DONE_ALL=', '').Trim()
-            Write-Host "  [OK] $count 件を無効化しました。" -ForegroundColor Green
+            Write-Host "  [OK] $(($doneLine -replace '^DONE_ALL=','').Trim()) 件を無効化しました。" -ForegroundColor Green
         } else {
             $output | Where-Object { $_.Trim() } | ForEach-Object { Write-Host "  $_" }
         }
@@ -334,17 +399,16 @@ After finishing all, output ONE line: DONE_ALL=<count> where count is the number
     }
 
     # ── ID 指定削除 ──
-    $id = $input
+    $id = $inputVal
     $confirm = Read-Host "  '$id' を削除しますか? [y/N]"
     if ($confirm -notmatch '^[yY]') { Write-Host "  キャンセルしました。" -ForegroundColor Yellow; return }
 
     Write-Host ""
     Write-Host "  削除処理中..." -ForegroundColor Cyan
-    $prompt = @"
+    $output = Invoke-CloudCLI @"
 Use RemoteTrigger with action='update', trigger_id='$id', body={"enabled": false}.
 After the call output ONE line: DONE
 "@
-    $output = Invoke-CloudCLI $prompt
 
     if ($output -match 'DONE') {
         Write-Host "  [OK] 無効化しました: $id" -ForegroundColor Green
@@ -364,22 +428,20 @@ function Invoke-CloudRun {
 
     Write-Host ""
     Write-Host "  [起動中] $id ..." -ForegroundColor Cyan
-    $prompt = @"
+    $output = Invoke-CloudCLI @"
 Use RemoteTrigger with action='run', trigger_id='$id'.
 After the call output ONE line: DONE or ERROR
 "@
-    $output = Invoke-CloudCLI $prompt
 
     if ($output -match 'DONE') {
         Write-Host "  [OK] 実行キューに追加しました。" -ForegroundColor Green
     } else {
-        Write-Host "  処理結果:" -ForegroundColor DarkGray
         $output | Where-Object { $_.Trim() } | ForEach-Object { Write-Host "  $_" }
     }
 }
 
 # ─────────────────────────────────────────────────
-# メニュー（ユーザー指定通りの構造）
+# メニュー（プロジェクト名をヘッダーに表示）
 # ─────────────────────────────────────────────────
 function Show-CloudScheduleMenu {
     Clear-Host
@@ -387,6 +449,8 @@ function Show-CloudScheduleMenu {
     Write-Host "  =============================================" -ForegroundColor Cyan
     Write-Host "   Cloud スケジュール 登録・削除・実行" -ForegroundColor Cyan
     Write-Host "   週6日（月〜土） / 最大 $DefaultDurationMinutes 分 / 最小間隔 1h" -ForegroundColor DarkCyan
+    Write-Host "  ─────────────────────────────────────────────" -ForegroundColor DarkGray
+    Write-Host "   プロジェクト: $script:RepoShortName" -ForegroundColor White
     Write-Host "  =============================================" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "    [1] 一覧表示" -ForegroundColor Yellow
@@ -394,6 +458,7 @@ function Show-CloudScheduleMenu {
     Write-Host "    [3] 全 4 標準ループを一括登録" -ForegroundColor Green
     Write-Host "    [4] 削除 / 無効化（ID 指定 or 全削除）" -ForegroundColor Yellow
     Write-Host "    [5] 今すぐ実行（Trigger ID 指定）" -ForegroundColor Green
+    Write-Host "    [P] プロジェクトを切り替え" -ForegroundColor Magenta
     Write-Host "    [0] 戻る" -ForegroundColor Gray
     Write-Host ""
 }
@@ -407,18 +472,18 @@ if ($QuickSetup) {
     Write-Host "  プロジェクト : $RepoUrl" -ForegroundColor DarkGray
     Write-Host ""
 
-    $loopSummary = ($LoopPresets | ForEach-Object { "  - $($_.Name) (cron: $($_.Cron))" }) -join "`n"
-    $prompt = @"
+    $loopSummary = ($script:LoopPresets | ForEach-Object { "  - $($_.Name) (cron: $($_.Cron))" }) -join "`n"
+    $checkPrompt = @"
 Check my cloud schedules using RemoteTrigger(action='list').
 For the repository '$RepoUrl', identify which of these 4 schedules are already registered (match by name):
 $loopSummary
 
-Output a table with columns: Name | Status (登録済み/未登録)
-Then output a count line: MISSING_COUNT=<number of missing schedules>
+Output a table: Name | Status (登録済み/未登録)
+Then output: MISSING_COUNT=<number>
 "@
 
     Write-Host "  Cloud Schedule 登録状況を確認中..." -ForegroundColor Cyan
-    $checkOutput = Invoke-CloudCLI $prompt -ShowOutput
+    $checkOutput = Invoke-CloudCLI $checkPrompt -ShowOutput
 
     $missingLine = $checkOutput | Where-Object { $_ -match '^MISSING_COUNT=' } | Select-Object -First 1
     $missingCount = if ($missingLine -match '=(\d+)$') { [int]$matches[1] } else { -1 }
@@ -427,13 +492,13 @@ Then output a count line: MISSING_COUNT=<number of missing schedules>
     if ($missingCount -eq 0) {
         Write-Host "  [OK] 全 4 スケジュールが登録済みです。" -ForegroundColor Green
     } else {
-        $label = if ($missingCount -gt 0) { "$missingCount 件" } else { "不明件数の" }
+        $label = if ($missingCount -gt 0) { "$missingCount 件" } else { '不明件数の' }
         Write-Host "  未登録スケジュールが $label あります。" -ForegroundColor Yellow
         $confirm = Read-Host "  今すぐ一括登録しますか? [y/N]"
         if ($confirm -match '^[yY]') {
             Invoke-CloudRegisterAll
         } else {
-            Write-Host "  スキップしました。メニュー 12 でいつでも登録できます。" -ForegroundColor DarkGray
+            Write-Host "  スキップ。メニュー 12 でいつでも登録できます。" -ForegroundColor DarkGray
         }
     }
     Write-Host ""
@@ -446,12 +511,21 @@ Then output a count line: MISSING_COUNT=<number of missing schedules>
 while ($true) {
     Show-CloudScheduleMenu
     $choice = Read-Host "  番号を入力"
-    switch ($choice) {
+    switch ($choice.ToUpper()) {
         '1' { Invoke-CloudList;        Read-Host "  Enter で戻ります" | Out-Null }
         '2' { Invoke-CloudRegister;    Read-Host "  Enter で戻ります" | Out-Null }
         '3' { Invoke-CloudRegisterAll; Read-Host "  Enter で戻ります" | Out-Null }
         '4' { Invoke-CloudDelete;      Read-Host "  Enter で戻ります" | Out-Null }
         '5' { Invoke-CloudRun;         Read-Host "  Enter で戻ります" | Out-Null }
+        'P' {
+            $newUrl = Select-Project
+            if ($newUrl -ne $RepoUrl) {
+                $RepoUrl = $newUrl
+                $script:LoopPresets = New-LoopPresets -Url $RepoUrl
+                $script:RepoShortName = $RepoUrl.Split('/')[-1]
+                Write-Host "  プロジェクトを切り替えました: $script:RepoShortName" -ForegroundColor Green
+            }
+        }
         '0' { exit 0 }
         default {
             Write-Host "  無効な入力です。" -ForegroundColor Red
