@@ -551,13 +551,13 @@ function Invoke-CloudRegisterAll {
 function Invoke-CloudManage {
     Invoke-CloudList
     Write-Host ""
-    Write-Host "  -- 操作を選択 --" -ForegroundColor Cyan
+    Write-Host "  -- 操作を選択 (プロジェクト: $script:RepoShortName) --" -ForegroundColor Cyan
     Write-Host "    [OFF]  無効化       (ID 指定 → enabled=false)" -ForegroundColor Yellow
     Write-Host "    [ON]   有効化       (ID 指定 → enabled=true)" -ForegroundColor Green
     Write-Host "    [DEL]  完全削除     (ID 指定 → API delete)" -ForegroundColor Red
-    Write-Host "    [OFFA] 全無効化     (全トリガー → enabled=false)" -ForegroundColor Yellow
-    Write-Host "    [ONA]  全有効化     (全トリガー → enabled=true)" -ForegroundColor Green
-    Write-Host "    [DELA] 全完全削除   (全トリガー → API delete)" -ForegroundColor Red
+    Write-Host "    [OFFA] 全無効化     (このプロジェクトの全トリガー → enabled=false)" -ForegroundColor Yellow
+    Write-Host "    [ONA]  全有効化     (このプロジェクトの全トリガー → enabled=true)" -ForegroundColor Green
+    Write-Host "    [DELA] 全完全削除   (このプロジェクトの全トリガー → API delete)" -ForegroundColor Red
     Write-Host "    [Enter] キャンセル" -ForegroundColor Gray
     Write-Host ""
     $op = (Read-Host "  操作を入力").Trim().ToUpper()
@@ -566,11 +566,13 @@ function Invoke-CloudManage {
 
     switch ($op) {
         'OFFA' {
-            $confirm = Read-Host "  全トリガーを無効化します。よろしいですか? [y/N]"
+            $confirm = Read-Host "  '$script:RepoShortName' の全トリガーを無効化します。よろしいですか? [y/N]"
             if ($confirm -notmatch '^[yY]') { Write-Host "  キャンセルしました。" -ForegroundColor Yellow; return }
-            Write-Host "  全無効化中..." -ForegroundColor Yellow
+            Write-Host "  全無効化中（プロジェクト: $script:RepoShortName）..." -ForegroundColor Yellow
             $out = Invoke-CloudCLI @"
-Use RemoteTrigger action='list', then for each trigger call action='update' with body={"enabled":false}.
+Use RemoteTrigger action='list'.
+Filter triggers to only those belonging to project '$script:RepoShortName' (repository: $script:RepoUrl).
+For each matching trigger, call action='update' with body={"enabled":false}.
 Output ONE line: DONE_ALL=<count>
 "@
             $line = $out | Where-Object { $_ -match '^DONE_ALL=' } | Select-Object -First 1
@@ -579,11 +581,13 @@ Output ONE line: DONE_ALL=<count>
             return
         }
         'ONA' {
-            $confirm = Read-Host "  全トリガーを有効化します。よろしいですか? [y/N]"
+            $confirm = Read-Host "  '$script:RepoShortName' の全トリガーを有効化します。よろしいですか? [y/N]"
             if ($confirm -notmatch '^[yY]') { Write-Host "  キャンセルしました。" -ForegroundColor Yellow; return }
-            Write-Host "  全有効化中..." -ForegroundColor Green
+            Write-Host "  全有効化中（プロジェクト: $script:RepoShortName）..." -ForegroundColor Green
             $out = Invoke-CloudCLI @"
-Use RemoteTrigger action='list', then for each trigger call action='update' with body={"enabled":true}.
+Use RemoteTrigger action='list'.
+Filter triggers to only those belonging to project '$script:RepoShortName' (repository: $script:RepoUrl).
+For each matching trigger, call action='update' with body={"enabled":true}.
 Output ONE line: DONE_ALL=<count>
 "@
             $line = $out | Where-Object { $_ -match '^DONE_ALL=' } | Select-Object -First 1
@@ -592,12 +596,13 @@ Output ONE line: DONE_ALL=<count>
             return
         }
         'DELA' {
-            $confirm = Read-Host "  全トリガーを完全削除します。元に戻せません。よろしいですか? [y/N]"
+            $confirm = Read-Host "  '$script:RepoShortName' の全トリガーを完全削除します。元に戻せません。よろしいですか? [y/N]"
             if ($confirm -notmatch '^[yY]') { Write-Host "  キャンセルしました。" -ForegroundColor Yellow; return }
-            Write-Host "  全完全削除中..." -ForegroundColor Red
+            Write-Host "  全完全削除中（プロジェクト: $script:RepoShortName）..." -ForegroundColor Red
             $out = Invoke-CloudCLI @"
-Use RemoteTrigger action='list' to get all trigger IDs.
-For each trigger ID, attempt to permanently delete it using RemoteTrigger.
+Use RemoteTrigger action='list'.
+Filter triggers to only those belonging to project '$script:RepoShortName' (repository: $script:RepoUrl).
+For each matching trigger ID, attempt to permanently delete it using RemoteTrigger.
 If permanent deletion is not supported by the API, disable it with action='update' body={"enabled":false} instead.
 Output ONE line: DONE_ALL=<count>
 "@

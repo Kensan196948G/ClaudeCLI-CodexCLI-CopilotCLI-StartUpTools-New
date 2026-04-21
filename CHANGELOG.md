@@ -2,6 +2,21 @@
 
 # CHANGELOG
 
+## [v3.2.64] - 2026-04-21 — 管理操作（OFFA/ONA/DELA）をプロジェクトスコープに限定
+
+### 🎯 概要
+`[4] 管理` の全一括操作（OFFA/ONA/DELA）が全プロジェクトのトリガーに影響していた問題を修正。現在選択中のプロジェクトのトリガーのみを対象とするようプロンプトを変更。確認ダイアログにプロジェクト名を明示して誤操作を防止。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/main/New-CloudSchedule.ps1` | Invoke-CloudManage: OFFA/ONA/DELA プロンプトに `$script:RepoShortName` / `$script:RepoUrl` フィルタ追加 / 確認ダイアログにプロジェクト名明示 / 操作ヘッダーにプロジェクト名表示 |
+
+### ✅ テスト結果
+- PSScriptAnalyzer 0 warnings (non-WriteHost)
+
+---
+
 ## [v3.2.63] - 2026-04-21 — PSScriptAnalyzer 0警告達成・一覧表示をプロジェクト別フィルタに改善
 
 ### 🎯 概要
