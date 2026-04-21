@@ -57,7 +57,9 @@ function Select-Project {
 
     # ── 1. 登録済み Cloud Schedule から git URL を動的取得 ──
     Write-Host ""
-    Write-Host "  登録済みプロジェクトを Cloud Schedule から取得中..." -ForegroundColor DarkGray
+    Write-Host "  登録済みプロジェクトを取得中（Cloud Schedule + Cron）..." -ForegroundColor DarkGray
+
+    $cloudUrls = @{}
     try {
         $out = & $script:ClaudeCLI -p @"
 Use RemoteTrigger with action='list'.
@@ -68,30 +70,65 @@ Example: REPO_URL:https://github.com/user/repo
         foreach ($line in $out) {
             if ($line -match '^REPO_URL:(.+)$') {
                 $url = $matches[1].Trim().TrimEnd('/') -replace '\.git$', ''
-                if ($url -match 'github\.com' -and ($projects | Where-Object Url -eq $url).Count -eq 0) {
-                    $name = $url.Split('/')[-1]
-                    $projects.Add([pscustomobject]@{ Label = $name; Url = $url })
+                if ($url -match 'github\.com') {
+                    $cloudUrls[$url] = $true
+                    if (($projects | Where-Object Url -eq $url).Count -eq 0) {
+                        $name = $url.Split('/')[-1]
+                        $projects.Add([pscustomobject]@{ Label = $name; Url = $url; HasCloud = $true; HasCron = $false })
+                    }
                 }
             }
         }
     } catch { }
 
-    # ── 2. 現在の作業ディレクトリの git remote（未登録なら追加） ──
+    # ── 2. Cron 登録済みプロジェクト（CronManager 経由、SSH）を取得してマージ ──
+    try {
+        $ScriptRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+        $cronMgr    = Join-Path $ScriptRoot 'scripts\lib\CronManager.psm1'
+        $cfgPath    = Join-Path $ScriptRoot 'config\config.json'
+        if (-not (Test-Path $cfgPath)) { $cfgPath = Join-Path $ScriptRoot 'Claude\templates\claude\config.json.template' }
+        if ((Test-Path $cronMgr) -and (Test-Path $cfgPath)) {
+            Import-Module $cronMgr -Force -DisableNameChecking -ErrorAction SilentlyContinue
+            $cfg = Get-Content $cfgPath -Raw | ConvertFrom-Json
+            $linuxHost = $cfg.linuxHost
+            if ($linuxHost -and $linuxHost -ne '<your-linux-host>') {
+                $entries = Get-ClaudeOSCronEntry -LinuxHost $linuxHost -ErrorAction SilentlyContinue
+                foreach ($e in @($entries)) {
+                    if ([string]::IsNullOrWhiteSpace($e.Project)) { continue }
+                    # プロジェクト名から GitHub URL を推定 (owner は git remote から取得)
+                    $owner  = ''
+                    try { $owner = (& git remote get-url origin 2>$null) -join '' | Select-String -Pattern 'github\.com[:/]([^/]+)/' | ForEach-Object { $_.Matches[0].Groups[1].Value } } catch { }
+                    $guessUrl = if ($owner) { "https://github.com/$owner/$($e.Project)" } else { '' }
+
+                    # 既存エントリを Cron 有りにマーク or 新規追加
+                    $existing = $projects | Where-Object { $_.Label -eq $e.Project -or ($guessUrl -and $_.Url -eq $guessUrl) } | Select-Object -First 1
+                    if ($existing) {
+                        $existing.HasCron = $true
+                    } else {
+                        $url = if ($guessUrl) { $guessUrl } else { '' }
+                        $projects.Add([pscustomobject]@{ Label = $e.Project; Url = $url; HasCloud = $false; HasCron = $true })
+                    }
+                }
+            }
+        }
+    } catch { }
+
+    # ── 3. 現在のディレクトリの git remote（未登録なら追加） ──
     try {
         $rawUrl = (& git remote get-url origin 2>$null) -join ''
         if ($rawUrl -match 'github\.com') {
             $rawUrl = $rawUrl.Trim() -replace '\.git$', '' -replace '^git@github\.com:', 'https://github.com/'
             if (($projects | Where-Object Url -eq $rawUrl).Count -eq 0) {
                 $name = $rawUrl.Split('/')[-1] + ' (現在のディレクトリ)'
-                $projects.Insert(0, [pscustomobject]@{ Label = $name; Url = $rawUrl })
+                $projects.Insert(0, [pscustomobject]@{ Label = $name; Url = $rawUrl; HasCloud = $false; HasCron = $false })
             }
         }
     } catch { }
 
-    # ── 3. フォールバック: API 失敗時のデフォルト2件 ──
+    # ── 4. フォールバック ──
     if ($projects.Count -eq 0) {
-        $projects.Add([pscustomobject]@{ Label = 'ClaudeCode-StartUpTools-New';   Url = 'https://github.com/Kensan196948G/ClaudeCode-StartUpTools-New' })
-        $projects.Add([pscustomobject]@{ Label = 'Enterprise-AI-HelpDesk-System'; Url = 'https://github.com/Kensan196948G/Enterprise-AI-HelpDesk-System' })
+        $projects.Add([pscustomobject]@{ Label = 'ClaudeCode-StartUpTools-New';   Url = 'https://github.com/Kensan196948G/ClaudeCode-StartUpTools-New'; HasCloud = $false; HasCron = $false })
+        $projects.Add([pscustomobject]@{ Label = 'Enterprise-AI-HelpDesk-System'; Url = 'https://github.com/Kensan196948G/Enterprise-AI-HelpDesk-System'; HasCloud = $false; HasCron = $false })
     }
 
     Clear-Host
@@ -102,20 +139,29 @@ Example: REPO_URL:https://github.com/user/repo
     Write-Host "   ※ L1 (Local/Windows) は登録不要（手動起動のみ）" -ForegroundColor DarkGray
     Write-Host "   ※ 5時間強制終了が必要な場合はメニュー 15 の Cron も併用" -ForegroundColor DarkGray
     Write-Host "  =============================================" -ForegroundColor Cyan
+    Write-Host "   凡例: ☁=Cloud Schedule登録済  ⏱=Cron(5h)登録済" -ForegroundColor DarkGray
     Write-Host ""
 
     for ($i = 0; $i -lt $projects.Count; $i++) {
-        Write-Host ("    [{0}] {1}" -f ($i + 1), $projects[$i].Label) -ForegroundColor White
-        Write-Host ("        {0}" -f $projects[$i].Url) -ForegroundColor DarkGray
+        $badge = ''
+        if ($projects[$i].HasCloud) { $badge += ' ☁' }
+        if ($projects[$i].HasCron)  { $badge += ' ⏱' }
+        $color = if ($projects[$i].HasCloud -or $projects[$i].HasCron) { 'White' } else { 'DarkGray' }
+        Write-Host ("    [{0}] {1}{2}" -f ($i + 1), $projects[$i].Label, $badge) -ForegroundColor $color
+        if ($projects[$i].Url) {
+            Write-Host ("        {0}" -f $projects[$i].Url) -ForegroundColor DarkGray
+        }
     }
     Write-Host "    [M] 手動入力（GitHub URL）" -ForegroundColor DarkGray
+    Write-Host "    [0] 戻る" -ForegroundColor Gray
     Write-Host ""
 
     $sel = (Read-Host "  番号を選択").Trim()
 
+    if ($sel -eq '0') { return '' }   # 戻る
     if ($sel -match '^\d+$') {
         $n = [int]$sel - 1
-        if ($n -ge 0 -and $n -lt $projects.Count) {
+        if ($n -ge 0 -and $n -lt $projects.Count -and $projects[$n].Url) {
             return $projects[$n].Url
         }
     } elseif ($sel -match '^[Mm]$') {
@@ -596,7 +642,7 @@ while ($true) {
         '5' { Invoke-CloudRun;         Read-Host "  Enter で戻ります" | Out-Null }
         'P' {
             $newUrl = Select-Project
-            if ($newUrl -ne $RepoUrl) {
+            if (-not [string]::IsNullOrWhiteSpace($newUrl) -and $newUrl -ne $RepoUrl) {
                 $RepoUrl = $newUrl
                 $script:LoopPresets = New-LoopPresets -Url $RepoUrl
                 $script:RepoShortName = $RepoUrl.Split('/')[-1]
