@@ -21,7 +21,7 @@
 週6日（月〜土・日曜除く）、1セッション最大 5 時間（300 分）制限で動作します。
 
 ```
-/schedule ClaudeOS Monitor every 30 minutes Monday through Saturday
+/schedule ClaudeOS Monitor every hour Monday through Saturday
 /schedule ClaudeOS Development every 2 hours Monday through Saturday
 /schedule ClaudeOS Verify every hour Monday through Saturday
 /schedule ClaudeOS Improvement every hour Monday through Saturday
