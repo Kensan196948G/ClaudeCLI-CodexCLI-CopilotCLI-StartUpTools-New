@@ -7,7 +7,7 @@
 > **📌 v3.1.0 で Claude Code 専用ツールに整理**
 > v3.1.0 より、Codex CLI / GitHub Copilot CLI の起動メニュー (S2/S3/L2/L3) は削除されました。本ツールは **Claude Code 専用の自律開発ランチャー** として位置づけを明確化し、Linux crontab 連携・セッション情報タブ・Statusline グローバル適用などの新機能に投資が集中しています。
 
-> **🔧 v3.2.39 — Session Info タブ 3 点修正 (残り時間表示 / 凍結耐性 / UI 補足)**
+> **☁️ v3.2.59 — Cloud Schedule プロジェクト選択 動的読み込み / Cron登録状況バッジ / 戻るボタン追加**
 > `[int]$Span.TotalHours` の .NET 銀行丸めで残り時間が +1h 繰り上がる表示バグを `[Math]::Floor` で修正。Windows conhost QuickEdit モードをタブ起動時に P/Invoke で無効化しクリック凍結を防止。画面下部に `Enterキーで更新可能` + 動的生成した再起動コマンドを常時表示。v3.2.38: SessionLogger / TemplateSyncManager ユニットテスト 30 件追加（Pester 680 件）。詳細は [`CHANGELOG.md`](./CHANGELOG.md) を参照。
 
 > **📨 v3.2.0 — Cron HTML メールレポート (Visual Recap Mail)**
@@ -27,7 +27,7 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.2.39** (Session Info タブ 3 点修正: 残り時間 / 凍結耐性 / UI 補足) — 旧: v3.2.38 (Pester 680 件) / v3.2.37 (scripts/lib BOM) |
+| バージョン | **v3.2.59** (Cloud Schedule 動的プロジェクト選択 / Cron バッジ / 戻るボタン) — 旧: v3.2.58 ([4]管理メニュー拡張) / v3.2.57 (Cloud Schedule 移行) |
 | テスト | **680件** — Pester (Unit 17 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |
