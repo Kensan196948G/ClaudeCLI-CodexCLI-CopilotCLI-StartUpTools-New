@@ -2,6 +2,26 @@
 
 # CHANGELOG
 
+## [v3.2.68] - 2026-04-22 — ConfigSchema.ps1 ユニットテスト追加 + 完全自立開発対応整備
+
+### 🎯 概要
+`scripts/lib/ConfigSchema.ps1` のユニットテストがゼロだった問題を解消。`Test-IntegerValueInRange`（範囲検証ロジック）、`Test-StartupConfigSchema`（全スキーマ項目の網羅検証）、`Assert-StartupConfigSchema`（ファイルパス受付・例外スロー）を対象に 37 テストケースを追加。  
+あわせて `Claude/templates/claude/settings.json` にフック定義追加、CLAUDE.md のクラウドスケジュール登録を条件付き重複防止対応、`Start-ClaudeCode.ps1` に START_PROMPT.md 自動再ビルド統合を実施。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `tests/unit/ConfigSchema.Tests.ps1` | 新規作成: `Test-IntegerValueInRange` 8件 + `Test-StartupConfigSchema` 22件 + `Assert-StartupConfigSchema` 4件 = 37 テストケース / PSScriptAnalyzer 0警告 |
+| `Claude/templates/claude/settings.json` | PreCompact / SessionStart / Stop フック定義をテンプレートに追加 |
+| `CLAUDE.md` | クラウドスケジュール登録を条件付きに変更（重複防止） |
+| `scripts/main/Start-ClaudeCode.ps1` | Claude 起動前に START_PROMPT.md を instructions/ から自動再ビルド |
+
+### ✅ テスト結果
+- Pester: 768/768 passed (Unit 22 / Integration 11 / Smoke 1)
+- PSScriptAnalyzer 0 warnings
+
+---
+
 ## [v3.2.67] - 2026-04-22 — RecentProjects.ps1 ユニットテスト追加
 
 ### 🎯 概要
