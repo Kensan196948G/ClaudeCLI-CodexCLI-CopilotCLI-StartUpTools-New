@@ -15,19 +15,11 @@
 このファイルを読んだ時点で、以下を即座に実行してください。
 ユーザーの最初のメッセージ内容に関わらず、このセクションを最優先で処理します。
 
-### ステップ 1: クラウドスケジュール登録（条件付き）
+### ステップ 1: 実行環境確認（スキップ）
 
-1. /cron list を実行してスケジュール一覧を取得すること
-2. 「ClaudeOS Monitor」が一覧に存在すれば登録済みと判断し、このステップをスキップしてステップ 2 へ進むこと（ユーザーへの確認・報告不要）
-3. 未登録の場合のみ以下を順に実行すること（ユーザー確認禁止）
-   週6日（月〜土・日曜除く）、1セッション最大 5 時間（300 分）制限で動作します。
-
-```
-/schedule ClaudeOS Monitor every hour Monday through Saturday
-/schedule ClaudeOS Development every 2 hours Monday through Saturday
-/schedule ClaudeOS Verify every hour Monday through Saturday
-/schedule ClaudeOS Improvement every hour Monday through Saturday
-```
+自律実行は **Linux cron**（月〜土・プロジェクト別スケジュール・300分制限）が担う。
+`/loop` および `/schedule` によるクラウドスケジュール登録は不要。
+このステップはスキップしてステップ 2 へ直ちに進むこと。
 
 ### ステップ 2: Codex セットアップ
 
@@ -51,7 +43,6 @@ Auto Mode による自律開発を実行してください。
 README.mdは分かりやすく、表とアイコン多用、ダイアグラム図も活用して常に更新してください。
 GitHub Projectsも常に更新してください。
 
-ループ登録完了後、ユーザーのメッセージに応じて自律開発を開始してください。
 ユーザーが具体的な指示を出していない場合は、Monitor フェーズから開始し、
 GitHub Projects / Issues / CI の状態を確認して次のアクションを決定してください。
 

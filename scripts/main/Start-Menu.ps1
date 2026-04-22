@@ -187,21 +187,23 @@ function Get-RecentProjectLaunchSpec {
 
 function Show-Menu {
     Clear-Host
-    $sep = " " + ("=" * 55)
+    $sep = " " + ("=" * 57)
 
     Write-Host ""
     Write-Host $sep -ForegroundColor Cyan
     Write-Host "   Claude Code ユニバーサルスタートアップツール v3.2" -ForegroundColor Cyan
-    Write-Host "   ClaudeOS v8.1 統合 / Cloud Schedule / Session Info Tab" -ForegroundColor DarkCyan
+    Write-Host "   ClaudeOS v8.2 統合 / Linux Cron 自律実行 / Session Info Tab" -ForegroundColor DarkCyan
     Write-Host $sep -ForegroundColor Cyan
     Write-Host ""
 
     Write-Host "  -- SSH 接続 ($LinuxHost -> $LinuxBase) --" -ForegroundColor Yellow
-    Write-Host "    S1. Claude Code を起動" -ForegroundColor Yellow
+    Write-Host "    S1. Claude Code を起動  " -NoNewline -ForegroundColor Yellow
+    Write-Host "[Linux cron 自律実行 / 5h セッション]" -ForegroundColor DarkYellow
     Write-Host ""
 
     Write-Host "  -- ローカル ($LocalDir) --" -ForegroundColor Green
-    Write-Host "    L1. Claude Code を起動" -ForegroundColor Green
+    Write-Host "    L1. Claude Code を起動  " -NoNewline -ForegroundColor Green
+    Write-Host "[手動セッション / スケジューラ不要]" -ForegroundColor DarkGreen
     Write-Host ""
 
     Write-Host "  -- 診断・セットアップ --" -ForegroundColor Magenta
@@ -214,13 +216,18 @@ function Show-Menu {
     Write-Host "    11. Architecture Check" -ForegroundColor Magenta
     Write-Host "    12. Statusline 設定" -ForegroundColor Magenta
     Write-Host "    13. Claude ログ監視タブを開く" -ForegroundColor Magenta
-    Write-Host "    14. Cloud スケジュール 登録・削除・実行 [S1専用 / Anthropicクラウド]" -ForegroundColor Magenta
-    Write-Host "    15. Cron スケジュール 登録・編集・削除 [S1専用 / 5h強制終了]" -ForegroundColor Magenta
+    Write-Host ""
+
+    Write-Host "  -- Linux Cron 自律実行管理 [SSH 専用] --" -ForegroundColor Cyan
+    Write-Host "    14. Cron スケジュール 登録・編集・削除 [SSH / 5h 強制終了]" -ForegroundColor Cyan
+    Write-Host "    15. Linux セッション状態監視  " -NoNewline -ForegroundColor Cyan
+    Write-Host "[SSH / リアルタイム cron 実行状況]" -ForegroundColor DarkCyan
     Write-Host ""
 
     Write-Host "    0.  終了" -ForegroundColor Gray
     Write-Host ""
     Write-Host $sep -ForegroundColor DarkGray
+    Write-Host "  自律実行: Linux cron (月〜土 / プロジェクト別 / 300分)" -ForegroundColor DarkGray
     Write-Host "  推奨: Windows Terminal から実行" -ForegroundColor DarkGray
     Write-Host $sep -ForegroundColor DarkGray
     Write-Host ""
@@ -304,8 +311,13 @@ while ($true) {
             Write-Host ""
             Read-Host "  Enterキーでメニューに戻ります"
         }
-        "14" { Invoke-MenuScript -File "scripts\main\New-CloudSchedule.ps1" }
-        "15" { Invoke-MenuScript -File "scripts\main\New-CronSchedule.ps1" }
+        "14" { Invoke-MenuScript -File "scripts\main\New-CronSchedule.ps1" }
+        "15" {
+            $watchScript = Join-Path $ProjectRoot "scripts\tools\Watch-SessionInfoSSH.ps1"
+            & $ShellExe -NoProfile -ExecutionPolicy Bypass -File $watchScript
+            Write-Host ""
+            Read-Host "  Enterキーでメニューに戻ります"
+        }
         "0"  { exit 0 }
         default {
             Write-Host ""
