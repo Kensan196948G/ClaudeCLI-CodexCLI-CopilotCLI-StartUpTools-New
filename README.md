@@ -27,7 +27,7 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.2.76** (P1-3 ローカル cron レジストリ / P1-7 Agent Teams 使用ログ) — 旧: v3.2.75 |
+| バージョン | **v3.2.78** (START_PROMPT.md 自動 Linux 同期 / /loop スキル誤起動修正) — 旧: v3.2.76 |
 | テスト | **776件** — Pester (Unit 21 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |

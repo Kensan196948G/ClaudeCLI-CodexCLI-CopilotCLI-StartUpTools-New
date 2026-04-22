@@ -60,6 +60,7 @@ function Show-CronMenu {
     Write-Host "    [4] 削除 (ID 指定)" -ForegroundColor Yellow
     Write-Host "    [5] 全解除" -ForegroundColor Yellow
     Write-Host "    [6] 今すぐ実行" -ForegroundColor Green
+    Write-Host "    [7] START_PROMPT を同期" -ForegroundColor Cyan
     Write-Host "    [0] 戻る" -ForegroundColor Gray
     Write-Host ""
 }
@@ -145,6 +146,8 @@ function Invoke-Register {
 
         # P1-2: state.json が存在しない場合は自動生成
         Invoke-EnsureStateJson -Project $project
+        # START_PROMPT.md を最新テンプレートで同期（Invoke-EnsureStateJson 未呼出し時のフォールバック）
+        Invoke-SyncStartPrompt -Project $project
     }
     catch {
         Write-Host "  [ERROR] $($_.Exception.Message)" -ForegroundColor Red
@@ -187,13 +190,46 @@ function Invoke-EnsureStateJson {
         $LinuxHost "mkdir -p '$base/$Project' && printf '%s' '$escapedState' > '$stateFile'" 2>$null
     Write-Host "  [state.json] 生成完了: $stateFile" -ForegroundColor Green
 
-    # .claude/ ディレクトリ確認（CLAUDE.md / START_PROMPT.md の配備先）
-    $claudeExists = & $sshExe -T -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMaster=no `
-        $LinuxHost "test -d '$claudeDir' && echo yes || echo no" 2>$null
-    if ($claudeExists -ne 'yes') {
-        Write-Host "  [.claude/] ディレクトリが未存在です。CLAUDE.md と START_PROMPT.md を手動で配備してください。" -ForegroundColor Yellow
-        Write-Host "    参照: docs/autonomy-checklist.md" -ForegroundColor DarkGray
+    # .claude/ ディレクトリを確保し START_PROMPT.md を同期
+    & $sshExe -T -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMaster=no `
+        $LinuxHost "mkdir -p '$claudeDir'" 2>$null
+    Invoke-SyncStartPrompt -Project $Project
+}
+
+function Invoke-SyncStartPrompt {
+    param([string]$Project)
+
+    $localFile = Join-Path $ScriptRoot 'Claude\templates\claude\START_PROMPT.md'
+    if (-not (Test-Path $localFile)) {
+        Write-Host "  [START_PROMPT] テンプレートが見つかりません: $localFile" -ForegroundColor Yellow
+        return
     }
+
+    $base       = $Config.linuxBase
+    $claudeDir  = "$base/$Project/.claude"
+    $remoteFile = "$claudeDir/START_PROMPT.md"
+    $sshExe     = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { 'ssh' }
+    $sshOpts    = @('-T', '-o', 'ConnectTimeout=10', '-o', 'StrictHostKeyChecking=accept-new', '-o', 'ControlMaster=no')
+
+    # .claude/ ディレクトリを作成（存在しない場合）
+    & $sshExe @sshOpts $LinuxHost "mkdir -p '$claudeDir'" 2>$null
+
+    # ファイル内容を stdin pipe 経由で転送（SCP 非依存）
+    $content = (Get-Content $localFile -Raw -Encoding UTF8) -replace "`r`n", "`n"
+    $content | & $sshExe @sshOpts $LinuxHost "cat > '$remoteFile'"
+
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "  [START_PROMPT] Linux に同期しました: $remoteFile" -ForegroundColor Green
+    } else {
+        Write-Host "  [START_PROMPT] 同期失敗 (exit=$LASTEXITCODE) — 手動で配備してください" -ForegroundColor Red
+    }
+}
+
+function Invoke-SyncMenu {
+    $project = Select-Project
+    if ([string]::IsNullOrWhiteSpace($project)) { return }
+    Write-Host ""
+    Invoke-SyncStartPrompt -Project $project
 }
 
 function Invoke-List {
@@ -314,6 +350,11 @@ function Invoke-CronTest {
         return
     }
 
+    # 起動前に START_PROMPT.md を最新テンプレートで同期
+    Write-Host ""
+    Write-Host "  [同期中] START_PROMPT.md を Linux へ転送..." -ForegroundColor Cyan
+    Invoke-SyncStartPrompt -Project $project
+
     # SSH でバックグラウンド起動 (nohup で SSH 切断後も継続)
     $sshExe    = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { 'ssh' }
     $sshTarget = "${LinuxUser}@${LinuxHost}"
@@ -368,6 +409,7 @@ while ($true) {
         '4' { Invoke-Remove; Read-Host "  Enter で戻ります" | Out-Null }
         '5' { Invoke-RemoveAll; Read-Host "  Enter で戻ります" | Out-Null }
         '6' { Invoke-CronTest; Read-Host "  Enter で戻ります" | Out-Null }
+        '7' { Invoke-SyncMenu; Read-Host "  Enter で戻ります" | Out-Null }
         '0' { exit 0 }
         default {
             Write-Host "  無効な入力" -ForegroundColor Red
