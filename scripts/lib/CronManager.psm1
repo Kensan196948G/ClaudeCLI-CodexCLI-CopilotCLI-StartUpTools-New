@@ -14,6 +14,9 @@ $script:EntryPrefix = 'CLAUDEOS'
 $script:LauncherPath = '/home/kensan/.claudeos/cron-launcher.sh'
 $script:LogsDir = '/home/kensan/.claudeos/logs'
 
+# P1-3: ローカルレジストリパス（Windows 側キャッシュ）
+$script:LocalRegistryPath = Join-Path $env:USERPROFILE '.claudeos\cron-registry.json'
+
 <#
 .SYNOPSIS
     Overrides module-scope defaults for cron entry prefix, launcher path, and logs directory.
@@ -177,6 +180,12 @@ function Add-ClaudeOSCronEntry {
         throw "crontab 更新に失敗 (exit=$exitCode)"
     }
 
+    # P1-3: Windows 側のローカルレジストリにも記録
+    try {
+        Add-LocalCronRegistryEntry -Id $id -Project $Project -LinuxHost $LinuxHost `
+            -DayOfWeek $DayOfWeek -Time $Time -DurationMinutes $DurationMinutes
+    } catch { <# registry 更新失敗はサイレント無視 #> }
+
     return [pscustomobject]@{
         Id = $id
         Project = $Project
@@ -221,6 +230,10 @@ function Remove-ClaudeOSCronEntry {
     if ($exitCode -ne 0) {
         throw "crontab 更新に失敗 (exit=$exitCode)"
     }
+
+    # P1-3: Windows 側のローカルレジストリからも削除
+    try { Remove-LocalCronRegistryEntry -Id $Id } catch { <# サイレント無視 #> }
+
     return $removed
 }
 
@@ -238,6 +251,73 @@ function Remove-AllClaudeOSCronEntry {
         $count += Remove-ClaudeOSCronEntry -LinuxHost $LinuxHost -Id $e.Id
     }
     return $count
+}
+
+<#
+.SYNOPSIS
+    Reads the local Windows-side cron registry cache (~/.claudeos/cron-registry.json).
+#>
+function Get-LocalCronRegistry {
+    [OutputType([object[]])]
+    param()
+    if (-not (Test-Path $script:LocalRegistryPath)) { return @() }
+    try {
+        $raw = Get-Content $script:LocalRegistryPath -Raw -Encoding UTF8
+        $entries = $raw | ConvertFrom-Json
+        if ($null -eq $entries) { return @() }
+        return @($entries)
+    } catch {
+        return @()
+    }
+}
+
+<#
+.SYNOPSIS
+    Adds or updates a project entry in the local cron registry cache.
+#>
+function Add-LocalCronRegistryEntry {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal registry cache update; no user-facing state change')]
+    [OutputType([void])]
+    param(
+        [Parameter(Mandatory)][string]$Id,
+        [Parameter(Mandatory)][string]$Project,
+        [Parameter(Mandatory)][string]$LinuxHost,
+        [int[]]$DayOfWeek = @(),
+        [string]$Time = '',
+        [int]$DurationMinutes = 300
+    )
+    $dir = Split-Path $script:LocalRegistryPath
+    if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+
+    $entries = @(Get-LocalCronRegistry)
+    $entries = @($entries | Where-Object { $_.Id -ne $Id })
+    $entries += [pscustomobject]@{
+        Id              = $Id
+        Project         = $Project
+        LinuxHost       = $LinuxHost
+        DayOfWeek       = $DayOfWeek
+        Time            = $Time
+        DurationMinutes = $DurationMinutes
+        RegisteredAt    = (Get-Date -Format 'yyyy-MM-ddTHH:mm:ss')
+    }
+    $entries | ConvertTo-Json -Depth 5 | Set-Content $script:LocalRegistryPath -Encoding UTF8
+}
+
+<#
+.SYNOPSIS
+    Removes a project entry from the local cron registry cache by its ID.
+#>
+function Remove-LocalCronRegistryEntry {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Internal registry cache update; no user-facing state change')]
+    [OutputType([void])]
+    param([Parameter(Mandatory)][string]$Id)
+    $entries = @(Get-LocalCronRegistry)
+    $entries = @($entries | Where-Object { $_.Id -ne $Id })
+    if ($entries.Count -eq 0) {
+        Set-Content $script:LocalRegistryPath -Value '[]' -Encoding UTF8
+    } else {
+        $entries | ConvertTo-Json -Depth 5 | Set-Content $script:LocalRegistryPath -Encoding UTF8
+    }
 }
 
 <#
@@ -274,4 +354,7 @@ Export-ModuleMember -Function `
     Format-CronExpression, `
     Format-CronEntryForDisplay, `
     New-CronEntryId, `
-    Get-DayOfWeekLabel
+    Get-DayOfWeekLabel, `
+    Get-LocalCronRegistry, `
+    Add-LocalCronRegistryEntry, `
+    Remove-LocalCronRegistryEntry

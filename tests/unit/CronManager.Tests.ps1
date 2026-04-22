@@ -179,3 +179,80 @@ Describe 'Get-ClaudeOSCronEntry' {
         $result[0].Id | Should -Be 'myentry01'
     }
 }
+
+Describe 'Get-LocalCronRegistry (P1-3)' {
+
+    BeforeEach {
+        # テスト用一時ディレクトリにレジストリパスを向ける（$TestDrive を先に変数に捕捉してからスコープに渡す）
+        $tmpDir = Join-Path $TestDrive 'claudeos-registry'
+        New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
+        $tmpRegistry = Join-Path $tmpDir 'cron-registry.json'
+        # 前回テストの残骸を削除
+        Remove-Item $tmpRegistry -Force -ErrorAction SilentlyContinue
+        # モジュールスコープ変数を差し替え
+        InModuleScope CronManager -Parameters @{ RegPath = $tmpRegistry } {
+            param($RegPath)
+            $script:LocalRegistryPath = $RegPath
+        }
+    }
+
+    It 'returns empty array when registry file does not exist' {
+        $result = Get-LocalCronRegistry
+        $result | Should -HaveCount 0
+    }
+
+    It 'returns entries written by Add-LocalCronRegistryEntry' {
+        Add-LocalCronRegistryEntry -Id 'test001' -Project 'MyProj' -LinuxHost 'server1' `
+            -DayOfWeek @(1, 3) -Time '21:00' -DurationMinutes 300
+
+        $result = Get-LocalCronRegistry
+        $result | Should -HaveCount 1
+        $result[0].Project | Should -Be 'MyProj'
+        $result[0].Id | Should -Be 'test001'
+        $result[0].LinuxHost | Should -Be 'server1'
+        $result[0].DurationMinutes | Should -Be 300
+    }
+
+    It 'Remove-LocalCronRegistryEntry removes the specified entry' {
+        Add-LocalCronRegistryEntry -Id 'del001' -Project 'DelProj' -LinuxHost 'srv' `
+            -DayOfWeek @(5) -Time '09:00' -DurationMinutes 120
+        Add-LocalCronRegistryEntry -Id 'keep001' -Project 'KeepProj' -LinuxHost 'srv' `
+            -DayOfWeek @(6) -Time '10:00' -DurationMinutes 60
+
+        Remove-LocalCronRegistryEntry -Id 'del001'
+
+        $result = Get-LocalCronRegistry
+        $result | Should -HaveCount 1
+        $result[0].Id | Should -Be 'keep001'
+    }
+
+    It 'Add-LocalCronRegistryEntry overwrites existing entry with same Id' {
+        Add-LocalCronRegistryEntry -Id 'upd001' -Project 'OldName' -LinuxHost 'h' `
+            -DayOfWeek @(1) -Time '08:00' -DurationMinutes 60
+        Add-LocalCronRegistryEntry -Id 'upd001' -Project 'NewName' -LinuxHost 'h' `
+            -DayOfWeek @(1) -Time '09:00' -DurationMinutes 120
+
+        $result = Get-LocalCronRegistry
+        $result | Should -HaveCount 1
+        $result[0].Project | Should -Be 'NewName'
+        $result[0].DurationMinutes | Should -Be 120
+    }
+
+    It 'Remove-LocalCronRegistryEntry on last entry writes empty array' {
+        Add-LocalCronRegistryEntry -Id 'only001' -Project 'Solo' -LinuxHost 'h' `
+            -DayOfWeek @(2) -Time '12:00' -DurationMinutes 300
+
+        Remove-LocalCronRegistryEntry -Id 'only001'
+
+        $result = Get-LocalCronRegistry
+        $result | Should -HaveCount 0
+    }
+
+    It 'RegisteredAt is set automatically' {
+        Add-LocalCronRegistryEntry -Id 'ts001' -Project 'TimeTest' -LinuxHost 'h' `
+            -DayOfWeek @(1) -Time '00:00' -DurationMinutes 300
+
+        $result = Get-LocalCronRegistry
+        $result[0].RegisteredAt | Should -Not -BeNullOrEmpty
+    }
+}

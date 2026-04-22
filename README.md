@@ -27,8 +27,8 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.2.75** (P1-2 state.json 自動生成 / P1-4 セッション状態復元 / P1-5 hooks 書き込み昇格 / P2-2 Codex optional / P2-4 タイムライン図) — 旧: v3.2.74 |
-| テスト | **768件** — Pester (Unit 21 / Integration 11 / Smoke 1) |
+| バージョン | **v3.2.76** (P1-3 ローカル cron レジストリ / P1-7 Agent Teams 使用ログ) — 旧: v3.2.75 |
+| テスト | **776件** — Pester (Unit 21 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |
 | Agents | **25体** の特化サブエージェント (2026Q2 棚卸し後、追加復元済み) |
@@ -70,7 +70,7 @@
 | Orchestration | 1 | orchestrator |
 | Testing | 1 | qa |
 
-### Hooks 構成 (3個)
+### Hooks 構成 (4個)
 
 > `.claude/settings.json` の `hooks` セクションに登録済み。スクリプト本体は `.claude/claudeos/scripts/hooks/` に配置。
 
@@ -79,6 +79,7 @@
 | `session-start` | SessionStart | `session-start.js` | state.json から前回フェーズ・STABLE状態を読み込み表示。`current_session_start_at` と trigger (cron/manual) を書き込み |
 | `pre-compact` | PreCompact | `pre-compact.js` | compact 直前に state.json へタイムスタンプを記録 |
 | `session-end` | Stop | `session-end.js` | `last_stop_at` を state.json へ書き込み後、STABLE 通知を実行 |
+| `usage-tracker` | PostToolUse (Agent) | `usage-tracker.js` | Agent ツール呼び出しを検出し `learning.usage_history.agents` へ使用実績を記録 |
 
 ### Skills 構成
 
