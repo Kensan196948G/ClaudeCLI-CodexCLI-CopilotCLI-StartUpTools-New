@@ -92,8 +92,8 @@
 83. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#232] v3.2.68 ConfigSchema.ps1 ユニットテスト追加 + 完全自立開発対応確認 — Test-IntegerValueInRange 8件 / Test-StartupConfigSchema 22件 / Assert-StartupConfigSchema 4件 = 計 37 テストケース / テンプレート settings.json にフック定義追加 / CLAUDE.md スケジュール条件付き登録対応 / Start-ClaudeCode.ps1 START_PROMPT.md 自動再ビルド統合
 84. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.2.74 P1-6 Codex optional化 + P2-3 完全自立チェックリスト + P1-1 Boot Sequence Step 5/6/8 実装 (PR #241)
 85. [DONE] [Priority:P1][Owner:Developer][Source:Manual] v3.2.75 P1-2 state.json 自動生成(New-CronSchedule) + P1-4 セッション状態復元(cron-launcher.sh) + P1-5 session-start.js 書き込み昇格 + P2-2 _header.md Codex optional + P2-4 README タイムライン図 + P2-1 テスト具体化
-86. [Priority:P2][Owner:Architect][Source:Manual] P1-3 登録プロジェクトレジストリ集中管理 — crontab ではなく Windows 側の registry.json で管理し SSH なしで確認できる仕組みの設計・実装
-87. [Priority:P2][Owner:Developer][Source:Manual] P1-7 Agent Teams 使用実績を state.json に記録 — usage_history.agents へのロギング実装（session-end.js または PostToolUse hook）
+86. [DONE] [Priority:P2][Owner:Architect][Source:Manual] v3.2.76 P1-3 登録プロジェクトレジストリ集中管理 — CronManager.psm1 に Get/Add/Remove-LocalCronRegistryEntry 追加。~/.claudeos/cron-registry.json を cron 登録/削除時に自動更新。ユニットテスト 6件 (776 PASS)
+87. [DONE] [Priority:P2][Owner:Developer][Source:Manual] v3.2.76 P1-7 Agent Teams 使用実績を state.json に記録 — usage-tracker.js 新規作成 / settings.json PostToolUse[Agent] hook 登録。learning.usage_history.agents に agentKey / call_count / last_used を記録 (776 PASS)
 
 ## Auto Extracted From Agent Teams Matrix
 
@@ -101,6 +101,9 @@
 ## GitHub Issues Sync
 
 (No open issues)
+
+
+
 
 
 

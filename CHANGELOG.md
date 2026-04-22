@@ -2,6 +2,27 @@
 
 # CHANGELOG
 
+## [v3.2.76] - 2026-04-22 — P1-3 ローカル cron レジストリ + P1-7 Agent Teams 使用ログ
+
+### 🎯 概要
+P1-3: CronManager.psm1 にローカルレジストリ機能を追加し、SSH なしで Windows 側から登録済みプロジェクトを参照可能に。P1-7: usage-tracker.js を新規作成し、Agent ツール呼び出しを state.json の learning.usage_history.agents に記録する PostToolUse hook を実装。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/lib/CronManager.psm1` | P1-3: Get-LocalCronRegistry / Add-LocalCronRegistryEntry / Remove-LocalCronRegistryEntry 追加。Add/Remove-ClaudeOSCronEntry から自動呼び出し |
+| `.claude/claudeos/scripts/hooks/usage-tracker.js` | P1-7: 新規作成。Agent ツール呼び出しを検出し learning.usage_history.agents に記録 |
+| `.claude/settings.json` | P1-7: PostToolUse[Agent] hook として usage-tracker.js を登録 |
+| `Claude/templates/claude/settings.json` | P1-7: テンプレートにも同設定を反映 |
+| `tests/unit/CronManager.Tests.ps1` | P1-3: Get-LocalCronRegistry テスト 6件追加 (33 → 39件) |
+| `README.md` | Hooks 構成を 4個に更新（usage-tracker 追加）、バージョン・テスト件数更新 |
+
+### ✅ テスト結果
+- Pester: 776/776 passed (新規 6件含む)
+- PSScriptAnalyzer: Error 0件
+
+---
+
 ## [v3.2.75] - 2026-04-22 — P1-2/4/5 state.json 連携強化 + P2-1/2/4 docs 整備
 
 ### 🎯 概要
