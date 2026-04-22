@@ -1,17 +1,15 @@
 # ClaudeOS v8 セッション開始
 
-## LOOP_COMMANDS
-ループ登録チェック（必須）：
-1. /cron list を実行してスケジュール一覧を取得すること
-2. 「ClaudeOS Monitor」が一覧に存在すれば登録済みと判断し、このステップを完全にスキップして直ちに Codex セットアップへ進むこと（ユーザーへの確認・報告不要）
-3. 未登録の場合のみ以下を順に実行すること（ユーザー確認禁止・停止禁止）
-4. 登録完了後は直ちに Codex セットアップへ進むこと
+## セッション開始処理
 
-/loop 30m    ClaudeOS Monitor
-/loop 120m   ClaudeOS Development
-/loop 60m　  ClaudeOS Verify
-/loop 60m　  ClaudeOS Improvement
+自律実行は Linux cron（月〜土、プロジェクト別スケジュール・300分制限）が担う。
+セッション開始時に `/loop` や `/schedule` の登録は不要。
+直ちに Codex セットアップを実行してから自律開発を開始すること。
 
+```
+/codex:setup
+/codex:status
+```
 
 ## PROMPT_BODY
 
@@ -21,7 +19,7 @@
 
 ## 指示確認プロトコル（必須）
 
-LOOP_COMMANDS 登録・Codex セットアップ完了後、作業を開始する前に、以下の確認チェックリストを出力してください。
+Codex セットアップ完了後、作業を開始する前に、以下の確認チェックリストを出力してください。
 
 ```
 === ClaudeOS v8 指示確認 ===

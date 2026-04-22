@@ -82,18 +82,22 @@ function Get-StartPromptSection {
     $loopMatch = [regex]::Match($content, '(?ms)^##\s*LOOP_COMMANDS[^\r\n]*\r?\n(.*?)(?=^##\s*PROMPT_BODY\b)')
     $bodyMatch = [regex]::Match($content, '(?ms)^##\s*PROMPT_BODY[^\r\n]*\r?\n(.*)$')
 
-    if (-not $loopMatch.Success -or -not $bodyMatch.Success) {
-        throw "START_PROMPT.md の形式が不正です。'## LOOP_COMMANDS' と '## PROMPT_BODY' が必要です。"
+    # LOOP_COMMANDS は任意（Linux cron 運用では不要）。
+    # PROMPT_BODY が見つからない場合はファイル全体を PromptBody として扱う。
+    $loopCommands = if ($loopMatch.Success) { $loopMatch.Groups[1].Value.Trim() } else { '' }
+    $promptBody   = if ($bodyMatch.Success) { $bodyMatch.Groups[1].Value.Trim() } else { $content.Trim() }
+
+    # LoopCommands がある場合のみ末尾に追加（スラッシュコマンド解析の誤発火防止）。
+    $fullText = if ($loopCommands) {
+        ("$promptBody`r`n`r`n$loopCommands").Trim()
+    } else {
+        $promptBody
     }
 
-    # PromptBody を先頭に配置する。
-    # LoopCommands（/loop ...）が先頭だと Claude Code のスラッシュコマンド解析が
-    # 発火して PromptBody 全体が /loop スキルの引数として消費されるため、
-    # 通常テキスト（PromptBody）を先に送り、/loop 行は末尾で Claude に読ませる。
     return [pscustomobject]@{
-        LoopCommands = ($loopMatch.Groups[1].Value.Trim())
-        PromptBody   = ($bodyMatch.Groups[1].Value.Trim())
-        FullText     = (($bodyMatch.Groups[1].Value.Trim()) + "`r`n`r`n" + ($loopMatch.Groups[1].Value.Trim())).Trim()
+        LoopCommands = $loopCommands
+        PromptBody   = $promptBody
+        FullText     = $fullText
     }
 }
 
@@ -412,9 +416,11 @@ try {
     Write-Host "=== Claude 起動プロンプト ===" -ForegroundColor Yellow
     Write-Host "SSH 自動投入時も以下を基準に送信します。" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "[LOOP_COMMANDS]" -ForegroundColor DarkGray
-    Write-Host $promptSections.LoopCommands
-    Write-Host ""
+    if ($promptSections.LoopCommands) {
+        Write-Host "[LOOP_COMMANDS]" -ForegroundColor DarkGray
+        Write-Host $promptSections.LoopCommands
+        Write-Host ""
+    }
     Write-Host "[PROMPT_BODY]" -ForegroundColor DarkGray
     Write-Host $promptSections.PromptBody
 
