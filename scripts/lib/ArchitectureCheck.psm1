@@ -8,41 +8,51 @@ Set-StrictMode -Version Latest
 
 $script:ForbiddenPatterns = @(
     [pscustomobject]@{
-        id      = 'DIRECT_PUSH_MAIN'
-        name    = 'main直接push禁止'
-        pattern = 'git push.*origin main'
-        severity = 'CRITICAL'
-        message  = 'mainブランチへの直接pushは禁止されています。PRを通してください。'
+        id                 = 'DIRECT_PUSH_MAIN'
+        name               = 'main直接push禁止'
+        pattern            = 'git push.*origin main'
+        severity           = 'CRITICAL'
+        message            = 'mainブランチへの直接pushは禁止されています。PRを通してください。'
+        # 自己検知防止: ArchitectureCheck 自身とテストデータファイルを除外
+        excludeFilePattern = 'ArchitectureCheck|\.Tests\.ps1$'
     }
     [pscustomobject]@{
-        id      = 'HARDCODED_SECRET'
-        name    = 'ハードコード秘密情報'
-        pattern = '(?i)(password|secret|api_key|token)\s*=\s*[''"][^''"]{4,}'
-        severity = 'CRITICAL'
-        message  = '秘密情報のハードコードが検出されました。環境変数または設定ファイルを使用してください。'
+        id                 = 'HARDCODED_SECRET'
+        name               = 'ハードコード秘密情報'
+        pattern            = '(?i)(password|secret|api_key|token)\s*=\s*[''"][^''"]{4,}'
+        severity           = 'CRITICAL'
+        message            = '秘密情報のハードコードが検出されました。環境変数または設定ファイルを使用してください。'
+        # テストデータ（gitleaks:allow 付き）を含むファイルを除外
+        excludeFilePattern = '\.Tests\.ps1$'
     }
     [pscustomobject]@{
-        id      = 'MISSING_STRICT_MODE'
-        name    = 'StrictMode未設定'
-        pattern = '^(?!.*Set-StrictMode)[\s\S]*$'
-        severity = 'WARNING'
-        message  = 'Set-StrictMode -Version Latest が設定されていません。'
-        fileOnly = $true
-        extensions = @('.psm1', '.ps1')
+        id                 = 'MISSING_STRICT_MODE'
+        name               = 'StrictMode未設定'
+        pattern            = '^(?!.*Set-StrictMode)[\s\S]*$'
+        severity           = 'WARNING'
+        message            = 'Set-StrictMode -Version Latest が設定されていません。'
+        fileOnly           = $true
+        extensions         = @('.psm1', '.ps1')
+        # Pester テストファイルは Pester スコープで動作するため除外
+        excludeFilePattern = '\.Tests\.ps1$'
     }
     [pscustomobject]@{
-        id      = 'CIRCULAR_IMPORT'
-        name    = '循環インポート疑惑'
-        pattern = 'Import-Module.*\$PSScriptRoot.*Import-Module.*\$PSScriptRoot'
-        severity = 'WARNING'
-        message  = '同一スクリプト内で複数のImport-Moduleが検出されました。循環依存の可能性があります。'
+        id                 = 'CIRCULAR_IMPORT'
+        name               = '循環インポート疑惑'
+        pattern            = 'Import-Module.*\$PSScriptRoot.*Import-Module.*\$PSScriptRoot'
+        severity           = 'WARNING'
+        message            = '同一スクリプト内で複数のImport-Moduleが検出されました。循環依存の可能性があります。'
+        # 自己検知防止: ルール定義文字列自身が検出されるため除外
+        excludeFilePattern = 'ArchitectureCheck'
     }
     [pscustomobject]@{
-        id      = 'MISSING_ERROR_HANDLING'
-        name    = 'エラーハンドリング不足'
-        pattern = 'Invoke-Expression|iex '
-        severity = 'WARNING'
-        message  = 'Invoke-Expression の使用が検出されました。セキュリティリスクがあります。'
+        id                 = 'MISSING_ERROR_HANDLING'
+        name               = 'エラーハンドリング不足'
+        pattern            = 'Invoke-Expression|iex '
+        severity           = 'WARNING'
+        message            = 'Invoke-Expression の使用が検出されました。セキュリティリスクがあります。'
+        # ArchitectureCheck はルール評価に Invoke-Expression を使用するため除外
+        excludeFilePattern = 'ArchitectureCheck'
     }
 )
 
@@ -89,7 +99,16 @@ function Invoke-ArchitectureCheck {
         $content = Get-Content $file.FullName -Raw -ErrorAction SilentlyContinue
         if (-not $content) { continue }
 
+        $relativePath = $file.FullName.Replace($Path, '').TrimStart('\')
+
         foreach ($rule in $script:ForbiddenPatterns) {
+            # ファイルレベル除外: excludeFilePattern にマッチするファイルはスキップ
+            if ($rule.PSObject.Properties['excludeFilePattern'] -and
+                $rule.excludeFilePattern -and
+                $relativePath -match $rule.excludeFilePattern) {
+                continue
+            }
+
             if ($rule.PSObject.Properties['fileOnly'] -and $rule.fileOnly) {
                 $ext = $file.Extension.ToLower()
                 if ($rule.extensions -notcontains $ext) { continue }
@@ -99,7 +118,7 @@ function Invoke-ArchitectureCheck {
                         RuleId   = $rule.id
                         RuleName = $rule.name
                         Severity = $rule.severity
-                        File     = $file.FullName.Replace($Path, '').TrimStart('\')
+                        File     = $relativePath
                         Line     = 0
                         Message  = $rule.message
                     }
@@ -109,12 +128,15 @@ function Invoke-ArchitectureCheck {
 
             $lines = $content -split "`n"
             for ($i = 0; $i -lt $lines.Count; $i++) {
+                # 行レベルサプレッション: # arch-check:ignore コメントでスキップ
+                if ($lines[$i] -match '#\s*arch-check:ignore') { continue }
+
                 if ($lines[$i] -match $rule.pattern) {
                     $violations += [pscustomobject]@{
                         RuleId   = $rule.id
                         RuleName = $rule.name
                         Severity = $rule.severity
-                        File     = $file.FullName.Replace($Path, '').TrimStart('\')
+                        File     = $relativePath
                         Line     = $i + 1
                         Message  = $rule.message
                     }
