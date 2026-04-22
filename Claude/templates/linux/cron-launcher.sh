@@ -143,10 +143,73 @@ export LANG=C.UTF-8 LC_ALL=C.UTF-8
 export CLAUDE_SESSION_ID="$SESSION_ID"
 export CLAUDE_PROJECT="$PROJECT"
 
+# P1-4: state.json からセッション状態を復元してクロンセッションに引き継ぐ
+STATE_FILE="$PROJECT_DIR/state.json"
+RESUME_PHASE="Monitor"
+RESUME_CONSECUTIVE=0
+RESUME_SUMMARY=""
+
+if [[ -f "$STATE_FILE" ]] && command -v python3 >/dev/null 2>&1; then
+  RESUME_PHASE=$(python3 -c "
+import json,sys
+try:
+    d=json.load(open('$STATE_FILE'))
+    print(d.get('execution',{}).get('phase','Monitor'))
+except: print('Monitor')
+" 2>/dev/null || echo "Monitor")
+  RESUME_CONSECUTIVE=$(python3 -c "
+import json,sys
+try:
+    d=json.load(open('$STATE_FILE'))
+    print(d.get('stable',{}).get('consecutive_success',0))
+except: print(0)
+" 2>/dev/null || echo "0")
+  RESUME_SUMMARY=$(python3 -c "
+import json,sys
+try:
+    d=json.load(open('$STATE_FILE'))
+    s=d.get('execution',{}).get('last_session_summary','')
+    print(s[:300] if s else '(none)')
+except: print('(none)')
+" 2>/dev/null || echo "(none)")
+  echo "[cron-launcher] state restored: phase=$RESUME_PHASE consecutive=$RESUME_CONSECUTIVE" >> "$LOG_FILE"
+
+  # state.json の execution.phase と current_session_start_at を更新
+  python3 - <<PYEOF >> "$LOG_FILE" 2>&1 || true
+import json, os
+f = '$STATE_FILE'
+try:
+    with open(f) as fp: d = json.load(fp)
+    d.setdefault('execution', {})
+    d['execution']['current_session_start_at'] = '$START_TIME'
+    d['execution']['last_trigger'] = 'cron'
+    d['execution']['last_cron_session_id'] = '$SESSION_ID'
+    tmp = f + '.tmp.$$'
+    with open(tmp, 'w') as fp: json.dump(d, fp, ensure_ascii=False, indent=2)
+    os.replace(tmp, f)
+    print('[cron-launcher] state.json updated (session start recorded)')
+except Exception as e:
+    print(f'[cron-launcher] state.json update failed: {e}')
+PYEOF
+else
+  echo "[cron-launcher] state.json not found or python3 unavailable — using defaults" >> "$LOG_FILE"
+fi
+
+export CLAUDE_RESUME_PHASE="$RESUME_PHASE"
+export CLAUDE_RESUME_CONSECUTIVE="$RESUME_CONSECUTIVE"
+
 # START_PROMPT.md が存在すれば引数として渡し、ClaudeCode を auto mode で起動
 PROMPT_ARG=""
 if [[ -f "$PROJECT_DIR/.claude/START_PROMPT.md" ]]; then
   PROMPT_ARG="$(cat "$PROJECT_DIR/.claude/START_PROMPT.md")"
+fi
+
+# 復元情報をプロンプトの先頭に注入（state.json が存在する場合のみ）
+if [[ -f "$STATE_FILE" ]]; then
+  RESUME_HEADER="[Cron Session Resume] phase=${RESUME_PHASE} consecutive_success=${RESUME_CONSECUTIVE} last_summary=${RESUME_SUMMARY}
+
+"
+  PROMPT_ARG="${RESUME_HEADER}${PROMPT_ARG}"
 fi
 
 # PROMPT_ARG をサイドカーファイルへ書き出す（tmux env var 継承バグ / 長大引数問題を回避）

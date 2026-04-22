@@ -142,9 +142,57 @@ function Invoke-Register {
         Write-Host ""
         Write-Host "  [OK] Cron エントリを登録しました: ID=$($entry.Id)" -ForegroundColor Green
         Write-Host "  Linux cron が月〜土 / プロジェクト別 / 300分で自律実行します。" -ForegroundColor DarkGreen
+
+        # P1-2: state.json が存在しない場合は自動生成
+        Invoke-EnsureStateJson -Project $project
     }
     catch {
         Write-Host "  [ERROR] $($_.Exception.Message)" -ForegroundColor Red
+    }
+}
+
+function Invoke-EnsureStateJson {
+    param([string]$Project)
+    $sshExe    = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { 'ssh' }
+    $base      = $Config.linuxBase
+    $stateFile = "$base/$Project/state.json"
+    $claudeDir = "$base/$Project/.claude"
+
+    # state.json 存在確認
+    $exists = & $sshExe -T -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMaster=no `
+        $LinuxHost "test -f '$stateFile' && echo yes || echo no" 2>$null
+    if ($exists -eq 'yes') {
+        Write-Host "  [state.json] 既存ファイルを確認しました — 変更なし" -ForegroundColor DarkGray
+        return
+    }
+
+    Write-Host "  [state.json] 未検出 — 最小構成を生成中..." -ForegroundColor Cyan
+    $minimalState = @"
+{
+  "goal": { "title": "$Project 自律開発" },
+  "kpi": { "success_rate_target": 0.9 },
+  "execution": {
+    "max_duration_minutes": $duration,
+    "phase": "Monitor",
+    "auto_stop_threshold": 5,
+    "graceful_shutdown": true,
+    "last_session_summary": ""
+  },
+  "stable": { "consecutive_success": 0, "target_n": 3, "stable_achieved": false },
+  "automation": { "auto_issue_generation": true, "self_evolution": true }
+}
+"@
+    $escapedState = $minimalState.Replace("'", "'\''")
+    & $sshExe -T -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMaster=no `
+        $LinuxHost "mkdir -p '$base/$Project' && printf '%s' '$escapedState' > '$stateFile'" 2>$null
+    Write-Host "  [state.json] 生成完了: $stateFile" -ForegroundColor Green
+
+    # .claude/ ディレクトリ確認（CLAUDE.md / START_PROMPT.md の配備先）
+    $claudeExists = & $sshExe -T -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMaster=no `
+        $LinuxHost "test -d '$claudeDir' && echo yes || echo no" 2>$null
+    if ($claudeExists -ne 'yes') {
+        Write-Host "  [.claude/] ディレクトリが未存在です。CLAUDE.md と START_PROMPT.md を手動で配備してください。" -ForegroundColor Yellow
+        Write-Host "    参照: docs/autonomy-checklist.md" -ForegroundColor DarkGray
     }
 }
 

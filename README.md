@@ -27,14 +27,14 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.2.67** (RecentProjects.ps1 ユニットテスト 17件追加) — 旧: v3.2.66 (WorktreeManager.psm1 テストカバレッジ拡充 14件) |
-| テスト | **731件** — Pester (Unit 21 / Integration 11 / Smoke 1) |
+| バージョン | **v3.2.75** (P1-2 state.json 自動生成 / P1-4 セッション状態復元 / P1-5 hooks 書き込み昇格 / P2-2 Codex optional / P2-4 タイムライン図) — 旧: v3.2.74 |
+| テスト | **768件** — Pester (Unit 21 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |
 | Agents | **25体** の特化サブエージェント (2026Q2 棚卸し後、追加復元済み) |
 | Skills | **0個** — Claude Opus 4.6 内包能力で代替可能な汎用スキルを棚卸しで全削除 |
 | Hooks | **4個** — agent-risk-check / capture-result / onboarding-refresh / usage-history-recorder |
-| Boot Sequence | `Start-ClaudeOS.ps1` (Step 3 Memory/Step 7 Agent Init/Step 9 Dashboard 実装完了) ✅ |
+| Boot Sequence | `Start-ClaudeOS.ps1` (Step 3 Memory/Step 5 Executive Init/Step 6 Management Init/Step 7 Agent Init/Step 8 Loop Engine Start/Step 9 Dashboard 実装完了) ✅ |
 
 ### Agent Teams 対応レベル (Claude Code 専用)
 
@@ -70,14 +70,15 @@
 | Orchestration | 1 | orchestrator |
 | Testing | 1 | qa |
 
-### Hooks 構成 (4個)
+### Hooks 構成 (3個)
 
-| Hook | 種別 | 機能 |
-|------|------|------|
-| `agent-risk-check` | PreToolUse | Bash/Edit/Write 操作前に第 2 の Claude が SAFE/CAUTION/BLOCK 判定 |
-| `capture-result` | PostToolUse | 主要ツール結果を後続フック向けに正規化 |
-| `usage-history-recorder` | PostToolUse | Agent/Skill/Command/Hook 呼び出し履歴を state.json に記録 |
-| `onboarding-refresh-on-stable` | PostToolUse | STABLE 判定到達時に ONBOARDING.md を自動更新 |
+> `.claude/settings.json` の `hooks` セクションに登録済み。スクリプト本体は `.claude/claudeos/scripts/hooks/` に配置。
+
+| Hook | 種別 | スクリプト | 機能 |
+|------|------|-----------|------|
+| `session-start` | SessionStart | `session-start.js` | state.json から前回フェーズ・STABLE状態を読み込み表示。`current_session_start_at` と trigger (cron/manual) を書き込み |
+| `pre-compact` | PreCompact | `pre-compact.js` | compact 直前に state.json へタイムスタンプを記録 |
+| `session-end` | Stop | `session-end.js` | `last_stop_at` を state.json へ書き込み後、STABLE 通知を実行 |
 
 ### Skills 構成
 
@@ -177,7 +178,46 @@ graph LR
     end
 ```
 
-## 自律開発フロー
+## Linux cron 完全自律実行 — セットアップから自律ループまでのフロー
+
+```mermaid
+flowchart TD
+    subgraph "Windows 側 (初回セットアップ)"
+        W1["🖥 start.bat"] --> W2["Start-Menu.ps1\n[14] Cron 登録"]
+        W2 --> W3["New-CronSchedule.ps1\nプロジェクト選択 / 曜日 / 時刻"]
+        W3 --> W4["🔑 SSH → Linux crontab 登録"]
+        W3 --> W5["📄 state.json 自動生成\n(未存在時のみ)"]
+    end
+
+    subgraph "Linux 側 (自律実行)"
+        L1["⏰ cron 発火\n(月〜土 / プロジェクト別)"] --> L2["cron-launcher.sh"]
+        L2 --> L3["state.json 読み込み\n前回 phase / consecutive 復元"]
+        L3 --> L4["START_PROMPT.md 読み込み\n復元情報を先頭に注入"]
+        L4 --> L5["claude --dangerously-skip-permissions\n(timeout 300m)"]
+    end
+
+    subgraph "Claude セッション (300分)"
+        C1["🔍 Monitor\n30m"] --> C2["🛠 Build\n120m"]
+        C2 --> C3["✅ Verify\n75m"]
+        C3 --> C4["🚀 Improve\n75m"]
+        C4 -->|STABLE未達| C2
+        C4 -->|STABLE達成| C5["📦 PR → Merge"]
+        C3 -->|CI失敗| C6["🔧 Auto Repair"]
+        C6 --> C3
+    end
+
+    subgraph "セッション終了"
+        E1["session-end.js\nlast_stop_at 更新"] --> E2["report-and-mail.py\nHTML メール送信"]
+        E2 --> E3["次回 cron まで待機"]
+    end
+
+    W4 --> L1
+    L5 --> C1
+    C5 --> E1
+    C4 --> E1
+```
+
+## 自律開発ループ詳細
 
 ```mermaid
 flowchart LR

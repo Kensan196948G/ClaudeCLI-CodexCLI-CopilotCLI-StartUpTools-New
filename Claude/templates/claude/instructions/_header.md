@@ -4,12 +4,17 @@
 
 自律実行は Linux cron（月〜土、プロジェクト別スケジュール・300分制限）が担う。
 セッション開始時に `/loop` や `/schedule` の登録は不要。
-直ちに Codex セットアップを実行してから自律開発を開始すること。
+
+Codex が利用可能な場合のみ実行する。**Codex が使えなくても自律開発は止めない。**
 
 ```
 /codex:setup
 /codex:status
 ```
+
+- Codex 認証済み → review 強化レイヤーとして活用
+- Codex 未認証 / 使えない → このステップをスキップして自律開発を開始する
+- **Codex の有無は停止条件ではない**
 
 ## PROMPT_BODY
 
@@ -19,15 +24,15 @@
 
 ## 指示確認プロトコル（必須）
 
-Codex セットアップ完了後、作業を開始する前に、以下の確認チェックリストを出力してください。
+作業を開始する前に、以下の確認チェックリストを出力してください。
 
 ```
 === ClaudeOS v8 指示確認 ===
-[✅/❌] 01 セッション開始・Codex設定・実行方針
+[✅/❌] 01 セッション開始・実行方針
 [✅/❌] 02 コア構造・マルチプロジェクト・Goal Driven
 [✅/❌] 03 state.json スキーマ・優先順位AI
 [✅/❌] 04 Agent Teams 定義・起動順序
-[✅/❌] 05 Codex統合・Debug原則
+[✅/❌] 05 Codex統合（任意）・Debug原則
 [✅/❌] 06 CI Manager・GitHub Actions
 [✅/❌] 07 AI Dev Factory・GitHub Projects連携
 [✅/❌] 08 ループ制御・WorkTree・Token・時間・STABLE・禁止事項
