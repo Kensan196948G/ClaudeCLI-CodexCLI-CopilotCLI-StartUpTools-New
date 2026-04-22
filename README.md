@@ -28,7 +28,7 @@
 | 項目 | 状態 |
 |------|------|
 | バージョン | **v3.2.67** (RecentProjects.ps1 ユニットテスト 17件追加) — 旧: v3.2.66 (WorktreeManager.psm1 テストカバレッジ拡充 14件) |
-| テスト | **731件** — Pester (Unit 19 / Integration 11 / Smoke 1) |
+| テスト | **731件** — Pester (Unit 21 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |
 | Agents | **25体** の特化サブエージェント (2026Q2 棚卸し後、追加復元済み) |
@@ -504,7 +504,7 @@ scripts/helpers/     PTY bridge 等のヘルパー
 scripts/templates/   各ツール向けテンプレート
 scripts/test/        診断スクリプト
 scripts/tools/       TASKS同期・バックログ管理
-tests/               Pester テスト (29 files / 680件 — Unit 17 / Integration 11 / Smoke 1)
+tests/               Pester テスト (33 files / 731件 — Unit 21 / Integration 11 / Smoke 1)
 Claude/              ClaudeOS 互換ポリシー群
 Codex/               Codex AGENTS.md
 .claude/claudeos/    ClaudeOS カーネル（198ファイル、配備先 — 編集元は Claude/templates/claudeos/）

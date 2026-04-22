@@ -320,6 +320,16 @@ try {
 
         Sync-LauncherClaudeGlobalConfig -StartupRoot $ScriptRoot -ProjectDir $localProjectDir
 
+        # Build-StartPrompt.ps1 で START_PROMPT.md を instructions/ から自動再生成
+        $buildPromptScript = Join-Path $ScriptRoot 'Claude\templates\claude\Build-StartPrompt.ps1'
+        if (Test-Path $buildPromptScript) {
+            Write-Info "START_PROMPT.md を instructions/ から再ビルド中..."
+            $psExeForBuild = (Get-Process -Id $PID).Path
+            & $psExeForBuild -NoProfile -ExecutionPolicy Bypass -File $buildPromptScript
+            if ($LASTEXITCODE -eq 0) { Write-Ok "START_PROMPT.md 再ビルド完了" }
+            else { Write-Warn "START_PROMPT.md 再ビルド失敗（既存ファイルを使用）" }
+        }
+
         $localPromptPath = Join-Path $ScriptRoot 'Claude\templates\claude\START_PROMPT.md'
         $localPromptArgs = @()
         if (Test-Path $localPromptPath) {
@@ -354,6 +364,16 @@ try {
     $templateSettings = Join-Path $ScriptRoot 'Claude\templates\claude\settings.json'
     $templatePrompt = Join-Path $ScriptRoot 'Claude\templates\claude\START_PROMPT.md'
     $bridgeSource = Join-Path $ScriptRoot 'scripts\helpers\claude_pty_bridge.py'
+
+    # Build-StartPrompt.ps1 で START_PROMPT.md を instructions/ から自動再生成
+    $buildPromptScriptSsh = Join-Path $ScriptRoot 'Claude\templates\claude\Build-StartPrompt.ps1'
+    if (Test-Path $buildPromptScriptSsh) {
+        Write-Info "START_PROMPT.md を instructions/ から再ビルド中..."
+        $psExeForBuild = (Get-Process -Id $PID).Path
+        & $psExeForBuild -NoProfile -ExecutionPolicy Bypass -File $buildPromptScriptSsh
+        if ($LASTEXITCODE -eq 0) { Write-Ok "START_PROMPT.md 再ビルド完了" }
+        else { Write-Warn "START_PROMPT.md 再ビルド失敗（既存ファイルを使用）" }
+    }
 
     $promptSections = Get-StartPromptSection -PromptPath $templatePrompt
 

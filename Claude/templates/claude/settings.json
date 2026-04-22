@@ -4,7 +4,8 @@
     "ENABLE_TOOL_SEARCH": "true",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "50",
-    "CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION": "true"
+    "CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION": "true",
+    "ENABLE_PROMPT_CACHING_1H": "1"
   },
   "includeCoAuthoredBy": true,
   "outputStyle": "Explanatory",
@@ -20,5 +21,40 @@
   "statusLine": {
     "type": "command",
     "command": "python3 .claude/statusline.py"
+  },
+  "hooks": {
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/claudeos/scripts/hooks/pre-compact.js"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/claudeos/scripts/hooks/session-start.js"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/claudeos/scripts/hooks/session-end.js"
+          }
+        ]
+      }
+    ]
   }
 }
