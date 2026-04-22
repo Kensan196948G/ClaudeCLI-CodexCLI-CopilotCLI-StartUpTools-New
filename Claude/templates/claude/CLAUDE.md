@@ -21,12 +21,18 @@
 `/loop` および `/schedule` によるクラウドスケジュール登録は不要。
 このステップはスキップしてステップ 2 へ直ちに進むこと。
 
-### ステップ 2: Codex セットアップ
+### ステップ 2: Codex セットアップ（任意）
+
+Codex が利用可能な場合のみ実行する。**Codex が使えなくても自律開発は止めない。**
 
 ```
 /codex:setup
 /codex:status
 ```
+
+- Codex 認証済み → review 強化レイヤーとして活用
+- Codex 未認証 / 使えない → スキップしてステップ 3 へ進む
+- Codex の有無は**停止条件ではない**。Claude 単独で継続すること
 
 ※リリース直前のみ: `/codex:setup --enable-review-gate`
 
