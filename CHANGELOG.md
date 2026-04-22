@@ -2,6 +2,26 @@
 
 # CHANGELOG
 
+## [v3.2.77] - 2026-04-22 — /loop・/schedule スラッシュコマンド参照を除去
+
+### 🎯 概要
+cron 実行時の初回プロンプトに `/loop` スキルが誤起動する問題を修正。`_header.md`・`01-session-startup.md`・`CLAUDE.md`（プロジェクトルート + テンプレート）内のスラッシュコマンド構文を平文に書き換え、`Build-StartPrompt.ps1` で `START_PROMPT.md` を再生成。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `CLAUDE.md` | `/loop` `/schedule` → 平文に書き換え |
+| `Claude/templates/claude/CLAUDE.md` | 同上 |
+| `Claude/templates/claude/instructions/_header.md` | 同上 |
+| `Claude/templates/claude/instructions/01-session-startup.md` | 同上 |
+| `Claude/templates/claude/START_PROMPT.md` | Build-StartPrompt.ps1 で再生成 |
+
+### ✅ テスト結果
+- CI: test-and-validate / PSScriptAnalyzer / Secrets scan / CodeRabbit — 全 pass
+- grep 確認: `/loop` `/schedule` スラッシュ構文なし（ファイルパス参照のみ）
+
+---
+
 ## [v3.2.76] - 2026-04-22 — P1-3 ローカル cron レジストリ + P1-7 Agent Teams 使用ログ
 
 ### 🎯 概要
