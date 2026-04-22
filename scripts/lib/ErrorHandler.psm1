@@ -1,4 +1,6 @@
-﻿# ============================================================
+﻿Set-StrictMode -Version Latest
+
+# ============================================================
 # ErrorHandler.psm1 - カテゴリ別エラーハンドリングモジュール
 # ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools v2.0.0
 # ============================================================
@@ -65,7 +67,7 @@ $script:CategorySolutions = @{
         "1. ANTHROPIC_API_KEY: https://console.anthropic.com/ で取得",
         "2. OPENAI_API_KEY: https://platform.openai.com/api-keys で取得",
         "3. GitHub Copilot: gh auth login で認証",
-        "4. 環境変数に設定: `$env:ANTHROPIC_API_KEY = 'your-key'"
+        "4. 環境変数に設定: `$env:ANTHROPIC_API_KEY = 'your-key'" # arch-check:ignore
     )
     DRIVE_ACCESS = @(
         "1. ドライブ診断を実行: start.bat → オプション 6",
