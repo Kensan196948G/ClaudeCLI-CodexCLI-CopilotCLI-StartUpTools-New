@@ -2,6 +2,27 @@
 
 # CHANGELOG
 
+## [v3.2.78] - 2026-04-22 — Linux側 START_PROMPT.md 自動同期 / /loop スキルトリガー根本解消
+
+### 🎯 概要
+v3.2.77 で Windows テンプレートを修正したが Linux 側のデプロイ済み `.claude/START_PROMPT.md` が旧版のまま残り `/loop` スキルが引き続きトリガーされていた。`New-CronSchedule.ps1` に `Invoke-SyncStartPrompt` 関数を追加し、cron 登録・今すぐ実行・手動同期の3経路で Linux 側ファイルを最新テンプレートと同期する。また `~/.claude/claudeos/CLAUDE.md` 先頭の `/loop` コマンド行4行を削除（即時適用）。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/main/New-CronSchedule.ps1` | `Invoke-SyncStartPrompt` / `Invoke-SyncMenu` 追加。`Invoke-Register`・`Invoke-EnsureStateJson`・`Invoke-CronTest` から呼び出し。メニュー `[7] START_PROMPT を同期` 追加 |
+| `~/.claude/claudeos/CLAUDE.md` | 先頭4行の `/loop 30m` 等を削除（リポジトリ外・即時適用） |
+
+### 🔑 設計ポイント
+- SSH stdin pipe (`$content | ssh "cat > file"`) で SCP 依存なしにテキストファイルを転送
+- `Invoke-SyncStartPrompt` は `Invoke-EnsureStateJson` が早期 return した場合でも `Invoke-Register` から直接呼ばれるためスキップなし
+- `Invoke-CronTest` での起動前同期により「今すぐ実行」時も常に最新プロンプトを使用
+
+### ✅ テスト結果
+- CI: test-and-validate / PSScriptAnalyzer / Secrets scan — 全 pass
+
+---
+
 ## [v3.2.77] - 2026-04-22 — /loop・/schedule スラッシュコマンド参照を除去
 
 ### 🎯 概要
