@@ -126,16 +126,10 @@ CLAUDE.md §18 から抽出した **全 8 項目**:
 
 ## 10. セッション開始手順
 
-CLAUDE.md §0 のデフォルト 4 ループ登録（state.json.execution.phase=Monitor から継続）:
+自律実行は Linux cron（月〜土・プロジェクト別・300分）が担う。
+`/loop` によるループ登録は不要。セッション開始時は以下のみ実行:
 
-```text
-/loop 30min   ClaudeOS Monitor
-/loop 2h      ClaudeOS Development
-/loop 1h15m   ClaudeOS Verify
-/loop 1h15m   ClaudeOS Improvement
-```
-
-配分内訳: Monitor 10% / Development 40% / Verify 25% / Improvement 25%（計 5 時間）。
+配分目安: Monitor 10% / Development 35% / Verify 25% / Improvement 15% / Debug 10% / Release 5%。
 
 続いて Codex セットアップ:
 
