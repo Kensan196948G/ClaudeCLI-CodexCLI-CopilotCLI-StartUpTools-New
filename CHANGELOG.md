@@ -2,6 +2,27 @@
 
 # CHANGELOG
 
+## [v3.2.79] - 2026-04-22 — tmux pipe-pane によるログ可視化 / cron-launcher.sh 自動同期
+
+### 🎯 概要
+`今すぐ実行` ([6]) 後に Watch-ClaudeLog.ps1 タブが空白になり Claude が起動していないように見える問題を修正。原因は `cron-launcher.sh` が Claude を tmux セッション内で起動するため stdout がログファイルに流れていなかったこと。`tmux pipe-pane` を追加して Claude の tmux pane 出力をログファイルに流すよう修正した。合わせて `cron-launcher.sh` の自動 Linux 同期機能を追加。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `Claude/templates/linux/cron-launcher.sh` | `tmux new-session` 直後に `tmux pipe-pane -t "$TMUX_SESSION" -o "cat >> '$LOG_FILE'"` を追加 |
+| `scripts/main/New-CronSchedule.ps1` | `Invoke-SyncLauncher` / `Invoke-SyncLauncherMenu` 追加。`Invoke-CronTest` から自動呼び出し。メニュー `[8] cron-launcher.sh を同期` 追加 |
+
+### 🔑 設計ポイント
+- `tmux pipe-pane -o` の `-o` フラグで pane 出力のみをキャプチャ（入力はキャプチャしない）
+- Claude の ANSI 出力がそのままログファイルに流れるため Windows Terminal の VT100 解釈でカラー表示
+- cron-launcher.sh の同期は START_PROMPT.md と同じ SSH stdin pipe 方式（SCP 非依存）
+
+### ✅ テスト結果
+- 稼働中セッションへの `tmux pipe-pane` 手動適用で cron-20260422-173116.log が 233B → 95KB に増加することを確認
+
+---
+
 ## [v3.2.78] - 2026-04-22 — Linux側 START_PROMPT.md 自動同期 / /loop スキルトリガー根本解消
 
 ### 🎯 概要

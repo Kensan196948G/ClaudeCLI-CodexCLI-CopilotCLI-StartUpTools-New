@@ -61,6 +61,7 @@ function Show-CronMenu {
     Write-Host "    [5] 全解除" -ForegroundColor Yellow
     Write-Host "    [6] 今すぐ実行" -ForegroundColor Green
     Write-Host "    [7] START_PROMPT を同期" -ForegroundColor Cyan
+    Write-Host "    [8] cron-launcher.sh を同期" -ForegroundColor Cyan
     Write-Host "    [0] 戻る" -ForegroundColor Gray
     Write-Host ""
 }
@@ -232,6 +233,33 @@ function Invoke-SyncMenu {
     Invoke-SyncStartPrompt -Project $project
 }
 
+function Invoke-SyncLauncher {
+    $localFile = Join-Path $ScriptRoot 'Claude\templates\linux\cron-launcher.sh'
+    if (-not (Test-Path $localFile)) {
+        Write-Host "  [LAUNCHER] テンプレートが見つかりません: $localFile" -ForegroundColor Yellow
+        return
+    }
+    $sshExe  = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { 'ssh' }
+    $sshOpts = @('-T', '-o', 'ConnectTimeout=10', '-o', 'StrictHostKeyChecking=accept-new', '-o', 'ControlMaster=no')
+    $claudeosDir = '/home/kensan/.claudeos'
+    & $sshExe @sshOpts $LinuxHost "mkdir -p '$claudeosDir'" 2>$null
+    $content = (Get-Content $localFile -Raw -Encoding UTF8) -replace "`r`n", "`n"
+    $content | & $sshExe @sshOpts $LinuxHost "cat > '$claudeosDir/cron-launcher.sh' && chmod +x '$claudeosDir/cron-launcher.sh'"
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "  [LAUNCHER] Linux に同期しました: $claudeosDir/cron-launcher.sh" -ForegroundColor Green
+    } else {
+        Write-Host "  [LAUNCHER] 同期失敗 (exit=$LASTEXITCODE) — 手動で配備してください" -ForegroundColor Red
+    }
+}
+
+function Invoke-SyncLauncherMenu {
+    Write-Host ""
+    Write-Host "  cron-launcher.sh を Linux へ同期します" -ForegroundColor Cyan
+    $confirm = Read-Host "  実行しますか? [y/N]"
+    if ($confirm -ne 'y' -and $confirm -ne 'Y') { return }
+    Invoke-SyncLauncher
+}
+
 function Invoke-List {
     $entries = Get-ClaudeOSCronEntry -LinuxHost $LinuxHost
     Write-Host ""
@@ -350,10 +378,12 @@ function Invoke-CronTest {
         return
     }
 
-    # 起動前に START_PROMPT.md を最新テンプレートで同期
+    # 起動前に START_PROMPT.md と cron-launcher.sh を最新テンプレートで同期
     Write-Host ""
     Write-Host "  [同期中] START_PROMPT.md を Linux へ転送..." -ForegroundColor Cyan
     Invoke-SyncStartPrompt -Project $project
+    Write-Host "  [同期中] cron-launcher.sh を Linux へ転送..." -ForegroundColor Cyan
+    Invoke-SyncLauncher
 
     # SSH でバックグラウンド起動 (nohup で SSH 切断後も継続)
     $sshExe    = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { 'ssh' }
@@ -410,6 +440,7 @@ while ($true) {
         '5' { Invoke-RemoveAll; Read-Host "  Enter で戻ります" | Out-Null }
         '6' { Invoke-CronTest; Read-Host "  Enter で戻ります" | Out-Null }
         '7' { Invoke-SyncMenu; Read-Host "  Enter で戻ります" | Out-Null }
+        '8' { Invoke-SyncLauncherMenu; Read-Host "  Enter で戻ります" | Out-Null }
         '0' { exit 0 }
         default {
             Write-Host "  無効な入力" -ForegroundColor Red

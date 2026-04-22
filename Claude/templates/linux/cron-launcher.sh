@@ -254,6 +254,8 @@ if command -v tmux >/dev/null 2>&1 && [[ "${CLAUDEOS_TMUX:-1}" == "1" ]]; then
     -e "_CLAUDEOS_TMUX_DONE=$_TMUX_DONE" \
     -e "_CLAUDEOS_PROMPT_FILE=$PROMPT_FILE" \
     "$CLAUDE_WRAPPER" 2>>"$LOG_FILE"
+  # pipe-pane: tmux pane の出力をログファイルにも流す（Windows 側の Watch-ClaudeLog.ps1 で可視化するため）
+  tmux pipe-pane -t "$TMUX_SESSION" -o "cat >> '$LOG_FILE'" 2>>"$LOG_FILE" || true
   echo "[cron-launcher] tmux attach -t $TMUX_SESSION  (UI閲覧用)" >> "$LOG_FILE"
   # tmux セッション終了まで待機（タイムアウト付き: keeper消滅後の二重防護）
   if ! timeout $((DURATION_SEC + 60)) tmux wait-for "$_TMUX_DONE" 2>>"$LOG_FILE"; then
