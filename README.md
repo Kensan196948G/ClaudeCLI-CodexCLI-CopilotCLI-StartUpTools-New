@@ -110,22 +110,23 @@ graph TD
     A["start.bat"] --> B["Start-Menu.ps1"]
     B --> C["Start-ClaudeCode.ps1"]
     B --> F["Start-All.ps1"]
-    B --> NCS["☁️ New-CloudSchedule.ps1"]
-    B --> SSL["🆕 Set-Statusline.ps1"]
+    B --> NCS["🕐 New-CronSchedule.ps1\n(Linux cron 登録・管理)"]
+    B --> SSL["Set-Statusline.ps1"]
     B --> G["Test-AllTools.ps1"]
 
+    CRON["Linux cron\n(月〜土 / プロジェクト別 / 300分)"] --> CL["cron-launcher.sh"]
+    CL --> |"claude --dangerously-skip-permissions"| CLAUDE["Claude Code\n自律開発セッション"]
+    NCS --> CRON
+
     C --> J{"Local or SSH?"}
-    C --> SIT["🆕 Show-SessionInfoTab.ps1"]
+    C --> SIT["Show-SessionInfoTab.ps1"]
     SIT --> WT["wt.exe new-tab"]
-    WT --> WSI["🆕 Watch-SessionInfo.ps1"]
+    WT --> WSI["Watch-SessionInfo.ps1"]
     WSI --> SJ["session.json (1s poll)"]
 
-    J -->|Local| K["projectsDir"]
+    J -->|Local| K["projectsDir\n(手動セッション)"]
     J -->|SSH| L["linuxHost via SSH"]
     L --> M["claude_pty_bridge.py"]
-
-    NCS --> RT["RemoteTrigger API (claude.ai)"]
-    RT --> CS["☁️ Cloud Schedule (Mon-Sat, 1h+, 300min)"]
 
     C --> PLD["Pre-Launch Diagnostics"]
     PLD --> MCP_CHK["MCP Health Check"]
@@ -302,8 +303,8 @@ start.bat
 
 | メニュー | 説明 |
 |----------|------|
-| `S1` | Claude Code を SSH 起動 (自動で Session Info タブも生成) |
-| `L1` | Claude Code をローカル起動 (自動で Session Info タブも生成) |
+| `S1` | Claude Code を SSH 起動 **[Linux cron 自律実行 / 5h セッション]** |
+| `L1` | Claude Code をローカル起動 **[手動セッション / スケジューラ不要]** |
 | `5` | ツール確認・診断 |
 | `6` | ドライブマッピング診断 |
 | `7` | Windows Terminal セットアップ |
@@ -311,10 +312,13 @@ start.bat
 | `9` | Agent Teams ランタイム |
 | `10` | Worktree Manager |
 | `11` | Architecture Check |
-| `12` | ☁️ Cloud スケジュール 登録・削除・実行 (Anthropic Cloud Schedule — 週6日・最大5h・プロジェクト別管理 — v3.2.57) |
-| `13` | 🆕 Statusline 設定 (グローバル `~/.claude/settings.json` を Linux に一括適用) |
+| `12` | Statusline 設定 (グローバル `~/.claude/settings.json` を Linux に一括適用) |
+| `13` | Claude ログ監視タブを開く |
+| `14` | 🕐 Cron スケジュール 登録・編集・削除 **[SSH / Linux cron / 5h 強制終了]** |
+| `15` | Linux セッション状態監視 **[SSH / リアルタイム cron 実行状況]** |
 
-> **v3.1.0 変更**: `S2` / `S3` / `L2` / `L3` (Codex CLI / GitHub Copilot CLI) は削除されました。
+> **自律実行方式**: Linux cron（月〜土 / プロジェクト別 / 300分）が唯一の起動トリガです。  
+> **v3.2.70 変更**: Cloud Schedule / `/loop` / `/schedule` は廃止。`New-CronSchedule.ps1`（メニュー14）で Linux cron を直接管理します。
 
 ### PowerShell から直接起動
 
@@ -323,9 +327,9 @@ start.bat
 .\scripts\main\Start-All.ps1
 .\scripts\main\Start-ClaudeCode.ps1 -Project "my-project"
 
-# v3.1.0 新機能 🆕
-.\scripts\main\New-CloudSchedule.ps1         # メニュー 12: Cloud スケジュール 登録・削除・実行
-.\scripts\main\Set-Statusline.ps1            # メニュー 13: Statusline グローバル適用
+# Linux Cron 自律実行管理（SSH専用）
+.\scripts\main\New-CronSchedule.ps1         # メニュー 14: Cron スケジュール 登録・編集・削除
+.\scripts\main\Set-Statusline.ps1            # メニュー 12: Statusline グローバル適用
 .\scripts\main\Show-SessionInfoTab.ps1 -SessionId <sid>  # 情報タブを手動で開く
 
 # ClaudeOS Boot Sequence (MVP)
@@ -334,17 +338,9 @@ start.bat
 .\scripts\main\Start-ClaudeOS.ps1 -NonInteractive    # CI / 自動実行向け
 ```
 
-### 🆕 v3.1.0 新機能の概要
+### 🕐 Linux Cron 自律実行（v3.2.70 正式運用）
 
-#### メニュー 12: Cloud スケジュール 登録・削除・実行 (v3.2.57)
-
-Anthropic Cloud Schedule (RemoteTrigger API) でプロジェクトごとの自律開発ループを永続管理します。セッション終了後も継続稼働します。
-
-- **動作条件**: 週6日（月〜土）/ 1セッション最大5時間 / API最小間隔1時間
-- **標準ループ**: Monitor (1h) / Development (2h) / Verify (1h) / Improvement (1h) — Mon-Sat
-- **プロジェクト別管理**: 起動時にプロジェクト選択 UI を表示。`[P]` キーでセッション中に切り替え可能
-- **操作**: `[1]`一覧 / `[2]`個別登録 / `[3]`4ループ一括登録 / `[4]`削除・全削除 / `[5]`即時実行
-- `New-CronSchedule.ps1` (旧 Linux crontab 方式) は後方互換のため保持
+Linux cron（メニュー 14 / `New-CronSchedule.ps1`）でプロジェクトごとの自律開発セッションを管理します。
 
 #### Session Info タブ (Windows Terminal)
 
@@ -365,12 +361,12 @@ Windows 側 `~/.claude/settings.json` の `statusLine` セクションを Linux 
 
 | Command | 用途 |
 |---------|------|
-| `/cron-register` | (旧) ClaudeCode 内から Linux crontab 新規登録 |
-| `/cron-cancel [id|all]` | (旧) Linux crontab Cron 解除 |
-| `/cron-list` | (旧) Linux crontab 登録済みエントリ一覧 |
 | `/work-time-set <分>` | 現セッションの作業時間を変更 |
 | `/work-time-reset` | 作業時間をデフォルト 5h に戻す |
 | `/session-info` | 現セッションの session.json 整形表示 |
+
+> **廃止済み**: `/cron-register`・`/cron-cancel`・`/cron-list` は v3.2.70 で廃止。  
+> メニュー 14 (`New-CronSchedule.ps1`) から Linux cron を直接管理してください。
 
 ---
 

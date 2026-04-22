@@ -185,6 +185,37 @@ jobs:
             }
           }
 
+      - name: Check No Cloud-Schedule Remnants in Operational Code
+        shell: pwsh
+        run: |
+          # v3.2.70 以降: Cloud Schedule / /schedule / /loop は廃止。
+          # テスト・CHANGELOG・TASKS.md・歴史的ドキュメントは除外。
+          $forbidden = @(
+            '/schedule ClaudeOS',
+            '/loop.*ClaudeOS',
+            'New-CloudSchedule',
+            'RemoteTrigger.*Cloud',
+            'Cloud Schedule.*登録'
+          )
+          $excludePatterns = @('CHANGELOG', 'TASKS.md', 'NewCloudSchedule.Tests', 'New-CloudSchedule.ps1', '.git')
+          $targets = Get-ChildItem -Path . -Recurse -Include '*.ps1','*.md','*.json' -ErrorAction SilentlyContinue |
+            Where-Object {
+              $f = $_.FullName
+              $exclude = $false
+              foreach ($ep in $excludePatterns) { if ($f -match [regex]::Escape($ep)) { $exclude = $true; break } }
+              -not $exclude
+            }
+          $violations = @()
+          foreach ($pattern in $forbidden) {
+            $found = $targets | ForEach-Object { Select-String -Path $_.FullName -Pattern $pattern -ErrorAction SilentlyContinue }
+            if ($found) { $violations += $found }
+          }
+          if ($violations.Count -gt 0) {
+            $violations | ForEach-Object { Write-Host "::error::$($_.Path):$($_.LineNumber): $($_.Line.Trim())" }
+            throw "Cloud Schedule / /loop 系の旧運用コードが $($violations.Count) 件残っています。v3.2.70 方針との矛盾を解消してください。"
+          }
+          Write-Host "OK: Cloud/Loop 残骸なし"
+
   lint-powershell:
     name: PSScriptAnalyzer
     runs-on: windows-latest
