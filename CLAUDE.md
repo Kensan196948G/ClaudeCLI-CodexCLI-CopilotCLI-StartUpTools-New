@@ -15,10 +15,12 @@
 このファイルを読んだ時点で、以下を即座に実行してください。
 ユーザーの最初のメッセージ内容に関わらず、このセクションを最優先で処理します。
 
-### ステップ 1: クラウドスケジュール登録
+### ステップ 1: クラウドスケジュール登録（条件付き）
 
-以下の 4 スケジュールをこの順番で登録してください。
-週6日（月〜土・日曜除く）、1セッション最大 5 時間（300 分）制限で動作します。
+1. /cron list を実行してスケジュール一覧を取得すること
+2. 「ClaudeOS Monitor」が一覧に存在すれば登録済みと判断し、このステップをスキップしてステップ 2 へ進むこと（ユーザーへの確認・報告不要）
+3. 未登録の場合のみ以下を順に実行すること（ユーザー確認禁止）
+   週6日（月〜土・日曜除く）、1セッション最大 5 時間（300 分）制限で動作します。
 
 ```
 /schedule ClaudeOS Monitor every hour Monday through Saturday
@@ -26,8 +28,6 @@
 /schedule ClaudeOS Verify every hour Monday through Saturday
 /schedule ClaudeOS Improvement every hour Monday through Saturday
 ```
-
-4 本すべての登録が完了するまで、通常の開発作業は開始しないでください。
 
 ### ステップ 2: Codex セットアップ
 
