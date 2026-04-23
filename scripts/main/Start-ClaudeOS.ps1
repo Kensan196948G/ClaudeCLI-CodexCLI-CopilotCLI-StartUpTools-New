@@ -197,6 +197,168 @@ function Invoke-StepPlaceholder {
     return @{ Step = $Number; Name = $Name; Status = 'SKIP'; Detail = $Reason }
 }
 
+function Invoke-StepExecutiveInit {
+    param([string]$Root)
+    Write-BootStep 5 'Executive Init'
+    try {
+        $statePath = Join-Path $Root 'state.json'
+        if (-not (Test-Path $statePath)) {
+            Write-Host '  [WARN] state.json not found — using defaults' -ForegroundColor Yellow
+            Write-Host '  Recommended next action: Monitor phase (initial project assessment)' -ForegroundColor Cyan
+            Write-Host ''
+            return @{ Step = 5; Name = 'Executive Init'; Status = 'OK'
+                      Detail = @{ goal = 'unknown'; phase = 'Monitor'; issues = @() } }
+        }
+
+        $state = Get-Content $statePath -Raw -Encoding UTF8 | ConvertFrom-Json -ErrorAction Stop
+        $goal  = if ($state.PSObject.Properties['goal'] -and $state.goal.title)   { $state.goal.title }   else { '(未設定)' }
+        $phase = if ($state.PSObject.Properties['execution'] -and $state.execution.phase) { $state.execution.phase } else { 'Monitor' }
+        $stableAchieved = if ($state.PSObject.Properties['stable']) { $state.stable.stable_achieved } else { $false }
+        $consecutive = if ($state.PSObject.Properties['stable']) { $state.stable.consecutive_success } else { 0 }
+
+        Write-Host ('  Goal       : {0}' -f $goal)  -ForegroundColor White
+        Write-Host ('  Phase      : {0}' -f $phase) -ForegroundColor Cyan
+        Write-Host ('  Stable     : {0} (consecutive={1})' -f $stableAchieved, $consecutive) -ForegroundColor $(if ($stableAchieved) { 'Green' } else { 'Yellow' })
+
+        # GitHub Issues から P1 課題を取得（gh コマンドが使える場合）
+        $p1Issues = @()
+        if (Get-Command gh -ErrorAction SilentlyContinue) {
+            try {
+                $issueJson = & gh issue list --label 'P1' --limit 5 --json number,title,state --state open 2>$null | ConvertFrom-Json -ErrorAction Stop
+                if ($issueJson) { $p1Issues = @($issueJson) }
+            } catch { $null = $_ }
+        }
+
+        if ($p1Issues.Count -gt 0) {
+            Write-Host ''
+            Write-Host ('  P1 Issues ({0}件):' -f $p1Issues.Count) -ForegroundColor Red
+            $p1Issues | ForEach-Object { Write-Host ('    #{0} {1}' -f $_.number, $_.title) -ForegroundColor Yellow }
+            Write-Host '  → P1 未解決のため Build フェーズ優先を推奨' -ForegroundColor Red
+        } else {
+            Write-Host '  P1 Issues : none — Improve or Monitor を推奨' -ForegroundColor Green
+        }
+        Write-Host ''
+
+        return @{
+            Step = 5; Name = 'Executive Init'; Status = 'OK'
+            Detail = @{ goal = $goal; phase = $phase; stable = $stableAchieved; p1Issues = $p1Issues.Count }
+        }
+    }
+    catch {
+        Write-Host ('  [FAIL] Executive Init: {0}' -f $_.Exception.Message) -ForegroundColor Red
+        Write-Host ''
+        return @{ Step = 5; Name = 'Executive Init'; Status = 'FAIL'; Detail = $_.Exception.Message }
+    }
+}
+
+function Invoke-StepManagementInit {
+    param([string]$Root)
+    Write-BootStep 6 'Management Init'
+    try {
+        $statePath = Join-Path $Root 'state.json'
+        if (-not (Test-Path $statePath)) {
+            Write-Host '  [SKIP] state.json not found' -ForegroundColor DarkGray
+            Write-Host ''
+            return @{ Step = 6; Name = 'Management Init'; Status = 'SKIP'; Detail = 'no state.json' }
+        }
+
+        $state = Get-Content $statePath -Raw -Encoding UTF8 | ConvertFrom-Json -ErrorAction Stop
+
+        # improvement セクション確認
+        if ($state.PSObject.Properties['improvement']) {
+            $imp = $state.improvement
+            $lastRun  = if ($imp.PSObject.Properties['stop_doing_last_run'])      { $imp.stop_doing_last_run }      else { '未実行' }
+            $found    = if ($imp.PSObject.Properties['stop_doing_candidates_found']) { $imp.stop_doing_candidates_found } else { 0 }
+            Write-Host ('  Stop-doing review: last={0} candidates={1}' -f $lastRun, $found) -ForegroundColor Cyan
+        }
+
+        # learning セクション確認
+        if ($state.PSObject.Properties['learning']) {
+            $deadWeight = $state.learning.dead_weight
+            $stale = if ($deadWeight -and $deadWeight.PSObject.Properties['candidates_pending_issue']) {
+                @($deadWeight.candidates_pending_issue).Count
+            } else { 0 }
+            Write-Host ('  Dead weight candidates: {0}' -f $stale) -ForegroundColor $(if ($stale -gt 0) { 'Yellow' } else { 'Green' })
+        }
+
+        # GitHub PR / Issue の概況
+        $openPRs = 0; $openIssues = 0
+        if (Get-Command gh -ErrorAction SilentlyContinue) {
+            try {
+                $prs    = & gh pr list --limit 10 --json number --state open 2>$null | ConvertFrom-Json -ErrorAction Stop
+                $issues = & gh issue list --limit 20 --json number --state open 2>$null | ConvertFrom-Json -ErrorAction Stop
+                $openPRs    = if ($prs)    { @($prs).Count }    else { 0 }
+                $openIssues = if ($issues) { @($issues).Count } else { 0 }
+            } catch { $null = $_ }
+        }
+        Write-Host ('  Open PRs  : {0}' -f $openPRs)    -ForegroundColor Cyan
+        Write-Host ('  Open Issues: {0}' -f $openIssues) -ForegroundColor Cyan
+        Write-Host ''
+
+        return @{
+            Step = 6; Name = 'Management Init'; Status = 'OK'
+            Detail = @{ openPRs = $openPRs; openIssues = $openIssues }
+        }
+    }
+    catch {
+        Write-Host ('  [FAIL] Management Init: {0}' -f $_.Exception.Message) -ForegroundColor Red
+        Write-Host ''
+        return @{ Step = 6; Name = 'Management Init'; Status = 'FAIL'; Detail = $_.Exception.Message }
+    }
+}
+
+function Invoke-StepLoopEngineStart {
+    param([string]$Root)
+    Write-BootStep 8 'Loop Engine Start'
+    try {
+        $statePath = Join-Path $Root 'state.json'
+        $phase = 'Monitor'
+        $reason = 'default start'
+
+        if (Test-Path $statePath) {
+            $state = Get-Content $statePath -Raw -Encoding UTF8 | ConvertFrom-Json -ErrorAction Stop
+            $phase = if ($state.PSObject.Properties['execution'] -and $state.execution.phase) {
+                $state.execution.phase } else { 'Monitor' }
+
+            # 前回 CI 状態から開始フェーズを決定
+            if ($state.PSObject.Properties['stable'] -and -not $state.stable.stable_achieved) {
+                $phase = 'Verify'; $reason = 'STABLE未達のため Verify 優先'
+            } elseif ($phase -eq 'Improve' -or $phase -eq 'Improvement') {
+                $phase = 'Monitor'; $reason = '前回 Improve 完了 — Monitor から再開'
+            } else {
+                $reason = 'state.json.execution.phase から継続'
+            }
+
+            # state.json に開始時刻とフェーズを記録（DryRun でなければ）
+            if (-not $DryRun) {
+                try {
+                    $state.execution.phase = $phase
+                    $state.execution.start_time = (Get-Date -Format 'yyyy-MM-ddTHH:mm:ss+09:00')
+                    $json = $state | ConvertTo-Json -Depth 20
+                    $tmp = "$statePath.tmp.$PID"
+                    [System.IO.File]::WriteAllText($tmp, $json + "`n")
+                    Move-Item -Path $tmp -Destination $statePath -Force
+                } catch { $null = $_ }
+            }
+        }
+
+        Write-Host ('  Starting phase  : {0}' -f $phase)  -ForegroundColor Green
+        Write-Host ('  Reason          : {0}' -f $reason) -ForegroundColor Cyan
+        Write-Host '  Loop: Monitor → Build → Verify → Improve (CTO 全権委任)'  -ForegroundColor White
+        Write-Host ''
+
+        return @{
+            Step = 8; Name = 'Loop Engine Start'; Status = 'OK'
+            Detail = @{ phase = $phase; reason = $reason }
+        }
+    }
+    catch {
+        Write-Host ('  [FAIL] Loop Engine Start: {0}' -f $_.Exception.Message) -ForegroundColor Red
+        Write-Host ''
+        return @{ Step = 8; Name = 'Loop Engine Start'; Status = 'FAIL'; Detail = $_.Exception.Message }
+    }
+}
+
 function Invoke-StepAgentInit {
     param([string]$Root)
     Write-BootStep 7 'Agent Init'
@@ -342,13 +504,10 @@ $results += Invoke-StepEnvironmentCheck
 $results += Invoke-StepProjectDetection -Root $ScriptRoot
 $results += Invoke-StepMemoryRestore -Root $ScriptRoot
 $results += Invoke-StepSystemInit
-$results += Invoke-StepPlaceholder -Number 5 -Name 'Executive Init' `
-    -Reason 'Runtime CTO / Strategy Engine is a conceptual layer (Claude itself)'
-$results += Invoke-StepPlaceholder -Number 6 -Name 'Management Init' `
-    -Reason 'Backlog / Scrum Master integration pending'
+$results += Invoke-StepExecutiveInit -Root $ScriptRoot
+$results += Invoke-StepManagementInit -Root $ScriptRoot
 $results += Invoke-StepAgentInit -Root $ScriptRoot
-$results += Invoke-StepPlaceholder -Number 8 -Name 'Loop Engine Start' `
-    -Reason 'Loop orchestration handled by Claude Code /loop harness'
+$results += Invoke-StepLoopEngineStart -Root $ScriptRoot
 
 $summary = Write-BootDashboard -Results $results -Root $ScriptRoot
 

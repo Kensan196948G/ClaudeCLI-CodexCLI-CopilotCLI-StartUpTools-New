@@ -128,10 +128,11 @@ skip 実行時の副作用リスクが「高」の場合はベンチマーク除
 
 （毎週月曜 09:00 JST — 毎月第 1 月曜に限定する場合は `state.json.frontier.last_test_date` の月次チェックで制御）
 
-手動起動:
+手動起動（Linux cron が自動実行。手動実行が必要な場合のみ）:
 
-```
-/loop frontier-test
+```bash
+# Linux サーバーで直接実行
+~/.claudeos/cron-launcher.sh <project> 60
 ```
 
 ---

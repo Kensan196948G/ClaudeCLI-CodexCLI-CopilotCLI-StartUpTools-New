@@ -2,23 +2,151 @@
 
 # CHANGELOG
 
-## [v3.2.68] - 2026-04-22 — ConfigSchema.ps1 ユニットテスト追加 + 完全自立開発対応整備
+## [v3.2.79] - 2026-04-22 — tmux pipe-pane によるログ可視化 / cron-launcher.sh 自動同期
 
 ### 🎯 概要
-`scripts/lib/ConfigSchema.ps1` のユニットテストがゼロだった問題を解消。`Test-IntegerValueInRange`（範囲検証ロジック）、`Test-StartupConfigSchema`（全スキーマ項目の網羅検証）、`Assert-StartupConfigSchema`（ファイルパス受付・例外スロー）を対象に 37 テストケースを追加。  
-あわせて `Claude/templates/claude/settings.json` にフック定義追加、CLAUDE.md のクラウドスケジュール登録を条件付き重複防止対応、`Start-ClaudeCode.ps1` に START_PROMPT.md 自動再ビルド統合を実施。
+`今すぐ実行` ([6]) 後に Watch-ClaudeLog.ps1 タブが空白になり Claude が起動していないように見える問題を修正。原因は `cron-launcher.sh` が Claude を tmux セッション内で起動するため stdout がログファイルに流れていなかったこと。`tmux pipe-pane` を追加して Claude の tmux pane 出力をログファイルに流すよう修正した。合わせて `cron-launcher.sh` の自動 Linux 同期機能を追加。
 
 ### 🔧 変更対象
 | ファイル | 変更内容 |
 |---|---|
-| `tests/unit/ConfigSchema.Tests.ps1` | 新規作成: `Test-IntegerValueInRange` 8件 + `Test-StartupConfigSchema` 25件 + `Assert-StartupConfigSchema` 4件 = 37 テストケース / PSScriptAnalyzer 0警告 |
-| `Claude/templates/claude/settings.json` | PreCompact / SessionStart / Stop フック定義をテンプレートに追加 |
-| `CLAUDE.md` | クラウドスケジュール登録を条件付きに変更（重複防止） |
-| `scripts/main/Start-ClaudeCode.ps1` | Claude 起動前に START_PROMPT.md を instructions/ から自動再ビルド |
+| `Claude/templates/linux/cron-launcher.sh` | `tmux new-session` 直後に `tmux pipe-pane -t "$TMUX_SESSION" -o "cat >> '$LOG_FILE'"` を追加 |
+| `scripts/main/New-CronSchedule.ps1` | `Invoke-SyncLauncher` / `Invoke-SyncLauncherMenu` 追加。`Invoke-CronTest` から自動呼び出し。メニュー `[8] cron-launcher.sh を同期` 追加 |
+
+### 🔑 設計ポイント
+- `tmux pipe-pane -o` の `-o` フラグで pane 出力のみをキャプチャ（入力はキャプチャしない）
+- Claude の ANSI 出力がそのままログファイルに流れるため Windows Terminal の VT100 解釈でカラー表示
+- cron-launcher.sh の同期は START_PROMPT.md と同じ SSH stdin pipe 方式（SCP 非依存）
 
 ### ✅ テスト結果
-- Pester: 768/768 passed (Unit 22 / Integration 11 / Smoke 1)
-- PSScriptAnalyzer 0 warnings
+- 稼働中セッションへの `tmux pipe-pane` 手動適用で cron-20260422-173116.log が 233B → 95KB に増加することを確認
+
+---
+
+## [v3.2.78] - 2026-04-22 — Linux側 START_PROMPT.md 自動同期 / /loop スキルトリガー根本解消
+
+### 🎯 概要
+v3.2.77 で Windows テンプレートを修正したが Linux 側のデプロイ済み `.claude/START_PROMPT.md` が旧版のまま残り `/loop` スキルが引き続きトリガーされていた。`New-CronSchedule.ps1` に `Invoke-SyncStartPrompt` 関数を追加し、cron 登録・今すぐ実行・手動同期の3経路で Linux 側ファイルを最新テンプレートと同期する。また `~/.claude/claudeos/CLAUDE.md` 先頭の `/loop` コマンド行4行を削除（即時適用）。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/main/New-CronSchedule.ps1` | `Invoke-SyncStartPrompt` / `Invoke-SyncMenu` 追加。`Invoke-Register`・`Invoke-EnsureStateJson`・`Invoke-CronTest` から呼び出し。メニュー `[7] START_PROMPT を同期` 追加 |
+| `~/.claude/claudeos/CLAUDE.md` | 先頭4行の `/loop 30m` 等を削除（リポジトリ外・即時適用） |
+
+### 🔑 設計ポイント
+- SSH stdin pipe (`$content | ssh "cat > file"`) で SCP 依存なしにテキストファイルを転送
+- `Invoke-SyncStartPrompt` は `Invoke-EnsureStateJson` が早期 return した場合でも `Invoke-Register` から直接呼ばれるためスキップなし
+- `Invoke-CronTest` での起動前同期により「今すぐ実行」時も常に最新プロンプトを使用
+
+### ✅ テスト結果
+- CI: test-and-validate / PSScriptAnalyzer / Secrets scan — 全 pass
+
+---
+
+## [v3.2.77] - 2026-04-22 — /loop・/schedule スラッシュコマンド参照を除去
+
+### 🎯 概要
+cron 実行時の初回プロンプトに `/loop` スキルが誤起動する問題を修正。`_header.md`・`01-session-startup.md`・`CLAUDE.md`（プロジェクトルート + テンプレート）内のスラッシュコマンド構文を平文に書き換え、`Build-StartPrompt.ps1` で `START_PROMPT.md` を再生成。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `CLAUDE.md` | `/loop` `/schedule` → 平文に書き換え |
+| `Claude/templates/claude/CLAUDE.md` | 同上 |
+| `Claude/templates/claude/instructions/_header.md` | 同上 |
+| `Claude/templates/claude/instructions/01-session-startup.md` | 同上 |
+| `Claude/templates/claude/START_PROMPT.md` | Build-StartPrompt.ps1 で再生成 |
+
+### ✅ テスト結果
+- CI: test-and-validate / PSScriptAnalyzer / Secrets scan / CodeRabbit — 全 pass
+- grep 確認: `/loop` `/schedule` スラッシュ構文なし（ファイルパス参照のみ）
+
+---
+
+## [v3.2.76] - 2026-04-22 — P1-3 ローカル cron レジストリ + P1-7 Agent Teams 使用ログ
+
+### 🎯 概要
+P1-3: CronManager.psm1 にローカルレジストリ機能を追加し、SSH なしで Windows 側から登録済みプロジェクトを参照可能に。P1-7: usage-tracker.js を新規作成し、Agent ツール呼び出しを state.json の learning.usage_history.agents に記録する PostToolUse hook を実装。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/lib/CronManager.psm1` | P1-3: Get-LocalCronRegistry / Add-LocalCronRegistryEntry / Remove-LocalCronRegistryEntry 追加。Add/Remove-ClaudeOSCronEntry から自動呼び出し |
+| `.claude/claudeos/scripts/hooks/usage-tracker.js` | P1-7: 新規作成。Agent ツール呼び出しを検出し learning.usage_history.agents に記録 |
+| `.claude/settings.json` | P1-7: PostToolUse[Agent] hook として usage-tracker.js を登録 |
+| `Claude/templates/claude/settings.json` | P1-7: テンプレートにも同設定を反映 |
+| `tests/unit/CronManager.Tests.ps1` | P1-3: Get-LocalCronRegistry テスト 6件追加 (33 → 39件) |
+| `README.md` | Hooks 構成を 4個に更新（usage-tracker 追加）、バージョン・テスト件数更新 |
+
+### ✅ テスト結果
+- Pester: 776/776 passed (新規 6件含む)
+- PSScriptAnalyzer: Error 0件
+
+---
+
+## [v3.2.75] - 2026-04-22 — P1-2/4/5 state.json 連携強化 + P2-1/2/4 docs 整備
+
+### 🎯 概要
+完全自律開発の継続性を高める state.json 連携を強化。Cron 登録時に state.json を自動生成（P1-2）、cron 起動時に前回フェーズを復元してプロンプトに注入（P1-4）、session-start.js を書き込み対応に昇格（P1-5）。ドキュメント整備として Codex optional 化（P2-2）・README タイムライン図追加（P2-4）・テスト具体化（P2-1）を実施。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/main/New-CronSchedule.ps1` | P1-2: Cron 登録後に Linux 側 state.json を自動生成（未存在時のみ）+ .claude/ 未配備の警告 |
+| `Claude/templates/linux/cron-launcher.sh` | P1-4: state.json から phase / consecutive_success / last_summary を復元し prompt に注入 |
+| `.claude/claudeos/scripts/hooks/session-start.js` | P1-5: current_session_start_at / last_trigger を state.json に atomic 書き込み |
+| `Claude/templates/claude/instructions/_header.md` | P2-2: Codex 必須表記を optional に統一 |
+| `Claude/templates/claude/START_PROMPT.md` | P2-2 反映後に自動再ビルド (906行) |
+| `README.md` | P2-4: Linux cron タイムライン図追加・Hooks 構成実態修正・Boot Sequence 更新 |
+| `tests/integration/StartScripts.Tests.ps1` | P2-1: Step 5/6/8 テストを 3 本に具体化 |
+
+### ✅ テスト結果
+- Pester: 770/770 passed
+- PSScriptAnalyzer: Error 0件
+
+---
+
+## [v3.2.74] - 2026-04-22 — P1-6 Codex optional化 + P2-3 完全自立チェックリスト + P1-1 Boot Sequence Step 5/6/8
+
+### 🎯 概要
+Codex を停止条件から外して optional 化（P1-6）、Linux cron 完全自律実行のための7項目チェックリストを新規作成（P2-3）、Boot Sequence の Step 5/6/8 を [SKIP] から実装済みに昇格（P1-1）。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `CLAUDE.md` / `Claude/templates/claude/CLAUDE.md` | Codex optional 化 |
+| `docs/autonomy-checklist.md` | 新規作成（7項目チェックリスト） |
+| `scripts/main/Start-ClaudeOS.ps1` | Step 5/6/8 実装 |
+
+### ✅ テスト結果
+- Pester: 768/768 passed
+
+---
+
+## [v3.2.73] - 2026-04-22 — P0 完全自律化 Cloud/Loop 残骸撤去 + CI 封鎖 + README 刷新
+
+### 🎯 概要
+/loop・/schedule・Cloud Schedule の残骸をコード・ドキュメント・CI から一掃。メニューを Linux Cron 自律実行中心に刷新。
+
+---
+
+## [v3.2.72] - 2026-04-22 — Architecture Check CRITICAL 1件解消
+
+---
+
+## [v3.2.71] - 2026-04-22 — ArchitectureCheck 偽陽性 CRITICAL 8件 → 0件修正
+
+---
+
+## [v3.2.70] - 2026-04-22 — /loop 残存参照を除去
+
+---
+
+## [v3.2.68] - 2026-04-22 — ConfigSchema.ps1 ユニットテスト追加 + 完全自立開発対応整備
+
+### 🎯 概要
+`Test-IntegerValueInRange` 8件 + `Test-StartupConfigSchema` 25件 + `Assert-StartupConfigSchema` 4件 = 37 テストケース追加。
 
 ---
 

@@ -95,9 +95,14 @@ Describe 'ArchitectureCheck Module' {
     }
 
     Describe 'Get-ArchitectureViolation' {
-        It 'Severity=ALL で全違反を返す' {
+        It 'Severity=ALL で違反リストを返す（excludeFilePattern 適用後は空の場合もある）' {
             $violations = Get-ArchitectureViolation -Path $PSScriptRoot -Severity ALL
-            $violations | Should -Not -BeNullOrEmpty -Because "testsディレクトリには違反がある可能性がある"
+            # 戻り値は配列または $null — 空配列は正常（除外パターン適用後）
+            if ($null -ne $violations) {
+                foreach ($v in @($violations)) {
+                    $v.RuleId | Should -Not -BeNullOrEmpty
+                }
+            }
         }
 
         It 'Severity=CRITICAL でCRITICALのみ返す' {

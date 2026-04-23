@@ -51,6 +51,17 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/claudeos/scripts/hooks/usage-tracker.js"
+          }
+        ]
+      }
     ]
   }
 }

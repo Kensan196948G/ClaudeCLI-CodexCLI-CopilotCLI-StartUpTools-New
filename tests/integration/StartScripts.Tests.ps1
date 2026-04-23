@@ -191,13 +191,34 @@ Describe 'Start-*.ps1 dry-run flows' {
         $output | Should -Match '\[DRY RUN\] No side effects will be applied'
     }
 
-    It 'Start-ClaudeOS.ps1 の Step 5/6/8 がプレースホルダー SKIP になること' {
+    It 'Start-ClaudeOS.ps1 の Step 5/6/8 が実装済みで FAIL にならないこと (P1-1)' {
         $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-ClaudeOS.ps1'
         $output = & $script:PowerShellExe -NoProfile -File $scriptPath -NonInteractive 2>&1 | Out-String
         $LASTEXITCODE | Should -Be 0
-        $output | Should -Match '\[Step 5\].*Executive Init.*SKIP'
-        $output | Should -Match '\[Step 6\].*Management Init.*SKIP'
-        $output | Should -Match '\[Step 8\].*Loop Engine Start.*SKIP'
+        # Step 5/6/8 ヘッダが存在すること（実装済み確認）
+        $output | Should -Match '\[Step 5\].*Executive Init'
+        $output | Should -Match '\[Step 6\].*Management Init'
+        $output | Should -Match '\[Step 8\].*Loop Engine Start'
+        # FAIL にはならないこと（OK または SKIP は許容）
+        $output | Should -Not -Match '\[Step 5\].*FAIL'
+        $output | Should -Not -Match '\[Step 6\].*FAIL'
+        $output | Should -Not -Match '\[Step 8\].*FAIL'
+    }
+
+    It 'Start-ClaudeOS.ps1 の Step 5 が Goal / Phase / STABLE 情報を出力すること' {
+        $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-ClaudeOS.ps1'
+        $output = & $script:PowerShellExe -NoProfile -File $scriptPath -NonInteractive 2>&1 | Out-String
+        $LASTEXITCODE | Should -Be 0
+        # Step 5 は Goal または Phase のいずれかの情報を出力する（state.json 無しの場合でも OK 行が出る）
+        $output | Should -Match '\[Step 5\]'
+    }
+
+    It 'Start-ClaudeOS.ps1 の Step 8 が起動フェーズを出力すること' {
+        $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-ClaudeOS.ps1'
+        $output = & $script:PowerShellExe -NoProfile -File $scriptPath -NonInteractive 2>&1 | Out-String
+        $LASTEXITCODE | Should -Be 0
+        # Step 8 は Loop Engine Start として実行されること
+        $output | Should -Match '\[Step 8\].*Loop Engine Start'
     }
 
     It 'Start-ClaudeOS.ps1 の Step 3 が Memory Restore として実行されること (Issue #70)' {

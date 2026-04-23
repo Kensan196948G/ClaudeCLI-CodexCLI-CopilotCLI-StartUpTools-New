@@ -66,11 +66,10 @@ Goal解析 → KPI確認 → 優先順位AI判定 → Issue自動生成 → GitH
 |---|---|
 | Monitor | 10% |
 | Development | 35% |
-| Verify | 20% |
-| Improvement | 10% |
-| Debug | 15% |
-| IssueFactory | 5% |
-| Release | 5% |
+| Verify | 25% |
+| Improvement | 15% |
+| Debug/Repair | 10% |
+| Release/Report | 5% |
 
 | Token消費率 | 対応 |
 |---|---|
@@ -94,6 +93,7 @@ Goal解析 → KPI確認 → 優先順位AI判定 → Issue自動生成 → GitH
 以下すべてを満たすこと：
 
 - test success
+- lint success
 - build success
 - CI success
 - review OK

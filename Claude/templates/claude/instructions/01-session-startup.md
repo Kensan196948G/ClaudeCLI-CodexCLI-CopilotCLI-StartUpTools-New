@@ -1,20 +1,19 @@
 # セッション開始・前提条件
 
-## LOOP_COMMANDS
-ループ登録チェック（必須）：
-1. /cron list を実行してスケジュール一覧を取得すること
-2. 「ClaudeOS Monitor」が一覧に存在すれば登録済みと判断し、このステップを完全にスキップして直ちに Codex セットアップへ進むこと（ユーザーへの確認・報告不要）
-3. 未登録の場合のみ以下を順に実行すること（ユーザー確認禁止・停止禁止）
-4. 登録完了後は直ちに Codex セットアップへ進むこと
+## セッション開始処理
 
-/loop 30m    ClaudeOS Monitor
-/loop 120m   ClaudeOS Development
-/loop 60m　  ClaudeOS Verify
-/loop 60m　  ClaudeOS Improvement
+自律実行は Linux cron（月〜土、プロジェクト別スケジュール・300分制限）が担う。
+セッション開始時に loop や schedule コマンドの登録は不要。
 
-## Codex統合（必須）
+## Codex統合（任意・推奨）
 
-本環境では Codex Plugin がインストール済みであることを前提とする。
+Codex Plugin が利用可能な場合のみ実行する。**使えない場合でも開発を止めない。**
+
+| 状態 | 対応 |
+|---|---|
+| Codex 認証済み | review 強化レイヤーとして積極活用 |
+| Codex 未認証 | このセクションをスキップして実行方針へ進む |
+| Codex エラー | エラーを記録して Claude 単独で継続 |
 
 - `codex-plugin-cc`
 - `/codex:*` コマンド利用可能

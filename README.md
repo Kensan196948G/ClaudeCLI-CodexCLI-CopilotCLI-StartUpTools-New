@@ -7,8 +7,8 @@
 > **📌 v3.1.0 で Claude Code 専用ツールに整理**
 > v3.1.0 より、Codex CLI / GitHub Copilot CLI の起動メニュー (S2/S3/L2/L3) は削除されました。本ツールは **Claude Code 専用の自律開発ランチャー** として位置づけを明確化し、Linux crontab 連携・セッション情報タブ・Statusline グローバル適用などの新機能に投資が集中しています。
 
-> **🧪 v3.2.68 — ConfigSchema.ps1 ユニットテスト追加 + 完全自立開発対応整備**
-> `Test-IntegerValueInRange` 8件 + `Test-StartupConfigSchema` 25件 + `Assert-StartupConfigSchema` 4件 = 37 テストケースを新規追加。settings.json テンプレートにフック定義追加 / CLAUDE.md スケジュール条件付き登録対応。v3.2.67: RecentProjects.ps1 ユニットテスト 17件追加。詳細は [`CHANGELOG.md`](./CHANGELOG.md) を参照。
+> **🧪 v3.2.67 — RecentProjects.ps1 ユニットテスト追加**
+> `Get-RecentProject` 9件 + `Update-RecentProject` 4件 + `Test-RecentProjectsEnabled` 3件 = 17 テストケースを新規追加。v3.2.66: WorktreeManager.psm1 テストカバレッジ拡充 14件。詳細は [`CHANGELOG.md`](./CHANGELOG.md) を参照。
 
 > **📨 v3.2.0 — Cron HTML メールレポート (Visual Recap Mail)**
 > Cron で起動された ClaudeCode セッションの完了時に、**HTML 形式のレポートメール** を Gmail SMTP 経由で送信。アイコン+色付き表組み+実行サマリ(Monitor/Development/Verify/Improvement の出現回数/エラー検出/STABLE 達成)+次フェーズ提案を含む。送信先は `CLAUDEOS_DEFAULT_TO`(未設定時 `CLAUDEOS_SMTP_USER`)で指定し、SMTP 認証情報は `~/.env-claudeos` の Linux 環境変数で管理(config.json には書かない設計)。詳細は [`docs/common/16_HTMLメールレポート設定.md`](./docs/common/16_HTMLメールレポート設定.md) を参照。
@@ -27,14 +27,14 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.2.68** (ConfigSchema.ps1 ユニットテスト 37件追加 + 完全自立開発対応整備) — 旧: v3.2.67 (RecentProjects.ps1 ユニットテスト 17件追加) |
-| テスト | **768件** — Pester (Unit 22 / Integration 11 / Smoke 1) |
+| バージョン | **v3.2.79** (tmux pipe-pane ログ可視化 / cron-launcher.sh 自動同期) — 旧: v3.2.78 |
+| テスト | **776件** — Pester (Unit 21 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |
 | Agents | **25体** の特化サブエージェント (2026Q2 棚卸し後、追加復元済み) |
 | Skills | **0個** — Claude Opus 4.6 内包能力で代替可能な汎用スキルを棚卸しで全削除 |
 | Hooks | **4個** — agent-risk-check / capture-result / onboarding-refresh / usage-history-recorder |
-| Boot Sequence | `Start-ClaudeOS.ps1` (Step 3 Memory/Step 7 Agent Init/Step 9 Dashboard 実装完了) ✅ |
+| Boot Sequence | `Start-ClaudeOS.ps1` (Step 3 Memory/Step 5 Executive Init/Step 6 Management Init/Step 7 Agent Init/Step 8 Loop Engine Start/Step 9 Dashboard 実装完了) ✅ |
 
 ### Agent Teams 対応レベル (Claude Code 専用)
 
@@ -72,12 +72,14 @@
 
 ### Hooks 構成 (4個)
 
-| Hook | 種別 | 機能 |
-|------|------|------|
-| `agent-risk-check` | PreToolUse | Bash/Edit/Write 操作前に第 2 の Claude が SAFE/CAUTION/BLOCK 判定 |
-| `capture-result` | PostToolUse | 主要ツール結果を後続フック向けに正規化 |
-| `usage-history-recorder` | PostToolUse | Agent/Skill/Command/Hook 呼び出し履歴を state.json に記録 |
-| `onboarding-refresh-on-stable` | PostToolUse | STABLE 判定到達時に ONBOARDING.md を自動更新 |
+> `.claude/settings.json` の `hooks` セクションに登録済み。スクリプト本体は `.claude/claudeos/scripts/hooks/` に配置。
+
+| Hook | 種別 | スクリプト | 機能 |
+|------|------|-----------|------|
+| `session-start` | SessionStart | `session-start.js` | state.json から前回フェーズ・STABLE状態を読み込み表示。`current_session_start_at` と trigger (cron/manual) を書き込み |
+| `pre-compact` | PreCompact | `pre-compact.js` | compact 直前に state.json へタイムスタンプを記録 |
+| `session-end` | Stop | `session-end.js` | `last_stop_at` を state.json へ書き込み後、STABLE 通知を実行 |
+| `usage-tracker` | PostToolUse (Agent) | `usage-tracker.js` | Agent ツール呼び出しを検出し `learning.usage_history.agents` へ使用実績を記録 |
 
 ### Skills 構成
 
@@ -93,7 +95,7 @@
 | 動詞 | コマンド | 目的 |
 |---|---|---|
 | **lint** | `Invoke-ScriptAnalyzer -Path . -Recurse -Severity Error` | PSScriptAnalyzer による静的解析（Error 粒度で CI ゲート、Warning は非ブロッキング） |
-| **test** | `Invoke-Pester .\tests -CI` | Pester 全テスト（現在 768 件 / Unit + Integration + Smoke）。`-CI` で `testResults.xml` 生成 |
+| **test** | `Invoke-Pester .\tests -CI` | Pester 全テスト（現在 680 件 / Unit + Integration + Smoke）。`-CI` で `testResults.xml` 生成 |
 | **build** | `.\scripts\main\Start-ClaudeOS.ps1 -DryRun` | ブートシーケンス検証（Step 1 〜 9 を実行せず設定のみ確認） |
 | **security** | `.\scripts\test\Test-McpHealth.ps1` + `gitleaks detect --source .`（CI と同等目的） | MCP サーバーヘルス + secret 漏洩スキャン（CI では [`security-scan.yml`](./.github/workflows/security-scan.yml) が gitleaks 実行） |
 
@@ -110,22 +112,23 @@ graph TD
     A["start.bat"] --> B["Start-Menu.ps1"]
     B --> C["Start-ClaudeCode.ps1"]
     B --> F["Start-All.ps1"]
-    B --> NCS["☁️ New-CloudSchedule.ps1"]
-    B --> SSL["🆕 Set-Statusline.ps1"]
+    B --> NCS["🕐 New-CronSchedule.ps1\n(Linux cron 登録・管理)"]
+    B --> SSL["Set-Statusline.ps1"]
     B --> G["Test-AllTools.ps1"]
 
+    CRON["Linux cron\n(月〜土 / プロジェクト別 / 300分)"] --> CL["cron-launcher.sh"]
+    CL --> |"claude --dangerously-skip-permissions"| CLAUDE["Claude Code\n自律開発セッション"]
+    NCS --> CRON
+
     C --> J{"Local or SSH?"}
-    C --> SIT["🆕 Show-SessionInfoTab.ps1"]
+    C --> SIT["Show-SessionInfoTab.ps1"]
     SIT --> WT["wt.exe new-tab"]
-    WT --> WSI["🆕 Watch-SessionInfo.ps1"]
+    WT --> WSI["Watch-SessionInfo.ps1"]
     WSI --> SJ["session.json (1s poll)"]
 
-    J -->|Local| K["projectsDir"]
+    J -->|Local| K["projectsDir\n(手動セッション)"]
     J -->|SSH| L["linuxHost via SSH"]
     L --> M["claude_pty_bridge.py"]
-
-    NCS --> RT["RemoteTrigger API (claude.ai)"]
-    RT --> CS["☁️ Cloud Schedule (Mon-Sat, 1h+, 300min)"]
 
     C --> PLD["Pre-Launch Diagnostics"]
     PLD --> MCP_CHK["MCP Health Check"]
@@ -176,7 +179,46 @@ graph LR
     end
 ```
 
-## 自律開発フロー
+## Linux cron 完全自律実行 — セットアップから自律ループまでのフロー
+
+```mermaid
+flowchart TD
+    subgraph "Windows 側 (初回セットアップ)"
+        W1["🖥 start.bat"] --> W2["Start-Menu.ps1\n[14] Cron 登録"]
+        W2 --> W3["New-CronSchedule.ps1\nプロジェクト選択 / 曜日 / 時刻"]
+        W3 --> W4["🔑 SSH → Linux crontab 登録"]
+        W3 --> W5["📄 state.json 自動生成\n(未存在時のみ)"]
+    end
+
+    subgraph "Linux 側 (自律実行)"
+        L1["⏰ cron 発火\n(月〜土 / プロジェクト別)"] --> L2["cron-launcher.sh"]
+        L2 --> L3["state.json 読み込み\n前回 phase / consecutive 復元"]
+        L3 --> L4["START_PROMPT.md 読み込み\n復元情報を先頭に注入"]
+        L4 --> L5["claude --dangerously-skip-permissions\n(timeout 300m)"]
+    end
+
+    subgraph "Claude セッション (300分)"
+        C1["🔍 Monitor\n30m"] --> C2["🛠 Build\n120m"]
+        C2 --> C3["✅ Verify\n75m"]
+        C3 --> C4["🚀 Improve\n75m"]
+        C4 -->|STABLE未達| C2
+        C4 -->|STABLE達成| C5["📦 PR → Merge"]
+        C3 -->|CI失敗| C6["🔧 Auto Repair"]
+        C6 --> C3
+    end
+
+    subgraph "セッション終了"
+        E1["session-end.js\nlast_stop_at 更新"] --> E2["report-and-mail.py\nHTML メール送信"]
+        E2 --> E3["次回 cron まで待機"]
+    end
+
+    W4 --> L1
+    L5 --> C1
+    C5 --> E1
+    C4 --> E1
+```
+
+## 自律開発ループ詳細
 
 ```mermaid
 flowchart LR
@@ -228,7 +270,7 @@ flowchart TD
 | 🐍 PTY Bridge | 🔧 共通 | SSH経由の Claude Code 操作を堅牢にサポート |
 | ⚙️ 一元設定 | 🔧 共通 | `config/config.json` で対応ツールを一元管理 |
 | 🩺 診断ツール | 🔧 共通 | `Test-AllTools.ps1` で環境を一括チェック |
-| ⚡ CI/CD | 🔧 共通 | GitHub Actions による自動テスト (Pester 768件 — 34 test files) |
+| ⚡ CI/CD | 🔧 共通 | GitHub Actions による自動テスト (Pester 680件 — 29 test files) |
 | 🧠 ClaudeOS カーネル | ⭐ Claude 専用 | 25体のエージェント + 4フック + 34コマンド |
 | 🔌 MCP ヘルスチェック | ⭐ Claude 専用 | `McpHealthCheck.psm1` で4サーバーの起動・接続・状態診断 |
 | 🤖 Agent Teams ランタイム | ⭐ Claude 専用 | `AgentTeams.psm1` でタスク分析→Team自動構成→能力マトリクス→可視化 |
@@ -302,8 +344,8 @@ start.bat
 
 | メニュー | 説明 |
 |----------|------|
-| `S1` | Claude Code を SSH 起動 (自動で Session Info タブも生成) |
-| `L1` | Claude Code をローカル起動 (自動で Session Info タブも生成) |
+| `S1` | Claude Code を SSH 起動 **[Linux cron 自律実行 / 5h セッション]** |
+| `L1` | Claude Code をローカル起動 **[手動セッション / スケジューラ不要]** |
 | `5` | ツール確認・診断 |
 | `6` | ドライブマッピング診断 |
 | `7` | Windows Terminal セットアップ |
@@ -311,10 +353,13 @@ start.bat
 | `9` | Agent Teams ランタイム |
 | `10` | Worktree Manager |
 | `11` | Architecture Check |
-| `12` | ☁️ Cloud スケジュール 登録・削除・実行 (Anthropic Cloud Schedule — 週6日・最大5h・プロジェクト別管理 — v3.2.57) |
-| `13` | 🆕 Statusline 設定 (グローバル `~/.claude/settings.json` を Linux に一括適用) |
+| `12` | Statusline 設定 (グローバル `~/.claude/settings.json` を Linux に一括適用) |
+| `13` | Claude ログ監視タブを開く |
+| `14` | 🕐 Cron スケジュール 登録・編集・削除 **[SSH / Linux cron / 5h 強制終了]** |
+| `15` | Linux セッション状態監視 **[SSH / リアルタイム cron 実行状況]** |
 
-> **v3.1.0 変更**: `S2` / `S3` / `L2` / `L3` (Codex CLI / GitHub Copilot CLI) は削除されました。
+> **自律実行方式**: Linux cron（月〜土 / プロジェクト別 / 300分）が唯一の起動トリガです。  
+> **v3.2.70 変更**: Cloud Schedule / `/loop` / `/schedule` は廃止。`New-CronSchedule.ps1`（メニュー14）で Linux cron を直接管理します。
 
 ### PowerShell から直接起動
 
@@ -323,9 +368,9 @@ start.bat
 .\scripts\main\Start-All.ps1
 .\scripts\main\Start-ClaudeCode.ps1 -Project "my-project"
 
-# v3.1.0 新機能 🆕
-.\scripts\main\New-CloudSchedule.ps1         # メニュー 12: Cloud スケジュール 登録・削除・実行
-.\scripts\main\Set-Statusline.ps1            # メニュー 13: Statusline グローバル適用
+# Linux Cron 自律実行管理（SSH専用）
+.\scripts\main\New-CronSchedule.ps1         # メニュー 14: Cron スケジュール 登録・編集・削除
+.\scripts\main\Set-Statusline.ps1            # メニュー 12: Statusline グローバル適用
 .\scripts\main\Show-SessionInfoTab.ps1 -SessionId <sid>  # 情報タブを手動で開く
 
 # ClaudeOS Boot Sequence (MVP)
@@ -334,17 +379,9 @@ start.bat
 .\scripts\main\Start-ClaudeOS.ps1 -NonInteractive    # CI / 自動実行向け
 ```
 
-### 🆕 v3.1.0 新機能の概要
+### 🕐 Linux Cron 自律実行（v3.2.70 正式運用）
 
-#### メニュー 12: Cloud スケジュール 登録・削除・実行 (v3.2.57)
-
-Anthropic Cloud Schedule (RemoteTrigger API) でプロジェクトごとの自律開発ループを永続管理します。セッション終了後も継続稼働します。
-
-- **動作条件**: 週6日（月〜土）/ 1セッション最大5時間 / API最小間隔1時間
-- **標準ループ**: Monitor (1h) / Development (2h) / Verify (1h) / Improvement (1h) — Mon-Sat
-- **プロジェクト別管理**: 起動時にプロジェクト選択 UI を表示。`[P]` キーでセッション中に切り替え可能
-- **操作**: `[1]`一覧 / `[2]`個別登録 / `[3]`4ループ一括登録 / `[4]`削除・全削除 / `[5]`即時実行
-- `New-CronSchedule.ps1` (旧 Linux crontab 方式) は後方互換のため保持
+Linux cron（メニュー 14 / `New-CronSchedule.ps1`）でプロジェクトごとの自律開発セッションを管理します。
 
 #### Session Info タブ (Windows Terminal)
 
@@ -365,12 +402,12 @@ Windows 側 `~/.claude/settings.json` の `statusLine` セクションを Linux 
 
 | Command | 用途 |
 |---------|------|
-| `/cron-register` | (旧) ClaudeCode 内から Linux crontab 新規登録 |
-| `/cron-cancel [id|all]` | (旧) Linux crontab Cron 解除 |
-| `/cron-list` | (旧) Linux crontab 登録済みエントリ一覧 |
 | `/work-time-set <分>` | 現セッションの作業時間を変更 |
 | `/work-time-reset` | 作業時間をデフォルト 5h に戻す |
 | `/session-info` | 現セッションの session.json 整形表示 |
+
+> **廃止済み**: `/cron-register`・`/cron-cancel`・`/cron-list` は v3.2.70 で廃止。  
+> メニュー 14 (`New-CronSchedule.ps1`) から Linux cron を直接管理してください。
 
 ---
 
@@ -504,7 +541,7 @@ scripts/helpers/     PTY bridge 等のヘルパー
 scripts/templates/   各ツール向けテンプレート
 scripts/test/        診断スクリプト
 scripts/tools/       TASKS同期・バックログ管理
-tests/               Pester テスト (34 files / 768件 — Unit 22 / Integration 11 / Smoke 1)
+tests/               Pester テスト (33 files / 731件 — Unit 21 / Integration 11 / Smoke 1)
 Claude/              ClaudeOS 互換ポリシー群
 Codex/               Codex AGENTS.md
 .claude/claudeos/    ClaudeOS カーネル（198ファイル、配備先 — 編集元は Claude/templates/claudeos/）

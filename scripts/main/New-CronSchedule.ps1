@@ -60,6 +60,8 @@ function Show-CronMenu {
     Write-Host "    [4] 削除 (ID 指定)" -ForegroundColor Yellow
     Write-Host "    [5] 全解除" -ForegroundColor Yellow
     Write-Host "    [6] 今すぐ実行" -ForegroundColor Green
+    Write-Host "    [7] START_PROMPT を同期" -ForegroundColor Cyan
+    Write-Host "    [8] cron-launcher.sh を同期" -ForegroundColor Cyan
     Write-Host "    [0] 戻る" -ForegroundColor Gray
     Write-Host ""
 }
@@ -141,43 +143,121 @@ function Invoke-Register {
         $entry = Add-ClaudeOSCronEntry -LinuxHost $LinuxHost -Project $project -DayOfWeek $dow -Time $time -DurationMinutes $duration
         Write-Host ""
         Write-Host "  [OK] Cron エントリを登録しました: ID=$($entry.Id)" -ForegroundColor Green
+        Write-Host "  Linux cron が月〜土 / プロジェクト別 / 300分で自律実行します。" -ForegroundColor DarkGreen
 
-        # ─── Cloud Schedule にも同期登録 ───
-        Write-Host ""
-        Write-Host "  Cloud Schedule (Anthropic クラウド) にも同期しますか?" -ForegroundColor Cyan
-        Write-Host "  ※ Cloud Schedule は永続動作 / Cron は 5h 強制終了の補完" -ForegroundColor DarkGray
-        $syncChoice = Read-Host "  Cloud Schedule に登録する? [y/N]"
-        if ($syncChoice -match '^[yY]') {
-            $cloudScript = Join-Path $ScriptRoot 'scripts\main\New-CloudSchedule.ps1'
-            if (Test-Path $cloudScript) {
-                # GitHub owner を git remote から取得
-                $owner = ''
-                try {
-                    $rawUrl = (& git remote get-url origin 2>$null) -join ''
-                    if ($rawUrl -match 'github\.com[:/]([^/]+)/') { $owner = $matches[1] }
-                } catch { $null = $_ } # git remote failure is non-fatal
-
-                $githubUrl = if ($owner) { "https://github.com/$owner/$project" } else { '' }
-
-                if ([string]::IsNullOrWhiteSpace($githubUrl)) {
-                    $githubUrl = (Read-Host "  GitHub URL を入力 (例: https://github.com/user/$project)").Trim()
-                }
-
-                if (-not [string]::IsNullOrWhiteSpace($githubUrl)) {
-                    Write-Host "  [Cloud] $githubUrl を QuickSetup で登録中..." -ForegroundColor Cyan
-                    $psExe = (Get-Process -Id $PID).Path
-                    & $psExe -NoProfile -ExecutionPolicy Bypass -File $cloudScript -RepoUrl $githubUrl -QuickSetup
-                } else {
-                    Write-Host "  [SKIP] GitHub URL が空のため Cloud Schedule 登録をスキップしました。" -ForegroundColor Yellow
-                }
-            } else {
-                Write-Host "  [WARN] New-CloudSchedule.ps1 が見つかりません。" -ForegroundColor Yellow
-            }
-        }
+        # P1-2: state.json が存在しない場合は自動生成
+        Invoke-EnsureStateJson -Project $project
+        # START_PROMPT.md を最新テンプレートで同期（Invoke-EnsureStateJson 未呼出し時のフォールバック）
+        Invoke-SyncStartPrompt -Project $project
     }
     catch {
         Write-Host "  [ERROR] $($_.Exception.Message)" -ForegroundColor Red
     }
+}
+
+function Invoke-EnsureStateJson {
+    param([string]$Project)
+    $sshExe    = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { 'ssh' }
+    $base      = $Config.linuxBase
+    $stateFile = "$base/$Project/state.json"
+    $claudeDir = "$base/$Project/.claude"
+
+    # state.json 存在確認
+    $exists = & $sshExe -T -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMaster=no `
+        $LinuxHost "test -f '$stateFile' && echo yes || echo no" 2>$null
+    if ($exists -eq 'yes') {
+        Write-Host "  [state.json] 既存ファイルを確認しました — 変更なし" -ForegroundColor DarkGray
+        return
+    }
+
+    Write-Host "  [state.json] 未検出 — 最小構成を生成中..." -ForegroundColor Cyan
+    $minimalState = @"
+{
+  "goal": { "title": "$Project 自律開発" },
+  "kpi": { "success_rate_target": 0.9 },
+  "execution": {
+    "max_duration_minutes": $duration,
+    "phase": "Monitor",
+    "auto_stop_threshold": 5,
+    "graceful_shutdown": true,
+    "last_session_summary": ""
+  },
+  "stable": { "consecutive_success": 0, "target_n": 3, "stable_achieved": false },
+  "automation": { "auto_issue_generation": true, "self_evolution": true }
+}
+"@
+    $escapedState = $minimalState.Replace("'", "'\''")
+    & $sshExe -T -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMaster=no `
+        $LinuxHost "mkdir -p '$base/$Project' && printf '%s' '$escapedState' > '$stateFile'" 2>$null
+    Write-Host "  [state.json] 生成完了: $stateFile" -ForegroundColor Green
+
+    # .claude/ ディレクトリを確保し START_PROMPT.md を同期
+    & $sshExe -T -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMaster=no `
+        $LinuxHost "mkdir -p '$claudeDir'" 2>$null
+    Invoke-SyncStartPrompt -Project $Project
+}
+
+function Invoke-SyncStartPrompt {
+    param([string]$Project)
+
+    $localFile = Join-Path $ScriptRoot 'Claude\templates\claude\START_PROMPT.md'
+    if (-not (Test-Path $localFile)) {
+        Write-Host "  [START_PROMPT] テンプレートが見つかりません: $localFile" -ForegroundColor Yellow
+        return
+    }
+
+    $base       = $Config.linuxBase
+    $claudeDir  = "$base/$Project/.claude"
+    $remoteFile = "$claudeDir/START_PROMPT.md"
+    $sshExe     = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { 'ssh' }
+    $sshOpts    = @('-T', '-o', 'ConnectTimeout=10', '-o', 'StrictHostKeyChecking=accept-new', '-o', 'ControlMaster=no')
+
+    # .claude/ ディレクトリを作成（存在しない場合）
+    & $sshExe @sshOpts $LinuxHost "mkdir -p '$claudeDir'" 2>$null
+
+    # ファイル内容を stdin pipe 経由で転送（SCP 非依存）
+    $content = (Get-Content $localFile -Raw -Encoding UTF8) -replace "`r`n", "`n"
+    $content | & $sshExe @sshOpts $LinuxHost "cat > '$remoteFile'"
+
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "  [START_PROMPT] Linux に同期しました: $remoteFile" -ForegroundColor Green
+    } else {
+        Write-Host "  [START_PROMPT] 同期失敗 (exit=$LASTEXITCODE) — 手動で配備してください" -ForegroundColor Red
+    }
+}
+
+function Invoke-SyncMenu {
+    $project = Select-Project
+    if ([string]::IsNullOrWhiteSpace($project)) { return }
+    Write-Host ""
+    Invoke-SyncStartPrompt -Project $project
+}
+
+function Invoke-SyncLauncher {
+    $localFile = Join-Path $ScriptRoot 'Claude\templates\linux\cron-launcher.sh'
+    if (-not (Test-Path $localFile)) {
+        Write-Host "  [LAUNCHER] テンプレートが見つかりません: $localFile" -ForegroundColor Yellow
+        return
+    }
+    $sshExe  = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { 'ssh' }
+    $sshOpts = @('-T', '-o', 'ConnectTimeout=10', '-o', 'StrictHostKeyChecking=accept-new', '-o', 'ControlMaster=no')
+    $claudeosDir = '/home/kensan/.claudeos'
+    & $sshExe @sshOpts $LinuxHost "mkdir -p '$claudeosDir'" 2>$null
+    $content = (Get-Content $localFile -Raw -Encoding UTF8) -replace "`r`n", "`n"
+    $content | & $sshExe @sshOpts $LinuxHost "cat > '$claudeosDir/cron-launcher.sh' && chmod +x '$claudeosDir/cron-launcher.sh'"
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "  [LAUNCHER] Linux に同期しました: $claudeosDir/cron-launcher.sh" -ForegroundColor Green
+    } else {
+        Write-Host "  [LAUNCHER] 同期失敗 (exit=$LASTEXITCODE) — 手動で配備してください" -ForegroundColor Red
+    }
+}
+
+function Invoke-SyncLauncherMenu {
+    Write-Host ""
+    Write-Host "  cron-launcher.sh を Linux へ同期します" -ForegroundColor Cyan
+    $confirm = Read-Host "  実行しますか? [y/N]"
+    if ($confirm -ne 'y' -and $confirm -ne 'Y') { return }
+    Invoke-SyncLauncher
 }
 
 function Invoke-List {
@@ -298,6 +378,13 @@ function Invoke-CronTest {
         return
     }
 
+    # 起動前に START_PROMPT.md と cron-launcher.sh を最新テンプレートで同期
+    Write-Host ""
+    Write-Host "  [同期中] START_PROMPT.md を Linux へ転送..." -ForegroundColor Cyan
+    Invoke-SyncStartPrompt -Project $project
+    Write-Host "  [同期中] cron-launcher.sh を Linux へ転送..." -ForegroundColor Cyan
+    Invoke-SyncLauncher
+
     # SSH でバックグラウンド起動 (nohup で SSH 切断後も継続)
     $sshExe    = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { 'ssh' }
     $sshTarget = "${LinuxUser}@${LinuxHost}"
@@ -352,6 +439,8 @@ while ($true) {
         '4' { Invoke-Remove; Read-Host "  Enter で戻ります" | Out-Null }
         '5' { Invoke-RemoveAll; Read-Host "  Enter で戻ります" | Out-Null }
         '6' { Invoke-CronTest; Read-Host "  Enter で戻ります" | Out-Null }
+        '7' { Invoke-SyncMenu; Read-Host "  Enter で戻ります" | Out-Null }
+        '8' { Invoke-SyncLauncherMenu; Read-Host "  Enter で戻ります" | Out-Null }
         '0' { exit 0 }
         default {
             Write-Host "  無効な入力" -ForegroundColor Red
