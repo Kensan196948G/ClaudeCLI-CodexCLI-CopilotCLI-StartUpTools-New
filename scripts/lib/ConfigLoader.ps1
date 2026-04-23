@@ -164,7 +164,7 @@ function Backup-ConfigFile {
         Write-Host "[INFO]  設定バックアップ作成: $backupFile" -ForegroundColor Cyan
 
         $pattern = "${baseName}_*${ext}"
-        $backups = Get-ChildItem -Path $BackupDir -Filter $pattern | Sort-Object LastWriteTime -Descending
+        $backups = @(Get-ChildItem -Path $BackupDir -Filter $pattern | Sort-Object LastWriteTime -Descending)
         if ($backups.Count -gt $MaxBackups) {
             $toDelete = $backups | Select-Object -Skip $MaxBackups
             foreach ($old in $toDelete) {

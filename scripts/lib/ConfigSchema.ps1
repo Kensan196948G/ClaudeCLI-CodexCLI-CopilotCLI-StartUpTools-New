@@ -238,7 +238,7 @@ function Assert-StartupConfigSchema {
         throw "config.jsonのJSONパースに失敗しました: $_"
     }
 
-    $errors = Test-StartupConfigSchema -Config $config
+    $errors = @(Test-StartupConfigSchema -Config $config)
     if ($errors.Count -gt 0) {
         throw ($errors -join "`n")
     }
