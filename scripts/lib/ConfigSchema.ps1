@@ -1,7 +1,6 @@
 ﻿# ============================================================
 # ConfigSchema.ps1 - 設定スキーマ定義・検証
 # ============================================================
-Set-StrictMode -Version Latest
 
 # Required field definitions (script scope — shared with dot-sourced siblings)
 $script:RequiredFields = @('version', 'linuxHost', 'tools')

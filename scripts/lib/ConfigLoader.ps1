@@ -2,7 +2,6 @@
 # ConfigLoader.ps1 - 設定ファイル読み込み・バックアップ
 # Depends on: ConfigSchema.ps1 (dot-sourced first in Config.psm1)
 # ============================================================
-Set-StrictMode -Version Latest
 
 <#
 .SYNOPSIS
