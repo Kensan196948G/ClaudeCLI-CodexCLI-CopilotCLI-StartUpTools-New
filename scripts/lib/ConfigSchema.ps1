@@ -58,6 +58,11 @@ function Test-StartupConfigSchema {
         [object]$Config
     )
 
+    # Normalize Hashtable inputs to PSCustomObject so PSObject.Properties works uniformly
+    if ($Config -is [System.Collections.Hashtable]) {
+        $Config = $Config | ConvertTo-Json -Depth 20 | ConvertFrom-Json
+    }
+
     $errors = [System.Collections.Generic.List[string]]::new()
 
     foreach ($field in $script:TemplateRequiredFields) {
