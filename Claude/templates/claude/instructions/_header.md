@@ -44,4 +44,7 @@ Codex が利用可能な場合のみ実行する。**Codex が使えなくても
 Auto Mode による自律開発を実行してください。
 全項目 ✅ を確認してから Monitor フェーズを開始すること。
 
+**設定された時間内で Monitor → Development → Verify → Improvement をループ（ループ回数は CTO 判断で OK）で進めてください。**
+ループ回数は KPI 状態・CI 状態・進捗により動的に決定する。
+
 ---

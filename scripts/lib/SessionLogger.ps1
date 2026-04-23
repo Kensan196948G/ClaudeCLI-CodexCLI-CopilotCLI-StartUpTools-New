@@ -4,6 +4,7 @@
     Handles execution context tracking, JSONL log writes, and WinMM audio playback.
     Dot-sourced by LauncherCommon.psm1 for backward compatibility.
 #>
+Set-StrictMode -Version Latest
 
 <#
 .SYNOPSIS

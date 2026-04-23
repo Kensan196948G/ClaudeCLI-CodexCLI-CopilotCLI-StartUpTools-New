@@ -1,6 +1,7 @@
 ﻿# ============================================================
 # AgentDefinition.ps1 - エージェント定義・ローダー・タスク分析
 # ============================================================
+Set-StrictMode -Version Latest
 
 # Core role definitions (script scope — shared with dot-sourced siblings)
 $script:CoreRoles = @(

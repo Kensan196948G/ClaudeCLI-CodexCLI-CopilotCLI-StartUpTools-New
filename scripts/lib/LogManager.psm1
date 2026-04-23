@@ -2,6 +2,7 @@
 # LogManager.psm1 - セッションログ管理モジュール
 # ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools v2.0.0
 # ============================================================
+Set-StrictMode -Version Latest
 
 # --- モジュールスコープ変数 ---
 $script:CurrentLogPath = $null
@@ -209,9 +210,9 @@ function Invoke-LogArchive {
     $prefix = if ($logConfig.logPrefix) { $logConfig.logPrefix } else { 'claude-devtools' }
     $archiveDir = Join-Path $logDir 'archive'
 
-    $toArchive = Get-ChildItem -Path $logDir -Filter "${prefix}-*.log" -File | Where-Object {
+    $toArchive = @(Get-ChildItem -Path $logDir -Filter "${prefix}-*.log" -File | Where-Object {
         ($now - $_.LastWriteTime).Days -gt $logConfig.archiveAfterDays
-    }
+    })
 
     if ($toArchive.Count -eq 0) { return }
 
@@ -267,7 +268,7 @@ function Get-LogSummary {
     if (-not $logDir -or -not (Test-Path $logDir)) { return $result }
 
     $prefix = if ($Config.logging.logPrefix) { $Config.logging.logPrefix } else { 'claude-devtools' }
-    $files = Get-ChildItem -Path $logDir -Filter "${prefix}-*.log" -File
+    $files = @(Get-ChildItem -Path $logDir -Filter "${prefix}-*.log" -File)
 
     if ($files.Count -eq 0) { return $result }
 

@@ -7,6 +7,7 @@
 #   ConfigLoader.ps1  — 設定読み込み・バックアップ
 #   RecentProjects.ps1 — 最近使用プロジェクト履歴
 # ============================================================
+Set-StrictMode -Version Latest
 
 # Dot-source submodules — functions land in this module's scope
 . (Join-Path $PSScriptRoot 'ConfigSchema.ps1')

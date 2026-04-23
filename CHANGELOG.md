@@ -2,6 +2,39 @@
 
 # CHANGELOG
 
+## [v3.2.80] - 2026-04-23 — scripts/lib 全 13 ファイルへ Set-StrictMode 追加 + PSCustomObject 安全化
+
+### 🎯 概要
+`ArchitectureCheck` で WARNING として報告されていた `Set-StrictMode -Version Latest` 未設定 13 ファイルを解消。
+Config モジュール（ConfigSchema.ps1 / ConfigLoader.ps1）に存在した動的プロパティアクセス（`$Config.$field`・`$Config.tools.$toolName`）を `PSObject.Properties[$key]?.Value` パターンに書き換え、StrictMode 下でも `PropertyNotFoundException` が発生しないよう修正。
+
+### 🔧 変更対象
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/lib/ConfigSchema.ps1` | `Set-StrictMode -Version Latest` 追加 + 動的プロパティアクセス 4 箇所を安全化 |
+| `scripts/lib/ConfigLoader.ps1` | `Set-StrictMode -Version Latest` 追加 + 動的プロパティアクセス 4 箇所を安全化 |
+| `scripts/lib/Config.psm1` | `Set-StrictMode -Version Latest` 追加 |
+| `scripts/lib/RecentProjects.ps1` | `Set-StrictMode -Version Latest` 追加（既存コードは PSObject.Properties パターン使用済み） |
+| `scripts/lib/AgentCapabilityMatrix.ps1` | `Set-StrictMode -Version Latest` 追加 |
+| `scripts/lib/AgentDefinition.ps1` | `Set-StrictMode -Version Latest` 追加 |
+| `scripts/lib/AgentTeamBuilder.ps1` | `Set-StrictMode -Version Latest` 追加 |
+| `scripts/lib/LauncherCommon.psm1` | `Set-StrictMode -Version Latest` 追加 |
+| `scripts/lib/LogManager.psm1` | `Set-StrictMode -Version Latest` 追加 |
+| `scripts/lib/MenuCommon.psm1` | `Set-StrictMode -Version Latest` 追加 |
+| `scripts/lib/SSHHelper.psm1` | `Set-StrictMode -Version Latest` 追加 |
+| `scripts/lib/SessionLogger.ps1` | `Set-StrictMode -Version Latest` 追加 |
+| `scripts/lib/TemplateSyncManager.ps1` | `Set-StrictMode -Version Latest` 追加 |
+
+### 🔑 設計ポイント
+- `$obj.$dynamicKey` → `$obj.PSObject.Properties[$dynamicKey]?.Value` で存在しないプロパティへのアクセスが `$null` を返すように変更（PropertyNotFoundException 回避）
+- `?.` 演算子は PowerShell 7.1+ で利用可能（CI 環境は PS 7 対応）
+- Issue #239 対応（P3）
+
+### ✅ テスト結果
+- CI: test-and-validate / PSScriptAnalyzer / Secrets scan
+
+---
+
 ## [v3.2.79] - 2026-04-22 — tmux pipe-pane によるログ可視化 / cron-launcher.sh 自動同期
 
 ### 🎯 概要

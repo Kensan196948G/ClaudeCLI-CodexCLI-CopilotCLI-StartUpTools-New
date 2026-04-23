@@ -5,6 +5,7 @@
     Session logging functions are in SessionLogger.psm1.
     Both are dot-sourced below for full backward compatibility with all callers.
 #>
+Set-StrictMode -Version Latest
 
 <#
 .SYNOPSIS
