@@ -3,6 +3,14 @@
   "goal": {
     "title": "<your project goal — e.g. ClaudeOS v8 自律開発最適化>"
   },
+  "project": {
+    "registration_date": null,
+    "release_deadline": null,
+    "release_deadline_note": "Set to 6 months after registration_date. Format: ISO8601 (e.g. 2026-10-23). This deadline is MANDATORY.",
+    "duration_months": 6,
+    "cron_enabled": true,
+    "session_max_minutes": 300
+  },
   "kpi": {
     "success_rate_target": 0.9
   },
