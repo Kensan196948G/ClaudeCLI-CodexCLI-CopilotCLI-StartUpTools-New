@@ -2,6 +2,7 @@
 # LogManager.psm1 - セッションログ管理モジュール
 # ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools v2.0.0
 # ============================================================
+Set-StrictMode -Version Latest
 
 # --- モジュールスコープ変数 ---
 $script:CurrentLogPath = $null

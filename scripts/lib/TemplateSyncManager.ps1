@@ -4,6 +4,7 @@
     Handles copying and syncing template files into project directories.
     Dot-sourced by LauncherCommon.psm1 for backward compatibility.
 #>
+Set-StrictMode -Version Latest
 
 <#
 .SYNOPSIS

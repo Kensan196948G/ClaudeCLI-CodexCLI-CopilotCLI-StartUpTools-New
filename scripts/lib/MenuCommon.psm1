@@ -1,3 +1,5 @@
+Set-StrictMode -Version Latest
+
 <#
 .SYNOPSIS
     Normalizes the tool filter string to a validated value or empty string for use in recent-menu queries.

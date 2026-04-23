@@ -2,6 +2,7 @@
 # ConfigLoader.ps1 - 設定ファイル読み込み・バックアップ
 # Depends on: ConfigSchema.ps1 (dot-sourced first in Config.psm1)
 # ============================================================
+Set-StrictMode -Version Latest
 
 <#
 .SYNOPSIS
@@ -38,7 +39,7 @@ function Import-StartupConfig {
     }
 
     foreach ($field in $script:RequiredFields) {
-        $value = $config.$field
+        $value = $config.PSObject.Properties[$field]?.Value
         if ($null -eq $value -or ($value -is [string] -and [string]::IsNullOrWhiteSpace($value))) {
             throw "config.jsonに必須フィールドがありません: '$field'"
         }
@@ -51,7 +52,7 @@ function Import-StartupConfig {
 
     $validTools = @('claude', 'codex', 'copilot')
     foreach ($toolName in $validTools) {
-        $toolConf = $config.tools.$toolName
+        $toolConf = if ($null -ne $config.tools) { $config.tools.PSObject.Properties[$toolName]?.Value } else { $null }
         if ($null -ne $toolConf) {
             if ($null -eq $toolConf.enabled) {
                 Write-Warning "tools.$toolName.enabled が未設定です"
@@ -141,12 +142,14 @@ function Backup-ConfigFile {
                     $parts = $keyPath -split '\.'
                     $obj = $json
                     for ($i = 0; $i -lt $parts.Count - 1; $i++) {
-                        if ($null -ne $obj.($parts[$i])) {
-                            $obj = $obj.($parts[$i])
+                        $propVal = $obj.PSObject.Properties[$parts[$i]]?.Value
+                        if ($null -ne $propVal) {
+                            $obj = $propVal
                         }
                     }
                     $lastKey = $parts[-1]
-                    if ($null -ne $obj -and $null -ne $obj.$lastKey -and $obj.$lastKey -ne "") {
+                    $lastProp = $obj.PSObject.Properties[$lastKey]
+                    if ($null -ne $obj -and $null -ne $lastProp -and $lastProp.Value -ne "") {
                         $obj.$lastKey = "***MASKED***"
                     }
                 }

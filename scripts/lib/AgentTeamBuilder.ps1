@@ -2,6 +2,7 @@
 # AgentTeamBuilder.ps1 - チーム組成・レポート生成
 # Depends on: AgentDefinition.ps1 (dot-sourced first in AgentTeams.psm1)
 # ============================================================
+Set-StrictMode -Version Latest
 
 <#
 .SYNOPSIS

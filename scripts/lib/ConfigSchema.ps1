@@ -1,6 +1,7 @@
 ﻿# ============================================================
 # ConfigSchema.ps1 - 設定スキーマ定義・検証
 # ============================================================
+Set-StrictMode -Version Latest
 
 # Required field definitions (script scope — shared with dot-sourced siblings)
 $script:RequiredFields = @('version', 'linuxHost', 'tools')
@@ -61,7 +62,7 @@ function Test-StartupConfigSchema {
     $errors = [System.Collections.Generic.List[string]]::new()
 
     foreach ($field in $script:TemplateRequiredFields) {
-        $value = $Config.$field
+        $value = $Config.PSObject.Properties[$field]?.Value
         if ($null -eq $value -or ($value -is [string] -and [string]::IsNullOrWhiteSpace($value))) {
             Add-SchemaError -Errors $errors -Message "必須フィールドが不足しています: $field"
         }
@@ -80,7 +81,7 @@ function Test-StartupConfigSchema {
     }
 
     foreach ($pathField in @('projectsDir', 'sshProjectsDir', 'projectsDirUnc', 'linuxHost', 'linuxBase')) {
-        $value = $Config.$pathField
+        $value = $Config.PSObject.Properties[$pathField]?.Value
         if ($null -ne $value -and $value -isnot [string]) {
             Add-SchemaError -Errors $errors -Message "$pathField は文字列である必要があります"
         }
@@ -91,14 +92,14 @@ function Test-StartupConfigSchema {
     }
 
     foreach ($toolName in $script:TemplateToolRequiredFields.Keys) {
-        $toolConfig = $Config.tools.$toolName
+        $toolConfig = $Config.tools.PSObject.Properties[$toolName]?.Value
         if ($null -eq $toolConfig) {
             Add-SchemaError -Errors $errors -Message "必須フィールドが不足しています: tools.$toolName"
             continue
         }
 
         foreach ($field in $script:TemplateToolRequiredFields[$toolName]) {
-            $value = $toolConfig.$field
+            $value = $toolConfig.PSObject.Properties[$field]?.Value
             if ($null -eq $value -or ($value -is [string] -and [string]::IsNullOrWhiteSpace($value))) {
                 Add-SchemaError -Errors $errors -Message "必須フィールドが不足しています: tools.$toolName.$field"
             }

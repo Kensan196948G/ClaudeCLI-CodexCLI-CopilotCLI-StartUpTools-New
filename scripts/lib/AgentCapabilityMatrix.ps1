@@ -2,6 +2,7 @@
 # AgentCapabilityMatrix.ps1 - ケイパビリティマトリクス・クイックステータス
 # Depends on: AgentDefinition.ps1, AgentTeamBuilder.ps1 (dot-sourced first in AgentTeams.psm1)
 # ============================================================
+Set-StrictMode -Version Latest
 
 function Get-AgentCapabilityMatrix {
     <#

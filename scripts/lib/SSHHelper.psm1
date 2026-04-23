@@ -2,6 +2,7 @@
 # SSHHelper.psm1 - SSH接続ヘルパーモジュール
 # ClaudeCLI-CodexCLI-CopilotCLI-StartUpTools v2.0.0
 # ============================================================
+Set-StrictMode -Version Latest
 
 <#
 .SYNOPSIS
