@@ -54,10 +54,10 @@ function Import-StartupConfig {
     foreach ($toolName in $validTools) {
         $toolConf = if ($null -ne $config.tools) { $config.tools.PSObject.Properties[$toolName]?.Value } else { $null }
         if ($null -ne $toolConf) {
-            if ($null -eq $toolConf.enabled) {
+            if ($null -eq $toolConf.PSObject.Properties['enabled']?.Value) {
                 Write-Warning "tools.$toolName.enabled が未設定です"
             }
-            if ($null -eq $toolConf.command) {
+            if ($null -eq $toolConf.PSObject.Properties['command']?.Value) {
                 Write-Warning "tools.$toolName.command が未設定です"
             }
         }

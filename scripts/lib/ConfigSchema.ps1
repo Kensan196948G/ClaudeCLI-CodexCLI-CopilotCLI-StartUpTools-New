@@ -68,15 +68,17 @@ function Test-StartupConfigSchema {
         }
     }
 
-    if ($null -eq $Config.tools) {
+    $configTools = $Config.PSObject.Properties['tools']?.Value
+    if ($null -eq $configTools) {
         Add-SchemaError -Errors $errors -Message "必須フィールドが不足しています: tools"
         return @($errors)
     }
 
-    if ([string]::IsNullOrWhiteSpace($Config.tools.defaultTool)) {
+    $defaultTool = $configTools.PSObject.Properties['defaultTool']?.Value
+    if ([string]::IsNullOrWhiteSpace($defaultTool)) {
         Add-SchemaError -Errors $errors -Message "必須フィールドが不足しています: tools.defaultTool"
     }
-    elseif ($Config.tools.defaultTool -notin $script:AllowedDefaultTools) {
+    elseif ($defaultTool -notin $script:AllowedDefaultTools) {
         Add-SchemaError -Errors $errors -Message "tools.defaultTool は claude/codex/copilot のいずれかである必要があります"
     }
 
@@ -87,12 +89,13 @@ function Test-StartupConfigSchema {
         }
     }
 
-    if ($null -ne $Config.localExcludes -and $Config.localExcludes -isnot [System.Array]) {
+    $localExcludes = $Config.PSObject.Properties['localExcludes']?.Value
+    if ($null -ne $localExcludes -and $localExcludes -isnot [System.Array]) {
         Add-SchemaError -Errors $errors -Message "localExcludes は配列である必要があります"
     }
 
     foreach ($toolName in $script:TemplateToolRequiredFields.Keys) {
-        $toolConfig = $Config.tools.PSObject.Properties[$toolName]?.Value
+        $toolConfig = $configTools.PSObject.Properties[$toolName]?.Value
         if ($null -eq $toolConfig) {
             Add-SchemaError -Errors $errors -Message "必須フィールドが不足しています: tools.$toolName"
             continue
@@ -105,79 +108,105 @@ function Test-StartupConfigSchema {
             }
         }
 
-        if ($toolConfig.enabled -isnot [bool]) {
+        $tcEnabled        = $toolConfig.PSObject.Properties['enabled']?.Value
+        $tcCommand        = $toolConfig.PSObject.Properties['command']?.Value
+        $tcArgs           = $toolConfig.PSObject.Properties['args']?.Value
+        $tcInstallCommand = $toolConfig.PSObject.Properties['installCommand']?.Value
+        $tcEnv            = $toolConfig.PSObject.Properties['env']?.Value
+        $tcApiKeyEnvVar   = $toolConfig.PSObject.Properties['apiKeyEnvVar']?.Value
+
+        if ($tcEnabled -isnot [bool]) {
             Add-SchemaError -Errors $errors -Message "tools.$toolName.enabled は boolean である必要があります"
         }
-        if ($toolConfig.command -isnot [string]) {
+        if ($tcCommand -isnot [string]) {
             Add-SchemaError -Errors $errors -Message "tools.$toolName.command は文字列である必要があります"
         }
-        if ($toolConfig.args -isnot [System.Array]) {
+        if ($tcArgs -isnot [System.Array]) {
             Add-SchemaError -Errors $errors -Message "tools.$toolName.args は配列である必要があります"
         }
-        if ($toolConfig.installCommand -isnot [string]) {
+        if ($tcInstallCommand -isnot [string]) {
             Add-SchemaError -Errors $errors -Message "tools.$toolName.installCommand は文字列である必要があります"
         }
-        if ($null -eq $toolConfig.env -or $toolConfig.env -is [string] -or $toolConfig.env -is [System.Array]) {
+        if ($null -eq $tcEnv -or $tcEnv -is [string] -or $tcEnv -is [System.Array]) {
             Add-SchemaError -Errors $errors -Message "tools.$toolName.env はオブジェクトである必要があります"
         }
-        if (($toolName -ne 'copilot') -and ($toolConfig.apiKeyEnvVar -isnot [string])) {
+        if (($toolName -ne 'copilot') -and ($tcApiKeyEnvVar -isnot [string])) {
             Add-SchemaError -Errors $errors -Message "tools.$toolName.apiKeyEnvVar は文字列である必要があります"
         }
     }
 
-    if ($null -ne $Config.recentProjects) {
-        if ($Config.recentProjects.enabled -isnot [bool]) {
+    $rp = $Config.PSObject.Properties['recentProjects']?.Value
+    if ($null -ne $rp) {
+        $rpEnabled     = $rp.PSObject.Properties['enabled']?.Value
+        $rpMaxHistory  = $rp.PSObject.Properties['maxHistory']?.Value
+        $rpHistoryFile = $rp.PSObject.Properties['historyFile']?.Value
+        if ($rpEnabled -isnot [bool]) {
             Add-SchemaError -Errors $errors -Message "recentProjects.enabled は boolean である必要があります"
         }
-        if (-not (Test-IntegerValueInRange -Value $Config.recentProjects.maxHistory -Minimum 1)) {
+        if (-not (Test-IntegerValueInRange -Value $rpMaxHistory -Minimum 1)) {
             Add-SchemaError -Errors $errors -Message "recentProjects.maxHistory は 1 以上の整数である必要があります"
         }
-        if ($Config.recentProjects.historyFile -isnot [string]) {
+        if ($rpHistoryFile -isnot [string]) {
             Add-SchemaError -Errors $errors -Message "recentProjects.historyFile は文字列である必要があります"
         }
     }
 
-    if ($null -ne $Config.logging) {
-        if ($Config.logging.enabled -isnot [bool]) {
+    $logging = $Config.PSObject.Properties['logging']?.Value
+    if ($null -ne $logging) {
+        $logEnabled        = $logging.PSObject.Properties['enabled']?.Value
+        $logDir            = $logging.PSObject.Properties['logDir']?.Value
+        $logPrefix         = $logging.PSObject.Properties['logPrefix']?.Value
+        $logSuccessKeep    = $logging.PSObject.Properties['successKeepDays']?.Value
+        $logFailureKeep    = $logging.PSObject.Properties['failureKeepDays']?.Value
+        if ($logEnabled -isnot [bool]) {
             Add-SchemaError -Errors $errors -Message "logging.enabled は boolean である必要があります"
         }
-        if ($null -ne $Config.logging.logDir -and $Config.logging.logDir -isnot [string]) {
+        if ($null -ne $logDir -and $logDir -isnot [string]) {
             Add-SchemaError -Errors $errors -Message "logging.logDir は文字列である必要があります"
         }
-        if ($null -ne $Config.logging.logPrefix -and $Config.logging.logPrefix -isnot [string]) {
+        if ($null -ne $logPrefix -and $logPrefix -isnot [string]) {
             Add-SchemaError -Errors $errors -Message "logging.logPrefix は文字列である必要があります"
         }
-        if ($null -ne $Config.logging.successKeepDays -and -not (Test-IntegerValueInRange -Value $Config.logging.successKeepDays -Minimum 1 -Maximum 3650)) {
+        if ($null -ne $logSuccessKeep -and -not (Test-IntegerValueInRange -Value $logSuccessKeep -Minimum 1 -Maximum 3650)) {
             Add-SchemaError -Errors $errors -Message "logging.successKeepDays は 1 から 3650 の整数である必要があります"
         }
-        if ($null -ne $Config.logging.failureKeepDays -and -not (Test-IntegerValueInRange -Value $Config.logging.failureKeepDays -Minimum 1 -Maximum 3650)) {
+        if ($null -ne $logFailureKeep -and -not (Test-IntegerValueInRange -Value $logFailureKeep -Minimum 1 -Maximum 3650)) {
             Add-SchemaError -Errors $errors -Message "logging.failureKeepDays は 1 から 3650 の整数である必要があります"
         }
     }
 
-    if ($null -ne $Config.ssh) {
-        if ($null -ne $Config.ssh.autoCleanup -and $Config.ssh.autoCleanup -isnot [bool]) {
+    $ssh = $Config.PSObject.Properties['ssh']?.Value
+    if ($null -ne $ssh) {
+        $sshAutoCleanup = $ssh.PSObject.Properties['autoCleanup']?.Value
+        $sshOptions     = $ssh.PSObject.Properties['options']?.Value
+        if ($null -ne $sshAutoCleanup -and $sshAutoCleanup -isnot [bool]) {
             Add-SchemaError -Errors $errors -Message "ssh.autoCleanup は boolean である必要があります"
         }
-        if ($null -ne $Config.ssh.options -and $Config.ssh.options -isnot [System.Array]) {
+        if ($null -ne $sshOptions -and $sshOptions -isnot [System.Array]) {
             Add-SchemaError -Errors $errors -Message "ssh.options は配列である必要があります"
         }
     }
 
-    if ($null -ne $Config.backupConfig) {
-        if ($null -ne $Config.backupConfig.enabled -and $Config.backupConfig.enabled -isnot [bool]) {
+    $bc = $Config.PSObject.Properties['backupConfig']?.Value
+    if ($null -ne $bc) {
+        $bcEnabled       = $bc.PSObject.Properties['enabled']?.Value
+        $bcBackupDir     = $bc.PSObject.Properties['backupDir']?.Value
+        $bcMaxBackups    = $bc.PSObject.Properties['maxBackups']?.Value
+        $bcMaskSensitive = $bc.PSObject.Properties['maskSensitive']?.Value
+        $bcSensitiveKeys = $bc.PSObject.Properties['sensitiveKeys']?.Value
+        if ($null -ne $bcEnabled -and $bcEnabled -isnot [bool]) {
             Add-SchemaError -Errors $errors -Message "backupConfig.enabled は boolean である必要があります"
         }
-        if ($null -ne $Config.backupConfig.backupDir -and $Config.backupConfig.backupDir -isnot [string]) {
+        if ($null -ne $bcBackupDir -and $bcBackupDir -isnot [string]) {
             Add-SchemaError -Errors $errors -Message "backupConfig.backupDir は文字列である必要があります"
         }
-        if ($null -ne $Config.backupConfig.maxBackups -and -not (Test-IntegerValueInRange -Value $Config.backupConfig.maxBackups -Minimum 1 -Maximum 1000)) {
+        if ($null -ne $bcMaxBackups -and -not (Test-IntegerValueInRange -Value $bcMaxBackups -Minimum 1 -Maximum 1000)) {
             Add-SchemaError -Errors $errors -Message "backupConfig.maxBackups は 1 から 1000 の整数である必要があります"
         }
-        if ($null -ne $Config.backupConfig.maskSensitive -and $Config.backupConfig.maskSensitive -isnot [bool]) {
+        if ($null -ne $bcMaskSensitive -and $bcMaskSensitive -isnot [bool]) {
             Add-SchemaError -Errors $errors -Message "backupConfig.maskSensitive は boolean である必要があります"
         }
-        if ($null -ne $Config.backupConfig.sensitiveKeys -and $Config.backupConfig.sensitiveKeys -isnot [System.Array]) {
+        if ($null -ne $bcSensitiveKeys -and $bcSensitiveKeys -isnot [System.Array]) {
             Add-SchemaError -Errors $errors -Message "backupConfig.sensitiveKeys は配列である必要があります"
         }
     }
