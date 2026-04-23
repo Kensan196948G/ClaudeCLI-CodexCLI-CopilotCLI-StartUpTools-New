@@ -11,7 +11,7 @@
 ### 🔧 変更対象
 | ファイル | 変更内容 |
 |---|---|
-| `tests/unit/ConfigSchema.Tests.ps1` | 新規作成: `Test-IntegerValueInRange` 8件 + `Test-StartupConfigSchema` 22件 + `Assert-StartupConfigSchema` 4件 = 37 テストケース / PSScriptAnalyzer 0警告 |
+| `tests/unit/ConfigSchema.Tests.ps1` | 新規作成: `Test-IntegerValueInRange` 8件 + `Test-StartupConfigSchema` 25件 + `Assert-StartupConfigSchema` 4件 = 37 テストケース / PSScriptAnalyzer 0警告 |
 | `Claude/templates/claude/settings.json` | PreCompact / SessionStart / Stop フック定義をテンプレートに追加 |
 | `CLAUDE.md` | クラウドスケジュール登録を条件付きに変更（重複防止） |
 | `scripts/main/Start-ClaudeCode.ps1` | Claude 起動前に START_PROMPT.md を instructions/ から自動再ビルド |

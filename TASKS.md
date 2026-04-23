@@ -89,7 +89,7 @@
 80. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#226] v3.2.65 New-CloudSchedule.ps1 ユニットテスト追加 — Build-CreatePrompt / New-LoopPreset の 23 テストケース / dot-source exit→return パッチ戦略 / PSScriptAnalyzer 0警告
 81. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#228] v3.2.66 WorktreeManager.psm1 テストカバレッジ拡充 — Get-WorktreeSummary 9件（Mock -ModuleName WorktreeManager）/ Get-WorktreeBasePath edge cases +2件 = 計 14 テストケース / PSScriptAnalyzer 0警告 / STABLE N=3達成
 82. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#230] v3.2.67 RecentProjects.ps1 ユニットテスト追加 — Get-RecentProject 9件（legacy/object 正規化・エラー抑制・env var展開）/ Update-RecentProject 4件（先頭挿入・重複削除・MaxHistory）/ Test-RecentProjectsEnabled 3件 = 計 17 テストケース / PSScriptAnalyzer 0警告
-83. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#232] v3.2.68 ConfigSchema.ps1 ユニットテスト追加 + 完全自立開発対応確認 — Test-IntegerValueInRange 8件 / Test-StartupConfigSchema 22件 / Assert-StartupConfigSchema 4件 = 計 37 テストケース / テンプレート settings.json にフック定義追加 / CLAUDE.md スケジュール条件付き登録対応 / Start-ClaudeCode.ps1 START_PROMPT.md 自動再ビルド統合 (PR #233)
+83. [DONE] [Priority:P2][Owner:Developer][Source:GitHub#232] v3.2.68 ConfigSchema.ps1 ユニットテスト追加 + 完全自立開発対応確認 — Test-IntegerValueInRange 8件 / Test-StartupConfigSchema 25件 / Assert-StartupConfigSchema 4件 = 計 37 テストケース / テンプレート settings.json にフック定義追加 / CLAUDE.md スケジュール条件付き登録対応 / Start-ClaudeCode.ps1 START_PROMPT.md 自動再ビルド統合 (PR #233)
 
 ## Auto Extracted From Agent Teams Matrix
 

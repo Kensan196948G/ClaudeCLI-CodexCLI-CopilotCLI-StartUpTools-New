@@ -52,8 +52,8 @@
   "improvement": {
     "stop_doing_review_date": null,
     "stop_doing_review_interval_days": 90,
-    "stop_doing_last_run": "2026-04-22T00:00:00Z",
-    "stop_doing_candidates_found": 3
+    "stop_doing_last_run": null,
+    "stop_doing_candidates_found": 0
   },
   "learning": {
     "usage_history": {
