@@ -49,4 +49,29 @@ try {
   console.error(`[SessionEnd] notify-stable failed: ${err.message}`);
 }
 
+// v3.2.81: Managed Memory Store sync (push) — config が存在する場合のみ (opt-in)
+// Stop フック内ではブロッキング呼び出しが ETIMEDOUT になるため spawn detached で非同期起動する
+(function syncMemoryStorePush() {
+  const { spawn } = require("child_process");
+  const cfgPath = path.join(process.cwd(), "config", "managed-agents.json");
+  const memPy = path.join(process.cwd(), "scripts", "tools", "managed-memory.py");
+  if (!fs.existsSync(cfgPath) || !fs.existsSync(memPy)) return;
+
+  const python = process.platform === "win32" ? "C:\\Python314\\python.exe" : "python3";
+  const logPath = path.join(process.cwd(), "logs", "memory-push.log");
+  try {
+    fs.mkdirSync(path.dirname(logPath), { recursive: true });
+    const logFd = fs.openSync(logPath, "a");
+    const child = spawn(python, [memPy, "sync", "--direction", "push"], {
+      env: { ...process.env, MANAGED_AGENTS_CONFIG: cfgPath },
+      detached: true,
+      stdio: ["ignore", logFd, logFd],
+    });
+    child.unref();
+    console.log(`  memory_sync: push launched (background → ${logPath})`);
+  } catch (e) {
+    console.log(`  memory_sync: push launch failed — ${e.message}`);
+  }
+})();
+
 process.exit(0);
