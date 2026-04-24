@@ -67,4 +67,27 @@ try {
   console.error(`[SessionStart] state.json write failed: ${err.message}`);
 }
 
+// v3.2.81: Managed Memory Store sync (pull) — config が存在する場合のみ (opt-in)
+(function syncMemoryStore() {
+  const { execFileSync } = require("child_process");
+  const cfgPath = path.join(process.cwd(), "config", "managed-agents.json");
+  const memPy = path.join(process.cwd(), "scripts", "tools", "managed-memory.py");
+  if (!fs.existsSync(cfgPath) || !fs.existsSync(memPy)) return;
+
+  const python = process.platform === "win32" ? "C:\\Python314\\python.exe" : "python3";
+  try {
+    const result = execFileSync(
+      python,
+      [memPy, "sync", "--direction", "pull"],
+      { env: { ...process.env, MANAGED_AGENTS_CONFIG: cfgPath }, timeout: 15000, encoding: "utf8" }
+    );
+    const parsed = JSON.parse(result);
+    const pulled = Array.isArray(parsed.pulled) ? parsed.pulled.length : 0;
+    console.log(`  memory_sync: pull ok (${pulled} files)`);
+  } catch (_) {
+    // sync 失敗はセッション起動を妨げない
+    console.log("  memory_sync: pull skipped (config not ready or API error)");
+  }
+})();
+
 process.exit(0);

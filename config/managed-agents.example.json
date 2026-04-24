@@ -1,0 +1,23 @@
+{
+  "_comment": "Managed Agents API 設定テンプレート。config/managed-agents.json にコピーして使用。このファイルは git 管理対象。managed-agents.json は .gitignore 対象。",
+  "apiKey": "sk-ant-api03-YOUR_API_KEY_HERE",
+
+  "_comment_memory": "Memory Store (managed-memory.py create-store で自動設定)",
+  "memoryStoreId": "",
+
+  "_comment_agents": "Agent Teams (managed-agents-setup.py setup-all で自動設定)",
+  "environmentId": "",
+  "orchestratorId": "",
+  "orchestratorVersion": 1,
+  "specialistAgents": {
+    "architect": { "id": "", "version": 1, "name": "ClaudeOS-Architect" },
+    "developer":  { "id": "", "version": 1, "name": "ClaudeOS-Developer" },
+    "qa":         { "id": "", "version": 1, "name": "ClaudeOS-QA" },
+    "security":   { "id": "", "version": 1, "name": "ClaudeOS-Security" },
+    "devops":     { "id": "", "version": 1, "name": "ClaudeOS-DevOps" },
+    "reviewer":   { "id": "", "version": 1, "name": "ClaudeOS-Reviewer" }
+  },
+
+  "_comment_session": "直近のセッション ID (managed-session.py run で自動更新)",
+  "lastSessionId": ""
+}

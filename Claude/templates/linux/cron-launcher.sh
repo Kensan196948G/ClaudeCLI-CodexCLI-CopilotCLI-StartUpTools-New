@@ -131,6 +131,16 @@ finalize() {
   else
     echo "[cron-launcher] report-and-mail.py をスキップ (script=$REPORT_SCRIPT, python3=$(command -v python3 || echo 'none'))" >> "$LOG_FILE"
   fi
+
+  # --- v3.2.81: Managed Memory Store sync (push) ---
+  # config/managed-agents.json が存在する場合のみ有効 (opt-in)
+  local _mem_py="$PROJECT_DIR/scripts/tools/managed-memory.py"
+  local _mem_cfg="$PROJECT_DIR/config/managed-agents.json"
+  if command -v python3 >/dev/null 2>&1 && [[ -f "$_mem_py" ]] && [[ -f "$_mem_cfg" ]]; then
+    echo "[cron-launcher] Memory Store sync (push) ..." >> "$LOG_FILE"
+    MANAGED_AGENTS_CONFIG="$_mem_cfg" python3 "$_mem_py" sync --direction push >> "$LOG_FILE" 2>&1 || \
+      echo "[cron-launcher] Memory Store sync (push) skipped or failed — continuing" >> "$LOG_FILE"
+  fi
 }
 trap finalize EXIT
 
@@ -142,6 +152,16 @@ cd "$PROJECT_DIR"
 export LANG=C.UTF-8 LC_ALL=C.UTF-8
 export CLAUDE_SESSION_ID="$SESSION_ID"
 export CLAUDE_PROJECT="$PROJECT"
+
+# --- v3.2.81: Managed Memory Store sync (pull) ---
+# config/managed-agents.json が存在する場合のみ有効 (opt-in)
+_MEM_PY="$PROJECT_DIR/scripts/tools/managed-memory.py"
+_MEM_CFG="$PROJECT_DIR/config/managed-agents.json"
+if command -v python3 >/dev/null 2>&1 && [[ -f "$_MEM_PY" ]] && [[ -f "$_MEM_CFG" ]]; then
+  echo "[cron-launcher] Memory Store sync (pull) ..." >> "$LOG_FILE"
+  MANAGED_AGENTS_CONFIG="$_MEM_CFG" python3 "$_MEM_PY" sync --direction pull >> "$LOG_FILE" 2>&1 || \
+    echo "[cron-launcher] Memory Store sync (pull) skipped or failed — continuing" >> "$LOG_FILE"
+fi
 
 # P1-4: state.json からセッション状態を復元してクロンセッションに引き継ぐ
 STATE_FILE="$PROJECT_DIR/state.json"
@@ -255,7 +275,12 @@ if command -v tmux >/dev/null 2>&1 && [[ "${CLAUDEOS_TMUX:-1}" == "1" ]]; then
     -e "_CLAUDEOS_PROMPT_FILE=$PROMPT_FILE" \
     "$CLAUDE_WRAPPER" 2>>"$LOG_FILE"
   # pipe-pane: tmux pane の出力をログファイルにも流す（Windows 側の Watch-ClaudeLog.ps1 で可視化するため）
-  tmux pipe-pane -t "$TMUX_SESSION" -o "cat >> '$LOG_FILE'" 2>>"$LOG_FILE" || true
+  # sed で TUI 制御シーケンスを除去してからログに書く:
+  #   s/.*\r//  : \r 上書き前テキスト除去（スピナー残骸防止）
+  #   s/\x1b\][^\x07]*\x07//g : OSC シーケンス除去（タブタイトル設定 "0;⠂..." 等）
+  #   s/\x1b\[[0-9;?]*[a-zA-Z]//g : CSI シーケンス除去（カーソル移動・色コード）
+  #   s/\x1b.//g : その他 ESC シーケンス除去
+  tmux pipe-pane -t "$TMUX_SESSION" -o "sed 's/.*\r//; s/\x1b\][^\x07]*\x07//g; s/\x1b\[[0-9;?]*[a-zA-Z]//g; s/\x1b.//g' >> '$LOG_FILE'" 2>>"$LOG_FILE" || true
   echo "[cron-launcher] tmux attach -t $TMUX_SESSION  (UI閲覧用)" >> "$LOG_FILE"
   # tmux セッション終了まで待機（タイムアウト付き: keeper消滅後の二重防護）
   if ! timeout $((DURATION_SEC + 60)) tmux wait-for "$_TMUX_DONE" 2>>"$LOG_FILE"; then
