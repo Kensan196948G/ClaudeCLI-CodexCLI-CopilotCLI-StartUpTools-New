@@ -14,7 +14,15 @@
     場合にも確実にアイコンが PS 7 になるよう改善)。
     v3.2.48 で profile 識別子を GUID 優先に変更 (空白を含む profile 名が
     Start-Process -ArgumentList で split される問題を回避)。
-    ClaudeOS v3.2.48
+    v3.2.81 で Write-WaitHeader に Clear-Host を追加 (待機画面崩れを修正)。
+    v3.2.82 で tail -F の出力に sed -u フィルタを追加 (ANSI エスケープ・\r 除去)。
+    v3.2.83 で $openedSessionIds により Session-Info タブの重複オープンを防止。
+    v3.2.84 で Open-TmuxAttachTab (Claude-UI タブ) を削除。-WithSessionInfoTab は Session-Info タブのみ開く。
+    v3.2.85 で Open-TmuxAttachTab を復活。sed フィルタ強化 (\r 上書き前テキスト除去)。Session-Info タブにプロセス間ファイルロック追加。
+    v3.2.86 で sed フィルタを s/.*\r// に変更 (貪欲マッチで最後の \r まで一括除去、[^\r]*\r の環境依存問題を解消)。
+    v3.2.87 で sed/stdbuf 依存を廃止。tail -F のみ SSH 実行し ANSI・\r フィルタを PowerShell 受信側で処理 (Linux 環境依存解消)。
+    v3.2.88 で PowerShell フィルタに OSC シーケンス・スピナー Unicode 除去を追加（2重防護）。cron-launcher.sh の pipe-pane も同時修正。
+    ClaudeOS v3.2.88
 .PARAMETER NewTab
     Windows Terminal の新規タブで開く（既定: 現在のウィンドウで実行）。
 .PARAMETER PollIntervalSeconds
@@ -175,6 +183,7 @@ if ($NewTab) {
 # ─── 内部関数 ────────────────────────────────────────────────────────────
 
 function Write-WaitHeader {
+    Clear-Host
     Write-Host ''
     Write-Host ('  ' + '=' * 54) -ForegroundColor Cyan
     Write-Host '   Claude Code ライブログ監視' -ForegroundColor Cyan
@@ -222,15 +231,13 @@ function Open-TmuxAttachTab {
         Write-Host '  [INFO] wt.exe が非検出のため Tmux Attach タブを開けません。' -ForegroundColor Yellow
         return
     }
-    # SessionId = "YYYYMMDD-HHMMSS-SAFEPROJECT" → 3番目セグメントが SAFE_PROJECT
     $parts = $SessionId -split '-', 3
     if ($parts.Count -lt 3) {
         Write-Host "  [WARN] SessionId のパースに失敗しました: $SessionId" -ForegroundColor Yellow
         return
     }
-    $safeProject = $parts[2]
+    $safeProject  = $parts[2]
     $tmuxSession  = "claudeos-$safeProject"
-    # attach-session: セッションが存在しなければエラー終了 (new-session -A はゴーストセッションを作るため使わない)
     $sshCmd       = "ssh -t $SshTarget tmux attach-session -t $tmuxSession"
     $psExe        = $script:PwshExe
     $psArgs = @(
@@ -283,6 +290,8 @@ if ($knownLog -match 'cron-(\d{8}-\d{6})\.log$') {
     }
 }
 $dotCount = 0
+# セッションIDごとにタブを1回だけ開くための記録（マルチ発火で重複オープンしない）
+$openedSessionIds = @{}
 
 while ($true) {
     $latest = Get-LatestLog
@@ -296,9 +305,26 @@ while ($true) {
             Write-Host '  Session ID を取得中...' -ForegroundColor DarkGray
             $sessionId = Get-SessionIdForLog -LogPath $latest
             if ($sessionId) {
-                Open-TmuxAttachTab -SessionId $sessionId   # Tab ②: Claude UI (tmux attach)
-                Start-Sleep -Seconds 1
-                Open-SessionInfoTab -SessionId $sessionId  # Tab ③: Session Info
+                if (-not $openedSessionIds.ContainsKey($sessionId)) {
+                    # プロセス間重複防止: TEMP にロックファイルを作成して先着1プロセスのみ開く
+                    $lockFile = Join-Path $env:TEMP "claudeos-sessiontab-$sessionId.lock"
+                    # 1時間以上前の古いロックをクリーンアップ
+                    if ((Test-Path $lockFile) -and ((Get-Date) - (Get-Item $lockFile).LastWriteTime).TotalHours -gt 1) {
+                        Remove-Item $lockFile -Force -ErrorAction SilentlyContinue
+                    }
+                    if (-not (Test-Path $lockFile)) {
+                        New-Item -ItemType File -Path $lockFile -Force -ErrorAction SilentlyContinue | Out-Null
+                        $openedSessionIds[$sessionId] = $true
+                        Open-TmuxAttachTab -SessionId $sessionId
+                        Start-Sleep -Seconds 1
+                        Open-SessionInfoTab -SessionId $sessionId
+                    } else {
+                        Write-Host "  [INFO] セッションタブ開き済み (別プロセス): $sessionId" -ForegroundColor DarkGray
+                        $openedSessionIds[$sessionId] = $true
+                    }
+                } else {
+                    Write-Host "  [INFO] セッションタブ開き済み: $sessionId" -ForegroundColor DarkGray
+                }
             } else {
                 Write-Host '  [WARN] Session ID が見つかりませんでした。' -ForegroundColor Yellow
             }
@@ -314,15 +340,34 @@ while ($true) {
             [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
             [Console]::InputEncoding  = [System.Text.Encoding]::UTF8
             $OutputEncoding = [System.Text.Encoding]::UTF8
-            ssh $using:SshTarget "stdbuf -oL tail -n 50 -F '$($using:latest)'"
+            # sed/stdbuf への依存を排除し tail -F のみを実行する。
+            # ANSI エスケープ・\r フィルタは受信側 (PowerShell) で行う (v3.2.87)。
+            ssh $using:SshTarget "tail -n 50 -F '$($using:latest)'"
+        }
+
+        # ANSI エスケープと \r を PowerShell 正規表現で除去するヘルパ（2重防護）。
+        # cron-launcher.sh の pipe-pane で除去しきれなかった残骸をここで除去する。
+        # '.*\r'              : \r 上書き前テキスト除去
+        # '\x1b\][^\x07]*\x07': OSC シーケンス除去（タブタイトル "0;⠂..." 等）
+        # '\x1b\[[0-9;?]*...' : CSI シーケンス除去（カーソル移動・色コード）
+        # '\x1b.'             : その他 ESC シーケンス除去
+        # '[✶✻✽✢]'           : スピナー Unicode 文字除去
+        $FilterLine = {
+            param([string]$raw)
+            $line = $raw `
+                -replace '.*\r', '' `
+                -replace '\x1b\][^\x07]*\x07', '' `
+                -replace '\x1b\][^\x1b]*$', '' `
+                -replace '\x1b\[[0-9;?]*[a-zA-Z]', '' `
+                -replace '\x1b.', '' `
+                -replace '[✶✻✽✢]', ''
+            if ($line.Trim().Length -gt 0) { Write-Host $line }
         }
 
         try {
             while ($true) {
-                # tail の出力を受信してコンソール表示 (非ブロッキング)
-                Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object {
-                    Write-Host $_
-                }
+                # tail の出力を受信してフィルタ後に表示 (非ブロッキング)
+                Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object { & $FilterLine $_ }
 
                 # tail Job が落ちた (SSH 切断等) なら抜ける
                 if ($tailJob.State -ne 'Running') { break }
@@ -333,9 +378,7 @@ while ($true) {
                 $newer = Get-LatestLog
                 if ($newer -and $newer -ne $latest) {
                     # 残出力を flush
-                    Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object {
-                        Write-Host $_
-                    }
+                    Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object { & $FilterLine $_ }
                     Write-Host ''
                     Write-Host "  より新しいセッション検出: $newer" -ForegroundColor Yellow
                     Write-Host '  次のセッションへ切り替えます...' -ForegroundColor Yellow
@@ -345,9 +388,7 @@ while ($true) {
         }
         finally {
             Stop-Job $tailJob -ErrorAction SilentlyContinue
-            Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object {
-                Write-Host $_
-            }
+            Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object { & $FilterLine $_ }
             Remove-Job $tailJob -Force -ErrorAction SilentlyContinue
         }
 

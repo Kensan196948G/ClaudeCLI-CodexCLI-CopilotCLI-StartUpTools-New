@@ -2,6 +2,59 @@
 
 # CHANGELOG
 
+## [v3.2.88] - 2026-04-26 — ANSI 制御シーケンス除去の 2 重防護 (pipe-pane + PowerShell)
+
+### 🎯 概要
+`Watch-ClaudeLog.ps1` の表示に混入していた ANSI エスケープ・TUI 制御シーケンス・スピナー残骸を、
+Linux 側 (`cron-launcher.sh` の `tmux pipe-pane`) と Windows 側 (PowerShell 受信フィルタ) の
+2 段階で除去する方式に刷新。合わせてセッションタブの重複オープン防止とログ表示崩れを修正。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/tools/Watch-ClaudeLog.ps1` | v3.2.81〜v3.2.88 改善を統合 |
+| `Claude/templates/linux/cron-launcher.sh` | pipe-pane sed フィルタ強化 |
+
+### 📋 版別変更サマリー
+
+| バージョン | 変更内容 |
+|---|---|
+| v3.2.81 | `Write-WaitHeader` に `Clear-Host` を追加 (待機画面崩れを修正) |
+| v3.2.82 | `tail -F` の出力に `sed -u` フィルタを追加 (ANSI エスケープ・`\r` 除去) |
+| v3.2.83 | `$openedSessionIds` によりセッションタブの重複オープンを防止 |
+| v3.2.84 | `Open-TmuxAttachTab` (Claude-UI タブ) を一時削除 |
+| v3.2.85 | `Open-TmuxAttachTab` を復活。`sed` フィルタ強化 + Session-Info タブにプロセス間ファイルロック追加 |
+| v3.2.86 | `sed` フィルタを `s/.*\r//` に変更 (貪欲マッチで `\r` 前テキストを一括除去) |
+| v3.2.87 | `sed`/`stdbuf` 依存を廃止。`tail -F` のみ SSH 実行し、ANSI・`\r` フィルタを PowerShell 側で処理 |
+| v3.2.88 | PowerShell フィルタに OSC シーケンス・スピナー Unicode 除去を追加。`cron-launcher.sh` pipe-pane も同時強化 |
+
+### 🔑 設計ポイント
+
+#### PowerShell 側フィルタ (`$FilterLine` スクリプトブロック)
+```powershell
+$line = $raw `
+    -replace '.*\r', '' `           # \r 上書き前テキスト除去（スピナー残骸）
+    -replace '\x1b\][^\x07]*\x07', '' `  # OSC シーケンス（タブタイトル等）
+    -replace '\x1b\[[0-9;?]*[a-zA-Z]', '' `  # CSI シーケンス（色・カーソル移動）
+    -replace '\x1b.', '' `           # その他 ESC シーケンス
+    -replace '[✶✻✽✢]', ''          # スピナー Unicode 文字
+```
+
+#### Linux 側フィルタ (`pipe-pane` sed)
+```bash
+tmux pipe-pane -t "$TMUX_SESSION" -o \
+  "sed 's/.*\r//; s/\x1b\][^\x07]*\x07//g; s/\x1b\[[0-9;?]*[a-zA-Z]//g; s/\x1b.//g' >> '$LOG_FILE'"
+```
+
+- `sed`/`stdbuf` への依存を PowerShell 側で代替することで Linux ディストリビューション差異を吸収
+- プロセス間ファイルロック (`$env:TEMP/claudeos-sessiontab-<id>.lock`) でタブ重複防止
+
+### ✅ テスト結果
+- CI: test-and-validate / PSScriptAnalyzer / Secrets scan
+
+---
+
 ## [v3.2.80] - 2026-04-23 — scripts/lib 全 13 ファイルへ Set-StrictMode 追加 + PSCustomObject 安全化
 
 ### 🎯 概要
