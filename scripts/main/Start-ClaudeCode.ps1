@@ -57,7 +57,11 @@ function New-RemoteTemplateDeployScript {
 
     $content = Get-Content -Path $TemplatePath -Raw -Encoding UTF8
     $base64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($content))
+    # bash double-quote does not expand ~ — replace with $HOME for correct expansion
     $normalizedTargetPath = $TargetPath.Replace('\', '/')
+    if ($normalizedTargetPath -match '^~/') {
+        $normalizedTargetPath = '$HOME/' + $normalizedTargetPath.Substring(2)
+    }
     $mkdir = ""
     if ($EnsureParentDirectory) {
         $mkdir = "mkdir -p `"`$(dirname `"$normalizedTargetPath`")`"`n"
@@ -442,6 +446,8 @@ try {
         (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'Claude\templates\claudeos\commands\session-info.md') -TargetPath "$linuxProject/.claude/commands/session-info.md" -Label '.claude/commands/session-info.md' -EnsureParentDirectory)
         # v3.1.0: cron-launcher.sh を ~/.claudeos/ に配布
         (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'Claude\templates\linux\cron-launcher.sh') -TargetPath "~/.claudeos/cron-launcher.sh" -Label '~/.claudeos/cron-launcher.sh' -EnsureParentDirectory)
+        # v3.2.97: statusline.js を ~/.claude/ に配布 (InitializeOnly: 存在時は上書きしない)
+        (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'scripts\templates\statusline.js') -TargetPath "~/.claude/statusline.js" -Label '~/.claude/statusline.js' -EnsureParentDirectory -InitializeOnly)
 @"
 cat > $(ConvertTo-BashSingleQuoted -Value $remoteBootstrap) <<'EOF'
 #!/usr/bin/env bash
