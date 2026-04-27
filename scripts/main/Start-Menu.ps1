@@ -187,49 +187,94 @@ function Get-RecentProjectLaunchSpec {
 
 function Show-Menu {
     Clear-Host
-    $sep = " " + ("=" * 57)
+    $hr = "  " + ([char]0x2500 * 60)
 
+    # ── ヘッダー ──────────────────────────────────────────────────────────────
     Write-Host ""
-    Write-Host $sep -ForegroundColor Cyan
-    Write-Host "   Claude Code ユニバーサルスタートアップツール v3.2" -ForegroundColor Cyan
-    Write-Host "   ClaudeOS v8.2 統合 / Linux Cron 自律実行 / Session Info Tab" -ForegroundColor DarkCyan
-    Write-Host $sep -ForegroundColor Cyan
-    Write-Host ""
-
-    Write-Host "  -- SSH 接続 ($LinuxHost -> $LinuxBase) --" -ForegroundColor Yellow
-    Write-Host "    S1. Claude Code を起動  " -NoNewline -ForegroundColor Yellow
-    Write-Host "[Linux cron 自律実行 / 5h セッション]" -ForegroundColor DarkYellow
+    Write-Host "  ╔══════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+    Write-Host "  ║   🤖 Claude Code ユニバーサルスタートアップツール v3.2  ║" -ForegroundColor Cyan
+    Write-Host "  ║      ClaudeOS v8.2  │  Linux Cron 自律実行  │  AI Dev   ║" -ForegroundColor DarkCyan
+    Write-Host "  ╚══════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
     Write-Host ""
 
-    Write-Host "  -- ローカル ($LocalDir) --" -ForegroundColor Green
-    Write-Host "    L1. Claude Code を起動  " -NoNewline -ForegroundColor Green
-    Write-Host "[手動セッション / スケジューラ不要]" -ForegroundColor DarkGreen
+    # ── 接続情報 ─────────────────────────────────────────────────────────────
+    Write-Host "  🔗 " -NoNewline -ForegroundColor Yellow
+    Write-Host "SSH   " -NoNewline -ForegroundColor DarkGray
+    Write-Host "$LinuxHost" -NoNewline -ForegroundColor White
+    Write-Host " ➜ " -NoNewline -ForegroundColor DarkGray
+    Write-Host "$LinuxBase" -ForegroundColor Yellow
+    Write-Host "  📂 " -NoNewline -ForegroundColor Green
+    Write-Host "Local " -NoNewline -ForegroundColor DarkGray
+    Write-Host "$LocalDir" -ForegroundColor Green
     Write-Host ""
 
-    Write-Host "  -- 診断・セットアップ --" -ForegroundColor Magenta
-    Write-Host "    5.  ツール確認・診断" -ForegroundColor Magenta
-    Write-Host "    6.  ドライブマッピング診断" -ForegroundColor Magenta
-    Write-Host "    7.  Windows Terminal セットアップ" -ForegroundColor Magenta
-    Write-Host "    8.  MCP ヘルスチェック" -ForegroundColor Magenta
-    Write-Host "    9.  Agent Teams ランタイム" -ForegroundColor Magenta
-    Write-Host "    10. Worktree Manager" -ForegroundColor Magenta
-    Write-Host "    11. Architecture Check" -ForegroundColor Magenta
-    Write-Host "    12. Statusline 設定" -ForegroundColor Magenta
-    Write-Host "    13. Claude ログ監視タブを開く" -ForegroundColor Magenta
+    # ── 起動 ─────────────────────────────────────────────────────────────────
+    Write-Host $hr -ForegroundColor DarkCyan
+    Write-Host "  🚀 Claude Code 起動" -ForegroundColor Cyan
+    Write-Host $hr -ForegroundColor DarkCyan
+    Write-Host "   " -NoNewline
+    Write-Host " S1 " -NoNewline -ForegroundColor Black -BackgroundColor Yellow
+    Write-Host "  ☁️  Claude Code (SSH)    " -NoNewline -ForegroundColor Yellow
+    Write-Host "Linux cron 自律実行 / 5h セッション" -ForegroundColor DarkYellow
+    Write-Host "   " -NoNewline
+    Write-Host " L1 " -NoNewline -ForegroundColor Black -BackgroundColor Green
+    Write-Host "  🖥️  Claude Code (ローカル)" -NoNewline -ForegroundColor Green
+    Write-Host "  手動セッション / スケジューラ不要" -ForegroundColor DarkGreen
     Write-Host ""
 
-    Write-Host "  -- Linux Cron 自律実行管理 [SSH 専用] --" -ForegroundColor Cyan
-    Write-Host "    14. Cron スケジュール 登録・編集・削除 [SSH / 5h 強制終了]" -ForegroundColor Cyan
-    Write-Host "    15. Linux セッション状態監視  " -NoNewline -ForegroundColor Cyan
+    # ── 診断・ツール ─────────────────────────────────────────────────────────
+    Write-Host $hr -ForegroundColor DarkMagenta
+    Write-Host "  🔧 診断・セットアップ・ツール" -ForegroundColor Magenta
+    Write-Host $hr -ForegroundColor DarkMagenta
+
+    $diagItems = @(
+        [pscustomobject]@{ Key = " 5"; Icon = "🩺"; Label = "ツール確認・診断";             Color = "Magenta"   }
+        [pscustomobject]@{ Key = " 6"; Icon = "💾"; Label = "ドライブマッピング診断";        Color = "Magenta"   }
+        [pscustomobject]@{ Key = " 7"; Icon = "⚙️"; Label = "Windows Terminal セットアップ"; Color = "DarkYellow"}
+        [pscustomobject]@{ Key = " 8"; Icon = "🩹"; Label = "MCP ヘルスチェック";            Color = "Magenta"   }
+        [pscustomobject]@{ Key = " 9"; Icon = "🤝"; Label = "Agent Teams ランタイム";        Color = "Cyan"      }
+        [pscustomobject]@{ Key = "10"; Icon = "🌿"; Label = "Worktree Manager";              Color = "Cyan"      }
+        [pscustomobject]@{ Key = "11"; Icon = "🏛️"; Label = "Architecture Check";            Color = "Magenta"   }
+        [pscustomobject]@{ Key = "12"; Icon = "📊"; Label = "Statusline 設定";               Color = "DarkCyan"  }
+        [pscustomobject]@{ Key = "13"; Icon = "📡"; Label = "Claude ログ監視タブを開く";     Color = "Cyan"      }
+    )
+    foreach ($it in $diagItems) {
+        Write-Host "   " -NoNewline
+        Write-Host " $($it.Key) " -NoNewline -ForegroundColor Black -BackgroundColor DarkGray
+        Write-Host "  $($it.Icon)  " -NoNewline -ForegroundColor White
+        Write-Host $it.Label -ForegroundColor $it.Color
+    }
+    Write-Host ""
+
+    # ── Cron 管理 ────────────────────────────────────────────────────────────
+    Write-Host $hr -ForegroundColor DarkYellow
+    Write-Host "  ⏰ Linux Cron 自律実行管理  " -NoNewline -ForegroundColor Yellow
+    Write-Host "[SSH 専用]" -ForegroundColor DarkYellow
+    Write-Host $hr -ForegroundColor DarkYellow
+
+    Write-Host "   " -NoNewline
+    Write-Host " 14 " -NoNewline -ForegroundColor Black -BackgroundColor DarkBlue
+    Write-Host "  📅  " -NoNewline -ForegroundColor White
+    Write-Host "Cron スケジュール 登録・編集・削除  " -NoNewline -ForegroundColor Cyan
+    Write-Host "[SSH / 5h 強制終了]" -ForegroundColor DarkCyan
+
+    Write-Host "   " -NoNewline
+    Write-Host " 15 " -NoNewline -ForegroundColor Black -BackgroundColor DarkBlue
+    Write-Host "  📺  " -NoNewline -ForegroundColor White
+    Write-Host "Linux セッション状態監視  " -NoNewline -ForegroundColor Cyan
     Write-Host "[SSH / リアルタイム cron 実行状況]" -ForegroundColor DarkCyan
     Write-Host ""
 
-    Write-Host "    0.  終了" -ForegroundColor Gray
+    # ── フッター ──────────────────────────────────────────────────────────────
+    Write-Host $hr -ForegroundColor DarkGray
+    Write-Host "   " -NoNewline
+    Write-Host "  0 " -NoNewline -ForegroundColor Black -BackgroundColor DarkGray
+    Write-Host "  ❌  終了" -ForegroundColor Gray
+    Write-Host $hr -ForegroundColor DarkGray
     Write-Host ""
-    Write-Host $sep -ForegroundColor DarkGray
-    Write-Host "  自律実行: Linux cron (月〜土 / プロジェクト別 / 300分)" -ForegroundColor DarkGray
-    Write-Host "  推奨: Windows Terminal から実行" -ForegroundColor DarkGray
-    Write-Host $sep -ForegroundColor DarkGray
+    Write-Host "  💡 " -NoNewline -ForegroundColor Yellow
+    Write-Host "自律実行: Linux cron (月〜土 / プロジェクト別 / 300分)　" -NoNewline -ForegroundColor DarkGray
+    Write-Host "推奨: Windows Terminal" -ForegroundColor DarkCyan
     Write-Host ""
 }
 
