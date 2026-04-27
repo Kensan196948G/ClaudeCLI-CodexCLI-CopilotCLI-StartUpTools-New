@@ -187,7 +187,7 @@ function Get-RecentProjectLaunchSpec {
 
 function Show-Menu {
     Clear-Host
-    $hr = "  " + ([char]0x2500 * 60)
+    $hr = "  " + ("─" * 60)
 
     # ── ヘッダー ──────────────────────────────────────────────────────────────
     Write-Host ""
