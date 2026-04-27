@@ -2,6 +2,21 @@
 
 # CHANGELOG
 
+## [v3.2.93] - 2026-04-27 — CTO最上位指令を _header.md と CLAUDE.md に強調追加
+
+### 🎯 概要
+CTO全権委任・5時間厳守・ループ・AgentTeams・Auto Mode・可視化・ドキュメント・GitHub Projects の10項目からなる最上位運用指令を blockquote + Bold + 絵文字で強調し、START_PROMPT.md の冒頭（61行目）と CLAUDE.md ステップ3 に配置。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `instructions/_header.md` | `## 🔥 最上位指令（必須実行）` セクション追加 |
+| `CLAUDE.md` | ステップ3 を blockquote + 絵文字リスト形式に強調更新 |
+| `START_PROMPT.md` | ビルド再生成（825行 → 842行） |
+
+---
+
 ## [v3.2.92] - 2026-04-27 — instructions/ を v8.5 Ultimate Modular Prompt Pack に再編
 
 ### 🎯 概要
