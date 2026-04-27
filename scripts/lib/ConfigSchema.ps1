@@ -131,7 +131,7 @@ function Test-StartupConfigSchema {
         if ($tcInstallCommand -isnot [string]) {
             Add-SchemaError -Errors $errors -Message "tools.$toolName.installCommand は文字列である必要があります"
         }
-        if ($null -eq $tcEnv -or $tcEnv -is [string] -or $tcEnv -is [System.Array]) {
+        if ($tcEnv -isnot [pscustomobject] -and $tcEnv -isnot [System.Collections.IDictionary]) {
             Add-SchemaError -Errors $errors -Message "tools.$toolName.env はオブジェクトである必要があります"
         }
         if (($toolName -ne 'copilot') -and ($tcApiKeyEnvVar -isnot [string])) {

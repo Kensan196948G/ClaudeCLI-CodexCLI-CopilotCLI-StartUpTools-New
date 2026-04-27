@@ -144,10 +144,13 @@ function Backup-ConfigFile {
                         $propVal = $obj.PSObject.Properties[$parts[$i]]?.Value
                         if ($null -ne $propVal) {
                             $obj = $propVal
+                        } else {
+                            $obj = $null
+                            break
                         }
                     }
                     $lastKey = $parts[-1]
-                    $lastProp = $obj.PSObject.Properties[$lastKey]
+                    $lastProp = if ($null -ne $obj) { $obj.PSObject.Properties[$lastKey] } else { $null }
                     if ($null -ne $obj -and $null -ne $lastProp -and $lastProp.Value -ne "") {
                         $obj.$lastKey = "***MASKED***"
                     }
