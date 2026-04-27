@@ -2,6 +2,34 @@
 
 # CHANGELOG
 
+## [v3.2.97] - 2026-04-27 — S1 起動時 ~/パス修正 + statusline.js 自動デプロイ
+
+### 🎯 概要
+S1 起動（SSH モード）でのテンプレートデプロイに2つの問題を修正。
+
+### 🐛 根本原因
+
+| バグ | 原因 | 修正 |
+|---|---|---|
+| `~/.claudeos/cron-launcher.sh` が `~/~/.cloudeos/` に誤配置 | bash double-quoteの中では `~` は展開されない | `~` → `$HOME` に変換するロジック追加 |
+| S1 起動時に `statusline.js` が Linux に自動デプロイされない | デプロイリストに含まれていなかった | `scripts/templates/statusline.js` を追加・`$HOME/.claude/statusline.js` として InitializeOnly でデプロイ |
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/main/Start-ClaudeCode.ps1` | `New-RemoteTemplateDeployScript` で `~` → `$HOME` 変換追加 / `statusline.js` デプロイ追加 |
+| `scripts/templates/statusline.js` | statusline.js テンプレートとして新規追加 |
+
+### ✅ 修正後の動作
+
+```
+S1 起動 → プロジェクト選択
+→ ~/.claudeos/cron-launcher.sh が /home/kensan/.claudeos/ に正しく配置 ✅
+→ ~/.claude/statusline.js が /home/kensan/.claude/ に InitializeOnly でデプロイ ✅
+→ 次回 S1 からは statusline が確実に動作
+```
+
 ## [v3.2.96] - 2026-04-27 — statusline.js Linux パス修正・自動デプロイ対応
 
 ### 🎯 概要
