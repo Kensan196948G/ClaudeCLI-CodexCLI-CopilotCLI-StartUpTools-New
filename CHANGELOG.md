@@ -2,6 +2,26 @@
 
 # CHANGELOG
 
+## [v3.2.89] - 2026-04-27 — CodeRabbit 指摘対応 (ロック原子化・null パス・env 型・cron エラー可視化)
+
+### 🎯 概要
+PR #250 に対する CodeRabbit / Copilot レビュー指摘 8 件を対応。ロックの競合条件・設定バリデーションのバグ・エラー隠蔽を修正。
+
+### 🔧 変更対象
+
+| ファイル | 修正内容 |
+|---|---|
+| `scripts/tools/Watch-ClaudeLog.ps1` | ロックファイル生成を `[System.IO.File]::Open(CreateNew)` で原子的に変更 |
+| `scripts/lib/ConfigLoader.ps1` | null 中間キーで `$obj=$null+break` 早期リターン、誤プロパティマスクを防止 |
+| `scripts/lib/ConfigSchema.ps1` | env 型チェックを負の排除 → 正の型チェック (pscustomobject / IDictionary) へ変更 |
+| `Claude/templates/linux/cron-launcher.sh` | `\|\| true` を削除し pipe-pane 失敗時に WARN ログ出力 |
+| `README.md` | バージョン v3.2.80 → v3.2.88 |
+| `Claude/templates/claude/CLAUDE.md` | フェーズ名を Monitor → Build → Verify → Improve に統一 |
+| `Claude/templates/claude/instructions/08-operations.md` | 時間配分を明記 (Monitor 30min / Build 2h / Verify 1h15m / Improve 1h15m) |
+| `Claude/templates/claude/START_PROMPT.md` | 凍結ルールを 30日/7日 基準に統一 |
+
+---
+
 ## [v3.2.88] - 2026-04-26 — ANSI 制御シーケンス除去の 2 重防護 (pipe-pane + PowerShell)
 
 ### 🎯 概要
