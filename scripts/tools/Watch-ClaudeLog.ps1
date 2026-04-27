@@ -306,21 +306,27 @@ while ($true) {
             $sessionId = Get-SessionIdForLog -LogPath $latest
             if ($sessionId) {
                 if (-not $openedSessionIds.ContainsKey($sessionId)) {
-                    # プロセス間重複防止: TEMP にロックファイルを作成して先着1プロセスのみ開く
+                    # プロセス間重複防止: CreateNew で排他的にロックファイルを開く（原子的）
                     $lockFile = Join-Path $env:TEMP "claudeos-sessiontab-$sessionId.lock"
-                    # 1時間以上前の古いロックをクリーンアップ
-                    if ((Test-Path $lockFile) -and ((Get-Date) - (Get-Item $lockFile).LastWriteTime).TotalHours -gt 1) {
-                        Remove-Item $lockFile -Force -ErrorAction SilentlyContinue
-                    }
-                    if (-not (Test-Path $lockFile)) {
-                        New-Item -ItemType File -Path $lockFile -Force -ErrorAction SilentlyContinue | Out-Null
+                    $lockStream = $null
+                    try {
+                        $lockStream = [System.IO.File]::Open(
+                            $lockFile,
+                            [System.IO.FileMode]::CreateNew,
+                            [System.IO.FileAccess]::Write,
+                            [System.IO.FileShare]::None
+                        )
+                        # CreateNew 成功 = このプロセスが先着
                         $openedSessionIds[$sessionId] = $true
                         Open-TmuxAttachTab -SessionId $sessionId
                         Start-Sleep -Seconds 1
                         Open-SessionInfoTab -SessionId $sessionId
-                    } else {
+                    } catch [System.IO.IOException] {
+                        # ファイルが既存 = 別プロセスが先着済み
                         Write-Host "  [INFO] セッションタブ開き済み (別プロセス): $sessionId" -ForegroundColor DarkGray
                         $openedSessionIds[$sessionId] = $true
+                    } finally {
+                        if ($null -ne $lockStream) { $lockStream.Dispose() }
                     }
                 } else {
                     Write-Host "  [INFO] セッションタブ開き済み: $sessionId" -ForegroundColor DarkGray

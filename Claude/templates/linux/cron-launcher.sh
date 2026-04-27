@@ -260,7 +260,9 @@ if command -v tmux >/dev/null 2>&1 && [[ "${CLAUDEOS_TMUX:-1}" == "1" ]]; then
   #   s/\x1b\][^\x07]*\x07//g : OSC シーケンス除去（タブタイトル設定 "0;⠂..." 等）
   #   s/\x1b\[[0-9;?]*[a-zA-Z]//g : CSI シーケンス除去（カーソル移動・色コード）
   #   s/\x1b.//g : その他 ESC シーケンス除去
-  tmux pipe-pane -t "$TMUX_SESSION" -o "sed 's/.*\r//; s/\x1b\][^\x07]*\x07//g; s/\x1b\[[0-9;?]*[a-zA-Z]//g; s/\x1b.//g' >> '$LOG_FILE'" 2>>"$LOG_FILE" || true
+  if ! tmux pipe-pane -t "$TMUX_SESSION" -o "sed 's/.*\r//; s/\x1b\][^\x07]*\x07//g; s/\x1b\[[0-9;?]*[a-zA-Z]//g; s/\x1b.//g' >> '$LOG_FILE'" 2>>"$LOG_FILE"; then
+    echo "[cron-launcher][WARN] tmux pipe-pane failed for session=$TMUX_SESSION, log=$LOG_FILE (log stream unavailable)" | tee -a "$LOG_FILE" >&2
+  fi
   echo "[cron-launcher] tmux attach -t $TMUX_SESSION  (UI閲覧用)" >> "$LOG_FILE"
   # tmux セッション終了まで待機（タイムアウト付き: keeper消滅後の二重防護）
   if ! timeout $((DURATION_SEC + 60)) tmux wait-for "$_TMUX_DONE" 2>>"$LOG_FILE"; then

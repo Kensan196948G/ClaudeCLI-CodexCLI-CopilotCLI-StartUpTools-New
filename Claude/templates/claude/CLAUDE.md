@@ -39,7 +39,7 @@ Codex が利用可能な場合のみ実行する。**Codex が使えなくても
 ### ステップ 3: 自律開発の開始
 
 
-設定された時間内でのMonitor、Development、Verify、Improvementをループ（ループ回数はCTO判断でOKです。）で進めてください。
+設定された時間内での Monitor → Build → Verify → Improve をループ（ループ回数はCTO判断でOKです。）で進めてください。
 ループ回数は KPI 状態・CI 状態・進捗により動的に決定する。
 以降は全てCTO全権委任で自律開発を開始してください。
 
