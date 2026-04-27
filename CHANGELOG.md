@@ -2,6 +2,26 @@
 
 # CHANGELOG
 
+## [v3.2.94] - 2026-04-27 — statusline グローバル設定崩れを修正（InitializeOnly）
+
+### 🎯 概要
+SSH モードでの `settings.json` 上書き問題を修正。`New-RemoteTemplateDeployScript` に `-InitializeOnly` スイッチを追加し、`settings.json` は初回のみ配置・既存ファイルを上書きしない動作に変更（ローカルモードと統一）。
+
+### 🐛 根本原因
+| モード | 旧動作 | 結果 |
+|---|---|---|
+| SSH（`New-RemoteTemplateDeployScript`）| `cmp -s` で差分があれば**毎回上書き** | Claude 実行中に変更された settings.json がテンプレートで上書きされ statusLine 消失 |
+| ローカル（`Initialize-ProjectTemplate`）| **初回のみ**配置（既存保持） | 問題なし |
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/main/Start-ClaudeCode.ps1` | `New-RemoteTemplateDeployScript` に `-InitializeOnly` スイッチを追加 |
+| `scripts/main/Start-ClaudeCode.ps1` | `settings.json` のデプロイに `-InitializeOnly` を適用（line 413） |
+
+---
+
 ## [v3.2.93] - 2026-04-27 — CTO最上位指令を _header.md と CLAUDE.md に強調追加
 
 ### 🎯 概要
