@@ -1,60 +1,69 @@
-# Codex統合・CodeRabbit統合・Debug原則
+# 05-codex-debug — Codex Debug 補助設計
 
-## CodeRabbit統合（v8）
+## 🎯 目的
 
-CodeRabbit は静的解析（40+ 解析器）による広範な品質チェックを担うツール。
-Codex の深い設計レビューと組み合わせて使用する。
+Codex を実装・デバッグ・レビュー補助として利用し、ClaudeOS のコンテキスト消費と修復負荷を下げる。
 
-### 実行コマンド
+---
 
-```text
-/coderabbit:review committed --base main   # コミット済み差分の事前チェック
-/coderabbit:review all --base main         # Verify フェーズでの包括レビュー
-/coderabbit:review uncommitted             # 修正後の即時確認
-```
+## 🧩 Codex の担当領域
 
-### Codex との統合順序
-
-```
-1. /coderabbit:review committed --base main  ← 静的解析 (広く・高速)
-2. /codex:review --base main --background    ← 設計・ロジックレビュー (深く)
-3. 両方の指摘を統合して修正
-```
-
-### 指摘対応ルール
-
-| 重大度 | 対応 |
+| 領域 | 役割 |
 |---|---|
-| Critical / High | 必須修正。未修正で merge 禁止 |
-| Medium | 原則修正。技術的理由があればスキップ可 |
-| Low | 任意。Token・時間残量に応じて対応 |
+| Debug | エラー原因の切り分け |
+| Review | PR差分レビュー |
+| Refactor | 小規模リファクタリング案 |
+| Test | テスト不足の指摘 |
+| Explain | ログ・スタックトレース解釈 |
+| Preview | 実装前の影響確認 |
 
-同一ファイル修正: 最大 3 ラウンド / 全体ループ: 最大 5 ラウンド
+---
 
-## 通常レビュー
-
-```text
-/codex:review --base main --background
-/codex:status
-/codex:result
-```
-
-## 対抗レビュー
+## 🔁 利用タイミング
 
 ```text
-/codex:adversarial-review --base main --background
+1. CI失敗
+2. テスト失敗
+3. lint失敗
+4. PRレビュー前
+5. 同一エラー2回目
+6. 大きな設計変更前
 ```
 
-## Debug / Rescue
+---
+
+## 🧠 Codex依頼プロンプト雛形
 
 ```text
-/codex:rescue --background investigate
+あなたは ClaudeOS の Codex Debug Agent です。
+
+対象:
+- Repository:
+- Branch:
+- Issue:
+- Error Log:
+- Changed Files:
+
+依頼:
+1. 原因を特定してください
+2. 影響範囲を示してください
+3. 最小修正案を提示してください
+4. 再発防止テストを提示してください
+5. 修正してよい範囲と触ってはいけない範囲を分けてください
+
+制約:
+- 大規模改修は禁止
+- 既存仕様を壊さない
+- セキュリティ低下は禁止
+- 修正案は小さく保つ
 ```
 
-## Debug原則
+---
 
-- 1 rescue = 1仮説
-- 最小修正
-- 深追い禁止
-- 同一原因 3 回まで
-- 原因不明時は推測修正を禁止
+## 🚫 Codex に任せすぎない領域
+
+- 最終merge判断
+- release判断
+- セキュリティ例外承認
+- state.json の恒久ルール変更
+- GitHub Projects の最終ステータス確定

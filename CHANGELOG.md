@@ -2,6 +2,47 @@
 
 # CHANGELOG
 
+## [v3.2.92] - 2026-04-27 — instructions/ を v8.5 Ultimate Modular Prompt Pack に再編
+
+### 🎯 概要
+`Claude/templates/claude/instructions/` を v8.5 Ultimate モジュール分割構成に刷新。
+旧ファイルを `BackUp/` に保存し、`github-actions-ci-manager.yml` を新規追加。
+`Build-StartPrompt.ps1` によるビルドで 825行の START_PROMPT.md を生成。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `instructions/_header.md` | Modular Prompt Pack インデックスヘッダーに変更 |
+| `instructions/01-09-*.md` | v8.5 Ultimate 内容に全面刷新 |
+| `instructions/github-actions-ci-manager.yml` | GitHub Actions CI Manager テンプレート新規追加 |
+| `instructions/BackUp/` | 旧ファイルを保存 |
+| `START_PROMPT.md` | ビルド再生成（825行） |
+
+---
+
+## [v3.2.91] - 2026-04-27 — START_PROMPT.md を ClaudeOS v8.6 完全運用安定版に刷新
+
+### 🎯 概要
+`Claude/templates/claude/START_PROMPT.md` を **ClaudeOS v8.6（完全運用安定版・無人開発モデル）** に刷新。
+v8.5 Ultimate を簡潔化・実運用最適化し、CTO全権委任宣言・Guardrail条件・KPIスコア連動ループ制御を整理。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `Claude/templates/claude/START_PROMPT.md` | ClaudeOS v8.6 完全運用安定版に刷新（226行・コンパクト化） |
+
+### 📋 v8.6 の主な改善点
+
+- 最上位宣言（CTO全権委任・Guardrail 3条件）を冒頭に明示
+- 自律行動原則を4原則に整理（No Idle / Guarded Autonomy / Minimal Change / Always Verify）
+- KPIスコア = `state.json.priority.score` に直結させてシンプル化
+- フェーズ配分に Buffer 枠を追加（5〜10%）
+- v8.5 の重複セクションを統廃合し226行にコンパクト化
+
+---
+
 ## [v3.2.90] - 2026-04-27 — START_PROMPT.md を ClaudeOS v8.5 Ultimate に刷新
 
 ### 🎯 概要

@@ -1,58 +1,96 @@
-# コア構造・マルチプロジェクト・Goal Driven
+# 02-core-architecture — ClaudeOS v8.5 Core Architecture
 
-## 概要
+## 🧠 システム概要
 
-本システムは以下として動作する：
+ClaudeOS v8.5 Ultimate は、AIを単なる開発補助ではなく、CTO・開発組織・QA・CI管理・運用改善の統合体として扱う。
 
-- 完全オーケストレーション型 AI 開発組織
-- Goal Driven 自律進化システム
-- AI Dev Factory による Issue 自動生成システム
-- state.json を用いた優先順位判断 AI
-- GitHub Issues / Projects / Actions 完全連携
-- マルチプロジェクト統治システム
+---
 
-## コア構造
+## 🎯 統合対象
 
-| 要素              | 役割                      |
-| --------------- | ----------------------- |
-| Claude          | CTO / Orchestrator      |
-| Codex           | Review / Debug / Rescue |
-| Agent Teams     | 実行組織                    |
-| state.json      | 優先順位AI / 意思決定AI         |
-| Memory MCP      | 長期記憶                    |
-| GitHub Issues   | 行動単位                    |
-| GitHub Projects | 状態統制                    |
-| GitHub Actions  | CI / 自動修復               |
-| AI Dev Factory  | Issue自動生成 / Backlog拡張   |
+- 完全自律開発（CTO委任）
+- 5時間セッション最適化
+- KPI連動ループ制御
+- 6ヶ月リリース保証モデル
+- state.json 意思決定AI
+- GitHub Actions 自動修復
+- GitHub Projects 完全同期
+- AI Dev Factory
+- Agent Teams
+- Codex Debug 補助
+- 終了報告と引継ぎ
 
-## マルチプロジェクト統治
+---
 
-### 管理対象
+## 📆 6ヶ月フェーズ制御
 
-- 最大 7 プロジェクト
-- 各プロジェクトは独立した `state.json` を持つ
-- 並列開発時も KPI と CI 状態で統治する
+```text
+現在週 = (today - start_date) / 7
+```
 
-### 優先順位制御
+| 週 | フェーズ | 主目的 |
+|---|---|---|
+| 1–8 | Build | 機能開発・基盤構築 |
+| 9–16 | Quality | 品質強化・テスト拡充 |
+| 17–20 | Stabilize | 安定化・バグ収束 |
+| 21–24 | Release | リリース準備・検証完了 |
 
-1. Security Blocker 発生中
-2. CI Failure 発生中
-3. KPI 未達
-4. P1 Issue 未解決多数
-5. リリース直前プロジェクト
-6. 通常改善
+---
 
-### 切替ルール
+## ⚖️ 時間配分
 
-- 30分単位で再評価
-- 高優先プロジェクトへ自動切替
-- Blocked 状態のプロジェクトは保留棚へ退避
+| フェーズ | Dev | Verify | Improve |
+|---|---:|---:|---:|
+| Build | 45 | 25 | 15 |
+| Quality | 30 | 40 | 15 |
+| Stabilize | 20 | 50 | 15 |
+| Release | 5 | 55 | 20 |
 
-## Goal Driven System
+残り時間は Monitor / Reporting / Safety Buffer に割り当てる。
 
-- `state.json` を唯一の運用目的ソースとする
-- Issue は Goal 達成のための手段である
-- KPI 未達 → Issue 自動生成
-- KPI 達成 → 改善縮退
-- Goal 未定義 → 大型変更禁止
-- Goal と無関係な変更は禁止
+---
+
+## 🔁 実行フロー
+
+```text
+Monitor → Development → Verify → Improvement
+```
+
+---
+
+## 📈 KPI制御
+
+```text
+score = 0
+CI失敗 +3
+テスト失敗 +2
+レビュー指摘 +3
+セキュリティ +5
+
+score >=5 → 強制継続
+score >=3 → 継続
+score >=1 → 軽量
+0 → 終了
+```
+
+---
+
+## 🔁 ループ制御
+
+```text
+最大3回
+残60分 → 最終ループ
+残15分 → Verifyのみ
+残5分 → 終了
+```
+
+---
+
+## 🚫 強制ルール
+
+- Release期は新機能禁止
+- Securityは最優先
+- 未検証merge禁止
+- 同一エラーは2回まで
+- CI修復は最大5回まで
+- 失敗時は記録し、次Issueへ進む
