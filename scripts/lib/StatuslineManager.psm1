@@ -42,6 +42,50 @@ function Get-GlobalStatusLineConfig {
 
 <#
 .SYNOPSIS
+    Copies a local script file to the remote Linux host's ~/.claude/ directory via SSH.
+#>
+function Copy-StatuslineScript {
+    param(
+        [Parameter(Mandatory)][string]$LinuxHost,
+        [Parameter(Mandatory)][string]$LocalPath
+    )
+
+    if (-not (Test-Path $LocalPath)) {
+        Write-Warning "Script file not found: $LocalPath"
+        return 1
+    }
+
+    $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes((Get-Content $LocalPath -Raw -Encoding UTF8)))
+
+    $script = @"
+set -e
+DEST="`$HOME/.claude/statusline.js"
+mkdir -p "`$(dirname "`$DEST")"
+printf '%s' "$b64" | base64 -d > "`$DEST"
+chmod 644 "`$DEST"
+echo "[OK] statusline.js を配置しました: `$DEST"
+"@
+
+    $sshExe = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { 'ssh' }
+    $psi = [System.Diagnostics.ProcessStartInfo]::new()
+    $psi.FileName = $sshExe
+    $psi.Arguments = "-T -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o ControlMaster=no $LinuxHost `"bash -s`""
+    $psi.UseShellExecute = $false
+    $psi.RedirectStandardInput = $true
+
+    $proc = [System.Diagnostics.Process]::new()
+    $proc.StartInfo = $psi
+    [void]$proc.Start()
+    $proc.StandardInput.NewLine = "`n"
+    $proc.StandardInput.Write(($script -replace "`r`n", "`n"))
+    $proc.StandardInput.WriteLine()
+    $proc.StandardInput.Close()
+    $proc.WaitForExit()
+    return $proc.ExitCode
+}
+
+<#
+.SYNOPSIS
     Merges the statusLine configuration into the remote Linux host's ~/.claude/settings.json via SSH.
 #>
 function Invoke-RemoteSettingsSync {
@@ -51,7 +95,16 @@ function Invoke-RemoteSettingsSync {
         [switch]$Backup
     )
 
-    $jsonPayload = $StatusLine | ConvertTo-Json -Depth 10 -Compress
+    # Translate Windows absolute paths (C:/Users/.../.claude/) to ~/  for Linux compatibility
+    $linuxStatusLine = $StatusLine | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+    if ($linuxStatusLine.PSObject.Properties.Name -contains 'command') {
+        $cmd = $linuxStatusLine.command
+        if ($cmd -match '^(.+?\s+)C:[/\\]Users[/\\][^/\\]+[/\\]\.claude[/\\](.+)$') {
+            $linuxStatusLine.command = ($Matches[1] + '~/.claude/' + $Matches[2]) -replace '\\', '/'
+        }
+    }
+
+    $jsonPayload = $linuxStatusLine | ConvertTo-Json -Depth 10 -Compress
     $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($jsonPayload))
     $backupLine = if ($Backup) {
         'if [ -f "$TARGET" ]; then cp "$TARGET" "$TARGET.bak-$(date +%Y%m%d-%H%M%S)"; fi'
@@ -99,4 +152,4 @@ PYEOF
     return $proc.ExitCode
 }
 
-Export-ModuleMember -Function Get-GlobalStatusLineConfig, Invoke-RemoteSettingsSync
+Export-ModuleMember -Function Get-GlobalStatusLineConfig, Copy-StatuslineScript, Invoke-RemoteSettingsSync

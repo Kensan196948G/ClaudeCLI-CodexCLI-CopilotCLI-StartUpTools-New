@@ -2,6 +2,38 @@
 
 # CHANGELOG
 
+## [v3.2.96] - 2026-04-27 — statusline.js Linux パス修正・自動デプロイ対応
+
+### 🎯 概要
+`Invoke-RemoteSettingsSync` が Windows 絶対パス (`C:/Users/kensan/.claude/statusline.js`) を
+Linux に verbatim コピーしていた問題を修正。`~/.claude/` への自動変換 + `statusline.js` ファイルの
+自動コピー機能を追加し、Windows / Linux 両方で statusline が動作するよう対応。
+
+### 🐛 根本原因
+
+| 項目 | 変更前 | 変更後 |
+|---|---|---|
+| `statusLine.command` | `node C:/Users/kensan/.claude/statusline.js` | `node ~/.claude/statusline.js` |
+| Linux 動作 | C:/Users... パスが存在せず失敗 | `~` が OS 別に展開され両方で動作 |
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/lib/StatuslineManager.psm1` | `Copy-StatuslineScript` 関数追加 / `Invoke-RemoteSettingsSync` に Windows→Linux パス変換追加 |
+| `scripts/main/Set-Statusline.ps1` | JS ファイルを Linux 側へ自動コピーするロジック追加 |
+| `C:/Users/kensan/.claude/settings.json`（手動） | `statusLine.command` を `node ~/.claude/statusline.js` に変更 |
+
+### ✅ 修正後の動作
+
+```
+メニュー12 実行
+→ statusline.js を Linux ~/.claude/ へコピー
+→ settings.json statusLine.command を node ~/.claude/statusline.js で書込み
+→ Windows 側 settings.json も ~/. claude/statusline.js を使用
+→ 次回同期で Windows 絶対パスで上書きされない ✅
+```
+
 ## [v3.2.95] - 2026-04-27 — statusLine をテンプレートから削除してグローバル管理に一本化
 
 ### 🎯 概要
