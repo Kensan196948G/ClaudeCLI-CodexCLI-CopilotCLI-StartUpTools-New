@@ -227,10 +227,33 @@ function Invoke-SyncStartPrompt {
 }
 
 function Invoke-SyncMenu {
-    $project = Select-Project
-    if ([string]::IsNullOrWhiteSpace($project)) { return }
+    $projects = Get-ProjectList
+    if ($projects.Count -eq 0) {
+        Write-Host "  プロジェクト一覧が取得できません。SSH接続を確認してください。" -ForegroundColor Yellow
+        return
+    }
+
     Write-Host ""
-    Invoke-SyncStartPrompt -Project $project
+    Write-Host "  == START_PROMPT 一括同期 ==" -ForegroundColor Cyan
+    Write-Host "  登録プロジェクト: $($projects.Count) 件" -ForegroundColor DarkCyan
+    Write-Host ""
+
+    $synced  = 0
+    $skipped = 0
+
+    foreach ($p in $projects) {
+        $confirm = Read-Host "  [$p] 同期しますか? [y/N]"
+        if ($confirm -match '^[yY]') {
+            Invoke-SyncStartPrompt -Project $p
+            $synced++
+        } else {
+            Write-Host "  [$p] スキップ" -ForegroundColor DarkGray
+            $skipped++
+        }
+    }
+
+    Write-Host ""
+    Write-Host "  完了: 同期 $synced 件 / スキップ $skipped 件" -ForegroundColor Cyan
 }
 
 function Invoke-SyncLauncher {

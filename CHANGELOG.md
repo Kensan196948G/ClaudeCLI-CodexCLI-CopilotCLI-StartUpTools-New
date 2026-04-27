@@ -2,6 +2,28 @@
 
 # CHANGELOG
 
+## [v3.2.90] - 2026-04-27 — START_PROMPT.md を ClaudeOS v8.5 Ultimate に刷新
+
+### 🎯 概要
+`Claude/templates/claude/START_PROMPT.md` を **ClaudeOS v8.5 Ultimate（完全統合版）** に全面刷新。
+Routines 最適化・state.json AI・6ヶ月リリース保証・GitHub Actions 完全連動・AI Dev Factory を統合した完全自律開発 OS テンプレートに更新。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `Claude/templates/claude/START_PROMPT.md` | ClaudeOS v8.5 Ultimate に全面刷新 |
+
+### 📋 v8.5 Ultimate の主な追加内容
+
+- 6ヶ月フェーズ制御表（Build/Quality/Stabilize/Release）
+- KPIスコア連動ループ判定（score計算式）
+- フェーズ別時間配分黄金比
+- GitHub Actions 完全連動テンプレート付き
+- AI Dev Factory Issue テンプレ
+
+---
+
 ## [v3.2.89] - 2026-04-27 — メニュー大幅刷新 + ログ監視タブ発火タイミング修正
 
 ### 🎯 概要
