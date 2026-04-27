@@ -2,6 +2,25 @@
 
 # CHANGELOG
 
+## [v3.2.92] - 2026-04-27 — instructions/ を v8.5 Ultimate Modular Prompt Pack に再編
+
+### 🎯 概要
+`Claude/templates/claude/instructions/` を v8.5 Ultimate モジュール分割構成に刷新。
+旧ファイルを `BackUp/` に保存し、`github-actions-ci-manager.yml` を新規追加。
+`Build-StartPrompt.ps1` によるビルドで 825行の START_PROMPT.md を生成。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `instructions/_header.md` | Modular Prompt Pack インデックスヘッダーに変更 |
+| `instructions/01-09-*.md` | v8.5 Ultimate 内容に全面刷新 |
+| `instructions/github-actions-ci-manager.yml` | GitHub Actions CI Manager テンプレート新規追加 |
+| `instructions/BackUp/` | 旧ファイルを保存 |
+| `START_PROMPT.md` | ビルド再生成（825行） |
+
+---
+
 ## [v3.2.91] - 2026-04-27 — START_PROMPT.md を ClaudeOS v8.6 完全運用安定版に刷新
 
 ### 🎯 概要
