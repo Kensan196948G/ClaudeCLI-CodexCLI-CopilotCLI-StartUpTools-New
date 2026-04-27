@@ -202,6 +202,18 @@ function Write-LiveHeader {
     Write-Host ''
 }
 
+# ANSI エスケープと \r を除去してログ行を表示する。stdbuf 未インストール環境でも制御文字残骸なしで表示できる (v3.2.89)。
+function Write-FilteredTailLine {
+    param([string]$Raw)
+    $line = $Raw `
+        -replace '.*\r', '' `
+        -replace '\x1b\][^\x07]*\x07', '' `
+        -replace '\x1b\][^\x1b]*$', '' `
+        -replace '\x1b\[[0-9;?]*[a-zA-Z]', '' `
+        -replace '\x1b.', ''
+    if ($line.Trim().Length -gt 0) { Write-Host $line }
+}
+
 function Get-LatestLog {
     $result = ssh $SshTarget "ls -t $LogsDir/cron-*.log 2>/dev/null | head -1" 2>$null
     if ($null -eq $result) { return '' }
@@ -319,23 +331,10 @@ while ($true) {
             ssh $using:SshTarget "tail -n 50 -F '$($using:latest)'"
         }
 
-        # ANSI エスケープと \r を PowerShell 正規表現で除去するヘルパ。
-        # stdbuf 未インストール環境でも制御文字残骸なしでログを表示する (v3.2.89)。
-        $FilterLine = {
-            param([string]$raw)
-            $line = $raw `
-                -replace '.*\r', '' `
-                -replace '\x1b\][^\x07]*\x07', '' `
-                -replace '\x1b\][^\x1b]*$', '' `
-                -replace '\x1b\[[0-9;?]*[a-zA-Z]', '' `
-                -replace '\x1b.', ''
-            if ($line.Trim().Length -gt 0) { Write-Host $line }
-        }
-
         try {
             while ($true) {
                 # tail の出力を受信してフィルタ後に表示 (非ブロッキング)
-                Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object { & $FilterLine $_ }
+                Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object { Write-FilteredTailLine $_ }
 
                 # tail Job が落ちた (SSH 切断等) なら抜ける
                 if ($tailJob.State -ne 'Running') { break }
@@ -346,7 +345,7 @@ while ($true) {
                 $newer = Get-LatestLog
                 if ($newer -and $newer -ne $latest) {
                     # 残出力を flush
-                    Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object { & $FilterLine $_ }
+                    Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object { Write-FilteredTailLine $_ }
                     Write-Host ''
                     Write-Host "  より新しいセッション検出: $newer" -ForegroundColor Yellow
                     Write-Host '  次のセッションへ切り替えます...' -ForegroundColor Yellow
@@ -356,7 +355,7 @@ while ($true) {
         }
         finally {
             Stop-Job $tailJob -ErrorAction SilentlyContinue
-            Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object { & $FilterLine $_ }
+            Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object { Write-FilteredTailLine $_ }
             Remove-Job $tailJob -Force -ErrorAction SilentlyContinue
         }
 
