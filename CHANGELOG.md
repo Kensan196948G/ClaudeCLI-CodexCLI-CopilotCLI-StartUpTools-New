@@ -2,6 +2,28 @@
 
 # CHANGELOG
 
+## [v3.2.89] - 2026-04-27 — メニュー大幅刷新 + ログ監視タブ発火タイミング修正
+
+### 🎯 概要
+`Start-Menu.ps1` の表示を PowerShell 7 カラー + Unicode ボーダー + 絵文字アイコン多用で全面刷新。
+`Watch-ClaudeLog.ps1` の `stdbuf -oL` 依存を除去し、cron 発火タイミングの検知遅延・ミスを解消。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/main/Start-Menu.ps1` | メニュー全面刷新 — Unicode ボーダー + 絵文字アイコン + PowerShell 7 カラー |
+| `scripts/tools/Watch-ClaudeLog.ps1` | `stdbuf -oL` 廃止 → `tail -F` のみ SSH 実行 + PowerShell 側 ANSI フィルタ追加 |
+
+### 🐛 修正詳細
+
+**ログ監視タイミング修正 (v3.2.89)**
+- 根本原因: `stdbuf -oL tail ...` が Linux 環境に `stdbuf` 未インストールの場合に SSH ジョブが即終了
+- 結果: `$knownLog = $latest` が設定されてしまい次回の cron 発火を"既知ログ"と判定してスキップ
+- 修正: `stdbuf -oL` を除去し `tail -F` のみ実行。ANSI フィルタを PowerShell 受信側で適用
+
+---
+
 ## [v3.2.80] - 2026-04-23 — scripts/lib 全 13 ファイルへ Set-StrictMode 追加 + PSCustomObject 安全化
 
 ### 🎯 概要

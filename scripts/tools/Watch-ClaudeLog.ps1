@@ -14,7 +14,9 @@
     場合にも確実にアイコンが PS 7 になるよう改善)。
     v3.2.48 で profile 識別子を GUID 優先に変更 (空白を含む profile 名が
     Start-Process -ArgumentList で split される問題を回避)。
-    ClaudeOS v3.2.48
+    v3.2.89 で stdbuf 依存を廃止。tail -F のみ SSH 実行し ANSI・\r フィルタを
+    PowerShell 受信側で処理 (Linux 環境依存解消 / cron 発火タイミング修正)。
+    ClaudeOS v3.2.89
 .PARAMETER NewTab
     Windows Terminal の新規タブで開く（既定: 現在のウィンドウで実行）。
 .PARAMETER PollIntervalSeconds
@@ -200,6 +202,18 @@ function Write-LiveHeader {
     Write-Host ''
 }
 
+# ANSI エスケープと \r を除去してログ行を表示する。stdbuf 未インストール環境でも制御文字残骸なしで表示できる (v3.2.89)。
+function Write-FilteredTailLine {
+    param([string]$Raw)
+    $line = $Raw `
+        -replace '.*\r', '' `
+        -replace '\x1b\][^\x07]*\x07', '' `
+        -replace '\x1b\][^\x1b]*$', '' `
+        -replace '\x1b\[[0-9;?]*[a-zA-Z]', '' `
+        -replace '\x1b.', ''
+    if ($line.Trim().Length -gt 0) { Write-Host $line }
+}
+
 function Get-LatestLog {
     $result = ssh $SshTarget "ls -t $LogsDir/cron-*.log 2>/dev/null | head -1" 2>$null
     if ($null -eq $result) { return '' }
@@ -306,23 +320,21 @@ while ($true) {
 
         Write-Host ''
         # tail -F をバックグラウンド Job で起動し、メインスレッドで次ログ出現を監視する。
-        # これにより tail -F が永続ブロックしても次の cron 発火を取りこぼさない (v3.2.41)。
-        # stdbuf -oL で tail の line-buffering を強制し、リアルタイム出力を担保する。
+        # stdbuf は Linux ディストリビューション依存のため排除。tail -F のみを SSH 実行し、
+        # ANSI エスケープ・\r フィルタは PowerShell 受信側で処理する (v3.2.89)。
         $tailJob = Start-Job -ScriptBlock {
             # Job は新規 runspace のため親 console のエンコーディング継承なし。
-            # 明示的に UTF-8 化しないと ssh 経由の日本語出力 (例: "UI閲覧用") が文字化ける (v3.2.42)。
+            # 明示的に UTF-8 化しないと ssh 経由の日本語出力が文字化ける (v3.2.42)。
             [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
             [Console]::InputEncoding  = [System.Text.Encoding]::UTF8
             $OutputEncoding = [System.Text.Encoding]::UTF8
-            ssh $using:SshTarget "stdbuf -oL tail -n 50 -F '$($using:latest)'"
+            ssh $using:SshTarget "tail -n 50 -F '$($using:latest)'"
         }
 
         try {
             while ($true) {
-                # tail の出力を受信してコンソール表示 (非ブロッキング)
-                Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object {
-                    Write-Host $_
-                }
+                # tail の出力を受信してフィルタ後に表示 (非ブロッキング)
+                Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object { Write-FilteredTailLine $_ }
 
                 # tail Job が落ちた (SSH 切断等) なら抜ける
                 if ($tailJob.State -ne 'Running') { break }
@@ -333,9 +345,7 @@ while ($true) {
                 $newer = Get-LatestLog
                 if ($newer -and $newer -ne $latest) {
                     # 残出力を flush
-                    Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object {
-                        Write-Host $_
-                    }
+                    Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object { Write-FilteredTailLine $_ }
                     Write-Host ''
                     Write-Host "  より新しいセッション検出: $newer" -ForegroundColor Yellow
                     Write-Host '  次のセッションへ切り替えます...' -ForegroundColor Yellow
@@ -345,9 +355,7 @@ while ($true) {
         }
         finally {
             Stop-Job $tailJob -ErrorAction SilentlyContinue
-            Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object {
-                Write-Host $_
-            }
+            Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object { Write-FilteredTailLine $_ }
             Remove-Job $tailJob -Force -ErrorAction SilentlyContinue
         }
 
