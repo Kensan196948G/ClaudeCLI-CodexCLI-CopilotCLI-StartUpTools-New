@@ -2,6 +2,34 @@
 
 # CHANGELOG
 
+## [v3.2.95] - 2026-04-27 — statusLine をテンプレートから削除してグローバル管理に一本化
+
+### 🎯 概要
+メニュー12（Statusline設定）がグローバル設定に書いても各プロジェクト設定に上書きされる問題を修正。
+テンプレート `settings.json` から `statusLine` セクションを削除し、`~/.claude/settings.json`（グローバル）のみで管理する設計に変更。
+
+### 🐛 根本原因
+Claude Code の優先順位: プロジェクト `.claude/settings.json` > グローバル `~/.claude/settings.json`
+テンプレートから配置されたプロジェクト `settings.json` に `statusLine` が書かれているため、
+メニュー12 でグローバルに設定しても上書きされていた。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `Claude/templates/claude/settings.json` | `statusLine` セクション削除（グローバルに委譲） |
+| Linux 全プロジェクト `.claude/settings.json` | 既存の `statusLine` を一括削除（8件） |
+
+### ✅ 修正後の動作
+
+```
+メニュー12 → ~/ .claude/settings.json に statusLine を書き込む
+           → 各プロジェクトの settings.json には statusLine なし
+           → グローバル設定が全プロジェクトで即時有効 ✅
+```
+
+---
+
 ## [v3.2.94] - 2026-04-27 — statusline グローバル設定崩れを修正（InitializeOnly）
 
 ### 🎯 概要
