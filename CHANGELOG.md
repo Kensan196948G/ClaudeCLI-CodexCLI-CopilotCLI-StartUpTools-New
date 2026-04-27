@@ -2,6 +2,142 @@
 
 # CHANGELOG
 
+## [v3.2.96] - 2026-04-27 — statusline.js Linux パス修正・自動デプロイ対応
+
+### 🎯 概要
+`Invoke-RemoteSettingsSync` が Windows 絶対パス (`C:/Users/kensan/.claude/statusline.js`) を
+Linux に verbatim コピーしていた問題を修正。`~/.claude/` への自動変換 + `statusline.js` ファイルの
+自動コピー機能を追加し、Windows / Linux 両方で statusline が動作するよう対応。
+
+### 🐛 根本原因
+
+| 項目 | 変更前 | 変更後 |
+|---|---|---|
+| `statusLine.command` | `node C:/Users/kensan/.claude/statusline.js` | `node ~/.claude/statusline.js` |
+| Linux 動作 | C:/Users... パスが存在せず失敗 | `~` が OS 別に展開され両方で動作 |
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/lib/StatuslineManager.psm1` | `Copy-StatuslineScript` 関数追加 / `Invoke-RemoteSettingsSync` に Windows→Linux パス変換追加 |
+| `scripts/main/Set-Statusline.ps1` | JS ファイルを Linux 側へ自動コピーするロジック追加 |
+| `C:/Users/kensan/.claude/settings.json`（手動） | `statusLine.command` を `node ~/.claude/statusline.js` に変更 |
+
+### ✅ 修正後の動作
+
+```
+メニュー12 実行
+→ statusline.js を Linux ~/.claude/ へコピー
+→ settings.json statusLine.command を node ~/.claude/statusline.js で書込み
+→ Windows 側 settings.json も ~/. claude/statusline.js を使用
+→ 次回同期で Windows 絶対パスで上書きされない ✅
+```
+
+## [v3.2.95] - 2026-04-27 — statusLine をテンプレートから削除してグローバル管理に一本化
+
+### 🎯 概要
+メニュー12（Statusline設定）がグローバル設定に書いても各プロジェクト設定に上書きされる問題を修正。
+テンプレート `settings.json` から `statusLine` セクションを削除し、`~/.claude/settings.json`（グローバル）のみで管理する設計に変更。
+
+### 🐛 根本原因
+Claude Code の優先順位: プロジェクト `.claude/settings.json` > グローバル `~/.claude/settings.json`
+テンプレートから配置されたプロジェクト `settings.json` に `statusLine` が書かれているため、
+メニュー12 でグローバルに設定しても上書きされていた。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `Claude/templates/claude/settings.json` | `statusLine` セクション削除（グローバルに委譲） |
+| Linux 全プロジェクト `.claude/settings.json` | 既存の `statusLine` を一括削除（8件） |
+
+### ✅ 修正後の動作
+
+```
+メニュー12 → ~/ .claude/settings.json に statusLine を書き込む
+           → 各プロジェクトの settings.json には statusLine なし
+           → グローバル設定が全プロジェクトで即時有効 ✅
+```
+
+---
+
+## [v3.2.94] - 2026-04-27 — statusline グローバル設定崩れを修正（InitializeOnly）
+
+### 🎯 概要
+SSH モードでの `settings.json` 上書き問題を修正。`New-RemoteTemplateDeployScript` に `-InitializeOnly` スイッチを追加し、`settings.json` は初回のみ配置・既存ファイルを上書きしない動作に変更（ローカルモードと統一）。
+
+### 🐛 根本原因
+| モード | 旧動作 | 結果 |
+|---|---|---|
+| SSH（`New-RemoteTemplateDeployScript`）| `cmp -s` で差分があれば**毎回上書き** | Claude 実行中に変更された settings.json がテンプレートで上書きされ statusLine 消失 |
+| ローカル（`Initialize-ProjectTemplate`）| **初回のみ**配置（既存保持） | 問題なし |
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/main/Start-ClaudeCode.ps1` | `New-RemoteTemplateDeployScript` に `-InitializeOnly` スイッチを追加 |
+| `scripts/main/Start-ClaudeCode.ps1` | `settings.json` のデプロイに `-InitializeOnly` を適用（line 413） |
+
+---
+
+## [v3.2.93] - 2026-04-27 — CTO最上位指令を _header.md と CLAUDE.md に強調追加
+
+### 🎯 概要
+CTO全権委任・5時間厳守・ループ・AgentTeams・Auto Mode・可視化・ドキュメント・GitHub Projects の10項目からなる最上位運用指令を blockquote + Bold + 絵文字で強調し、START_PROMPT.md の冒頭（61行目）と CLAUDE.md ステップ3 に配置。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `instructions/_header.md` | `## 🔥 最上位指令（必須実行）` セクション追加 |
+| `CLAUDE.md` | ステップ3 を blockquote + 絵文字リスト形式に強調更新 |
+| `START_PROMPT.md` | ビルド再生成（825行 → 842行） |
+
+---
+
+## [v3.2.92] - 2026-04-27 — instructions/ を v8.5 Ultimate Modular Prompt Pack に再編
+
+### 🎯 概要
+`Claude/templates/claude/instructions/` を v8.5 Ultimate モジュール分割構成に刷新。
+旧ファイルを `BackUp/` に保存し、`github-actions-ci-manager.yml` を新規追加。
+`Build-StartPrompt.ps1` によるビルドで 825行の START_PROMPT.md を生成。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `instructions/_header.md` | Modular Prompt Pack インデックスヘッダーに変更 |
+| `instructions/01-09-*.md` | v8.5 Ultimate 内容に全面刷新 |
+| `instructions/github-actions-ci-manager.yml` | GitHub Actions CI Manager テンプレート新規追加 |
+| `instructions/BackUp/` | 旧ファイルを保存 |
+| `START_PROMPT.md` | ビルド再生成（825行） |
+
+---
+
+## [v3.2.91] - 2026-04-27 — START_PROMPT.md を ClaudeOS v8.6 完全運用安定版に刷新
+
+### 🎯 概要
+`Claude/templates/claude/START_PROMPT.md` を **ClaudeOS v8.6（完全運用安定版・無人開発モデル）** に刷新。
+v8.5 Ultimate を簡潔化・実運用最適化し、CTO全権委任宣言・Guardrail条件・KPIスコア連動ループ制御を整理。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `Claude/templates/claude/START_PROMPT.md` | ClaudeOS v8.6 完全運用安定版に刷新（226行・コンパクト化） |
+
+### 📋 v8.6 の主な改善点
+
+- 最上位宣言（CTO全権委任・Guardrail 3条件）を冒頭に明示
+- 自律行動原則を4原則に整理（No Idle / Guarded Autonomy / Minimal Change / Always Verify）
+- KPIスコア = `state.json.priority.score` に直結させてシンプル化
+- フェーズ配分に Buffer 枠を追加（5〜10%）
+- v8.5 の重複セクションを統廃合し226行にコンパクト化
+
+---
+
 ## [v3.2.90] - 2026-04-27 — START_PROMPT.md を ClaudeOS v8.5 Ultimate に刷新
 
 ### 🎯 概要

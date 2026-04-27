@@ -68,6 +68,20 @@ Write-Host "  -- 適用内容のプレビュー --" -ForegroundColor Cyan
 Write-Host ($global.statusLine | ConvertTo-Json -Depth 10) -ForegroundColor White
 Write-Host ""
 
+# If command references a local JS file (Windows absolute or ~ path), copy it to Linux first
+$shouldCopyScript = $false
+$localScriptPath = $null
+if ($global.statusLine.PSObject.Properties.Name -contains 'command') {
+    $cmd = $global.statusLine.command
+    if ($cmd -match 'C:[/\\]Users[/\\][^/\\]+[/\\]\.claude[/\\](.+\.js)$') {
+        $localScriptPath = Join-Path $env:USERPROFILE ".claude\$($Matches[1])"
+        $shouldCopyScript = Test-Path $localScriptPath
+    } elseif ($cmd -match '~[/\\]\.claude[/\\](.+\.js)$') {
+        $localScriptPath = Join-Path $env:USERPROFILE ".claude\$($Matches[1])"
+        $shouldCopyScript = Test-Path $localScriptPath
+    }
+}
+
 if (-not $NonInteractive) {
     $confirm = Read-Host "  Linux 側へ適用します。よろしいですか? [y/N]"
     if ($confirm -notmatch '^[yY]') {
@@ -77,6 +91,14 @@ if (-not $NonInteractive) {
 }
 
 try {
+    if ($shouldCopyScript -and $localScriptPath) {
+        Write-Host "  statusline スクリプトを Linux 側へコピー中..." -ForegroundColor Gray
+        $cpRc = Copy-StatuslineScript -LinuxHost $LinuxHost -LocalPath $localScriptPath
+        if ($cpRc -ne 0) {
+            Write-Host "  [WARN] スクリプトのコピーに失敗しました (exit=$cpRc)" -ForegroundColor Yellow
+        }
+    }
+
     $rc = Invoke-RemoteSettingsSync -LinuxHost $LinuxHost -StatusLine $global.statusLine -Backup:$backup
     if ($rc -eq 0) {
         Write-Host "  [OK] Statusline 設定を同期しました。" -ForegroundColor Green

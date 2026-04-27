@@ -1,53 +1,85 @@
-# Agent Teams
+# 04-agent-teams — Agent Teams 設計
 
-## 論理定義
+## 🎯 目的
 
-| 役割               | 責任                   |
-| ---------------- | -------------------- |
-| CTO              | 最終判断                 |
-| ProductManager   | Issue生成 / Projects同期 |
-| Architect        | 設計                   |
-| Developer        | 実装                   |
-| Reviewer         | Codexレビュー / CodeRabbitレビュー |
-| Debugger         | 原因分析                 |
-| QA               | テスト                  |
-| Security         | リスク評価                |
-| DevOps           | CI/CD / Actions      |
-| Analyst          | KPI分析                |
-| EvolutionManager | 改善戦略                 |
-| ReleaseManager   | リリース管理               |
+ClaudeOS を単体AIではなく、複数役割を持つ仮想開発組織として運用する。
 
-## Agent起動順序
+---
 
-| フェーズ | 起動チェーン |
+## 🧑‍💼 基本チーム構成
+
+| Agent | 役割 |
 |---|---|
-| Monitor | CTO → ProductManager → Analyst → Architect → DevOps |
-| Development | Architect → Developer → Reviewer |
-| Verify | QA → Reviewer → Security → DevOps |
-| Repair | Debugger → Developer → Reviewer → QA → DevOps |
-| Improvement | EvolutionManager → ProductManager → Architect → Developer → QA |
-| Release | ReleaseManager → Reviewer → Security → DevOps → CTO |
+| CTO | 全体判断・優先順位・リリース責任 |
+| Manager | Issue管理・進捗管理・Project同期 |
+| Architect | 設計・技術選定・構造レビュー |
+| DevAPI | API / Backend 実装 |
+| DevUI | Frontend / UI 実装 |
+| QA | テスト設計・品質保証 |
+| Tester | 実行検証・再現確認 |
+| CIManager | GitHub Actions / CI修復 |
+| Security | 脆弱性・権限・秘密情報確認 |
+| ReleaseManager | リリース判定・最終報告 |
 
-## Agentログフォーマット（統一）
+---
 
-v3.2.54 からアイコン + 英語名 / 日本語名併記に統一する:
+## 🔁 Agent Teams 会話ログ形式
 
 ```text
-[👔 CTO / 最高技術責任者] 判断:
-[📋 ProductManager / プロダクトマネージャー] Issue生成/Project同期:
-[🏛️ Architect / アーキテクト] 設計:
-[💻 Developer / デベロッパー] 実装:
-[🔍 Reviewer / レビュアー] 指摘:
-[🐛 Debugger / デバッガー] 原因:
-[🧪 QA / 品質保証] 検証:
-[🔒 Security / セキュリティ] リスク:
-[⚙️ DevOps / 運用基盤] CI状態:
-[📊 Analyst / アナリスト] KPI分析:
-[🧬 EvolutionManager / 進化マネージャー] 改善:
-[🚀 ReleaseManager / リリースマネージャー] 判断:
-[🐰 CodeRabbit] レビュー結果: Critical=N High=N Medium=N Low=N
+[AgentTeams Log]
+
+@CTO:
+- decision:
+- reason:
+
+@Manager:
+- issue_status:
+- project_status:
+
+@Architect:
+- design_review:
+- risk:
+
+@Developer:
+- implementation:
+- changed_files:
+
+@QA:
+- test_policy:
+- test_result:
+
+@CIManager:
+- ci_status:
+- repair_action:
+
+@Security:
+- security_check:
+- blocker:
+
+@ReleaseManager:
+- release_readiness:
+- next_action:
 ```
 
-- アイコンは省略禁止 (Windows Terminal + pwsh 7 で描画確認済)
-- 英語名 / 日本語名の両方を `/` で併記すること
-- サブエージェント委任・結果統合もすべて上記形式で表示 (内部完結禁止)
+---
+
+## 🚦 エスカレーションルール
+
+| 条件 | 担当 |
+|---|---|
+| CI失敗 | CIManager |
+| テスト失敗 | QA / Tester |
+| 設計不整合 | Architect |
+| Issue過多 | Manager |
+| セキュリティ指摘 | Security |
+| リリース判断 | CTO / ReleaseManager |
+
+---
+
+## 🚫 禁止事項
+
+- Agent判断なしのmerge
+- QA確認なしのDone移動
+- Security未確認のrelease
+- Release期の新機能追加
+- 同一エラーの無限修復

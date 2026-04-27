@@ -1,76 +1,72 @@
-# AI Dev Factory・GitHub Projects連携
+# 07-ai-dev-factory — AI Dev Factory
 
-## AI Dev Factory
+## 🎯 目的
 
-### 目的
+ClaudeOS が backlog / TODO / CI / KPI / Review から自動的にIssue候補を生成し、開発対象を枯渇させない。
 
-AI Dev Factory は、開発・検証・レビュー結果から次の Issue を自動生成し、GitHub Projects へ反映する自律バックログ工場である。
+---
 
-### Issue生成条件
+## 🏭 Issue自動生成条件
 
-- KPI 未達
-- CI failure
-- build failure
-- test failure
-- Codex review 指摘
-- Security findings
-- TODO / FIXME 検出
-- カバレッジ不足
-- ドキュメント欠落
-- リファクタ対象の継続蓄積
+- CI失敗
+- KPI未達
+- テスト不足
+- セキュリティ指摘
+- backlog.md の未処理項目
+- TODOコメントの蓄積
+- docs/roadmap.md との差分
+- 既存Issueのブロッカー
 
-### Issue生成禁止条件
+---
 
-- 既存 Issue と重複
-- 目的不明
-- 再現条件なし
-- 期待結果なし
-- P1 未解決中の軽微改善
-
-### Issueテンプレート
+## 📝 Issueテンプレート
 
 ```text
-Title: [P1/P2/P3] 短い要約
-
-Summary:
-- 何が起きているか
-- 何を直すべきか
+Title: [P1] 問題概要
 
 Reason:
-- 発生源（CI / Review / KPI / Security / TODO）
+CI failure / KPI gap / test gap / security risk
 
-Acceptance Criteria:
-- [ ] 再現条件が明確
-- [ ] 修正条件が明確
-- [ ] テスト条件が明確
-- [ ] 完了判定が明確
+Context:
+- 発生箇所:
+- 関連ファイル:
+- 関連Issue:
+- 関連PR:
 
-Project Sync:
-- Project: <GitHub Project Name>
-- Status: Todo
-- Priority: P1/P2/P3
-- Owner: Agent Role
+Acceptance:
+- 再現可能
+- 修正可能
+- テスト可能
+- CI通過
+- 影響範囲が説明されている
+
+Priority:
+P1 / P2 / P3
+
+Owner:
+ClaudeOS / CIManager / QA / Security
 ```
 
-## GitHub Projects連携
+---
 
-### 運用原則
+## 📊 優先順位
 
-- 生成した Issue は GitHub Projects に必ず紐付ける
-- Status / Priority / Owner / Iteration を同期する
-- Issue 完了時に Project 状態も更新する
-
-### 標準ステータス
-
-Backlog → Todo → In Progress → Review → Verify → Blocked → Done
-
-### 自動連携ルール
-
-| トリガー | ステータス |
+| 優先度 | 条件 |
 |---|---|
-| 新規 Issue 生成 | `Backlog` または `Todo` |
-| 開発着手 | `In Progress` |
-| Codex review 中 | `Review` |
-| QA / CI 確認中 | `Verify` |
-| 依存待ち / Security blocker | `Blocked` |
-| マージ完了 | `Done` |
+| P1 | Security / CI停止 / Release阻害 |
+| P2 | テスト不足 / 品質低下 |
+| P3 | 改善 / リファクタリング |
+| P4 | 将来案 / 調査 |
+
+---
+
+## 🚫 Release期の制約
+
+Release期に生成された新機能Issueは原則Backlogへ回す。
+
+ただし、以下は例外。
+
+- Security修正
+- Release阻害バグ
+- データ破損リスク
+- ビルド不能

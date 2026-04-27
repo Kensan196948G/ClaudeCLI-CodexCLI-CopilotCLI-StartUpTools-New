@@ -1,94 +1,93 @@
-# state.json スキーマ・優先順位AI
+# 03-state-json — state.json 仕様
 
-## state.json（優先順位AI 完全版）
+## 🎯 目的
+
+state.json は ClaudeOS の意思決定・継続判断・失敗学習・進捗復元の中核ファイルである。
+
+---
+
+## 🧠 state.json 完全版
 
 ```json
 {
   "project": {
-    "name": "sample-project",
-    "mode": "autonomous"
+    "name": "project-name",
+    "start_date": "2026-01-01",
+    "release_deadline": "2026-07-01"
   },
-  "goal": {
-    "title": "自律開発最適化",
-    "description": "品質と安定性を維持しながら継続的に改善する"
+  "phase": {
+    "current": "build",
+    "week": 1
   },
   "kpi": {
-    "success_rate_target": 0.9,
-    "test_pass_rate_target": 0.95,
-    "review_blocker_target": 0,
-    "security_blocker_target": 0,
-    "ci_stability_target": 0.95
+    "ci_success_rate": 0.0,
+    "test_pass_rate": 0.0,
+    "review_blocker_count": 0,
+    "security_issue_count": 0
   },
   "execution": {
     "max_duration_minutes": 300,
-    "cooldown_minutes_min": 5,
-    "cooldown_minutes_max": 15,
-    "retry_limit_ci": 15,
-    "same_root_cause_limit": 3
+    "loop_count": 0,
+    "max_loops": 3,
+    "ci_retry_limit": 5,
+    "same_error_limit": 2
   },
-  "automation": {
-    "auto_issue_generation": true,
-    "auto_project_sync": true,
-    "self_evolution": true,
-    "auto_priority_scoring": true,
-    "auto_repair": true
+  "status": {
+    "current_phase": "monitor",
+    "stable": false
   },
   "priority": {
-    "weights": {
-      "security": 100,
-      "ci_failure": 90,
-      "data_risk": 85,
-      "test_failure": 75,
-      "review_findings": 70,
-      "kpi_gap": 65,
-      "technical_debt": 40,
-      "minor_ux": 20
-    },
-    "current_top_reason": "ci_failure"
+    "score": 0
   },
   "learning": {
     "failure_patterns": [],
-    "success_patterns": [],
-    "blocked_patterns": [],
-    "preferred_fix_order": ["security", "ci", "test", "review", "refactor"]
-  },
-  "github": {
-    "default_branch": "main",
-    "require_pr": true,
-    "require_codex_review": true,
-    "require_actions_success": true,
-    "project_sync_enabled": true
-  },
-  "status": {
-    "stable": false,
-    "blocked": false,
-    "current_phase": "monitor",
-    "last_updated": "YYYY-MM-DDTHH:MM:SSZ"
+    "success_patterns": []
   }
 }
 ```
 
-## 優先順位AI
+---
 
-### 判定原則
+## 🔄 更新タイミング
 
-優先順位は感覚で決めず、`state.json.priority.weights` に基づいてスコア計算する。
+| タイミング | 更新内容 |
+|---|---|
+| セッション開始 | current_phase / week / KPI |
+| Monitor完了 | Issue / PR / CI状態 |
+| Development完了 | 実装対象 / 変更内容 |
+| Verify完了 | test_pass_rate / CI状態 |
+| Improvement完了 | 改善内容 / 学習 |
+| 終了時 | loop_count / stable / next_action |
 
-### 判定対象
+---
 
-- Security blocker
-- CI failure
-- build failure
-- test failure
-- review findings
-- data impact
-- KPI gap
-- technical debt
-- UX / docs / minor tasks
+## 🧬 学習ルール
 
-### 判定ルール
+### failure_patterns
 
-- 最大スコアの項目を最優先とする
-- 同点の場合: `security > ci > data > test > review > kpi > debt > ux`
-- P1 未解決中は P3 を凍結する
-- 進行中 Issue より高優先 Issue が出たら切替可能
+以下を記録する。
+
+- 同じCIエラー
+- 同じテスト失敗
+- 同じlintエラー
+- 設計ミス
+- セキュリティ指摘
+
+### success_patterns
+
+以下を記録する。
+
+- 修復成功手順
+- 安定した実装パターン
+- 再利用可能なテスト
+- 有効だったIssue分割
+- 有効だったレビュー観点
+
+---
+
+## 🚨 安全ルール
+
+- state.json が壊れている場合は、復元用 state.backup.json を作成する
+- JSON構文エラー時は自動修復せず、修復Issueを作成する
+- release_deadline は原則変更禁止
+- loop_count は実行ごとに必ず増加させる

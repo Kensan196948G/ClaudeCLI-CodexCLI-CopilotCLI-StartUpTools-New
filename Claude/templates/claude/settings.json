@@ -18,10 +18,6 @@
   "terminal": {
     "mode": "auto"
   },
-  "statusLine": {
-    "type": "command",
-    "command": "python3 .claude/statusline.py"
-  },
   "hooks": {
     "PreCompact": [
       {

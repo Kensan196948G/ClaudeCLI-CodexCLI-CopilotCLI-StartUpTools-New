@@ -1,68 +1,101 @@
-# 終了処理・最終報告・可視化・ドキュメント運用
+# 09-termination-reporting — 終了処理・報告
 
-## 終了処理
+## 🎯 目的
 
-1. commit
-2. push
-3. PR 作成
-4. state 保存
-5. Memory 保存
-6. Learning 保存
-7. Project 状態更新
+ClaudeOS セッション終了時に、作業結果・検証結果・未完了事項・次回引継ぎを明確に残す。
 
-## 可視化・ドキュメント運用
+---
 
-### 可視化
+## 🧾 終了処理
 
-- 全プロセスをログとして出力
-- AgentTeams の会話を可視化
-- 状態遷移（Monitor / Dev / Verify / Improve）を記録
-- KPI / CI 状態を常時表示
+```text
+1. 変更差分確認
+2. test / lint / build 結果確認
+3. state.json更新
+4. GitHub Project更新
+5. 必要なら commit
+6. 必要なら push
+7. 必要なら PR作成
+8. 終了報告作成
+```
 
-### ドキュメント更新
+---
 
-README.md の更新トリガーとルールは 01-session-startup.md「4. ドキュメント確認・更新ルール」「5. README.md更新ルール」に定義済み。それに従うこと。
+## ✅ commit / push / PR ルール
 
-### README必須構成
+| 条件 | 対応 |
+|---|---|
+| 変更あり + 検証成功 | commit / push / PR |
+| 変更あり + 検証失敗 | commit禁止、修復Issue作成 |
+| docsのみ | 軽量検証後commit可 |
+| Security未確認 | merge禁止 |
+| CI未通過 | merge禁止 |
 
-- システム概要
-- アーキテクチャ図（Mermaid等）
-- 処理フロー図
-- セットアップ手順
-- 実行方法
-- 開発フロー
-- CI/CD構成
+---
 
-品質基準: 表を多用、アイコンを活用、初見でも理解可能な構成
+## 📤 終了報告テンプレート
 
-### GitHub連携
+```text
+# ClaudeOS Session Report
 
-GitHub Projects の更新タイミングは 01-session-startup.md「6. GitHub Projects更新ルール」に定義済み。それに従うこと。
+## Summary
+- Project:
+- Phase:
+- Week:
+- Session Duration:
+- Loop Count:
 
-- Issue 状態と Project ステータスを同期する
-- README の記載内容と Project の実態を整合させる
+## Completed
+- 
+- 
 
-## 最終報告
+## Changed Files
+- 
 
-- 開発内容
-- CI 結果
-- review 結果
-- rescue 結果
-- 自動生成 Issue 一覧
-- Project 更新内容
-- 残課題
-- 次アクション
+## Verification
+- lint:
+- test:
+- build:
+- CI:
 
-## v8の本質
+## KPI
+- ci_success_rate:
+- test_pass_rate:
+- review_blocker_count:
+- security_issue_count:
+- score:
 
-- AI が Issue を自動生成する（AI Dev Factory）
-- AI が GitHub Projects を統制する
-- AI が state.json を基に優先順位判断する（優先順位AI）
-- AI が CI を監視し、限定的に自己修復する（CI Manager）
-- AI が失敗と成功を学習する（自己進化システム）
-- CodeRabbit + Codex の二重レビューで品質を担保する
-- Auto Loop Intelligence によるフェーズ間自動遷移
+## GitHub
+- Issues updated:
+- PR created:
+- Project status:
 
-## 最重要思想
+## Learning
+### Failure Patterns
+- 
 
-止まる勇気 + 小さく直す + 必ず検証する
+### Success Patterns
+- 
+
+## Risks
+- 
+
+## Next Actions
+1. 
+2. 
+3. 
+
+## Final Decision
+- stable: true / false
+- next_session_mode: Monitor / Development / Verify / Improvement
+```
+
+---
+
+## 🚫 終了時の禁止事項
+
+- 検証失敗を隠す
+- state.jsonを更新しない
+- PRだけ作ってCI未確認
+- Projectステータスを放置
+- 次回アクションを残さない

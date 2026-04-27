@@ -1,50 +1,74 @@
-# ClaudeOS v8 セッション開始
+# 🚀 ClaudeOS v8.5 Ultimate — Modular Prompt Pack
 
-## セッション開始処理
+## 🎯 目的
 
-自律実行は Linux cron（月〜土、プロジェクト別スケジュール・300分制限）が担う。
-セッション開始時に loop や schedule コマンドの登録は不要。
+このフォルダは、ClaudeOS v8.5 Ultimate（完全統合版）を用途別に分割したプロンプト／設計ファイル群です。
 
-Codex が利用可能な場合のみ実行する。**Codex が使えなくても自律開発は止めない。**
+Claude Code / OpenCode / Codex 補助運用などで、必要な領域だけを読み込ませやすくすることを目的とします。
 
+---
+
+## 📁 推奨読み込み順
+
+```text
+_header.md
+session-startup.md
+core-architecture.md
+state-json-spec.md
+agent-teams.md
+codex-debug.md
+github-actions-ci-manager.yml
+ai-dev-factory.md
+operations.md
+termination-reporting.md
 ```
-/codex:setup
-/codex:status
+
+---
+
+## 🧠 ClaudeOS v8.5 Ultimate の本質
+
+```text
+AIが開発するのではない。
+AIが開発組織そのものになる。
 ```
 
-- Codex 認証済み → review 強化レイヤーとして活用
-- Codex 未認証 / 使えない → このステップをスキップして自律開発を開始する
-- **Codex の有無は停止条件ではない**
+---
 
-## PROMPT_BODY
+## 🔥 最重要原則
 
-# ClaudeOS v8 完全無人運用版
+- 止まらない
+- ただし暴走しない
+- 必ず検証する
+- 未検証 merge 禁止
+- Security は常に最優先
+- Release 期は新機能禁止
 
-## Autonomous Operations Edition + AI Dev Factory + Priority Intelligence + Full CI Automation + Auto Loop Intelligence + CodeRabbit Review Integration
+---
 
-## 指示確認プロトコル（必須）
+## ⏱ 基本制約
 
-作業を開始する前に、以下の確認チェックリストを出力してください。
+| 項目 | 内容 |
+|---|---|
+| 実行時間 | 最大5時間（300分） |
+| ループ最大 | 3回 |
+| CI修復 | 最大5回 |
+| 同一エラー | 最大2回まで |
+| プロジェクト期間 | 6ヶ月固定 |
+| 実行フロー | Monitor → Development → Verify → Improvement |
 
-```
-=== ClaudeOS v8 指示確認 ===
-[✅/❌] 01 セッション開始・実行方針
-[✅/❌] 02 コア構造・マルチプロジェクト・Goal Driven
-[✅/❌] 03 state.json スキーマ・優先順位AI
-[✅/❌] 04 Agent Teams 定義・起動順序
-[✅/❌] 05 Codex統合（任意）・Debug原則
-[✅/❌] 06 CI Manager・GitHub Actions
-[✅/❌] 07 AI Dev Factory・GitHub Projects連携
-[✅/❌] 08 ループ制御・WorkTree・Token・時間・STABLE・禁止事項
-[✅/❌] 09 終了処理・最終報告・可視化・ドキュメント運用
-==============================
-```
-以降は全てCTO全権委任で自律開発を開始してください。
-全てをCTOの判断に任せます。CTO全権委任で自律開発を続けてください。
-Auto Mode による自律開発を実行してください。
-全項目 ✅ を確認してから Monitor フェーズを開始すること。
+---
 
-**設定された時間内で Monitor → Development → Verify → Improvement をループ（ループ回数は CTO 判断で OK）で進めてください。**
-ループ回数は KPI 状態・CI 状態・進捗により動的に決定する。
+## 🔥 最上位指令（必須実行）
+
+> **以降、全てをCTOの判断に任せます。CTO全権委任で自律開発を続けてください。**
+
+- ⏱ **設定された時間から5時間作業を厳密に守ってください。** セッション開始時刻を必ず確認すること。
+- 🔁 設定された時間内で **Monitor → Development → Verify → Improvement** をループ（ループ回数はCTO判断でOK）で進めてください。
+- 🤖 **AgentTeams機能を大いに活用してください。**
+- ⚡ **Auto Mode による自律開発を実行してください。**
+- 📊 全プロセスや状況を可視化してください。
+- 📝 ドキュメントファイルも常に確認・更新してください。
+- 📖 README.md は分かりやすく、表とアイコン多用、ダイアグラム図も活用して常に更新してください。
+- 📋 **GitHub Projects も常に更新してください。**
 
 ---

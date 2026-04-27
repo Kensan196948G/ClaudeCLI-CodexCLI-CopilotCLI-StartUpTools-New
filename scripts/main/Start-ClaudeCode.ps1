@@ -44,7 +44,11 @@ function New-RemoteTemplateDeployScript {
         [Parameter(Mandatory)][string]$TemplatePath,
         [Parameter(Mandatory)][string]$TargetPath,
         [Parameter(Mandatory)][string]$Label,
-        [switch]$EnsureParentDirectory
+        [switch]$EnsureParentDirectory,
+        # InitializeOnly: ファイルが存在しない場合のみ配置（既存ファイルを上書きしない）。
+        # ローカルモードの Initialize-ProjectTemplate と同等の動作。
+        # settings.json など Claude が実行中に変更するファイルに使用する。
+        [switch]$InitializeOnly
     )
 
     if (-not (Test-Path $TemplatePath)) {
@@ -57,6 +61,21 @@ function New-RemoteTemplateDeployScript {
     $mkdir = ""
     if ($EnsureParentDirectory) {
         $mkdir = "mkdir -p `"`$(dirname `"$normalizedTargetPath`")`"`n"
+    }
+
+    if ($InitializeOnly) {
+        return @"
+$mkdir
+TMP_FILE=`$(mktemp)
+printf '%s' '$base64' | base64 -d > "`$TMP_FILE"
+if [ ! -f "$normalizedTargetPath" ]; then
+  mv "`$TMP_FILE" "$normalizedTargetPath"
+  echo "[OK] $Label を配置しました: $normalizedTargetPath"
+else
+  rm -f "`$TMP_FILE"
+  echo "[INFO] $Label は最新です: $normalizedTargetPath"
+fi
+"@
     }
 
     return @"
@@ -410,7 +429,7 @@ try {
         "mkdir -p $(ConvertTo-BashSingleQuoted -Value "$linuxProject/.claude")"
         (New-RemoteTemplateDeployScript -TemplatePath $templateClaude -TargetPath "$linuxProject/CLAUDE.md" -Label 'CLAUDE.md')
         (New-RemoteTemplateDeployScript -TemplatePath $templateClaude -TargetPath "$linuxProject/.claude/CLAUDE.md" -Label '.claude/CLAUDE.md' -EnsureParentDirectory)
-        (New-RemoteTemplateDeployScript -TemplatePath $templateSettings -TargetPath "$linuxProject/.claude/settings.json" -Label '.claude/settings.json' -EnsureParentDirectory)
+        (New-RemoteTemplateDeployScript -TemplatePath $templateSettings -TargetPath "$linuxProject/.claude/settings.json" -Label '.claude/settings.json' -EnsureParentDirectory -InitializeOnly)
         (New-RemoteTemplateDeployScript -TemplatePath $templatePrompt -TargetPath "$linuxProject/.claude/START_PROMPT.md" -Label '.claude/START_PROMPT.md' -EnsureParentDirectory)
         (New-RemoteTemplateDeployScript -TemplatePath $bridgeSource -TargetPath $remoteBridgePath -Label '.claude/claude_pty_bridge.py' -EnsureParentDirectory)
         (New-RemoteTemplateDeployScript -TemplatePath (Join-Path $ScriptRoot 'scripts\templates\claude-statusline.py') -TargetPath "$linuxProject/.claude/statusline.py" -Label '.claude/statusline.py' -EnsureParentDirectory)

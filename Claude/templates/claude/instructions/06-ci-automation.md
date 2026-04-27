@@ -1,104 +1,37 @@
-# CI Manager・GitHub Actions
+# 06-ci-automation — GitHub Actions / CI 自動化
 
-## 基本原則
+## 🎯 目的
 
-- 最大 15 回まで修復試行
-- 同一原因 3 回で停止
-- 差分なしで停止
-- Security blocker 検知で即停止
-- 人手承認が必要な操作は実行しない
+CIをClaudeOSの品質ゲートとして扱い、失敗時は自動でIssue化し、CIManagerが修復対象として扱えるようにする。
 
-## CI フロー
+---
 
-1. Push / PR をトリガー
-2. Build 実行
-3. Test 実行
-4. Lint / Format / Static Check
-5. Security Check
-6. Codex review 結果確認
-7. 失敗時は Issue 自動生成
-8. 修復可能なら限定回数で再試行
-9. 成功時は STABLE 判定候補へ進行
+## 🔁 CI対象
 
-## GitHub Actions 実装テンプレート
+- npm install / npm ci
+- lint
+- test
+- build
+- artifact出力
+- CI失敗Issue作成
 
-```yaml
-name: ClaudeOS CI Manager
+---
 
-on:
-  push:
-    branches: [main, develop, 'feature/**']
-  pull_request:
-    branches: [main, develop]
-  workflow_dispatch:
+## 🚦 CI修復ルール
 
-jobs:
-  build-test-review:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+| 条件 | 対応 |
+|---|---|
+| CI失敗 | Issue自動生成 |
+| 同一エラー1回目 | 修復 |
+| 同一エラー2回目 | Codex Debugへ依頼 |
+| 同一エラー3回目 | 修復停止・別Issue化 |
+| 修復5回到達 | 打ち切り |
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+---
 
-      - name: Install
-        run: |
-          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+## 🚫 禁止事項
 
-      - name: Lint
-        run: npm run lint --if-present
-
-      - name: Test
-        run: npm test --if-present
-
-      - name: Build
-        run: npm run build --if-present
-
-      - name: Security Audit
-        run: npm audit --audit-level=high || true
-
-      - name: Archive logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-logs
-          path: .
-
-  issue-factory:
-    if: failure()
-    needs: build-test-review
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Create Failure Report
-        run: |
-          mkdir -p .claudeos
-          echo "CI failed - generate issue" > .claudeos/ci_failure_report.txt
-
-      - name: Upload Failure Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-failure-report
-          path: .claudeos/ci_failure_report.txt
-```
-
-## Issue Factory + Actions 連携
-
-### 失敗時
-
-- Actions 失敗ログを保存
-- 失敗分類を実施
-- 重複 Issue を確認
-- 未登録なら Issue を生成
-- Project を `Blocked` または `Todo` へ更新
-
-### 成功時
-
-- state.json の KPI を更新
-- Project を `Verify` または `Done` へ更新
-- 成功パターンを learning に保存
+- CI未通過のmerge
+- テスト未実行のDone移動
+- 同一エラーの無限修復
+- ログを残さない修正
