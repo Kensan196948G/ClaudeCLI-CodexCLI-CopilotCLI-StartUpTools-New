@@ -16,7 +16,9 @@
     Start-Process -ArgumentList で split される問題を回避)。
     v3.2.89 で stdbuf 依存を廃止。tail -F のみ SSH 実行し ANSI・\r フィルタを
     PowerShell 受信側で処理 (Linux 環境依存解消 / cron 発火タイミング修正)。
-    ClaudeOS v3.2.89
+    v3.2.98 で起動時の 15 分制限を撤廃。既存ログの有無・経過時間に関わらず
+    起動直後に最新ログを即監視開始するよう変更。
+    ClaudeOS v3.2.98
 .PARAMETER NewTab
     Windows Terminal の新規タブで開く（既定: 現在のウィンドウで実行）。
 .PARAMETER PollIntervalSeconds
@@ -286,16 +288,11 @@ function Open-SessionInfoTab {
 
 Write-WaitHeader
 
-$knownLog = Get-LatestLog
-# 起動時に15分以内のログがある場合は実行中と見なして即監視
-if ($knownLog -match 'cron-(\d{8}-\d{6})\.log$') {
-    $logTime = [datetime]::MinValue
-    $parsed  = [datetime]::TryParseExact($Matches[1], 'yyyyMMdd-HHmmss', $null,
-        [System.Globalization.DateTimeStyles]::None, [ref]$logTime)
-    if ($parsed -and ((Get-Date) - $logTime -lt [timespan]::FromMinutes(15))) {
-        $knownLog = ''  # 新規扱いにして直後のループで検出させる
-    }
-}
+# Always start with empty knownLog so the first loop iteration detects any existing
+# log as "new" and starts tailing immediately, regardless of how old it is.
+# This covers both: (a) opened before cron fires → waits then auto-tails,
+# (b) opened after cron already fired → tails the latest log right away.
+$knownLog = ''
 $dotCount = 0
 
 while ($true) {
