@@ -24,7 +24,10 @@
     v3.2.100 で3点修正: ①DisableQuickEdit 撤廃（コピペ可能化）、
     ②New-LocalLogFile を try/catch + fallback 化（Permission denied 解消）、
     ③Get-SessionIdForLog にリトライ追加（Session ID 取得競合解消）。
-    ClaudeOS v3.2.100
+    v3.2.102 で起動時検出とライブ検出を区別。起動時は既存ログを tail -n 0
+    （過去エラー再表示なし）+ Session ID スキップ、新規発火時は tail -n 50
+    で従来通り直近ログを表示する。
+    ClaudeOS v3.2.102
 .PARAMETER NewTab
     Windows Terminal の新規タブで開く（既定: 現在のウィンドウで実行）。
 .PARAMETER PollIntervalSeconds
@@ -306,12 +309,12 @@ function Open-SessionInfoTab {
 
 Write-WaitHeader
 
-# Always start with empty knownLog so the first loop iteration detects any existing
-# log as "new" and starts tailing immediately, regardless of how old it is.
-# This covers both: (a) opened before cron fires → waits then auto-tails,
-# (b) opened after cron already fired → tails the latest log right away.
-$knownLog = ''
-$dotCount = 0
+# $knownLog = '' causes the first loop iteration to detect any existing log as "new"
+# and start tailing immediately (v3.2.98). $isStartupDetection tracks whether the
+# upcoming detection is the on-startup one (existing log) vs a real live cron fire.
+$knownLog           = ''
+$isStartupDetection = $true
+$dotCount           = 0
 
 while ($true) {
     $latest = Get-LatestLog
@@ -319,18 +322,35 @@ while ($true) {
     # 新しいログが現れたら監視開始
     if ($latest -and ($latest -ne $knownLog)) {
         try { $null = New-LocalLogFile } catch { $script:LocalLogFile = '' }   # create a fresh local mirror file for this session
-        Write-LiveHeader -LogFile $latest
-        Write-Host "  新しいセッション検出: $latest" -ForegroundColor Green
 
-        if ($WithSessionInfoTab) {
-            Write-Host '  Session ID を取得中...' -ForegroundColor DarkGray
-            $sessionId = Get-SessionIdForLog -LogPath $latest
-            if ($sessionId) {
-                Open-TmuxAttachTab -SessionId $sessionId   # Tab ②: Claude UI (tmux attach)
-                Start-Sleep -Seconds 1
-                Open-SessionInfoTab -SessionId $sessionId  # Tab ③: Session Info
-            } else {
-                Write-Host '  [WARN] Session ID が見つかりませんでした。' -ForegroundColor Yellow
+        # Capture before modifying so the flag is correct in both branches.
+        $thisIsStartup      = $isStartupDetection
+        $isStartupDetection = $false   # all subsequent detections are live
+
+        if ($thisIsStartup) {
+            # Existing log found on startup: do NOT re-display historical content
+            # (tail -n 0) and skip Session ID lookup (session likely already over).
+            $tailLines = 0
+            Write-LiveHeader -LogFile $latest
+            Write-Host "  既存ログ接続中 (起動時検出)" -ForegroundColor DarkYellow
+            Write-Host "  過去ログの再表示はスキップします。新規書き込みを監視中..." -ForegroundColor DarkGray
+            Write-Host "  ログ内容確認は Local ファイルを参照してください。" -ForegroundColor DarkGray
+        } else {
+            # New log appeared while monitoring: real cron fire.
+            $tailLines = 50
+            Write-LiveHeader -LogFile $latest
+            Write-Host "  新しいセッション検出: $latest" -ForegroundColor Green
+
+            if ($WithSessionInfoTab) {
+                Write-Host '  Session ID を取得中...' -ForegroundColor DarkGray
+                $sessionId = Get-SessionIdForLog -LogPath $latest
+                if ($sessionId) {
+                    Open-TmuxAttachTab -SessionId $sessionId   # Tab ②: Claude UI (tmux attach)
+                    Start-Sleep -Seconds 1
+                    Open-SessionInfoTab -SessionId $sessionId  # Tab ③: Session Info
+                } else {
+                    Write-Host '  [WARN] Session ID が見つかりませんでした。' -ForegroundColor Yellow
+                }
             }
         }
 
@@ -344,7 +364,7 @@ while ($true) {
             [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
             [Console]::InputEncoding  = [System.Text.Encoding]::UTF8
             $OutputEncoding = [System.Text.Encoding]::UTF8
-            ssh $using:SshTarget "tail -n 50 -F '$($using:latest)'"
+            ssh $using:SshTarget "tail -n $($using:tailLines) -F '$($using:latest)'"
         }
 
         try {
