@@ -18,7 +18,10 @@
     PowerShell 受信側で処理 (Linux 環境依存解消 / cron 発火タイミング修正)。
     v3.2.98 で起動時の 15 分制限を撤廃。既存ログの有無・経過時間に関わらず
     起動直後に最新ログを即監視開始するよう変更。
-    ClaudeOS v3.2.98
+    v3.2.99 でローカルミラーファイル機能を追加。cron セッションごとに
+    $env:TEMP\claude-live-log-YYYYMMDD-HHmmss.txt へ tail 出力を同時書き込みし
+    ヘッダーにパスを表示。コピー＆ペーストやログ採取がファイル経由で可能になる。
+    ClaudeOS v3.2.99
 .PARAMETER NewTab
     Windows Terminal の新規タブで開く（既定: 現在のウィンドウで実行）。
 .PARAMETER PollIntervalSeconds
@@ -199,12 +202,30 @@ function Write-LiveHeader {
     Write-Host '   Claude Code ライブログ監視' -ForegroundColor Cyan
     Write-Host "   Host : $LinuxHost" -ForegroundColor DarkCyan
     Write-Host "   Log  : $LogFile" -ForegroundColor DarkCyan
+    if ($script:LocalLogFile) {
+        Write-Host "   Local: $($script:LocalLogFile)" -ForegroundColor DarkGreen
+    }
     Write-Host ('  ' + '=' * 54) -ForegroundColor Cyan
     Write-Host '  Ctrl+C でこのタブを閉じる（セッション本体は継続）' -ForegroundColor DarkGray
+    Write-Host '  ログ採取: Local パスのファイルをメモ帳/VS Code で開く' -ForegroundColor DarkGray
     Write-Host ''
 }
 
-# ANSI エスケープと \r を除去してログ行を表示する。stdbuf 未インストール環境でも制御文字残骸なしで表示できる (v3.2.89)。
+# Script-level local mirror file path; updated per session in New-LocalLogFile.
+$script:LocalLogFile = ''
+
+function New-LocalLogFile {
+    $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $path  = Join-Path $env:TEMP "claude-live-log-${stamp}.txt"
+    $script:LocalLogFile = $path
+    # Write session header so the file is immediately identifiable when opened.
+    "[claude-live-log] session started $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" |
+        Out-File -FilePath $path -Encoding UTF8
+    return $path
+}
+
+# ANSI エスケープと \r を除去してログ行を表示し、ローカルミラーファイルにも同時書き込みする (v3.2.99)。
+# stdbuf 未インストール環境でも制御文字残骸なしで表示できる (v3.2.89)。
 function Write-FilteredTailLine {
     param([string]$Raw)
     $line = $Raw `
@@ -213,7 +234,12 @@ function Write-FilteredTailLine {
         -replace '\x1b\][^\x1b]*$', '' `
         -replace '\x1b\[[0-9;?]*[a-zA-Z]', '' `
         -replace '\x1b.', ''
-    if ($line.Trim().Length -gt 0) { Write-Host $line }
+    if ($line.Trim().Length -gt 0) {
+        Write-Host $line
+        if ($script:LocalLogFile) {
+            try { Add-Content -Path $script:LocalLogFile -Value $line -Encoding UTF8 } catch {}
+        }
+    }
 }
 
 function Get-LatestLog {
@@ -300,6 +326,7 @@ while ($true) {
 
     # 新しいログが現れたら監視開始
     if ($latest -and ($latest -ne $knownLog)) {
+        $null = New-LocalLogFile   # create a fresh local mirror file for this session
         Write-LiveHeader -LogFile $latest
         Write-Host "  新しいセッション検出: $latest" -ForegroundColor Green
 
