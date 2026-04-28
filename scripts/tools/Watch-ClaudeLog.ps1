@@ -21,7 +21,10 @@
     v3.2.99 でローカルミラーファイル機能を追加。cron セッションごとに
     $env:TEMP\claude-live-log-YYYYMMDD-HHmmss.txt へ tail 出力を同時書き込みし
     ヘッダーにパスを表示。コピー＆ペーストやログ採取がファイル経由で可能になる。
-    ClaudeOS v3.2.99
+    v3.2.100 で3点修正: ①DisableQuickEdit 撤廃（コピペ可能化）、
+    ②New-LocalLogFile を try/catch + fallback 化（Permission denied 解消）、
+    ③Get-SessionIdForLog にリトライ追加（Session ID 取得競合解消）。
+    ClaudeOS v3.2.100
 .PARAMETER NewTab
     Windows Terminal の新規タブで開く（既定: 現在のウィンドウで実行）。
 .PARAMETER PollIntervalSeconds
@@ -40,34 +43,6 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# Disable conhost QuickEdit: accidental click-select otherwise blocks stdout
-# until Enter/Esc, freezing this monitoring tab. Windows Terminal selection is
-# independent of this flag so copy/paste still works in WT.
-if (-not ('ClaudeConsoleMode' -as [type])) {
-    try {
-        Add-Type -TypeDefinition @'
-using System;
-using System.Runtime.InteropServices;
-public static class ClaudeConsoleMode {
-    [DllImport("kernel32.dll", SetLastError=true)]
-    private static extern IntPtr GetStdHandle(int n);
-    [DllImport("kernel32.dll", SetLastError=true)]
-    private static extern bool GetConsoleMode(IntPtr h, out uint m);
-    [DllImport("kernel32.dll", SetLastError=true)]
-    private static extern bool SetConsoleMode(IntPtr h, uint m);
-    public static void DisableQuickEdit() {
-        IntPtr h = GetStdHandle(-10);
-        uint m;
-        if (!GetConsoleMode(h, out m)) { return; }
-        // ENABLE_EXTENDED_FLAGS(0x80) must be set for the change to stick.
-        m = (m | 0x80u) & ~0x40u;
-        SetConsoleMode(h, m);
-    }
-}
-'@ -ErrorAction SilentlyContinue
-    } catch { $null = $_ }
-}
-try { [ClaudeConsoleMode]::DisableQuickEdit() } catch { $null = $_ }
 
 $ScriptRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Import-Module (Join-Path $ScriptRoot 'scripts\lib\LauncherCommon.psm1') -Force -DisableNameChecking
@@ -216,12 +191,22 @@ $script:LocalLogFile = ''
 
 function New-LocalLogFile {
     $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-    $path  = Join-Path $env:TEMP "claude-live-log-${stamp}.txt"
-    $script:LocalLogFile = $path
-    # Write session header so the file is immediately identifiable when opened.
-    "[claude-live-log] session started $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" |
-        Out-File -FilePath $path -Encoding UTF8
-    return $path
+    $header = "[claude-live-log] session started $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+    # Try multiple candidate paths; silently move to next if one fails (Permission denied etc.)
+    $candidates = @(
+        (Join-Path $env:TEMP "claude-live-log-${stamp}.txt"),
+        (Join-Path $env:USERPROFILE "Documents\claude-live-log-${stamp}.txt"),
+        (Join-Path $PSScriptRoot "..\..\logs\claude-live-log-${stamp}.txt")
+    )
+    foreach ($path in $candidates) {
+        try {
+            $header | Out-File -FilePath $path -Encoding UTF8 -ErrorAction Stop
+            $script:LocalLogFile = $path
+            return $path
+        } catch {}
+    }
+    $script:LocalLogFile = ''
+    return ''
 }
 
 # ANSI エスケープと \r を除去してログ行を表示し、ローカルミラーファイルにも同時書き込みする (v3.2.99)。
@@ -252,9 +237,16 @@ function Get-SessionIdForLog {
     param([string]$LogPath)
     $basename = ($LogPath -split '/')[-1]
     $stamp    = $basename -replace '^cron-', '' -replace '\.log$', ''
-    $result   = ssh $SshTarget "ls '$SessionsDir/${stamp}-'*.json 2>/dev/null | head -1" 2>$null
-    if ($null -eq $result -or [string]::IsNullOrWhiteSpace($result)) { return '' }
-    return ($result.Trim() -split '/')[-1] -replace '\.json$', ''
+    # Retry up to 3 times (2s apart) to handle the race condition where
+    # the session JSON is written slightly after the log file first appears.
+    for ($attempt = 0; $attempt -lt 3; $attempt++) {
+        $result = ssh $SshTarget "ls '$SessionsDir/${stamp}-'*.json 2>/dev/null | head -1" 2>$null
+        if ($result -and -not [string]::IsNullOrWhiteSpace($result)) {
+            return ($result.Trim() -split '/')[-1] -replace '\.json$', ''
+        }
+        if ($attempt -lt 2) { Start-Sleep -Seconds 2 }
+    }
+    return ''
 }
 
 function Open-TmuxAttachTab {
@@ -326,7 +318,7 @@ while ($true) {
 
     # 新しいログが現れたら監視開始
     if ($latest -and ($latest -ne $knownLog)) {
-        $null = New-LocalLogFile   # create a fresh local mirror file for this session
+        try { $null = New-LocalLogFile } catch { $script:LocalLogFile = '' }   # create a fresh local mirror file for this session
         Write-LiveHeader -LogFile $latest
         Write-Host "  新しいセッション検出: $latest" -ForegroundColor Green
 
