@@ -145,6 +145,9 @@ function Invoke-Register {
         Write-Host "  [OK] Cron エントリを登録しました: ID=$($entry.Id)" -ForegroundColor Green
         Write-Host "  Linux cron が月〜土 / プロジェクト別 / 300分で自律実行します。" -ForegroundColor DarkGreen
 
+        # cron-launcher.sh を同期（chmod +x 含む）— 未デプロイだと cron が Permission denied で失敗するため必須
+        Write-Host "  [同期中] cron-launcher.sh を Linux へ転送..." -ForegroundColor Cyan
+        Invoke-SyncLauncher
         # P1-2: state.json が存在しない場合は自動生成
         Invoke-EnsureStateJson -Project $project
         # START_PROMPT.md を最新テンプレートで同期（Invoke-EnsureStateJson 未呼出し時のフォールバック）
