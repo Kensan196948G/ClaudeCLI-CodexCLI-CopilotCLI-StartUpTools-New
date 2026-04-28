@@ -164,7 +164,9 @@ function Add-ClaudeOSCronEntry {
     $id = New-CronEntryId
     $created = (Get-Date).ToString('yyyy-MM-ddTHH:mm:ss')
     $logFilePattern = "$($script:LogsDir)/cron-`$(date +\%Y\%m\%d-\%H\%M\%S).log"
-    $command = "$($script:LauncherPath) $Project $DurationMinutes >> $logFilePattern 2>&1"
+    # Use "bash script" explicitly so the cron entry works even if the execute bit
+    # is lost (e.g. after re-deploy without chmod +x).
+    $command = "bash $($script:LauncherPath) $Project $DurationMinutes >> $logFilePattern 2>&1"
 
     $commentLine = "# $($script:EntryPrefix):$id project=$Project duration=$DurationMinutes created=$created"
     $cronLine = "$cronExpr $command"
