@@ -7,8 +7,8 @@
 > **📌 v3.1.0 で Claude Code 専用ツールに整理**
 > v3.1.0 より、Codex CLI / GitHub Copilot CLI の起動メニュー (S2/S3/L2/L3) は削除されました。本ツールは **Claude Code 専用の自律開発ランチャー** として位置づけを明確化し、Linux crontab 連携・セッション情報タブ・Statusline グローバル適用などの新機能に投資が集中しています。
 
-> **📅 v3.2.106 — 6ヶ月プロジェクト期間ポリシー反映・_footer 修正**
-> CLAUDE.md ステップ3に CTO 全権委任指令と6ヶ月本番リリース期限制約を追記。`_footer.md` に期間ポリシーを追加（未適用問題を修正）。`state.schema.json` に `project` セクション・リリース期限フィールドを追加。詳細は [`CHANGELOG.md`](./CHANGELOG.md) を参照。
+> **🧪 v3.2.107 — WebUI 全テスト検証 250 項目を全プロジェクト実行の最終プロンプトに追加**
+> フロントエンド 110 項目 ＋ バックエンド 140 項目（AI 開発系検証含む）の 250 項目チェックリストを `10-webui-final-verification.md` として追加し、全プロジェクトの START_PROMPT.md 末尾に自動組み込み。詳細は [`CHANGELOG.md`](./CHANGELOG.md) を参照。
 
 > **📨 v3.2.0 — Cron HTML メールレポート (Visual Recap Mail)**
 > Cron で起動された ClaudeCode セッションの完了時に、**HTML 形式のレポートメール** を Gmail SMTP 経由で送信。アイコン+色付き表組み+実行サマリ(Monitor/Development/Verify/Improvement の出現回数/エラー検出/STABLE 達成)+次フェーズ提案を含む。送信先は `CLAUDEOS_DEFAULT_TO`(未設定時 `CLAUDEOS_SMTP_USER`)で指定し、SMTP 認証情報は `~/.env-claudeos` の Linux 環境変数で管理(config.json には書かない設計)。詳細は [`docs/common/16_HTMLメールレポート設定.md`](./docs/common/16_HTMLメールレポート設定.md) を参照。
@@ -27,7 +27,7 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.2.106** (6ヶ月期間ポリシー反映・_footer 修正) — 旧: v3.2.97 |
+| バージョン | **v3.2.107** (WebUI 全テスト検証 250 項目 全プロジェクト最終プロンプト追加) — 旧: v3.2.106 |
 | テスト | **776件** — Pester (Unit 21 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | v8 (Opus 4.7 最適化 / Token 1.35x 補正 / Agent Teams 並列 spawn / `/compact` 事前発動 / `task_budget` / 1H cache / `/ultrareview` / PreCompact hook / `/recap` fallback / Push Notification / Effort 動的切替) |

@@ -2,6 +2,26 @@
 
 # CHANGELOG
 
+## [v3.2.107] - 2026-04-30 — WebUI 全テスト検証・デバッグ 250 項目を全プロジェクト実行の最終プロンプトに追加
+
+### 🎯 概要
+全登録プロジェクトの実行プロンプト（START_PROMPT.md）の末尾に、フロントエンド／バックエンド 250 項目テスト検証・デバッグリストを最終指示として組み込む。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `Claude/templates/claude/instructions/10-webui-final-verification.md` | **新規作成** — 250 項目 WebUI 全テスト検証・デバッグ指示ファイル |
+| `Claude/templates/claude/instructions/_header.md` | 推奨読み込み順に `webui-final-verification.md` と `_footer.md` を追記 |
+| `Claude/templates/claude/START_PROMPT.md` | 再ビルド（1190行 / 10ファイル + header + footer）|
+
+### ✅ 修正後の動作
+
+- `BUILD-StartPrompt.ps1` が `^\d` パターンで `10-webui-final-verification.md` を自動収集
+- `START_PROMPT.md` の末尾（_footer.md 直前）に 250 項目検証リストが自動挿入される
+- 全登録プロジェクトの cron・ローカル・SSH 実行で同一チェックリストが適用される
+- フロント 110 項目（UI描画/レスポンシブ/JS/フォーム/セキュリティ/性能/UX）＋バック 140 項目（API/DB/セキュリティ/性能/バッチ/監視/障害/AI検証）の完全網羅
+
 ## [v3.2.106] - 2026-04-30 — 6ヶ月プロジェクト期間ポリシー反映・_footer 修正
 
 ### 🎯 概要
