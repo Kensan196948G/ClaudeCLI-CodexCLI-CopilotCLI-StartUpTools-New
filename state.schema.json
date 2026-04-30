@@ -22,6 +22,18 @@
         "title": { "type": "string" }
       }
     },
+    "project": {
+      "type": "object",
+      "description": "Project timeline constraints. release_deadline is MANDATORY (6 months from registration_date).",
+      "properties": {
+        "registration_date": { "type": ["string", "null"], "format": "date" },
+        "release_deadline": { "type": ["string", "null"], "format": "date" },
+        "release_deadline_note": { "type": "string" },
+        "duration_months": { "type": "integer", "minimum": 1 },
+        "cron_enabled": { "type": "boolean" },
+        "session_max_minutes": { "type": "integer", "minimum": 1, "maximum": 300 }
+      }
+    },
     "kpi": {
       "type": "object",
       "properties": {
@@ -33,6 +45,9 @@
       "required": ["max_duration_minutes", "phase"],
       "properties": {
         "start_time": { "type": ["string", "null"], "format": "date-time" },
+        "project_start_date": { "type": ["string", "null"], "format": "date", "description": "Project registration date (YYYY-MM-DD). Release deadline = +6 months." },
+        "release_deadline": { "type": ["string", "null"], "format": "date", "description": "Production release deadline (YYYY-MM-DD). Strictly enforced." },
+        "project_period_months": { "type": ["integer", "null"], "minimum": 1, "description": "Project duration in months (default 6)." },
         "max_duration_minutes": { "type": "integer", "minimum": 1, "maximum": 300 },
         "elapsed_minutes": { "type": "number", "minimum": 0 },
         "remaining_minutes": { "type": "number", "minimum": 0 },
