@@ -64,6 +64,32 @@ jobs:
             ci_result.txt
           if-no-files-found: ignore
 
+  check-release-milestone:
+    name: Validate 6-month Release Milestone
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Production Release Milestone
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: milestones } = await github.rest.issues.listMilestones({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open'
+            });
+            const release = milestones.find(m =>
+              /release|production|リリース|本番/i.test(m.title)
+            );
+            if (!release) {
+              core.warning(
+                'Production Release マイルストーンが未設定です。' +
+                'プロジェクト開始から6ヶ月以内のマイルストーンを GitHub Projects に設定してください。'
+              );
+            } else {
+              const due = release.due_on ? new Date(release.due_on) : null;
+              core.notice(`Production Release milestone: "${release.title}" due=${due ? due.toISOString().slice(0,10) : 'unset'}`);
+            }
+
   auto-repair-issue:
     name: Create CI Repair Issue
     needs: build-test

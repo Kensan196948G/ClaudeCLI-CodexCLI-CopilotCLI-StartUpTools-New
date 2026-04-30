@@ -2,6 +2,28 @@
 
 # CHANGELOG
 
+## [v3.2.106] - 2026-04-30 — 6ヶ月プロジェクト期間ポリシー反映・_footer 修正
+
+### 🎯 概要
+全登録プロジェクトへの6ヶ月本番リリース期限ポリシーをCLAUDE.md・_footer・state.schema.jsonに反映し、_footerが未適用だった問題を修正。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `CLAUDE.md` | ステップ3にCTO全権委任指令・プロジェクト期間制約（6ヶ月）を追記 |
+| `Claude/templates/claude/instructions/_footer.md` | 6ヶ月本番リリース制約・AgentTeams・AutoMode等の全指令を追加 |
+| `Claude/templates/claude/instructions/BackUp/_footer.md` | _footer.mdと同期（バックアップ更新） |
+| `Claude/templates/claude/instructions/github-actions-ci-manager.yml` | Productionリリースマイルストーン検証ジョブ追加 |
+| `state.schema.json` | `project` セクション・`execution.project_start_date` / `release_deadline` / `project_period_months` フィールド追加 |
+
+### ✅ 修正後の動作
+
+- セッション起動時にCLAUDE.mdからプロジェクト期間制約（6ヶ月）が明示される
+- `_footer.md` を新規プロジェクトに貼り付けることで期間制約が自動適用される
+- `state.schema.json` でリリース期限フィールドが型チェックされる
+- CI で Production Release マイルストーン未設定時に warning が出る
+
 ## [v3.2.97] - 2026-04-27 — S1 起動時 ~/パス修正 + statusline.js 自動デプロイ
 
 ### 🎯 概要
