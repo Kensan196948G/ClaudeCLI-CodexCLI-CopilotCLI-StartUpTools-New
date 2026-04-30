@@ -8,6 +8,7 @@
 # 機密情報（絶対にコミットしない）
 config/config.json
 config/config.local.json
+config/managed-agents.json
 *.key
 *.pem
 id_rsa*

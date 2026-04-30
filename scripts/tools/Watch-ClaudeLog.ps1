@@ -1,44 +1,31 @@
-﻿<#
+<#
 .SYNOPSIS
-    Claude Code ログをリアルタイム監視する（SSH + tail -f）。
+    メニュー13: Claude セッション起動・監視タブ。
 .DESCRIPTION
-    Linux 側の cron-launcher.sh が出力するログファイルを自動検出し
-    Windows Terminal の新規タブで tail -f を開始する。
-    cron 実行前に起動しておくと、発火を検知して自動でログ表示を開始する。
-    v3.2.41 から tail -F をバックグラウンド Job 化し、ライブ表示中にも
-    次の cron 発火を検出 → 自動で次セッションへ切り替える (マルチ発火対応)。
-    v3.2.42 で spawn タブを強制 pwsh 7 化 + Start-Job 内 UTF-8 化 (文字化け解消)。
-    v3.2.46 で wt new-tab に -p "PowerShell" を付与してタブアイコンを PS 化。
-    v3.2.47 で WT settings.json から pwsh profile 名を動的検出 + GUID fallback
-    (ユーザー環境で profile 名が "PowerShell version 7" / "PowerShell 7" 等の
-    場合にも確実にアイコンが PS 7 になるよう改善)。
-    v3.2.48 で profile 識別子を GUID 優先に変更 (空白を含む profile 名が
-    Start-Process -ArgumentList で split される問題を回避)。
-    v3.2.89 で stdbuf 依存を廃止。tail -F のみ SSH 実行し ANSI・\r フィルタを
-    PowerShell 受信側で処理 (Linux 環境依存解消 / cron 発火タイミング修正)。
-    v3.2.98 で起動時の 15 分制限を撤廃。既存ログの有無・経過時間に関わらず
-    起動直後に最新ログを即監視開始するよう変更。
-    v3.2.99 でローカルミラーファイル機能を追加。cron セッションごとに
-    $env:TEMP\claude-live-log-YYYYMMDD-HHmmss.txt へ tail 出力を同時書き込みし
-    ヘッダーにパスを表示。コピー＆ペーストやログ採取がファイル経由で可能になる。
-    v3.2.100 で3点修正: ①DisableQuickEdit 撤廃（コピペ可能化）、
-    ②New-LocalLogFile を try/catch + fallback 化（Permission denied 解消）、
-    ③Get-SessionIdForLog にリトライ追加（Session ID 取得競合解消）。
-    v3.2.102 で起動時検出とライブ検出を区別。起動時は既存ログを tail -n 0
-    （過去エラー再表示なし）+ Session ID スキップ、新規発火時は tail -n 50
-    で従来通り直近ログを表示する。
-    ClaudeOS v3.2.102
+    ClaudeOS v3.2.104
+    起動時に以下を順に試みる:
+      1. 既存の claudeos-* tmux セッションがあれば即 attach
+      2. 今日のCronスケジュール時刻が過ぎていてセッションが未起動なら即実行
+      3. 上記に該当しなければ次の Cron 発火を待機
+
+    セッション接続後、Session-Info タブ (Watch-SessionInfoSSH.ps1) を
+    既存 WindowsTerminal ウィンドウに自動で追加する。
+
+    -NewTab: 既存 WindowsTerminal の最後のウィンドウに新タブとして追加する。
+
+    v3.2.104: 起動時即実行ロジック + Session-Info タブ自動オープン追加。
+    v3.2.103: tail-F + 別タブ方式を廃止し tmux 直接 attach 方式に変更。
+    ClaudeOS v3.2.104
 .PARAMETER NewTab
-    Windows Terminal の新規タブで開く（既定: 現在のウィンドウで実行）。
+    既存 WindowsTerminal ウィンドウに新タブを追加して起動する。
 .PARAMETER PollIntervalSeconds
-    ログファイル検出のポーリング間隔（秒）。既定: 5。
-.PARAMETER WithSessionInfoTab
-    新しいセッション検出時に Session Info タブを自動で開く。
+    tmux セッション検出のポーリング間隔（秒）。既定: 5。
 #>
 
 param(
     [switch]$NewTab,
-    [switch]$WithSessionInfoTab,
+    [switch]$WithSessionInfoTab,   # 後方互換
+    [switch]$TmuxAttach,           # 後方互換
     [int]$PollIntervalSeconds = 5
 )
 
@@ -46,27 +33,25 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-
 $ScriptRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Import-Module (Join-Path $ScriptRoot 'scripts\lib\LauncherCommon.psm1') -Force -DisableNameChecking
 Import-Module (Join-Path $ScriptRoot 'scripts\lib\Config.psm1') -Force -DisableNameChecking
 
-$ConfigPath = Get-StartupConfigPath -StartupRoot $ScriptRoot
-$Config     = Import-LauncherConfig -ConfigPath $ConfigPath
-$LinuxHost  = $Config.linuxHost
-$LinuxUser  = if ($Config.PSObject.Properties.Name -contains 'linuxUser' -and -not [string]::IsNullOrWhiteSpace($Config.linuxUser)) { $Config.linuxUser } else { 'kensan' }
-$SshTarget  = "${LinuxUser}@${LinuxHost}"
-
-$LogsDir = '/home/kensan/.claudeos/logs'
-if ($Config.PSObject.Properties.Name -contains 'cron' -and
-    $Config.cron.PSObject.Properties.Name -contains 'logsDir') {
-    $LogsDir = $Config.cron.logsDir
-}
-
+$ConfigPath  = Get-StartupConfigPath -StartupRoot $ScriptRoot
+$Config      = Import-LauncherConfig -ConfigPath $ConfigPath
+$LinuxHost   = $Config.linuxHost
+$LinuxUser   = if ($Config.PSObject.Properties.Name -contains 'linuxUser' -and
+                    -not [string]::IsNullOrWhiteSpace($Config.linuxUser)) { $Config.linuxUser } else { 'kensan' }
+$SshTarget   = "${LinuxUser}@${LinuxHost}"
 $SessionsDir = '/home/kensan/.claudeos/sessions'
-if ($Config.PSObject.Properties.Name -contains 'cron' -and
-    $Config.cron.PSObject.Properties.Name -contains 'sessionsDir') {
-    $SessionsDir = $Config.cron.sessionsDir
+$LauncherPath = '/home/kensan/.claudeos/cron-launcher.sh'
+$LogsDir      = '/home/kensan/.claudeos/logs'
+
+if ($Config.PSObject.Properties.Name -contains 'cron') {
+    $c = $Config.cron
+    if ($c.PSObject.Properties.Name -contains 'sessionsDir') { $SessionsDir  = $c.sessionsDir }
+    if ($c.PSObject.Properties.Name -contains 'launcherPath'){ $LauncherPath = $c.launcherPath }
+    if ($c.PSObject.Properties.Name -contains 'logsDir')     { $LogsDir      = $c.logsDir }
 }
 
 if ([string]::IsNullOrWhiteSpace($LinuxHost) -or $LinuxHost -eq '<your-linux-host>') {
@@ -74,342 +59,250 @@ if ([string]::IsNullOrWhiteSpace($LinuxHost) -or $LinuxHost -eq '<your-linux-hos
     exit 1
 }
 
-# spawn タブ用の PowerShell exe 解決: PowerShell 7 (pwsh.exe) を最優先。
-# PATH 不通でも既知インストール先を検査し、最終 fallback は親プロセス。
+# ─── pwsh / wt 解決（-NewTab 用）──────────────────────────────────────────────
+
 function Get-PwshExe {
     $cmd = Get-Command pwsh -ErrorAction SilentlyContinue
     if ($cmd -and $cmd.Source) { return $cmd.Source }
-    foreach ($p in @(
-        'C:\Program Files\PowerShell\7\pwsh.exe',
-        "$env:ProgramFiles\PowerShell\7\pwsh.exe",
-        "$env:LOCALAPPDATA\Microsoft\PowerShell\7\pwsh.exe"
-    )) {
-        if ($p -and (Test-Path $p)) { return $p }
+    foreach ($p in @('C:\Program Files\PowerShell\7\pwsh.exe', "$env:ProgramFiles\PowerShell\7\pwsh.exe")) {
+        if (Test-Path $p) { return $p }
     }
     return (Get-Process -Id $PID).Path
 }
 $PwshExe = Get-PwshExe
 
-# wt.exe に渡す profile 識別子 (タブアイコン・配色を PowerShell 7 化する)。
-#
-# GUID を優先返却する理由 (v3.2.48):
-#   profile 名は "PowerShell version 7" のように空白を含むことがあり、
-#   Start-Process -ArgumentList の配列要素は自動クォートされないため
-#   wt.exe 側で `-p PowerShell` + `version` + `7 ...` に split されて失敗する
-#   (ERROR 0x80070002: 指定されたファイルが見つかりません)。
-#   GUID (`{574e775e-...}`) は空白を含まないためこの問題を回避できる。
-#
-# 検出順:
-#   1. 環境変数 AI_STARTUP_WT_PROFILE (明示指定; 名前でも GUID でも可)
-#   2. WT settings.json から pwsh.exe を commandline に持つ profile の GUID
-#   3. Microsoft fragment 由来の PS 7 固定 GUID (pwsh.exe パスから決定的)
 function Get-WtPwshProfile {
-    $settingsPaths = @(
+    foreach ($p in @(
         "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json",
         "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState\settings.json"
-    )
-    foreach ($p in $settingsPaths) {
+    )) {
         if (-not (Test-Path $p)) { continue }
         try {
-            $s = Get-Content $p -Raw -Encoding UTF8 | ConvertFrom-Json
-            $profiles = @($s.profiles.list) | Where-Object {
-                $_.commandline -and $_.commandline -match 'pwsh\.exe' -and -not $_.hidden
-            }
+            $profiles = @((Get-Content $p -Raw -Encoding UTF8 | ConvertFrom-Json).profiles.list) |
+                Where-Object { $_.commandline -match 'pwsh\.exe' -and -not $_.hidden }
             if ($profiles.Count -gt 0) {
-                # GUID 優先 (空白なし、シェル安全)
                 if ($profiles[0].guid) { return $profiles[0].guid }
                 if ($profiles[0].name) { return $profiles[0].name }
             }
         } catch { $null = $_ }
     }
-    # Microsoft fragment 経由で pwsh.exe から生成される固定 GUID
     return '{574e775e-4f2a-5b96-ac1e-a2962a402336}'
 }
 $WtProfileName = if ($env:AI_STARTUP_WT_PROFILE) { $env:AI_STARTUP_WT_PROFILE } else { Get-WtPwshProfile }
 
-# NewTab モード: 自身を新しい Windows Terminal タブで再起動
+# ─── -NewTab モード ──────────────────────────────────────────────────────────
+# .cmd ランチャー経由でスペース入りパス問題を回避。& 演算子で WT コンテキストを継承。
+
 if ($NewTab) {
-    $psExe  = $PwshExe
-    $wtExe  = Get-Command wt.exe -ErrorAction SilentlyContinue
-    $myPath = $PSCommandPath
+    $wtExe       = Get-Command wt.exe -ErrorAction SilentlyContinue
+    $launcherCmd = Join-Path $PSScriptRoot 'Watch-ClaudeLog-Launcher.cmd'
 
-    # $PSCommandPath が空の場合（dot-source 経由など）はガード
-    if ([string]::IsNullOrWhiteSpace($myPath)) {
-        Write-Host '[ERROR] -NewTab モードは PSCommandPath が空のため使用できません。直接ファイルパスを指定して実行してください。' -ForegroundColor Red
-        exit 1
-    }
-
-    $psArgs = @(
-        '-NoExit', '-NoProfile', '-ExecutionPolicy', 'Bypass',
-        '-File', $myPath,
-        '-PollIntervalSeconds', $PollIntervalSeconds
-    )
-    if ($WithSessionInfoTab) { $psArgs += '-WithSessionInfoTab' }
-
-    if ($wtExe) {
-        $wtArgs = @('-w', '0', 'new-tab', '-p', $WtProfileName, '--title', 'Claude-Live-Log', '--', $psExe) + $psArgs
-        Start-Process -FilePath $wtExe.Source -ArgumentList $wtArgs -WindowStyle Hidden
-        Write-Host '[INFO] Claude-Live-Log タブを開きました。' -ForegroundColor Cyan
+    if ($wtExe -and (Test-Path $launcherCmd)) {
+        $wtArgs = @('-w', 'last', 'new-tab', '-p', $WtProfileName,
+                    '--title', 'Claude-Live-Log', '--commandline', $launcherCmd)
+        & $wtExe.Source @wtArgs
+        Write-Host '[INFO] Claude-Live-Log タブを既存 WindowsTerminal に追加しました。' -ForegroundColor Cyan
     } else {
-        Start-Process -FilePath $psExe -ArgumentList $psArgs -WindowStyle Normal
-        Write-Host '[INFO] Claude Live Log ウィンドウを開きました（wt.exe 非検出）。' -ForegroundColor Yellow
+        Start-Process -FilePath $PwshExe -ArgumentList @('-NoExit', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $PSCommandPath) -WindowStyle Normal
+        Write-Host '[INFO] Claude Live Log ウィンドウを開きました。' -ForegroundColor Yellow
     }
     exit 0
 }
 
-# ─── 内部関数 ────────────────────────────────────────────────────────────
+# ─── ヘッダー表示 ────────────────────────────────────────────────────────────
 
 function Write-WaitHeader {
-    Write-Host ''
-    Write-Host ('  ' + '=' * 54) -ForegroundColor Cyan
-    Write-Host '   Claude Code ライブログ監視' -ForegroundColor Cyan
-    Write-Host "   Host : $LinuxHost" -ForegroundColor DarkCyan
-    Write-Host "   Log  : (待機中)" -ForegroundColor DarkCyan
-    Write-Host ('  ' + '=' * 54) -ForegroundColor Cyan
-    Write-Host ''
-    Write-Host '  cron 発火待機中...' -ForegroundColor Yellow
-    Write-Host "  ログディレクトリ: $LogsDir" -ForegroundColor DarkGray
-    Write-Host ''
-}
-
-function Write-LiveHeader {
-    param([string]$LogFile)
     Clear-Host
     Write-Host ''
     Write-Host ('  ' + '=' * 54) -ForegroundColor Cyan
-    Write-Host '   Claude Code ライブログ監視' -ForegroundColor Cyan
+    Write-Host '   Claude Code セッション監視' -ForegroundColor Cyan
     Write-Host "   Host : $LinuxHost" -ForegroundColor DarkCyan
-    Write-Host "   Log  : $LogFile" -ForegroundColor DarkCyan
-    if ($script:LocalLogFile) {
-        Write-Host "   Local: $($script:LocalLogFile)" -ForegroundColor DarkGreen
-    }
     Write-Host ('  ' + '=' * 54) -ForegroundColor Cyan
-    Write-Host '  Ctrl+C でこのタブを閉じる（セッション本体は継続）' -ForegroundColor DarkGray
-    Write-Host '  ログ採取: Local パスのファイルをメモ帳/VS Code で開く' -ForegroundColor DarkGray
+    Write-Host ''
+    Write-Host '  次の Cron 発火を待機中...' -ForegroundColor Yellow
+    Write-Host '  Ctrl+C でこのタブを終了します。' -ForegroundColor DarkGray
     Write-Host ''
 }
 
-# Script-level local mirror file path; updated per session in New-LocalLogFile.
-$script:LocalLogFile = ''
+function Write-AttachHeader {
+    param([string]$Session)
+    Clear-Host
+    Write-Host ''
+    Write-Host ('  ' + '=' * 54) -ForegroundColor Green
+    Write-Host "   接続: $Session" -ForegroundColor Green
+    Write-Host "   Ctrl+B → D : デタッチ（Claude セッションは継続）" -ForegroundColor DarkGray
+    Write-Host ('  ' + '=' * 54) -ForegroundColor Green
+    Write-Host ''
+}
 
-function New-LocalLogFile {
-    $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-    $header = "[claude-live-log] session started $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
-    # Try multiple candidate paths; silently move to next if one fails (Permission denied etc.)
-    $candidates = @(
-        (Join-Path $env:TEMP "claude-live-log-${stamp}.txt"),
-        (Join-Path $env:USERPROFILE "Documents\claude-live-log-${stamp}.txt"),
-        (Join-Path $PSScriptRoot "..\..\logs\claude-live-log-${stamp}.txt")
-    )
-    foreach ($path in $candidates) {
-        try {
-            $header | Out-File -FilePath $path -Encoding UTF8 -ErrorAction Stop
-            $script:LocalLogFile = $path
-            return $path
-        } catch {}
+# ─── SSH ヘルパ ──────────────────────────────────────────────────────────────
+
+function Invoke-Ssh {
+    param([string]$Cmd)
+    $result = & ssh -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new `
+        -o ControlMaster=no $SshTarget $Cmd 2>$null
+    return $result
+}
+
+# 現在動いている claudeos-* tmux セッション名を返す（なければ空文字）
+function Get-RunningTmuxSession {
+    $raw = Invoke-Ssh "tmux ls 2>/dev/null | grep '^claudeos-'"
+    if (-not $raw) { return '' }
+    $line = ($raw -split "`n" | Where-Object { $_.Trim() } | Select-Object -First 1)
+    return $(if ($line) { ($line -split ':')[0].Trim() } else { '' })
+}
+
+# 今日の曜日 (0=日..6=土) でスケジュール時刻が現在より過去のプロジェクトを返す
+function Get-OverdueCronProject {
+    $script = @'
+DOW=$(date +%w)
+NOW_MIN=$(( 10#$(date +%H) * 60 + 10#$(date +%M) ))
+crontab -l 2>/dev/null | grep 'cron-launcher.sh' | grep -v '^#' | while IFS= read -r line; do
+  MIN=$(echo "$line"  | awk '{print $1}')
+  HOUR=$(echo "$line" | awk '{print $2}')
+  DOW_FIELD=$(echo "$line" | awk '{print $5}')
+  PROJECT=$(echo "$line" | grep -oP 'cron-launcher\.sh \K\S+')
+  [ -z "$PROJECT" ] && continue
+  SCHED=$(( 10#$HOUR * 60 + 10#$MIN ))
+  if echo ",$DOW_FIELD," | grep -qE ",$DOW," || [ "$DOW_FIELD" = "*" ]; then
+    if [ "$SCHED" -le "$NOW_MIN" ]; then
+      echo "$PROJECT|$SCHED"
+    fi
+  fi
+done | sort -t'|' -k2 -rn | head -1 | cut -d'|' -f1
+'@
+    $result = Invoke-Ssh $script
+    return $(if ($result) { $result.Trim() } else { '' })
+}
+
+# cron-launcher.sh をバックグラウンドで即実行し、起動したセッション名を返す
+function Start-CronSession {
+    param([string]$Project, [int]$DurationMin = 300)
+    $safeName  = $Project -replace '[^A-Za-z0-9_-]', '_'
+    $logFile   = "$LogsDir/cron-`$(date +%Y%m%d-%H%M%S).log"
+    $launchCmd = "nohup bash $LauncherPath '$Project' $DurationMin >> $logFile 2>&1 &"
+    Invoke-Ssh "mkdir -p $LogsDir && $launchCmd" | Out-Null
+
+    Write-Host "  [起動中] $Project (${DurationMin}min) ..." -ForegroundColor Cyan
+    # tmux セッションが現れるまで最大 30 秒待機
+    $targetName = "claudeos-$safeName"
+    for ($i = 0; $i -lt 15; $i++) {
+        Start-Sleep -Seconds 2
+        $sess = Get-RunningTmuxSession
+        if ($sess -eq $targetName) {
+            Write-Host "  [OK] tmux セッション起動確認: $sess" -ForegroundColor Green
+            return $sess
+        }
     }
-    $script:LocalLogFile = ''
+    Write-Host "  [WARN] tmux セッションの起動を確認できませんでした。" -ForegroundColor Yellow
     return ''
 }
 
-# ANSI エスケープと \r を除去してログ行を表示し、ローカルミラーファイルにも同時書き込みする (v3.2.99)。
-# stdbuf 未インストール環境でも制御文字残骸なしで表示できる (v3.2.89)。
-function Write-FilteredTailLine {
-    param([string]$Raw)
-    $line = $Raw `
-        -replace '.*\r', '' `
-        -replace '\x1b\][^\x07]*\x07', '' `
-        -replace '\x1b\][^\x1b]*$', '' `
-        -replace '\x1b\[[0-9;?]*[a-zA-Z]', '' `
-        -replace '\x1b.', ''
-    if ($line.Trim().Length -gt 0) {
-        Write-Host $line
-        if ($script:LocalLogFile) {
-            try { Add-Content -Path $script:LocalLogFile -Value $line -Encoding UTF8 } catch {}
-        }
-    }
+# 最新 session.json から SessionId を取得
+function Get-LatestSessionId {
+    param([string]$TmuxSession)
+    # セッション名から SAFE_PROJECT を逆引き: "claudeos-SAFE" → SAFE
+    $safe = $TmuxSession -replace '^claudeos-', ''
+    $result = Invoke-Ssh "ls -t '$SessionsDir/'*-${safe}.json 2>/dev/null | head -1"
+    if (-not $result) { return '' }
+    return ([System.IO.Path]::GetFileNameWithoutExtension($result.Trim()))
 }
 
-function Get-LatestLog {
-    $result = ssh $SshTarget "ls -t $LogsDir/cron-*.log 2>/dev/null | head -1" 2>$null
-    if ($null -eq $result) { return '' }
-    return $result.Trim()
-}
-
-function Get-SessionIdForLog {
-    param([string]$LogPath)
-    $basename = ($LogPath -split '/')[-1]
-    $stamp    = $basename -replace '^cron-', '' -replace '\.log$', ''
-    # Retry up to 3 times (2s apart) to handle the race condition where
-    # the session JSON is written slightly after the log file first appears.
-    for ($attempt = 0; $attempt -lt 3; $attempt++) {
-        $result = ssh $SshTarget "ls '$SessionsDir/${stamp}-'*.json 2>/dev/null | head -1" 2>$null
-        if ($result -and -not [string]::IsNullOrWhiteSpace($result)) {
-            return ($result.Trim() -split '/')[-1] -replace '\.json$', ''
-        }
-        if ($attempt -lt 2) { Start-Sleep -Seconds 2 }
-    }
-    return ''
-}
-
-function Open-TmuxAttachTab {
-    param([string]$SessionId)
-    $wtExe = Get-Command wt.exe -ErrorAction SilentlyContinue
-    if (-not $wtExe) {
-        Write-Host '  [INFO] wt.exe が非検出のため Tmux Attach タブを開けません。' -ForegroundColor Yellow
-        return
-    }
-    # SessionId = "YYYYMMDD-HHMMSS-SAFEPROJECT" → 3番目セグメントが SAFE_PROJECT
-    $parts = $SessionId -split '-', 3
-    if ($parts.Count -lt 3) {
-        Write-Host "  [WARN] SessionId のパースに失敗しました: $SessionId" -ForegroundColor Yellow
-        return
-    }
-    $safeProject = $parts[2]
-    $tmuxSession  = "claudeos-$safeProject"
-    # attach-session: セッションが存在しなければエラー終了 (new-session -A はゴーストセッションを作るため使わない)
-    $sshCmd       = "ssh -t $SshTarget tmux attach-session -t $tmuxSession"
-    $psExe        = $script:PwshExe
-    $psArgs = @(
-        '-NoExit', '-NoProfile', '-ExecutionPolicy', 'Bypass',
-        '-Command', $sshCmd
-    )
-    $wtArgs = @('-w', '0', 'new-tab', '-p', $script:WtProfileName, '--title', 'Claude-UI', '--', $psExe) + $psArgs
-    Start-Process -FilePath $wtExe.Source -ArgumentList $wtArgs -WindowStyle Hidden
-    Write-Host "  Claude UI タブを開きました: tmux attach-session -t $tmuxSession" -ForegroundColor Magenta
-}
-
+# Session-Info タブを既存 WT ウィンドウに追加する
 function Open-SessionInfoTab {
     param([string]$SessionId)
-    $wtExe = Get-Command wt.exe -ErrorAction SilentlyContinue
-    if (-not $wtExe) {
-        Write-Host '  [INFO] wt.exe が非検出のため Session Info タブを開けません。' -ForegroundColor Yellow
-        return
-    }
-    $psExe    = $script:PwshExe
+    if ([string]::IsNullOrWhiteSpace($SessionId)) { return }
+
+    $wtExe    = Get-Command wt.exe -ErrorAction SilentlyContinue
     $siScript = Join-Path $PSScriptRoot 'Watch-SessionInfoSSH.ps1'
-    if (-not (Test-Path $siScript)) {
-        Write-Host "  [WARN] Watch-SessionInfoSSH.ps1 が見つかりません: $siScript" -ForegroundColor Yellow
-        return
-    }
-    $psArgs = @(
-        '-NoExit', '-NoProfile', '-ExecutionPolicy', 'Bypass',
-        '-File', $siScript,
-        '-SessionId', $SessionId,
-        '-LinuxHost', $LinuxHost,
-        '-LinuxUser', $LinuxUser,
-        '-SessionsDir', $SessionsDir
-    )
-    $wtArgs = @('-w', '0', 'new-tab', '-p', $script:WtProfileName, '--title', 'Session-Info', '--', $psExe) + $psArgs
-    Start-Process -FilePath $wtExe.Source -ArgumentList $wtArgs -WindowStyle Hidden
-    Write-Host "  Session Info タブを開きました: $SessionId" -ForegroundColor Cyan
+    if (-not $wtExe -or -not (Test-Path $siScript)) { return }
+
+    # Session-Info 用の .cmd ランチャーを一時生成（スペース入りパス回避）
+    $tmpCmd = Join-Path $env:TEMP 'ClaudeOS-SessionInfo-Launcher.cmd'
+    @"
+@echo off
+pwsh -NoExit -NoProfile -ExecutionPolicy Bypass -File "$siScript" -SessionId "$SessionId" -LinuxHost "$LinuxHost" -LinuxUser "$LinuxUser" -SessionsDir "$SessionsDir"
+"@ | Set-Content $tmpCmd -Encoding ASCII
+
+    $wtArgs = @('-w', 'last', 'new-tab', '-p', $WtProfileName,
+                '--title', 'Session-Info', '--commandline', $tmpCmd)
+    & $wtExe.Source @wtArgs
+    Write-Host "  [+] Session-Info タブを開きました: $SessionId" -ForegroundColor DarkCyan
 }
 
-# ─── 本体: ログ監視ループ ────────────────────────────────────────────────
+# tmux attach（フォアグラウンド）を実行し、Session-Info タブも開く
+function Connect-TmuxSession {
+    param([string]$TmuxSession)
+
+    Write-AttachHeader -Session $TmuxSession
+
+    # Session-Info タブを開く（attach と並行）
+    $sessionId = Get-LatestSessionId -TmuxSession $TmuxSession
+    if ($sessionId) { Open-SessionInfoTab -SessionId $sessionId }
+
+    # フォアグラウンドで attach（-tt で強制 TTY 割り当て）
+    & ssh -tt $SshTarget "tmux attach-session -t '$TmuxSession'" 2>$null
+
+    Write-Host ''
+    Write-Host '  セッション終了またはデタッチしました。' -ForegroundColor Yellow
+    Write-Host '  次の Cron 発火を待機中...' -ForegroundColor DarkGray
+    Write-Host ''
+    Start-Sleep -Seconds 2
+}
+
+# ─── 起動時即実行ロジック ─────────────────────────────────────────────────────
+
+Write-Host ''
+Write-Host ('  ' + '=' * 54) -ForegroundColor Cyan
+Write-Host '   Claude Code セッション監視 — 起動チェック中...' -ForegroundColor Cyan
+Write-Host "   Host : $LinuxHost" -ForegroundColor DarkCyan
+Write-Host ('  ' + '=' * 54) -ForegroundColor Cyan
+Write-Host ''
+
+# ① 既存 tmux セッションがあれば即 attach
+$existing = Get-RunningTmuxSession
+if ($existing) {
+    Write-Host "  [検出] 実行中セッション: $existing" -ForegroundColor Green
+    Connect-TmuxSession -TmuxSession $existing
+    $lastSession = $existing
+} else {
+    # ② 今日のCron時刻が過ぎていれば即起動
+    Write-Host '  実行中セッションなし。今日のCronスケジュールを確認中...' -ForegroundColor DarkGray
+    $overdueProject = Get-OverdueCronProject
+    if ($overdueProject) {
+        Write-Host "  [即実行] スケジュール時刻超過: $overdueProject" -ForegroundColor Yellow
+        $newSession = Start-CronSession -Project $overdueProject
+        if ($newSession) {
+            Connect-TmuxSession -TmuxSession $newSession
+            $lastSession = $newSession
+        } else {
+            $lastSession = ''
+        }
+    } else {
+        Write-Host '  本日の実行時刻はまだ先です。発火を待機します。' -ForegroundColor DarkGray
+        $lastSession = ''
+    }
+}
+
+# ─── 監視ループ（セッション終了後・次回発火待機）────────────────────────────
 
 Write-WaitHeader
-
-# $knownLog = '' causes the first loop iteration to detect any existing log as "new"
-# and start tailing immediately (v3.2.98). $isStartupDetection tracks whether the
-# upcoming detection is the on-startup one (existing log) vs a real live cron fire.
-$knownLog           = ''
-$isStartupDetection = $true
-$dotCount           = 0
+$dotCount = 0
 
 while ($true) {
-    $latest = Get-LatestLog
+    $current = Get-RunningTmuxSession
 
-    # 新しいログが現れたら監視開始
-    if ($latest -and ($latest -ne $knownLog)) {
-        try { $null = New-LocalLogFile } catch { $script:LocalLogFile = '' }   # create a fresh local mirror file for this session
-
-        # Capture before modifying so the flag is correct in both branches.
-        $thisIsStartup      = $isStartupDetection
-        $isStartupDetection = $false   # all subsequent detections are live
-
-        if ($thisIsStartup) {
-            # Existing log found on startup: do NOT re-display historical content
-            # (tail -n 0) and skip Session ID lookup (session likely already over).
-            $tailLines = 0
-            Write-LiveHeader -LogFile $latest
-            Write-Host "  既存ログ接続中 (起動時検出)" -ForegroundColor DarkYellow
-            Write-Host "  過去ログの再表示はスキップします。新規書き込みを監視中..." -ForegroundColor DarkGray
-            Write-Host "  ログ内容確認は Local ファイルを参照してください。" -ForegroundColor DarkGray
-        } else {
-            # New log appeared while monitoring: real cron fire.
-            $tailLines = 50
-            Write-LiveHeader -LogFile $latest
-            Write-Host "  新しいセッション検出: $latest" -ForegroundColor Green
-
-            if ($WithSessionInfoTab) {
-                Write-Host '  Session ID を取得中...' -ForegroundColor DarkGray
-                $sessionId = Get-SessionIdForLog -LogPath $latest
-                if ($sessionId) {
-                    Open-TmuxAttachTab -SessionId $sessionId   # Tab ②: Claude UI (tmux attach)
-                    Start-Sleep -Seconds 1
-                    Open-SessionInfoTab -SessionId $sessionId  # Tab ③: Session Info
-                } else {
-                    Write-Host '  [WARN] Session ID が見つかりませんでした。' -ForegroundColor Yellow
-                }
-            }
-        }
-
+    if ($current -and ($current -ne $lastSession)) {
         Write-Host ''
-        # tail -F をバックグラウンド Job で起動し、メインスレッドで次ログ出現を監視する。
-        # stdbuf は Linux ディストリビューション依存のため排除。tail -F のみを SSH 実行し、
-        # ANSI エスケープ・\r フィルタは PowerShell 受信側で処理する (v3.2.89)。
-        $tailJob = Start-Job -ScriptBlock {
-            # Job は新規 runspace のため親 console のエンコーディング継承なし。
-            # 明示的に UTF-8 化しないと ssh 経由の日本語出力が文字化ける (v3.2.42)。
-            [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-            [Console]::InputEncoding  = [System.Text.Encoding]::UTF8
-            $OutputEncoding = [System.Text.Encoding]::UTF8
-            ssh $using:SshTarget "tail -n $($using:tailLines) -F '$($using:latest)'"
-        }
-
-        try {
-            while ($true) {
-                # tail の出力を受信してフィルタ後に表示 (非ブロッキング)
-                Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object { Write-FilteredTailLine $_ }
-
-                # tail Job が落ちた (SSH 切断等) なら抜ける
-                if ($tailJob.State -ne 'Running') { break }
-
-                Start-Sleep -Seconds $PollIntervalSeconds
-
-                # より新しいログが出現したら切り替え
-                $newer = Get-LatestLog
-                if ($newer -and $newer -ne $latest) {
-                    # 残出力を flush
-                    Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object { Write-FilteredTailLine $_ }
-                    Write-Host ''
-                    Write-Host "  より新しいセッション検出: $newer" -ForegroundColor Yellow
-                    Write-Host '  次のセッションへ切り替えます...' -ForegroundColor Yellow
-                    break
-                }
-            }
-        }
-        finally {
-            Stop-Job $tailJob -ErrorAction SilentlyContinue
-            Receive-Job $tailJob -ErrorAction SilentlyContinue | ForEach-Object { Write-FilteredTailLine $_ }
-            Remove-Job $tailJob -Force -ErrorAction SilentlyContinue
-        }
-
-        Write-Host ''
-        Write-Host '  現セッションの監視を終了しました。次の cron 発火を待機します...' -ForegroundColor Yellow
-        Write-Host ''
-        $knownLog = $latest
-        $dotCount = 0
+        Write-Host "  [新規発火] $current" -ForegroundColor Green
+        Connect-TmuxSession -TmuxSession $current
+        $lastSession = $current
+        $dotCount    = 0
         Write-WaitHeader
-        continue
-    }
-
-    # 待機中ドット表示
-    Write-Host '.' -NoNewline -ForegroundColor DarkGray
-    $dotCount++
-    if ($dotCount -ge 60) {
-        Write-Host ''
-        $dotCount = 0
+    } else {
+        Write-Host '.' -NoNewline -ForegroundColor DarkGray
+        $dotCount++
+        if ($dotCount -ge 60) { Write-Host ''; $dotCount = 0 }
     }
 
     Start-Sleep -Seconds $PollIntervalSeconds

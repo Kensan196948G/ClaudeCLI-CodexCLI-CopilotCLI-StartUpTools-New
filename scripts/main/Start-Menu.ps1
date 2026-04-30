@@ -315,7 +315,7 @@ while ($true) {
         "12" { Invoke-MenuScript -File "scripts\main\Set-Statusline.ps1" }
         "13" {
             $watchScript = Join-Path $ProjectRoot "scripts\tools\Watch-ClaudeLog.ps1"
-            & $ShellExe -NoProfile -ExecutionPolicy Bypass -File $watchScript -NewTab -WithSessionInfoTab
+            & $ShellExe -NoProfile -ExecutionPolicy Bypass -File $watchScript -NewTab
             Write-Host ""
             Read-Host "  Enterキーでメニューに戻ります"
         }
