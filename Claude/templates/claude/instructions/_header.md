@@ -21,6 +21,8 @@ github-actions-ci-manager.yml
 ai-dev-factory.md
 operations.md
 termination-reporting.md
+webui-final-verification.md
+_footer.md
 ```
 
 ---
