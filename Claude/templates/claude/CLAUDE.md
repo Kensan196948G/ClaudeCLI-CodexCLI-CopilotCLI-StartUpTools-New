@@ -8,7 +8,8 @@
 
 - AI開発組織そのもの（CTO・開発・QA・Security・CI/CD・PM を一体化）
 - `/goal` コマンド駆動の自律継続開発（Claude Code v2.1.159+ 公式機能）
-- Agent Teams による並列協調開発（**公式機能** v2.1.159+）
+- Agent Teams による並列協調開発（**Experimental**・`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` 必須）
+- Dynamic Workflows による大規模エージェント協調（`/workflows`・`/deep-research`）
 - Agent View（`claude agents`）によるセッション監視
 - GitHub 連携による完全無人運用
 
@@ -359,6 +360,86 @@ claude agents
 > 起動ガードレール（token < 70% / 残 ≥ 60min / `ultracode` 既定化禁止 / session 終了で破棄）と
 > 3 階層マトリクスは `claudeos/core/04-agent-teams.md`「dynamic workflows」§ を正本とする。
 > `.github/workflows/*.yml`（CI）とは別物。
+
+### 6.7 Agent Teams 品質ゲート Hooks（v2.1.159+）
+
+Agent Teams 専用フックで品質を自動強制できる。
+
+```json
+"TeammateIdle":   { "exit 2" → フィードバック送信 + チームメイト稼働継続 }
+"TaskCreated":    { "exit 2" → タスク作成を拒否 + 理由フィードバック }
+"TaskCompleted":  { "exit 2" → タスク完了を拒否（テスト未通過なら blocked） }
+```
+
+**設定例 (settings.json):**
+```json
+"hooks": {
+  "TeammateIdle": [{ "matcher": "*", "hooks": [{ "type": "command", "command": "node .claude/claudeos/scripts/hooks/teammate-idle-gate.js" }] }],
+  "TaskCreated":  [{ "matcher": "*", "hooks": [{ "type": "command", "command": "node .claude/claudeos/scripts/hooks/task-created-gate.js" }] }],
+  "TaskCompleted":[{ "matcher": "*", "hooks": [{ "type": "command", "command": "node .claude/claudeos/scripts/hooks/task-completed-gate.js" }] }]
+}
+```
+
+### 6.8 Agent Teams キーボードショートカット（in-process モード）
+
+| キー | 動作 |
+|---|---|
+| `Shift+↓` | チームメイト間をサイクル（リード → TM1 → TM2 → ... → リード） |
+| `Ctrl+T` | タスクリスト表示/非表示 |
+| `Enter` | チームメイトのセッション詳細を確認 |
+| `Esc` | チームメイト操作を中断 |
+
+### 6.9 Agent Teams ベストプラクティス（公式推奨）
+
+- **チームサイズ**: 3〜5 チームメイト が最適。それ以上は協調オーバーヘッドが増大
+- **タスク粒度**: 1 チームメイトにつき 5〜6 タスク が目安
+- **独立性**: 同一ファイルを複数チームメイトが編集すると上書き衝突 → ファイルを担当分割する
+- **コンテキスト**: チームメイトはリードの会話履歴を引き継がない → spawn プロンプトに必要情報を明示
+- **待機**: リードがチームメイトより先に実装を始める場合 → `Wait for your teammates to complete their tasks`
+- **プラン承認**: 重要タスクは `Require plan approval before they make any changes` でリードにレビューさせる
+
+### 6.10 Dynamic Workflows 詳細（`/workflows`・v2.1.154+）
+
+| コマンド | 説明 |
+|---|---|
+| `/workflows` | 実行中・完了済みワークフロー一覧と管理画面 |
+| `/deep-research <質問>` | Web 検索を複数角度で並行、ソースをクロスチェック、引用付きレポート生成 |
+| `/effort ultracode` | xhigh 推論 + 自動ワークフロー化（毎タスクでワークフローを計画） |
+
+**ワークフロー内キーボードショートカット（`/workflows` 画面）:**
+
+| キー | 動作 |
+|---|---|
+| `↑` / `↓` | フェーズ・エージェント選択 |
+| `Enter` / `→` | ドリルダウン（フェーズ → エージェント詳細） |
+| `Esc` | 1段階戻る |
+| `p` | 実行の一時停止/再開 |
+| `x` | 選択エージェント停止（ルートで選択時はワークフロー全体停止） |
+| `r` | 選択エージェントを再実行 |
+| `s` | スクリプトをコマンドとして保存（`.claude/workflows/` または `~/.claude/workflows/`） |
+
+**ワークフロー保存場所:**
+
+| パス | スコープ |
+|---|---|
+| `.claude/workflows/<name>.js` | プロジェクト共有（git でチーム全員に配布） |
+| `~/.claude/workflows/<name>.js` | ユーザー個人（全プロジェクトで利用可） |
+
+保存したワークフローは `/` でオートコンプリート候補として表示される。
+
+**ワークフローの keyword トリガー:**
+プロンプトに `workflow` という単語を含めるだけで、Claude がそのタスク用ワークフローを自動作成する。
+
+```
+# 例
+Run a workflow to audit every API endpoint under src/routes/ for missing auth checks
+```
+
+**無効化設定（無効化したい場合のみ）:**
+```json
+{ "disableWorkflows": true }  // settings.json
+// または環境変数: CLAUDE_CODE_DISABLE_WORKFLOWS=1
+```
 
 ## 7. Issue Factory
 
