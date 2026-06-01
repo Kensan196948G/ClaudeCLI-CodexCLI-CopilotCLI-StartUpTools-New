@@ -76,6 +76,12 @@ teardown() { _bats_common_teardown; }
   [ "$output" = "$HOME/alert.mp3" ]
 }
 
+@test "config_sound_path: 未定義 tool は空かつ exit 0 (set -e 安全)" {
+  run config_sound_path nosuchtool
+  [ "$status" -eq 0 ]
+  [ "$output" = "" ]
+}
+
 @test "config_recent_history_path: USERPROFILE を展開" {
   run config_recent_history_path
   [ "$output" = "$HOME/.ai-startup/recent.json" ]

@@ -27,7 +27,7 @@ notify__play() {
   # config の soundEnabled
   config_sound_enabled || return 0
 
-  local f; f="$(config_sound_path "$tool")"
+  local f; f="$(config_sound_path "$tool")" || true
   [[ -n "$f" && -f "$f" ]] || return 0
 
   # 利用可能な最初のプレイヤを検出

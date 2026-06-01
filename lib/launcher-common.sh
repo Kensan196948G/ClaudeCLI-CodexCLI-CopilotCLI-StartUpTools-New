@@ -42,4 +42,5 @@ launcher__select_project() {
   if [[ "$idx" =~ ^[0-9]+$ ]] && (( idx >= 1 && idx <= ${#projs[@]} )); then
     printf '%s' "${projs[$((idx - 1))]}"
   fi
+  return 0   # 範囲外でも空 + exit 0 (set -e 安全)
 }

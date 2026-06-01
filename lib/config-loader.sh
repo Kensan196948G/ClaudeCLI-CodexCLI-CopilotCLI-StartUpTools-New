@@ -46,7 +46,8 @@ config_sound_enabled() { [[ "$(config_get '.notifications.soundEnabled' 'false')
 # config_sound_path <tool> — 音声ファイルパス (%USERPROFILE%/\ を Linux 化)
 config_sound_path() {
   local p; p="$(config_get ".notifications.sounds.$1" '')"
-  [[ -n "$p" ]] && json_expand_path "$p"
+  [[ -z "$p" ]] && return 0          # 未定義 tool は空 + exit 0 (set -e 安全)
+  json_expand_path "$p"
 }
 
 # --- Recent Projects 履歴パス (%USERPROFILE% 展開) ---
