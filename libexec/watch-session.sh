@@ -2,7 +2,9 @@
 # ============================================================
 # watch-session.sh — セッション状態監視 (メニュー項15)
 # 移植元: scripts/tools/Watch-SessionInfoSSH.ps1 (SSH → ローカル読取)
-#   ~/.claudeos/sessions/*.json + tmux claudeos-* を表示
+#
+# 構成 (改善): ①実行中の tmux セッション + 接続/停止の操作案内
+#              ②最近のセッション履歴 (最新15件)
 #   --once: 1回表示 (bats用) / 既定: 2秒ごとに更新 (Ctrl-C で戻る)
 # ============================================================
 
@@ -14,20 +16,34 @@ source "$SCRIPT_DIR/../lib/common.sh"
 source "$SCRIPT_DIR/../lib/json.sh"
 
 _render_sessions() {
-  local sdir="$1" f proj status start found=0
-  for f in "$sdir"/*.json; do
-    [[ -f "$f" ]] || continue
-    found=1
-    proj="$(json_get "$f" '.project' '?')"
-    status="$(json_get "$f" '.status' '?')"
-    start="$(json_get "$f" '.start_time' '?')"
-    printf '  %-28s %-10s %s\n' "$proj" "$status" "$start"
-  done
-  (( found == 0 )) && printf '  (セッション記録なし)\n'
+  local sdir="$1"
+
+  # ① 実行中の tmux セッション (BG実行/cron実行の確認手段)
   if has_cmd tmux; then
-    printf '  %s-- tmux セッション --%s\n' "$C_CYAN" "$C_RESET"
-    tmux ls 2>/dev/null | grep '^claudeos-' || printf '  (実行中なし)\n'
+    printf '  %s● 実行中の ClaudeOS セッション (tmux):%s\n' "$C_GREEN" "$C_RESET"
+    local running; running="$(tmux ls 2>/dev/null | grep '^claudeos-' || true)"
+    if [[ -n "$running" ]]; then
+      printf '%s\n' "$running" | sed 's/^/      /'
+      printf '      %s接続:%s tmux attach -t <名前>   (%sCtrl-b d%s でデタッチ=継続)\n' "$C_CYAN" "$C_RESET" "$C_YELLOW" "$C_RESET"
+      printf '      %s停止:%s tmux kill-session -t <名前>\n' "$C_CYAN" "$C_RESET"
+    else
+      printf '      (実行中なし)\n'
+    fi
   fi
+  printf '\n'
+
+  # ② 最近のセッション履歴 (最新15件)
+  printf '  %s最近のセッション履歴 (最新15件):%s\n' "$C_CYAN" "$C_RESET"
+  local f n=0
+  while IFS= read -r f; do
+    [[ -f "$f" ]] || continue
+    n=$((n + 1))
+    printf '      %-30s %-10s %s\n' \
+      "$(json_get "$f" '.project' '?')" \
+      "$(json_get "$f" '.status' '?')" \
+      "$(json_get "$f" '.start_time' '?')"
+  done < <(ls -t "$sdir"/*.json 2>/dev/null | head -15)
+  (( n == 0 )) && printf '      (記録なし)\n'
 }
 
 main() {
@@ -36,7 +52,7 @@ main() {
   [[ -d "$sdir" ]] || { log_warn "セッションディレクトリがありません: $sdir"; return 0; }
 
   if (( once )); then
-    log_info "セッション一覧:"
+    log_info "セッション状態"
     _render_sessions "$sdir"
   else
     log_info "セッション状態監視 (Ctrl-C で戻る)"

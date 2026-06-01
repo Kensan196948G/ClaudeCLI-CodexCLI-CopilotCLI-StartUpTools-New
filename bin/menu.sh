@@ -162,8 +162,7 @@ menu_loop() {
           else log_warn "agent-teams-status.js が見つかりません"; fi
           read -rp "  Enter で戻る " _ || true ;;
       PD) run_menu_script "$BIN/start-dashboard.sh" ;;
-      MC) ( command -v xdg-open >/dev/null 2>&1 && xdg-open "http://localhost:3737/mission-control" >/dev/null 2>&1 & ) || true
-          ss -ltn 2>/dev/null | grep -q ':3737 ' || run_menu_script "$BIN/start-dashboard.sh" --no-browser ;;
+      MC) run_menu_script "$BIN/start-dashboard.sh" --no-browser ;;
       DR) run_menu_script "$BIN/dashboard-service.sh" --register --run-now ;;
       DU) run_menu_script "$BIN/dashboard-service.sh" --unregister ;;
       0)  exit 0 ;;

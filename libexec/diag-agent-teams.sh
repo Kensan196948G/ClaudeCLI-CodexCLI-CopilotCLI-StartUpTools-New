@@ -20,14 +20,13 @@ main() {
     tc="$(json_get "$state" '.agent_teams_usage.current_session.team_create_count' '0')"
     sc="$(json_get "$state" '.agent_teams_usage.current_session.send_message_count' '0')"
     log_ok "現セッション: TeamCreate=$tc / SendMessage=$sc"
+    local js="$CCSU_ROOT/scripts/tools/agent-teams-status.js"
+    if [[ -f "$js" ]] && has_cmd node; then
+      printf '  %s-- agent-teams-status.js --%s\n' "$C_CYAN" "$C_RESET"
+      ( cd "$CCSU_ROOT" && node "$js" 2>/dev/null ) || log_info "(agent-teams-status.js: 実行時データなし)"
+    fi
   else
-    log_warn "state.json が見つかりません: $state"
-  fi
-
-  local js="$CCSU_ROOT/scripts/tools/agent-teams-status.js"
-  if [[ -f "$js" ]] && has_cmd node; then
-    printf '  %s-- agent-teams-status.js --%s\n' "$C_CYAN" "$C_RESET"
-    ( cd "$CCSU_ROOT" && node "$js" 2>/dev/null ) || log_warn "agent-teams-status.js 実行失敗"
+    log_info "state.json 未生成です (cron/手動の claude 実行で生成されます)"
   fi
 }
 

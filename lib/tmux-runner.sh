@@ -115,7 +115,8 @@ tmux_run() {
     "$TMUX_BIN" attach -t "$session"
   else
     log_ok "バックグラウンド起動: $session"
-    log_info "  接続: tmux attach -t $session"
+    log_info "  接続: tmux attach -t $session  (Ctrl-b d でデタッチ=BG継続)"
+    log_info "  状態: メニュー項15 (セッション状態監視) で稼働確認"
     log_info "  停止: tmux kill-session -t $session"
     log_info "  ログ: $log_file"
   fi

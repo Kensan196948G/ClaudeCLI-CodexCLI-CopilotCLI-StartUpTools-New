@@ -23,6 +23,11 @@ main() {
   if [[ -f "$conf" ]]; then log_ok "~/.tmux.conf あり"; else log_info "~/.tmux.conf なし (tmux 既定設定で動作)"; fi
 
   printf '  端末: TERM=%s%s%s LANG=%s\n' "$C_GRAY" "${TERM:-未設定}" "$C_RESET" "${LANG:-未設定}"
+  case "${LANG:-}" in
+    ja_JP.*) : ;;  # 既に日本語
+    *) printf '  %s日本語表示にするには:%s export LANG=ja_JP.UTF-8\n' "$C_YELLOW" "$C_RESET"
+       printf '       (未生成なら: sudo locale-gen ja_JP.UTF-8 && sudo update-locale)\n' ;;
+  esac
   printf '\n  %sClaudeOS セッションへの接続:%s\n' "$C_CYAN" "$C_RESET"
   printf '    実行中一覧 : tmux ls | grep claudeos-\n'
   printf '    接続       : tmux attach -t claudeos-<project>\n'

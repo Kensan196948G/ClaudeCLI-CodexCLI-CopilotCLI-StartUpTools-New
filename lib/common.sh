@@ -69,5 +69,14 @@ require_cmd() {
 # --- プロジェクト名を tmux/ファイル安全な文字列へ (cron-launcher.sh の SAFE_PROJECT と同一規則) ---
 ccsu_safe_name() { printf '%s' "$1" | tr -c 'A-Za-z0-9_-' '_'; }
 
+# --- LAN IP 取得 (Windows 等からアクセスする際のホスト IP。docker bridge を除外) ---
+#   デフォルトルートの src IP を優先 (= 物理 LAN の 192.168.0.x 等)。失敗時は hostname -I 先頭。
+ccsu_lan_ip() {
+  local ip
+  ip="$(ip route get 1.1.1.1 2>/dev/null | grep -oP 'src \K[0-9.]+' | head -1)"
+  [[ -z "$ip" ]] && ip="$(hostname -I 2>/dev/null | awk '{print $1}')"
+  printf '%s' "${ip:-127.0.0.1}"
+}
+
 # --- 終了コード規約 (PowerShell の throw 'USER_CANCELLED' を表現) ---
 EXIT_USER_CANCELLED=10
