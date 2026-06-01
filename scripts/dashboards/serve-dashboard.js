@@ -26,34 +26,33 @@ const PROJ_ROOT    = path.resolve(__dirname, '..', '..');
 
 // ── Fixed Job execution (POST /api/jobs) ────────────────────────────────────
 const ALLOWED_JOBS = {
-  // ── 既存ジョブ ──────────────────────────────────────────────────────────
+  // ── 既存ジョブ (Node/外部コマンド: 変更なし) ──────────────────────────────
   'audit-scan':         { cmd: 'node',  args: ['scripts/tools/run-audit-scan.js'],                             timeout: 30 },
   'cmdb-scan':          { cmd: 'node',  args: ['scripts/tools/run-cmdb-scan.js'],                              timeout: 20 },
-  'sync-issues':        { cmd: 'pwsh',  args: ['-NonInteractive', '-File', 'scripts/tools/Sync-Issues.ps1'],   timeout: 30 },
+  'sync-issues':        { cmd: 'gh',    args: ['issue', 'list', '--state', 'open', '--limit', '20'],           timeout: 30 },
   'agent-teams-status': { cmd: 'node',  args: ['scripts/tools/agent-teams-status.js'],                         timeout: 10 },
   'gitleaks-run':       { cmd: 'gitleaks', args: ['detect', '--source', '.', '--exit-code', '0'],              timeout: 30 },
-  // ── 診断系ジョブ（評価 §16 対応）────────────────────────────────────────
-  'mcp-health':         { cmd: 'pwsh',  args: ['-NonInteractive', '-File', 'scripts/test/Test-McpHealth.ps1'],           timeout: 30 },
-  'architecture-check': { cmd: 'pwsh',  args: ['-NonInteractive', '-File', 'scripts/test/Test-ArchitectureCheck.ps1'],   timeout: 30 },
-  'worktree-list':      { cmd: 'pwsh',  args: ['-NonInteractive', '-File', 'scripts/test/Test-WorktreeManager.ps1'],     timeout: 20 },
-  'test-all-tools':     { cmd: 'pwsh',  args: ['-NonInteractive', '-File', 'scripts/test/Test-AllTools.ps1'],            timeout: 60 },
-  'pester-run':         { cmd: 'pwsh',  args: ['-NonInteractive', '-Command',
-    '$cfg=New-PesterConfiguration;$cfg.Run.Path="./tests";$cfg.Run.Exit=$false;$cfg.Output.Verbosity="Normal";Invoke-Pester -Configuration $cfg'],
-    timeout: 120 },
-  'psscriptanalyzer-run': { cmd: 'pwsh', args: ['-NonInteractive', '-Command',
-    'Invoke-ScriptAnalyzer -Path scripts -Recurse -Severity Error,Warning | Select-Object ScriptName,Line,Severity,RuleName,Message | Format-Table -AutoSize | Out-String -Width 200'],
+  // ── 診断系ジョブ (Linux native: bash libexec/*.sh) ───────────────────────
+  'mcp-health':         { cmd: 'bash',  args: ['libexec/diag-mcp-health.sh'],     timeout: 30 },
+  'architecture-check': { cmd: 'bash',  args: ['libexec/diag-architecture.sh'],   timeout: 30 },
+  'worktree-list':      { cmd: 'bash',  args: ['libexec/diag-worktree.sh'],       timeout: 20 },
+  'test-all-tools':     { cmd: 'bash',  args: ['libexec/diag-all-tools.sh'],      timeout: 60 },
+  // key は UI 互換のため維持。中身は bats / shellcheck (Linux native)
+  'pester-run':         { cmd: 'bats',  args: ['tests/bats/unit'],                timeout: 120 },
+  'psscriptanalyzer-run': { cmd: 'bash', args: ['-c',
+    'shellcheck -S error start.sh lib/*.sh bin/*.sh libexec/*.sh && echo "shellcheck: 0 errors"'],
     timeout: 60 },
   // ── 管理系ジョブ（二段階確認付き）────────────────────────────────────────
-  'dashboard-task-register':   { cmd: 'pwsh', args: ['-NonInteractive', '-File', 'scripts/main/Register-DashboardTask.ps1', '-RunNow', '-NonInteractive'], timeout: 30,
-    requireConfirm: true, confirmMsg: 'Dashboard をタスクスケジューラーに登録し、今すぐ起動します。OS 設定（ログオン時自動起動）を変更します。' },
-  'dashboard-task-unregister': { cmd: 'pwsh', args: ['-NonInteractive', '-File', 'scripts/main/Register-DashboardTask.ps1', '-Unregister', '-NonInteractive'], timeout: 30,
-    requireConfirm: true, confirmMsg: 'Dashboard の自動起動タスクをスケジューラーから解除します。次回ログイン以降、自動起動しなくなります。' },
+  'dashboard-task-register':   { cmd: 'bash', args: ['bin/dashboard-service.sh', '--register', '--run-now'], timeout: 30,
+    requireConfirm: true, confirmMsg: 'Dashboard を systemd user service に登録し、今すぐ起動します。ログイン時自動起動 (linger) を有効化します。' },
+  'dashboard-task-unregister': { cmd: 'bash', args: ['bin/dashboard-service.sh', '--unregister'], timeout: 30,
+    requireConfirm: true, confirmMsg: 'Dashboard の自動起動 (systemd/cron) を解除します。次回以降、自動起動しなくなります。' },
   // ── 状態確認ジョブ（read-only）────────────────────────────────────────────
-  'dashboard-task-status':   { cmd: 'pwsh', args: ['-NonInteractive', '-File', 'scripts/main/Register-DashboardTask.ps1', '-Status', '-NonInteractive'], timeout: 10 },
-  'source-of-truth-drift':   { cmd: 'pwsh', args: ['-NonInteractive', '-Command',
-    '$t=(Get-ChildItem "Claude/templates/claudeos" -Recurse -File -EA SilentlyContinue).Count; $d=(Get-ChildItem ".claude/claudeos" -Recurse -File -EA SilentlyContinue).Count; Write-Host "Template: $t | Deployed: $d | Diff: $([Math]::Abs($t-$d))"'], timeout: 15 },
-  'version-drift-check':     { cmd: 'pwsh', args: ['-NonInteractive', '-Command',
-    'Select-String -Path README.md,CLAUDE.md -Pattern "v\\d+\\.\\d+\\.\\d+" -AllMatches -EA SilentlyContinue | ForEach-Object { "$($_.Filename): $($_.Matches.Value -join \",\")" } | Select-Object -Unique'], timeout: 15 },
+  'dashboard-task-status':   { cmd: 'bash', args: ['bin/dashboard-service.sh', '--status'], timeout: 10 },
+  'source-of-truth-drift':   { cmd: 'bash', args: ['-c',
+    't=$(find Claude/templates/claudeos -type f 2>/dev/null | wc -l); d=$(find .claude/claudeos -type f 2>/dev/null | wc -l); echo "Template: $t | Deployed: $d | Diff: $([ "$t" -gt "$d" ] && echo $((t-d)) || echo $((d-t)))"'], timeout: 15 },
+  'version-drift-check':     { cmd: 'bash', args: ['-c',
+    'for f in README.md CLAUDE.md; do printf "%s: " "$f"; grep -ohE "v[0-9]+\\.[0-9]+\\.[0-9]+" "$f" 2>/dev/null | sort -u | paste -sd,; done'], timeout: 15 },
 };
 // ── SSE Token store (for EventSource auth when DASHBOARD_PASSWORD is set) ──
 // EventSource cannot send Authorization headers, so we use short-lived tokens.
@@ -1306,13 +1305,21 @@ function handleSystemHealth(res) {
     c.deployedFilesCount  = dep;
     c.sourceOfTruthDiff   = Math.abs(tpl - dep);
   } catch { c.sourceOfTruthDiff = -1; }
-  // Dashboard Task status (Windows only) — short timeout to avoid blocking
+  // Dashboard service status (Linux: systemd user service / crontab @reboot)
   try {
-    const out = execSync(
-      'powershell -NonInteractive -Command "(Get-ScheduledTask -TaskName \'ClaudeOS Dashboard\' -ErrorAction SilentlyContinue).State"',
-      { encoding: 'utf8', timeout: 1500 }  // reduced from 5000ms to 1500ms
-    );
-    c.dashboardTaskState = out.trim() || 'NotRegistered';
+    let st = 'NotRegistered';
+    try {
+      const o = execSync('systemctl --user is-active claudeos-dashboard.service 2>/dev/null', { encoding: 'utf8', timeout: 1500 });
+      const v = o.trim();
+      if (v === 'active') st = 'Running';
+      else if (v) st = v;
+    } catch {
+      try {
+        const cr = execSync('crontab -l 2>/dev/null | grep -c serve-dashboard.js', { encoding: 'utf8', timeout: 1500 });
+        if (parseInt(cr.trim(), 10) > 0) st = 'CronRegistered';
+      } catch { /* no cron entry */ }
+    }
+    c.dashboardTaskState = st;
   } catch { c.dashboardTaskState = 'Unknown'; }
   // state.json phase/deploy-ready
   try {
