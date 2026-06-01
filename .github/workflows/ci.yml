@@ -261,3 +261,31 @@ jobs:
           } else {
             Write-Host "::notice::PSScriptAnalyzer: no warning-level issues"
           }
+
+  # ── Linux native CI (bash 移行: feat/linux-migration) ──────────────────────
+  shellcheck-and-bats:
+    name: ShellCheck + bats (Linux native)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install bats / shellcheck / jq
+        run: sudo apt-get update -qq && sudo apt-get install -y bats shellcheck jq
+
+      - name: ShellCheck (Error severity)
+        run: |
+          shopt -s nullglob
+          shellcheck -S error start.sh lib/*.sh bin/*.sh libexec/*.sh
+          echo "::notice::shellcheck: 0 error-level issues"
+
+      - name: bats (unit)
+        run: |
+          bats --formatter tap tests/bats/unit/ | tee reports-bats.tap
+          ok=$(grep -cE '^ok ' reports-bats.tap || echo 0)
+          echo "::notice::bats: ${ok} tests passed"
+
+      - name: Node validations (cross-platform 流用)
+        run: |
+          node scripts/validate-state-example.js
+          node scripts/check-doc-versions.js
