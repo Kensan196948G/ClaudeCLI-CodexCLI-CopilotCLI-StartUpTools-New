@@ -156,7 +156,7 @@ menu_loop() {
       12) run_menu_script "$BIN/set-statusline.sh" ;;
       13) run_menu_script "$LIBEXEC/watch-claude-log.sh" ;;
       14) run_menu_script "$BIN/cron-schedule.sh" ;;
-      15) run_menu_script "$LIBEXEC/watch-session.sh" ;;
+      15) bash "$LIBEXEC/watch-session.sh" || true ;;   # 内部に 0=戻る の対話メニューを持つため直接実行
       16) if [[ -f "$CCSU_ROOT/scripts/tools/agent-teams-status.js" ]]; then
             ( cd "$CCSU_ROOT" && node scripts/tools/agent-teams-status.js ) || true
           else log_warn "agent-teams-status.js が見つかりません"; fi
