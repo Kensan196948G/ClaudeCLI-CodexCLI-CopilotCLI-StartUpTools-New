@@ -18,6 +18,9 @@
   "terminal": {
     "mode": "auto"
   },
+  "worktree": {
+    "baseRef": "head"
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -25,7 +28,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/claudeos/scripts/hooks/pre-commit-gate.js"
+            "command": "node .claude/claudeos/scripts/hooks/pre-commit-gate.js",
+            "continueOnBlock": true
           }
         ]
       }
@@ -87,7 +91,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/claudeos/scripts/hooks/auto-format.js"
+            "command": "node .claude/claudeos/scripts/hooks/auto-format.js",
+            "continueOnBlock": true
           }
         ]
       },

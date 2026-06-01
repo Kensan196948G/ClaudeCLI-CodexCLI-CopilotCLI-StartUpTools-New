@@ -18,6 +18,9 @@
   "terminal": {
     "mode": "auto"
   },
+  "worktree": {
+    "baseRef": "head"
+  },
   "hooks": {
     "PreCompact": [
       {
