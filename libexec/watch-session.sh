@@ -43,7 +43,8 @@ _render_sessions() {
       "$(json_get "$f" '.status' '?')" \
       "$(json_get "$f" '.start_time' '?')"
   done < <(ls -t "$sdir"/*.json 2>/dev/null | head -15)
-  (( n == 0 )) && printf '      (記録なし)\n'
+  if (( n == 0 )); then printf '      (記録なし)\n'; fi
+  return 0   # 最終行を条件式にしない (set -e 安全)
 }
 
 main() {
