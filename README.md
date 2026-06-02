@@ -171,6 +171,9 @@ bash bin/autonomy.sh list                      # すべての Supervisor 一覧
 | `q` | 画面を閉じる（AI セッションは裏で継続） |
 
 > 💡 介入して指示し終えたら `Ctrl-b 0` で抜けるだけ。AI はそのまま自律作業に戻ります。
+>
+> ⚠️ **操作キー（`n`/`l`/`s`/`x`）はダッシュボード画面でのみ有効**です。プロジェクトに介入して
+> Claude の画面を見ている間は、キーは Claude への入力になります。**まず `Ctrl-b 0` でダッシュボードへ戻って**から押してください（`MO` で開いた直後は必ずダッシュボードに居ます）。
 
 ### 🆕 新しいプロジェクトを管理下に追加（`n` キー）
 
@@ -287,7 +290,7 @@ bash bin/cron-schedule.sh add --project A --time 21:00 --dow 1,2,3,4,5,6
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.4.3** — コントロールセンターに新規プロジェクト・オンボード（n キー）/ 旧: v3.4.2 |
+| バージョン | **v3.4.4** — コントロールセンターの UX 修正（キー誤入力 / 重複タブ）/ 旧: v3.4.3 |
 | 実行基盤 | 🐧 **Linux ネイティブ**（`start.sh` / `bin/*.sh` / tmux / cron） |
 | テスト | ✅ **bats 194 件**（Linux）+ **Pester**（pwsh / Windows CI）/ shellcheck 0 |
 | CI | ✅ SUCCESS（ShellCheck+bats / test-and-validate / Secrets / PSScriptAnalyzer / CodeRabbit） |
