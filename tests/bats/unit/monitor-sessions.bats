@@ -35,8 +35,28 @@ case "${1:-}" in
   *) exit 0 ;;
 esac
 '
+  # cron-manager 用 crontab スタブ (CRON_STORE 不在 → 登録なし)
+  export CRON_STORE="$TEST_TEMP/crontab.store"
+  make_stub_bin crontab '
+store="${CRON_STORE:?}"
+case "${1:-}" in
+  -l) [[ -f "$store" ]] && cat "$store" || exit 1 ;;
+  -)  cat > "$store" ;;
+  *)  exit 2 ;;
+esac
+'
+  # supervisor 状態ディレクトリ (空 → supervisor なし)
+  export CCSU_SUP_DIR="$TEST_TEMP/sup"
 }
 teardown() { _bats_common_teardown; }
+
+# 登録 cron エントリを seed
+_mon_seed_cron() {
+  cat > "$CRON_STORE" <<EOF
+# CLAUDEOS:abc12345 project=$1 duration=300 created=2026-01-01T00:00:00
+0 21 * * 1,2,3,4,5,6 bash /x/cron-launcher.sh $1 300
+EOF
+}
 
 # ---- 純粋ヘルパ: mon__fmt_hms --------------------------------
 @test "mon__fmt_hms: 3661 → 01:01:01" {
@@ -101,7 +121,7 @@ teardown() { _bats_common_teardown; }
   export MON_TEST_SESSIONS=""
   run bash "$SCRIPT" --once
   [ "$status" -eq 0 ]
-  [[ "$output" == *"実行中の ClaudeOS セッションなし"* ]]
+  [[ "$output" == *"(実行中なし)"* ]]
 }
 
 @test "--once: duration ありで経過/残りと プロジェクト名を表示" {
@@ -114,8 +134,8 @@ teardown() { _bats_common_teardown; }
   [[ "$output" == *"MyProj"* ]]
   # HH:MM:SS 形式の経過/残りが描画される
   [[ "$output" =~ [0-9][0-9]:[0-9][0-9]:[0-9][0-9] ]]
-  # duration があるので残りは — ではない
-  [[ "$output" == *"ライブ監視"* ]]
+  # コントロールセンターのタイトル
+  [[ "$output" == *"コントロールセンター"* ]]
 }
 
 @test "--once: duration 無しは残り — 表示" {
@@ -140,4 +160,53 @@ teardown() { _bats_common_teardown; }
 @test "不明な引数でエラー" {
   run bash "$SCRIPT" frobnicate
   [ "$status" -ne 0 ]
+}
+
+# ---- 登録 / supervisor セクション (Phase 2 コントロールセンター) ----
+@test "mon__registered_projects: cron ∪ supervisor を一意列挙 (連結バグ回帰)" {
+  _mon_seed_cron ProjA
+  mkdir -p "$CCSU_SUP_DIR"
+  echo '{ "project": "ProjB" }' > "$CCSU_SUP_DIR/ProjB.json"
+  echo '{ "project": "ProjC" }' > "$CCSU_SUP_DIR/ProjC.json"
+  run bash -c "source '$SCRIPT'; mon__registered_projects"
+  [[ "$output" == *"ProjA"* ]]
+  [[ "$output" == *"ProjB"* ]]
+  [[ "$output" == *"ProjC"* ]]
+  # supervisor 複数ファイルが改行なしで連結された幻のエントリが無いこと
+  [[ "$output" != *"ProjBProjC"* ]]
+  [[ "$output" != *"ProjCProjB"* ]]
+  # ちょうど 3 行 (連結があれば 2 行や 4 行になる)
+  [ "$(printf '%s\n' "$output" | grep -c .)" -eq 3 ]
+}
+
+@test "mon__collect_registered: session稼働とsupervisor状態を出力" {
+  _mon_seed_cron ProjA
+  export MON_TEST_SESSIONS="claudeos-ProjA"
+  mkdir -p "$CCSU_SUP_DIR"
+  echo '{ "project": "ProjA", "status": "running", "restarts_today": 2, "minutes_today": 30 }' > "$CCSU_SUP_DIR/ProjA.json"
+  run bash -c "source '$SCRIPT'; mon__collect_registered"
+  [[ "$output" == *"ProjA|1|running|2|30"* ]]
+}
+
+@test "mon__remove_cron_for: 当該プロジェクトの cron を削除" {
+  _mon_seed_cron ProjA
+  run bash -c "source '$SCRIPT'; mon__remove_cron_for ProjA"
+  [ "$output" = "1" ]
+  run cat "$CRON_STORE"
+  [[ "$output" != *"project=ProjA"* ]]
+}
+
+@test "--once: 登録セクションに cron プロジェクトを表示" {
+  _mon_seed_cron ProjA
+  export MON_TEST_SESSIONS=""
+  run bash "$SCRIPT" --once
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"登録 / supervisor"* ]]
+  [[ "$output" == *"ProjA"* ]]
+}
+
+@test "--once: 登録なしの案内" {
+  export MON_TEST_SESSIONS=""
+  run bash "$SCRIPT" --once
+  [[ "$output" == *"登録なし"* ]]
 }

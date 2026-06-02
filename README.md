@@ -51,7 +51,7 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.4.0** (Autonomy Supervisor — Goal到達まで自律再開 / Phase 1 CLI) — 旧: v3.3.8 |
+| バージョン | **v3.4.1** (統合コントロールセンター — TUI から監視+起動+supervisor+介入 / Phase 2) — 旧: v3.4.0 |
 | テスト | **776件** — Pester (Unit 21 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | **v9.0** (`/goal` 駆動 / Agent Teams パターン A/B/C / Agent View / 動的判断 / 週次フェーズ制御 / learning パターン記録 / Stop Conditions 厳格化 / Opus 4.7 最適化 / 1H cache / PreCompact hook) |
@@ -436,7 +436,15 @@ bash bin/autonomy.sh status [project] | list                   # 状態（restar
 | crash-loop / 手動 | 短命セッション連続 / `stop` |
 
 > ⚠️ supervisor 管理プロジェクトは **cron 登録を外す**（二重起動回避）。残っている場合 `start` は警告し、`--force` で続行。
-> 🔜 Phase 2 でライブ監視タブ（`claudeos-monitor`）から起動・監督・介入を統合予定。
+
+**🎛️ 統合コントロールセンター（v3.4.1 / Phase 2）**: メニュー `MO`（または `bash bin/monitor-sessions.sh open`）で、1 画面に「実行中セッション（タブ/FG 介入）＋ 登録プロジェクト ＋ supervisor 状態」を集約。キー操作:
+
+| キー | 動作 |
+|---|---|
+| `[1-9]` / `Ctrl-b <n>` | そのプロジェクトを前面(FG)へ＝介入 / `Ctrl-b 0` でダッシュボードへ |
+| `[l]` | 登録から選んで自律1セッション起動（BG） |
+| `[s]` | 登録から選んで supervisor 開始（cron 競合時は「外して切替」を確認） |
+| `[x]` | supervisor 停止 |
 
 Linux native メニューを使う場合は `./start.sh` を実行します。項目 `7` は `~/.claudeos/{logs,sessions,tmp}` と `~/.tmux.conf` の ClaudeOS 管理ブロックを作成・更新します。
 
