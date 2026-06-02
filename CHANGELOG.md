@@ -2,6 +2,27 @@
 
 # CHANGELOG
 
+## [v3.4.7] - 2026-06-02 — プロジェクト列挙を「Git リポジトリのディレクトリのみ」に統一
+
+### 🎯 概要
+プロジェクト選択の対象を **「ディレクトリ かつ Git リポジトリ（`.git` 保有）」** に限定。ファイル（`.md`/`.sh`/`.json` 等）や非 Git ディレクトリ（整理用フォルダ等）を一覧から除外。共通ヘルパ `config_project_list` を新設し、`n` ピッカー / cron 登録 / 手動起動（L1/S1）で共有（単一の定義 = SoT）。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `lib/config-loader.sh` | **`config_project_list`** 新設（`config_projects_dir` 直下の dir かつ `.git` 保有のみ。ファイル/非 Git/隠しは `*/` グロブ＋`.git` チェックで除外） |
+| `bin/monitor-sessions.sh` / `bin/cron-schedule.sh` / `lib/launcher-common.sh` | 各 `*_project_list` を `config_project_list` に統一 |
+| `tests/bats/unit/*` | `config_project_list` + 非 Git/ファイル除外 のテスト追加 |
+
+### ✅ 内容
+
+- 実データ: 32 項目（6 ファイル + 5 非 Git ディレクトリ + 21 Git リポジトリ）→ 一覧は **21 件のみ**に
+- `n` ピッカー / cron 登録 / 手動起動（L1/S1）すべてで一貫（GitHub origin の有無は 🐙 バッジで表示）
+- 全 bats **206 件** / shellcheck error 0
+
+---
+
 ## [v3.4.6] - 2026-06-02 — コントロールセンターの画面チラつき修正 + オンボード操作の明確化
 
 ### 🎯 概要

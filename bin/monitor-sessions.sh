@@ -253,12 +253,8 @@ mon__action() {
 # 新規プロジェクトのオンボード (n キー: 全プロジェクトから選んで管理下へ)
 # ------------------------------------------------------------
 
-# mon__all_projects — config_projects_dir 配下の全プロジェクト名 (隠し除外)
-mon__all_projects() {
-  local base; base="$(config_projects_dir)"
-  [[ -d "$base" ]] || return 0
-  ls -1 "$base" 2>/dev/null | grep -v '^\.' || true
-}
+# mon__all_projects — プロジェクト列挙 (config_project_list: dir かつ Git リポジトリのみ)
+mon__all_projects() { config_project_list; }
 
 # mon__project_state_badge <project> — 現状を表す状態バッジ (誤操作防止の可視化)
 mon__project_state_badge() {

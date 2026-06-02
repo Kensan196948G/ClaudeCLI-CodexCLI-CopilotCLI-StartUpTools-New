@@ -29,12 +29,8 @@ source "$SCRIPT_DIR/../lib/cron-manager.sh"
 CRON_LAUNCHER="${CCSU_CRON_LAUNCHER:-$HOME/.claudeos/cron-launcher.sh}"
 DEFAULT_DURATION=300
 
-# --- プロジェクト一覧 (ローカル ls。New-CronSchedule の ssh ls を置換) ---
-cs__project_list() {
-  local base; base="$(config_projects_dir)"
-  [[ -d "$base" ]] || return 0
-  ls -1 "$base" 2>/dev/null | grep -v '^\.' || true
-}
+# --- プロジェクト一覧 (config_project_list: dir かつ Git リポジトリのみ) ---
+cs__project_list() { config_project_list; }
 
 # --- 一覧表示 (cron__format_display で整形) ---
 cs__list_display() {

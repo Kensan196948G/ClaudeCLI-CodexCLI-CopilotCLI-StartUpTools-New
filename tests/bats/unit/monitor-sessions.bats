@@ -50,7 +50,7 @@ esac
   # config (全プロジェクト列挙 mon__all_projects 用)
   export AI_STARTUP_CONFIG_PATH="$TEST_TEMP/config.json"
   printf '{ "linuxBase": "%s/projects" }\n' "$TEST_TEMP" > "$AI_STARTUP_CONFIG_PATH"
-  mkdir -p "$TEST_TEMP/projects/Alpha" "$TEST_TEMP/projects/Beta"
+  mkdir -p "$TEST_TEMP/projects/Alpha/.git" "$TEST_TEMP/projects/Beta/.git"
 }
 teardown() { _bats_common_teardown; }
 
@@ -253,7 +253,8 @@ EOF
   [ "$status" -eq 0 ]
 }
 
-@test "mon__is_github: .git なしは非0" {
-  run bash -c "source '$SCRIPT'; mon__is_github Beta"
+@test "mon__is_github: .git なし/origin なしは非0" {
+  mkdir -p "$TEST_TEMP/projects/PlainDir"   # .git を持たないディレクトリ
+  run bash -c "source '$SCRIPT'; mon__is_github PlainDir"
   [ "$status" -ne 0 ]
 }

@@ -205,7 +205,9 @@ bash bin/autonomy.sh list                      # すべての Supervisor 一覧
 > 🧠 **裏側のしくみ（安心ポイント）**: 「追加」とは “supervisor を開始する／cron に登録する” こと **そのもの**です。
 > 別の管理リストを作らないので、画面の表示と実際の動きが**ズレません**。
 
-**🐙 GitHub バッジ & フィルタ**: 一覧では GitHub レポジトリを持つプロジェクトに `🐙` が付きます。
+**📂 一覧に出る条件**: `config_projects_dir`（既定 `~/Projects`）直下の **ディレクトリ かつ Git リポジトリ（`.git` を持つ）** のみが対象です。ファイル（`.md`/`.sh`/`.json` 等）や非 Git の整理用フォルダは**自動で除外**されます。
+
+**🐙 GitHub バッジ & フィルタ**: GitHub のリモート（origin）を持つプロジェクトに `🐙` が付きます。
 プロジェクトが多いときは `u`（未管理のみ）/ `a`（全表示）で絞り込めます。
 
 ### 📅 たくさんのプロジェクトをまとめて登録（曜日分散）
@@ -309,7 +311,7 @@ bash bin/cron-schedule.sh add --project A --time 21:00 --dow 1,2,3,4,5,6
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.4.6** — コントロールセンターの画面チラつき修正 + オンボード操作の明確化 / 旧: v3.4.5 |
+| バージョン | **v3.4.7** — プロジェクト列挙を Git リポジトリのディレクトリのみに統一 / 旧: v3.4.6 |
 | 実行基盤 | 🐧 **Linux ネイティブ**（`start.sh` / `bin/*.sh` / tmux / cron） |
 | テスト | ✅ **bats 194 件**（Linux）+ **Pester**（pwsh / Windows CI）/ shellcheck 0 |
 | CI | ✅ SUCCESS（ShellCheck+bats / test-and-validate / Secrets / PSScriptAnalyzer / CodeRabbit） |
