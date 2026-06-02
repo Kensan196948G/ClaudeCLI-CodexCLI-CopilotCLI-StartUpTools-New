@@ -26,6 +26,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/config-loader.sh"
 TMUX_BIN="${CCSU_TMUX_BIN:-tmux}"
 CLAUDE_BIN="${CCSU_CLAUDE_BIN:-claude}"
 
+# レポートメール (cron-launcher.sh と同一の report-and-mail.py を共有)
+CCSU_REPORT_SCRIPT="${CLAUDEOS_REPORT_SCRIPT:-$CCSU_HOME/report-and-mail.py}"
+
 # tmux__session_name <project> — セッション名 (cron-launcher.sh と同一規則)
 tmux__session_name() { printf 'claudeos-%s' "$(ccsu_safe_name "$1")"; }
 
@@ -61,10 +64,50 @@ tmux__stop() {
 }
 
 # ------------------------------------------------------------
+# tmux__send_report <sid> <log> <status> <start> <end> <dur_min> <project>
+#   手動セッションの終了レポートメールを送信 (cron-launcher.sh の finalize と同一の
+#   report-and-mail.py を共有)。CLAUDEOS_EMAIL_ENABLED=1 かつ python3 + スクリプト
+#   存在時のみ送信。失敗しても全体は成功扱い (副次機能)。
+# ------------------------------------------------------------
+tmux__send_report() {
+  local sid="$1" log="$2" status="$3" start="$4" end="$5" dur="$6" project="$7"
+  [[ "${CLAUDEOS_EMAIL_ENABLED:-0}" == "1" ]] || return 0
+  [[ "${CLAUDEOS_MANUAL_EMAIL:-1}" == "1" ]]   || return 0   # 手動メールだけ無効化する余地
+  has_cmd python3            || { log_warn "python3 不在: レポートメール skip"; return 0; }
+  [[ -f "$CCSU_REPORT_SCRIPT" ]] || { log_warn "report-and-mail.py 不在: skip ($CCSU_REPORT_SCRIPT)"; return 0; }
+  python3 "$CCSU_REPORT_SCRIPT" \
+    --session "$sid" --log "$log" --status "$status" \
+    --start "$start" --end "$end" --duration-min "$dur" \
+    --project "$project" --sessions-dir "$CCSU_HOME/sessions" \
+    >>"$log" 2>&1 || log_warn "レポートメール送信に失敗 (詳細はログ: $log)"
+  return 0
+}
+
+# ------------------------------------------------------------
+# tmux__report_watcher <session> <sid> <project> <dur_min> <start_iso> <log>
+#   セッション終了まで待機し、終了後にレポートメールを送る (setsid 経由で常駐)。
+#   status 推定: 経過が予定 duration にほぼ達していれば timeout、それ以外は completed。
+# ------------------------------------------------------------
+tmux__report_watcher() {
+  local session="$1" sid="$2" project="$3" dur="$4" start="$5" log="$6"
+  local interval="${CCSU_REPORT_POLL_SEC:-30}" start_epoch now elapsed status end
+  start_epoch="$(date +%s)"
+  while "$TMUX_BIN" has-session -t "$session" 2>/dev/null; do sleep "$interval"; done
+  now="$(date +%s)"; elapsed=$(( now - start_epoch )); end="$(date -Iseconds)"
+  if [[ "$dur" =~ ^[0-9]+$ ]] && (( dur > 0 )) && (( elapsed >= dur * 60 - interval )); then
+    status="timeout"
+  else
+    status="completed"
+  fi
+  tmux__send_report "$sid" "$log" "$status" "$start" "$end" "$dur" "$project"
+}
+
+# ------------------------------------------------------------
 # tmux_run <project> <duration-min> <mode>
 #   mode: foreground (既定, attach) | background (detached, 即復帰)
 #   - PROJECTS_BASE/<project> に cd して tmux で claude を起動
 #   - pipe-pane で TUI 制御シーケンス除去後のログを ~/.claudeos/logs へ
+#   - CLAUDEOS_EMAIL_ENABLED=1 時は終了レポートメール用 watcher を常駐させる
 # ------------------------------------------------------------
 tmux_run() {
   local project="$1" duration_min="${2:-300}" mode="${3:-foreground}"
@@ -115,6 +158,21 @@ tmux_run() {
     "sed 's/.*\r//; s/\x1b\][^\x07]*\x07//g; s/\x1b\[[0-9;?]*[a-zA-Z]//g; s/\x1b.//g' >> '$log_file'" 2>/dev/null || \
     log_warn "pipe-pane に失敗 (ログ可視化なし): $log_file"
 
+  # 終了レポートメール watcher (CLAUDEOS_EMAIL_ENABLED=1 時のみ)。
+  # setsid で常駐させ、端末を閉じてもセッション終了まで生存させる。
+  # lib 自身を __watch サブコマンドで再実行する (関数を setsid に直接渡せないため)。
+  if [[ "${CLAUDEOS_EMAIL_ENABLED:-0}" == "1" && "${CLAUDEOS_MANUAL_EMAIL:-1}" == "1" ]]; then
+    local sid start_iso self runner
+    sid="manual-${stamp}-${safe}"
+    start_iso="$(date -Iseconds)"
+    self="${BASH_SOURCE[0]}"
+    if has_cmd setsid; then runner=setsid; else runner=nohup; fi
+    "$runner" bash "$self" __watch "$session" "$sid" "$project" "$duration_min" "$start_iso" "$log_file" \
+      </dev/null >/dev/null 2>&1 &
+    disown 2>/dev/null || true
+    log_info "  メール: 終了時にレポート送信 (CLAUDEOS_EMAIL_ENABLED=1)"
+  fi
+
   if [[ "$mode" == "foreground" ]]; then
     log_info "フォアグラウンド起動: $session (Ctrl-b d でデタッチしても BG 継続)"
     "$TMUX_BIN" attach -t "$session"
@@ -126,3 +184,12 @@ tmux_run() {
     log_info "  ログ: $log_file"
   fi
 }
+
+# 直接実行時: setsid から呼ばれる watcher サブコマンドのみ受け付ける
+# (source 時は BASH_SOURCE[0]!=$0 のため何もしない)
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  case "${1:-}" in
+    __watch) shift; tmux__report_watcher "$@" ;;
+    *)       : ;;
+  esac
+fi

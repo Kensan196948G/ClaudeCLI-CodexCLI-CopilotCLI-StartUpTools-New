@@ -414,6 +414,10 @@ bash bin/cron-schedule.sh run-now --project A --foreground # 同期フォアグ�
 bash bin/monitor-sessions.sh open                          # ライブ監視タブへ attach
 ```
 
+> **📧 終了レポートメール**: `~/.env-claudeos` に SMTP 設定 + `CLAUDEOS_EMAIL_ENABLED=1` があると、
+> セッション終了時に HTML レポートメール（`report-and-mail.py`）が送信されます。cron / BG 一括起動に加え、
+> **手動起動（L1/S1）も対応**（`setsid` 常駐 watcher が終了を検知）。手動分のみ止めたい場合は `CLAUDEOS_MANUAL_EMAIL=0`。
+
 Linux native メニューを使う場合は `./start.sh` を実行します。項目 `7` は `~/.claudeos/{logs,sessions,tmp}` と `~/.tmux.conf` の ClaudeOS 管理ブロックを作成・更新します。
 
 ```bash
