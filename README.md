@@ -51,7 +51,7 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.3.7** (プロジェクト別 CI/PR/Issues 実データ表示) — 旧: v3.3.6 |
+| バージョン | **v3.3.8** (Cron BG既定化 + tmux ライブ監視タブ + 手動メール対応) — 旧: v3.3.7 |
 | テスト | **776件** — Pester (Unit 21 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | **v9.0** (`/goal` 駆動 / Agent Teams パターン A/B/C / Agent View / 動的判断 / 週次フェーズ制御 / learning パターン記録 / Stop Conditions 厳格化 / Opus 4.7 最適化 / 1H cache / PreCompact hook) |
