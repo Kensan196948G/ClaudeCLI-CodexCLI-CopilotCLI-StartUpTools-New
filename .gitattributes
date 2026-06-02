@@ -4,6 +4,7 @@
 # Shell scripts must always use LF (Linux/macOS execution)
 *.sh text eol=lf
 *.bash text eol=lf
+*.bats text eol=lf
 
 # Node.js hooks run on Linux — must be LF
 *.js text eol=lf

@@ -2,6 +2,43 @@
 
 # CHANGELOG
 
+## [v3.3.8] - 2026-06-02 — Cron BG 既定化 + ライブ監視タブ（tmux）
+
+### 🎯 概要
+Cron 登録プロジェクトを **すべて既定でバックグラウンド（detached tmux）実行**にし、メニューをブロックしないよう変更。実行中セッションの **経過/残り時間・プロジェクト名** を専用タブ `claudeos-monitor` で 1 秒間隔ライブ表示し、キー操作でフォアグラウンド（前面）へ切替できる。GUI 端末なし（ヘッドレス）環境向けに「別ターミナルタブ = tmux ウィンドウ」で実装。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `bin/monitor-sessions.sh` | **新規**。専用 `claudeos-monitor` セッション + `link-window` で各プロジェクトをタブ集約。経過=`#{session_created}` / 残り=`@ccsu_duration_min` から算出。stale タブ自動 unlink |
+| `bin/cron-schedule.sh` | `run-now` を **BG 既定化**（`--foreground` で従来同期）。`launch`（登録から複数選択/全件 BG 起動）追加。メニュー `[7]` 追加 |
+| `Claude/templates/linux/cron-launcher.sh` | tmux セッションに安定ウィンドウ名 + `@ccsu_project` / `@ccsu_duration_min` を付与（監視タブ用メタデータ） |
+| `lib/tmux-runner.sh` | 手動起動セッションにも同メタデータを付与（監視タブで cron/手動を統一表示）。**終了レポートメール watcher**（`tmux__send_report` / `tmux__report_watcher`）追加 |
+| `bin/start-claude.sh` | `~/.env-claudeos` を読み込み（SMTP creds / `CLAUDEOS_EMAIL_ENABLED` を watcher へ継承） |
+| `bin/menu.sh` | メニュー `MO`（ライブ監視タブを開く）追加、項14/15 説明更新 |
+| `libexec/setup-terminal.sh` | 次手順にライブ監視タブのキー操作を追記 |
+
+### ✅ 主な改善内容
+
+- **BG 既定**: `run-now` / `launch` は detached tmux で起動しメニューを最大 5h ブロックしない
+- **キー切替 FG**: 監視ダッシュボードの数字キー `1-9` / `Ctrl-b <n>` で前面化、`Ctrl-b 0` で監視へ戻る
+- **ライブ監視タブ**: `claudeos-monitor` が経過/残り時間・プロジェクト名を 1 秒更新。cron/手動の全セッションを 1 枚に集約
+- **ヘッドレス対応**: GUI 端末非依存（tmux ウィンドウ = タブ）。`#{session_created}` ベースでファイル I/O 不要
+- **手動起動もメール対応**: L1/S1（`tmux-runner.sh`）の終了時も cron と同じ `report-and-mail.py` で HTML レポートメールを送信。`setsid` で常駐 watcher 化しセッション終了を検知。`CLAUDEOS_EMAIL_ENABLED=1` で有効、`CLAUDEOS_MANUAL_EMAIL=0` で手動分のみ無効化可
+- **テスト**: `monitor-sessions.bats` 新規（15 件）+ `cron-schedule.bats`（BG 既定/`launch`）+ `tmux-runner.bats`（レポートメール 6 件）更新。全 bats パス / shellcheck error 0
+
+### 🔑 操作
+
+```bash
+bash bin/cron-schedule.sh launch --all          # 登録済みを全件 BG 起動
+bash bin/cron-schedule.sh run-now --project A   # 1 件 BG 起動（既定）
+bash bin/monitor-sessions.sh open               # ライブ監視タブへ attach
+# 監視中: [1-9]/Ctrl-b<n>=FG, Ctrl-b 0=監視へ, q=監視終了（BG継続）
+```
+
+---
+
 ## [v3.3.7] - 2026-05-30 — プロジェクト別 CI/PR/Issues 実データ表示
 
 ### 🎯 概要

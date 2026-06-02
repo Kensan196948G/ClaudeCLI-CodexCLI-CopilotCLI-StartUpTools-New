@@ -7,8 +7,9 @@
 本システムは以下として統合動作する：
 
 - AI開発組織そのもの（CTO・開発・QA・Security・CI/CD・PM を一体化）
-- `/goal` コマンド駆動の自律継続開発（Claude Code v2.1.139+ 公式機能）
-- Agent Teams による並列協調開発（Experimental）
+- `/goal` コマンド駆動の自律継続開発（Claude Code v2.1.159+ 公式機能）
+- Agent Teams による並列協調開発（**Experimental**・`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` 必須）
+- Dynamic Workflows による大規模エージェント協調（`/workflows`・`/deep-research`）
 - Agent View（`claude agents`）によるセッション監視
 - GitHub 連携による完全無人運用
 
@@ -360,6 +361,86 @@ claude agents
 > 3 階層マトリクスは `claudeos/core/04-agent-teams.md`「dynamic workflows」§ を正本とする。
 > `.github/workflows/*.yml`（CI）とは別物。
 
+### 6.7 Agent Teams 品質ゲート Hooks（v2.1.159+）
+
+Agent Teams 専用フックで品質を自動強制できる。
+
+```json
+"TeammateIdle":   { "exit 2" → フィードバック送信 + チームメイト稼働継続 }
+"TaskCreated":    { "exit 2" → タスク作成を拒否 + 理由フィードバック }
+"TaskCompleted":  { "exit 2" → タスク完了を拒否（テスト未通過なら blocked） }
+```
+
+**設定例 (settings.json):**
+```json
+"hooks": {
+  "TeammateIdle": [{ "matcher": "*", "hooks": [{ "type": "command", "command": "node .claude/claudeos/scripts/hooks/teammate-idle-gate.js" }] }],
+  "TaskCreated":  [{ "matcher": "*", "hooks": [{ "type": "command", "command": "node .claude/claudeos/scripts/hooks/task-created-gate.js" }] }],
+  "TaskCompleted":[{ "matcher": "*", "hooks": [{ "type": "command", "command": "node .claude/claudeos/scripts/hooks/task-completed-gate.js" }] }]
+}
+```
+
+### 6.8 Agent Teams キーボードショートカット（in-process モード）
+
+| キー | 動作 |
+|---|---|
+| `Shift+↓` | チームメイト間をサイクル（リード → TM1 → TM2 → ... → リード） |
+| `Ctrl+T` | タスクリスト表示/非表示 |
+| `Enter` | チームメイトのセッション詳細を確認 |
+| `Esc` | チームメイト操作を中断 |
+
+### 6.9 Agent Teams ベストプラクティス（公式推奨）
+
+- **チームサイズ**: 3〜5 チームメイト が最適。それ以上は協調オーバーヘッドが増大
+- **タスク粒度**: 1 チームメイトにつき 5〜6 タスク が目安
+- **独立性**: 同一ファイルを複数チームメイトが編集すると上書き衝突 → ファイルを担当分割する
+- **コンテキスト**: チームメイトはリードの会話履歴を引き継がない → spawn プロンプトに必要情報を明示
+- **待機**: リードがチームメイトより先に実装を始める場合 → `Wait for your teammates to complete their tasks`
+- **プラン承認**: 重要タスクは `Require plan approval before they make any changes` でリードにレビューさせる
+
+### 6.10 Dynamic Workflows 詳細（`/workflows`・v2.1.154+）
+
+| コマンド | 説明 |
+|---|---|
+| `/workflows` | 実行中・完了済みワークフロー一覧と管理画面 |
+| `/deep-research <質問>` | Web 検索を複数角度で並行、ソースをクロスチェック、引用付きレポート生成 |
+| `/effort ultracode` | xhigh 推論 + 自動ワークフロー化（毎タスクでワークフローを計画） |
+
+**ワークフロー内キーボードショートカット（`/workflows` 画面）:**
+
+| キー | 動作 |
+|---|---|
+| `↑` / `↓` | フェーズ・エージェント選択 |
+| `Enter` / `→` | ドリルダウン（フェーズ → エージェント詳細） |
+| `Esc` | 1段階戻る |
+| `p` | 実行の一時停止/再開 |
+| `x` | 選択エージェント停止（ルートで選択時はワークフロー全体停止） |
+| `r` | 選択エージェントを再実行 |
+| `s` | スクリプトをコマンドとして保存（`.claude/workflows/` または `~/.claude/workflows/`） |
+
+**ワークフロー保存場所:**
+
+| パス | スコープ |
+|---|---|
+| `.claude/workflows/<name>.js` | プロジェクト共有（git でチーム全員に配布） |
+| `~/.claude/workflows/<name>.js` | ユーザー個人（全プロジェクトで利用可） |
+
+保存したワークフローは `/` でオートコンプリート候補として表示される。
+
+**ワークフローの keyword トリガー:**
+プロンプトに `workflow` という単語を含めるだけで、Claude がそのタスク用ワークフローを自動作成する。
+
+```
+# 例
+Run a workflow to audit every API endpoint under src/routes/ for missing auth checks
+```
+
+**無効化設定（無効化したい場合のみ）:**
+```json
+{ "disableWorkflows": true }  // settings.json
+// または環境変数: CLAUDE_CODE_DISABLE_WORKFLOWS=1
+```
+
 ## 7. Issue Factory
 
 ### 生成条件
@@ -672,7 +753,68 @@ Agent Teams で並列に動き、Agent View で監視する。
 固定ループではなく、状況に応じて最適解を自律選択する。
 ```
 
-## 23. 参照先
+## 23. v2.1.159+ 新機能・設定リファレンス
+
+### 🆕 新スラッシュコマンド（v2.1.159+）
+
+| コマンド | 機能 | 使用タイミング |
+|---|---|---|
+| `/code-review high --fix` | バグ検出 + 自動修正適用 | Verify フェーズ・PR 前 |
+| `/simplify` | コードクリーンアップのみ（軽量） | Improve フェーズ |
+| `/reload-skills` | スキル再スキャン（再起動不要） | スキル追加後 |
+| `/usage` | セッション使用量詳細 | トークン監視時 |
+| `/usage-credits` | クレジット使用量確認 | コスト管理時 |
+| `/scroll-speed` | スクロール速度調整 | UI 設定 |
+| `claude plugin init <name>` | プラグイン scaffold 生成 | 新プラグイン作成時 |
+| `claude plugin prune` | 孤立依存関係の削除 | プラグイン整理時 |
+
+### ⚙️ 新設定キー（v2.1.159+）
+
+```json
+{
+  "worktree": {
+    "baseRef": "head"
+  },
+  "skillOverrides": "user-invocable-only",
+  "parentSettingsBehavior": "first-wins"
+}
+```
+
+| 設定キー | 値 | 説明 |
+|---|---|---|
+| `worktree.baseRef` | `"head"` / `"fresh"` | worktree 分岐元。`head`=現 HEAD、`fresh`=origin デフォルトブランチ |
+| `worktree.bgIsolation` | `"none"` | BG セッションで直接編集（worktree 不使用） |
+| `skillOverrides` | `"user-invocable-only"` | スキル起動制限（`off`/`user-invocable-only`/`name-only`） |
+| `sandbox.bwrapPath` | `/usr/bin/bwrap` | Linux sandboxing パス（Linux/WSL 環境で有効） |
+| `parentSettingsBehavior` | `"first-wins"` | 親設定のマージ方式 |
+
+### 🔗 フック拡張（v2.1.159+）
+
+```json
+{
+  "type": "command",
+  "command": "node .claude/claudeos/scripts/hooks/pre-commit-gate.js",
+  "continueOnBlock": true
+}
+```
+
+| オプション | 説明 |
+|---|---|
+| `continueOnBlock: true` | フックがブロックした際に理由を Claude にフィードバック（修正判断に活用） |
+| `args: ["cmd", "arg1"]` | exec 形式（シェル不使用）でコマンド実行 |
+| `disallowed-tools: ["Bash"]` | 指定ツールをフック対象から除外 |
+
+### 🤖 モデル最新情報（v2.1.159+）
+
+| モデル | ID | 特徴 |
+|---|---|---|
+| **Opus 4.8** | `claude-opus-4-8` | xhigh effort デフォルト、Fast Mode で 2.5× 高速 |
+| Sonnet 4.6 | `claude-sonnet-4-6` | バランス型（現デフォルト） |
+| Haiku 4.5 | `claude-haiku-4-5-20251001` | 軽量・高速（/goal 達成判定用） |
+
+> **Lean System Prompt**: Opus 4.8 / Sonnet 4.6 でデフォルト有効。コンテキスト効率向上。
+
+## 24. 参照先
 
 | レイヤー | ファイル |
 |---|---|
@@ -687,6 +829,7 @@ Agent Teams で並列に動き、Agent View で監視する。
 | Evolution | `claudeos/evolution/self-evolution.md` |
 | CTO | `claudeos/executive/ai-cto.md` |
 | /goal 公式 docs | `https://code.claude.com/docs/en/goal` |
+| changelog | `https://code.claude.com/docs/en/changelog` |
 | グローバル設定 | `~/.claude/CLAUDE.md` |
 
 

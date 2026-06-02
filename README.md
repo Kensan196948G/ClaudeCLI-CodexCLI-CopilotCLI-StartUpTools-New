@@ -51,7 +51,7 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.3.7** (プロジェクト別 CI/PR/Issues 実データ表示) — 旧: v3.3.6 |
+| バージョン | **v3.3.8** (Cron BG既定化 + tmux ライブ監視タブ + 手動メール対応) — 旧: v3.3.7 |
 | テスト | **776件** — Pester (Unit 21 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | **v9.0** (`/goal` 駆動 / Agent Teams パターン A/B/C / Agent View / 動的判断 / 週次フェーズ制御 / learning パターン記録 / Stop Conditions 厳格化 / Opus 4.7 最適化 / 1H cache / PreCompact hook) |
@@ -326,6 +326,7 @@ flowchart TD
 
 **Linux 側（SSH 起動時）:**
 - `claude` / `codex` / `copilot` を実行できる環境
+- `tmux` (バックグラウンド起動・セッション接続で使用)
 - SSH 鍵認証
 
 ### セットアップ
@@ -371,22 +372,59 @@ start.bat
 
 | メニュー | 説明 |
 |----------|------|
-| `S1` | Claude Code を SSH 起動 **[Linux cron 自律実行 / 5h セッション]** |
-| `L1` | Claude Code をローカル起動 **[手動セッション / スケジューラ不要]** |
+| `L1` | 🖥️ ローカル即起動（フォアグラウンド / tmux attach） |
+| `S1` | 🌙 バックグラウンド起動（自律 / 5h / detached tmux） |
 | `5` | ツール確認・診断 |
-| `6` | ドライブマッピング診断 |
-| `7` | Windows Terminal セットアップ |
+| `6` | マウント / ネットワーク疎通診断 |
+| `7` | tmux / 端末セットアップ |
 | `8` | MCP ヘルスチェック |
 | `9` | Agent Teams ランタイム |
 | `10` | Worktree Manager |
 | `11` | Architecture Check |
 | `12` | Statusline 設定 (グローバル `~/.claude/settings.json` を Linux に一括適用) |
 | `13` | Claude ログ監視タブを開く |
-| `14` | 🕐 Cron スケジュール 登録・編集・削除 **[SSH / Linux cron / 5h 強制終了]** |
-| `15` | Linux セッション状態監視 **[SSH / リアルタイム cron 実行状況]** |
+| `14` | 📅 Cron スケジュール 登録・編集・削除 / **登録から選んで一括 BG 起動** |
+| `15` | 📺 セッション状態監視（一覧 / 接続・停止） |
+| `MO` | 📺 **ライブ監視タブを開く**（経過/残り時間・タブ切替で FG / `claudeos-monitor`） |
 
 > **自律実行方式**: Linux cron（月〜土 / プロジェクト別 / 300分）が唯一の起動トリガです。  
-> **v3.2.70 変更**: Cloud Schedule / `/loop` / `/schedule` は廃止。`New-CronSchedule.ps1`（メニュー14）で Linux cron を直接管理します。
+> **v3.2.70 変更**: Cloud Schedule / `/loop` / `/schedule` は廃止。メニュー 14（`bin/cron-schedule.sh`）で Linux cron を直接管理します。
+
+#### 📺 ライブ監視タブ + バックグラウンド一括起動（Linux / tmux）— v3.3.8
+
+Cron 登録プロジェクトは **すべて既定でバックグラウンド（detached tmux）実行**になり、メニューをブロックしません。実行中セッションは専用の監視タブで一覧・切替できます。
+
+| 操作 | 方法 |
+|------|------|
+| 登録から選んで一括 BG 起動 | メニュー `14` → `[7] 登録から選んで一括BG起動 + ライブ監視`（番号 `1,3` / すべて `a`） |
+| 今すぐ 1 件 BG 起動 | メニュー `14` → `[6] 今すぐ実行`（既定 BG。`y` でフォアグラウンド） |
+| ライブ監視タブを開く | メニュー `MO` または `bash bin/monitor-sessions.sh open` |
+| プロジェクトを FG（前面）へ | 監視ダッシュボードで数字キー `1`〜`9`、または `Ctrl-b <n>` |
+| 監視ダッシュボードへ戻る | `Ctrl-b 0` |
+| 隣のタブへ / 監視終了 | `Ctrl-b n` / `Ctrl-b p`、ダッシュボードで `q`（各セッションは BG 継続） |
+
+監視タブ（`claudeos-monitor`）は 1 秒間隔で **経過時間・残り時間・実行中プロジェクト名** を更新表示し、起動中の各プロジェクト（cron / 手動どちらも）を 1 枚のタブとして集約します。
+
+```bash
+# 非対話 CLI 例
+bash bin/cron-schedule.sh launch --all                     # 登録済みを全件 BG 起動
+bash bin/cron-schedule.sh launch --project A,B             # 指定プロジェクトを BG 起動
+bash bin/cron-schedule.sh run-now --project A              # 1 件 BG 起動（既定）
+bash bin/cron-schedule.sh run-now --project A --foreground # 同期フォアグラウンド実行
+bash bin/monitor-sessions.sh open                          # ライブ監視タブへ attach
+```
+
+> **📧 終了レポートメール**: `~/.env-claudeos` に SMTP 設定 + `CLAUDEOS_EMAIL_ENABLED=1` があると、
+> セッション終了時に HTML レポートメール（`report-and-mail.py`）が送信されます。cron / BG 一括起動に加え、
+> **手動起動（L1/S1）も対応**（`setsid` 常駐 watcher が終了を検知）。手動分のみ止めたい場合は `CLAUDEOS_MANUAL_EMAIL=0`。
+
+Linux native メニューを使う場合は `./start.sh` を実行します。項目 `7` は `~/.claudeos/{logs,sessions,tmp}` と `~/.tmux.conf` の ClaudeOS 管理ブロックを作成・更新します。
+
+```bash
+./libexec/setup-terminal.sh --apply
+./libexec/setup-terminal.sh --locale-ja
+./libexec/setup-terminal.sh --install --yes --apply
+```
 
 ### PowerShell から直接起動
 

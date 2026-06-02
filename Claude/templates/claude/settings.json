@@ -18,6 +18,9 @@
   "terminal": {
     "mode": "auto"
   },
+  "worktree": {
+    "baseRef": "head"
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -25,7 +28,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/claudeos/scripts/hooks/pre-commit-gate.js"
+            "command": "node .claude/claudeos/scripts/hooks/pre-commit-gate.js",
+            "continueOnBlock": true
           }
         ]
       }
@@ -87,7 +91,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/claudeos/scripts/hooks/auto-format.js"
+            "command": "node .claude/claudeos/scripts/hooks/auto-format.js",
+            "continueOnBlock": true
           }
         ]
       },
@@ -106,6 +111,39 @@
           {
             "type": "command",
             "command": "node .claude/claudeos/scripts/hooks/agent-teams-tracker.js"
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/claudeos/scripts/hooks/teammate-idle-gate.js"
+          }
+        ]
+      }
+    ],
+    "TaskCreated": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/claudeos/scripts/hooks/task-created-gate.js"
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/claudeos/scripts/hooks/task-completed-gate.js"
           }
         ]
       }
