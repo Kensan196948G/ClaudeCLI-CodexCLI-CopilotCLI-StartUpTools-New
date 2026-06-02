@@ -309,7 +309,7 @@ bash bin/cron-schedule.sh add --project A --time 21:00 --dow 1,2,3,4,5,6
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.4.5** — 多数プロジェクト管理の効率化（GitHubバッジ / 未管理フィルタ / 一括cron登録）/ 旧: v3.4.4 |
+| バージョン | **v3.4.6** — コントロールセンターの画面チラつき修正 + オンボード操作の明確化 / 旧: v3.4.5 |
 | 実行基盤 | 🐧 **Linux ネイティブ**（`start.sh` / `bin/*.sh` / tmux / cron） |
 | テスト | ✅ **bats 194 件**（Linux）+ **Pester**（pwsh / Windows CI）/ shellcheck 0 |
 | CI | ✅ SUCCESS（ShellCheck+bats / test-and-validate / Secrets / PSScriptAnalyzer / CodeRabbit） |

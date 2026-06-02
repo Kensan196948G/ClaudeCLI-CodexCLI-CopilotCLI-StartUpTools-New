@@ -311,27 +311,28 @@ mon__onboard() {
     if mon__is_github "${projs[$i]}"; then gh="🐙"; else gh="　"; fi
     printf '   %s[%d]%s %s %-30s %s\n' "$C_YELLOW" "$((i + 1))" "$C_RESET" "$gh" "${projs[$i]}" "$(mon__project_state_badge "${projs[$i]}")"
   done
-  printf '   %s🐙=GitHubレポジトリ  ⚪未管理 が追加候補%s\n' "$C_GRAY" "$C_RESET"
-  local sel p; read -rp "  番号 (0=キャンセル / u=未管理のみ / a=全表示): " sel || true
+  printf '   %s🐙=GitHubレポジトリ  ⚪未管理 が追加候補  番号を選ぶと管理方法を選べます%s\n' "$C_GRAY" "$C_RESET"
+  local sel p; read -rp "  追加する番号 (0=キャンセル / u=未管理のみ / a=全表示): " sel || true
   case "$sel" in
     u|U) mon__onboard unmanaged; return 0 ;;
     a|A) mon__onboard; return 0 ;;
   esac
   if [[ "$sel" =~ ^[0-9]+$ ]] && (( sel >= 1 && sel <= ${#projs[@]} )); then
     p="${projs[$((sel - 1))]}"
-    printf '\n  %s─ %s に対して ─%s\n' "$C_CYAN" "$p" "$C_RESET"
-    printf '   [1] 🔁 supervisor 開始 (Goal到達まで自律再開)\n'
-    printf '   [2] ▶️  1回だけ自律起動 (BG)\n'
-    printf '   [3] 📅 cron スケジュール登録\n'
-    printf '   [0] キャンセル\n'
-    local act; read -rp "  選択: " act || true
+    clear 2>/dev/null || true   # 32件リストを消してアクションメニューを見やすく
+    printf '\n  %s🆕 %s をどう自律管理しますか?%s\n\n' "$C_CYAN" "$p" "$C_RESET"
+    printf '   %s[1]%s 🔁 supervisor 開始  (Goal到達まで自動で再開し続ける)\n' "$C_GREEN" "$C_RESET"
+    printf '   %s[2]%s ▶️  1回だけ自律起動 (BG)  (まず1セッションだけ試す)\n' "$C_GREEN" "$C_RESET"
+    printf '   %s[3]%s 📅 cron スケジュール登録  (毎週この曜日・時刻に動かす)\n' "$C_GREEN" "$C_RESET"
+    printf '   %s[0]%s キャンセル\n\n' "$C_GRAY" "$C_RESET"
+    local act; read -rp "  番号を選択: " act || true
     case "$act" in
       1) mon__supervise_start "$p" ;;
       2) bash "$SCRIPT_DIR/cron-schedule.sh" run-now --project "$p" || true ;;
       3) mon__cron_register "$p" ;;
-      *) : ;;
+      *) printf '  キャンセルしました\n' ;;
     esac
-    read -rp "  Enter で戻る " _ || true
+    read -rp "  Enter で監視ダッシュボードへ戻る " _ || true
   fi
   tput civis 2>/dev/null || true
 }
@@ -386,14 +387,18 @@ mon__render_once() {
 }
 
 # mon__dashboard — window 0 で動くライブループ (open が内部起動)
+#   チラつき防止: 毎フレーム clear せず、カーソルをホームへ戻して上書き描画し、
+#   末尾の残り行だけ消す (tput ed)。clear の全消去フラッシュを避ける。
 mon__dashboard() {
   tput civis 2>/dev/null || true
   trap 'tput cnorm 2>/dev/null || true' EXIT
+  clear 2>/dev/null || true   # 初回のみ全消去 (以降は上書きでチラつき防止)
   local key
   while true; do
     mon__sync_tabs
-    clear 2>/dev/null || true
+    tput cup 0 0 2>/dev/null || printf '\033[H'   # ホームへ移動 (clear しない)
     mon__render_once
+    tput ed 2>/dev/null || printf '\033[J'        # カーソル以降の残り行を消去
     key=''
     read -rsn1 -t "$MON_REFRESH" key 2>/dev/null || true
     case "$key" in
