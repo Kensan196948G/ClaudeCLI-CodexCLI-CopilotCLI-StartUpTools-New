@@ -245,3 +245,15 @@ EOF
   run bash -c "source '$SCRIPT'; mon__project_state_badge Alpha"
   [[ "$output" == *"自律中"* ]]
 }
+
+@test "mon__is_github: .git + origin あれば 0" {
+  git -C "$TEST_TEMP/projects/Alpha" init -q 2>/dev/null || skip "git なし"
+  git -C "$TEST_TEMP/projects/Alpha" remote add origin https://example.com/x.git 2>/dev/null
+  run bash -c "source '$SCRIPT'; mon__is_github Alpha"
+  [ "$status" -eq 0 ]
+}
+
+@test "mon__is_github: .git なしは非0" {
+  run bash -c "source '$SCRIPT'; mon__is_github Beta"
+  [ "$status" -ne 0 ]
+}

@@ -13,6 +13,7 @@
 #   cron-schedule.sh remove-all
 #   cron-schedule.sh run-now --project P [--duration 300] [--foreground]  # 既定 BG
 #   cron-schedule.sh launch [--project P[,P2]] [--duration N] [--all]     # 登録から一括 BG
+#   cron-schedule.sh bulk-register [--github-only] [--unmanaged-only] [--apply]  # 曜日分散一括登録
 # ============================================================
 
 set -euo pipefail
@@ -192,6 +193,85 @@ cs__run_now() {
   fi
 }
 
+# --- GitHub レポジトリ判定 (.git + remote origin) ---
+cs__is_github() {
+  local d; d="$(config_projects_dir)/$1"
+  [[ -d "$d/.git" ]] || return 1
+  git -C "$d" remote get-url origin >/dev/null 2>&1
+}
+
+# --- cron 登録済み / supervisor 管理下 判定 ---
+cs__is_cron_registered() { cron__list 2>/dev/null | awk -F'|' -v p="$1" '$2==p{f=1} END{exit !f}'; }
+cs__is_supervised() { [[ -f "${CCSU_SUP_DIR:-$HOME/.claudeos/supervisor}/$(ccsu_safe_name "$1").json" ]]; }
+
+# --- 一括 cron 登録 (曜日・時刻に分散。既定 dry-run、--apply で実登録) ---
+#   bulk-register [--github-only] [--unmanaged-only] [--start HH] [--spacing H]
+#                 [--duration M] [--dow CSV] [--apply]
+#   負荷分散: 各プロジェクトを 曜日 round-robin + 時刻スロットで割り当て、全件同時起動を避ける。
+cs__bulk_register() {
+  local github_only=0 unmanaged_only=0 start_hour=9 spacing="" duration="$DEFAULT_DURATION" dow="1,2,3,4,5,6" apply=0
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --github-only)    github_only=1; shift ;;
+      --unmanaged-only) unmanaged_only=1; shift ;;
+      --start)          start_hour="$2"; shift 2 ;;
+      --spacing)        spacing="$2"; shift 2 ;;
+      --duration)       duration="$2"; shift 2 ;;
+      --dow)            dow="$2"; shift 2 ;;
+      --apply)          apply=1; shift ;;
+      *) log_error "bulk-register: 不明な引数: $1"; return 1 ;;
+    esac
+  done
+  [[ "$start_hour" =~ ^[0-9]+$ && "$duration" =~ ^[0-9]+$ ]] || { log_error "--start / --duration は数値"; return 1; }
+  # 既定 spacing: duration を時間換算 (= 重複しない最小間隔)。例 300m → 5h
+  [[ -z "$spacing" ]] && spacing=$(( (duration + 59) / 60 ))
+  [[ "$spacing" =~ ^[0-9]+$ ]] || { log_error "--spacing は数値"; return 1; }
+  (( spacing < 1 )) && spacing=1
+
+  local -a dows; IFS=',' read -ra dows <<< "$dow"
+  local ndow=${#dows[@]}
+  (( ndow == 0 )) && { log_error "--dow が空"; return 1; }
+  # 重複警告: 間隔 < duration なら同日のセッションが重なる
+  if (( spacing * 60 < duration )); then
+    printf '  %s⚠️ 間隔 %dh < duration %dm: 同日のセッションが重複します(同時実行が増えます)%s\n' \
+      "$C_YELLOW" "$spacing" "$duration" "$C_RESET"
+  fi
+
+  # 候補収集
+  local -a cands=(); local p
+  while IFS= read -r p; do
+    [[ -z "$p" ]] && continue
+    (( github_only ))    && { cs__is_github "$p" || continue; }
+    if (( unmanaged_only )); then
+      cs__is_cron_registered "$p" && continue
+      cs__is_supervised "$p" && continue
+    fi
+    cands+=("$p")
+  done < <(cs__project_list)
+  (( ${#cands[@]} == 0 )) && { log_warn "対象プロジェクトがありません (条件: github_only=$github_only unmanaged_only=$unmanaged_only)"; return 0; }
+
+  log_info "一括 cron 登録 計画: ${#cands[@]} 件 / 曜日=$dow / 開始 ${start_hour}時 / 間隔 ${spacing}h / duration ${duration}m"
+  (( apply == 0 )) && printf '  %s※ DRY-RUN (実登録は --apply を付与)%s\n' "$C_YELLOW" "$C_RESET"
+
+  local i day_idx slot hour d t ok=0 skip=0
+  for i in "${!cands[@]}"; do
+    day_idx=$(( i % ndow )); slot=$(( i / ndow ))
+    d="${dows[$day_idx]}"; hour=$(( start_hour + slot * spacing ))
+    if (( hour > 23 )); then printf '  ⚠️  %-30s スロット超過(%d時) → skip\n' "${cands[$i]}" "$hour"; skip=$((skip+1)); continue; fi
+    t="$(printf '%02d:00' "$hour")"
+    printf '  %-30s %s曜 %s  %sm\n' "${cands[$i]}" "$(cron__dow_label "$d")" "$t" "$duration"
+    if (( apply )); then
+      if cs__is_cron_registered "${cands[$i]}"; then printf '     (登録済み → skip)\n'; skip=$((skip+1)); continue; fi
+      if cron__add "${cands[$i]}" "$duration" "$t" "$d" >/dev/null; then ok=$((ok+1)); else log_warn "登録失敗: ${cands[$i]}"; fi
+    fi
+  done
+  if (( apply )); then
+    log_ok "一括登録: 登録 $ok 件 / skip $skip 件"
+  else
+    printf '  %s適用: 同じ引数に --apply を付けて再実行%s\n' "$C_CYAN" "$C_RESET"
+  fi
+}
+
 # --- 対話: 曜日選択 (0=日〜6=土、カンマ区切り) ---
 cs__prompt_dow() {
   printf '  0=日 1=月 2=火 3=水 4=木 5=金 6=土 (月〜土なら 1,2,3,4,5,6)\n' >&2
@@ -263,8 +343,9 @@ main() {
     remove-all) cron__remove_all; printf '\n' ;;
     run-now)    shift; cs__run_now "$@" ;;
     launch)     shift; cs__launch "$@" ;;
+    bulk-register) shift; cs__bulk_register "$@" ;;
     menu|"")    cs__menu ;;
-    *) log_error "不明なサブコマンド: $1 (list|add|remove|remove-all|run-now|launch|menu)"; exit 1 ;;
+    *) log_error "不明なサブコマンド: $1 (list|add|remove|remove-all|run-now|launch|bulk-register|menu)"; exit 1 ;;
   esac
 }
 
