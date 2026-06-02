@@ -102,7 +102,7 @@ show_menu() {
   printf '  %s⏰ Linux Cron 管理%s\n' "$C_YELLOW" "$C_RESET"
   printf '   %s 14 %s  📅  Cron スケジュール 登録・編集・削除 / 選んで一括BG起動\n' "$C_BG_DKBLUE" "$C_RESET"
   printf '   %s 15 %s  📺  セッション状態監視 (一覧 / 接続・停止)\n' "$C_BG_DKBLUE" "$C_RESET"
-  printf '   %s MO %s  📺  ライブ監視タブを開く (経過/残り・タブ切替FG / claudeos-monitor)\n' "$C_BG_DKBLUE" "$C_RESET"
+  printf '   %s MO %s  🎛️  コントロールセンター (監視+起動+supervisor+介入 / claudeos-monitor)\n' "$C_BG_DKBLUE" "$C_RESET"
   printf '\n'
 
   local hr; hr="  $(printf '─%.0s' {1..52})"

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
-# monitor-sessions.sh — Cron/手動セッションのライブ監視タブ (ClaudeOS v3.3.8)
+# monitor-sessions.sh — ライブ監視タブ + 統合コントロールセンター (ClaudeOS v3.4.1)
+#   (Phase 2: 登録プロジェクト一覧 + supervisor 起動/停止/介入を 1 画面に統合)
 #
 # 役割:
 #   専用 tmux セッション "claudeos-monitor" を用意し、実行中の
@@ -29,6 +30,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
 source "$SCRIPT_DIR/../lib/common.sh"
+# shellcheck source=lib/config-loader.sh
+source "$SCRIPT_DIR/../lib/config-loader.sh"
+# shellcheck source=lib/cron-manager.sh
+source "$SCRIPT_DIR/../lib/cron-manager.sh"
+# shellcheck source=lib/supervisor.sh
+source "$SCRIPT_DIR/../lib/supervisor.sh"
 
 TMUX_BIN="${CCSU_TMUX_BIN:-tmux}"
 MON_SESSION="${CCSU_MONITOR_SESSION:-claudeos-monitor}"
@@ -143,29 +150,138 @@ mon__collect() {
 }
 
 # ------------------------------------------------------------
+# 登録プロジェクト + supervisor (コントロールセンター)
+# ------------------------------------------------------------
+
+# mon__registered_projects — cron 登録 ∪ supervisor 管理下 のプロジェクト名 (一意)
+mon__registered_projects() {
+  {
+    cron__list 2>/dev/null | awk -F'|' '$2!="" {print $2}'
+    if [[ -d "$SUP_DIR" ]]; then
+      local f
+      for f in "$SUP_DIR"/*.json; do
+        [[ -f "$f" ]] || continue
+        # json_get は改行を付けないため明示的に改行する (複数ファイルの連結防止)
+        printf '%s\n' "$(json_get "$f" '.project' '')"
+      done
+    fi
+  } | awk 'NF' | sort -u
+}
+
+# mon__collect_registered — 「project|session_running|sup_status|restarts|minutes」
+mon__collect_registered() {
+  local p safe running sup_status restarts minutes
+  while IFS= read -r p; do
+    [[ -z "$p" ]] && continue
+    safe="$(ccsu_safe_name "$p")"
+    if "$TMUX_BIN" has-session -t "claudeos-$safe" 2>/dev/null; then running=1; else running=0; fi
+    sup_status="$(sup__get "$p" status '-')"
+    restarts="$(sup__get "$p" restarts_today '-')"
+    minutes="$(sup__get "$p" minutes_today '-')"
+    printf '%s|%s|%s|%s|%s\n' "$p" "$running" "$sup_status" "$restarts" "$minutes"
+  done < <(mon__registered_projects)
+}
+
+# mon__remove_cron_for <project> — 当該プロジェクトの CLAUDEOS cron を全削除。削除数を stdout
+mon__remove_cron_for() {
+  local project="$1" id p count=0 r
+  while IFS='|' read -r id p _; do
+    [[ "$p" == "$project" ]] || continue
+    r="$(cron__remove "$id")"; count=$(( count + r ))
+  done < <(cron__list 2>/dev/null)
+  printf '%s' "$count"
+}
+
+# mon__supervise_start <project> — cron 競合があれば外して supervisor 開始
+mon__supervise_start() {
+  local project="$1" force="" ans n
+  if cron__list 2>/dev/null | awk -F'|' -v p="$project" '$2==p{f=1} END{exit !f}'; then
+    read -rp "  cron 登録を外して supervisor に切替えますか? [Y/n]: " ans || true
+    if [[ "${ans,,}" != "n" && "${ans,,}" != "no" ]]; then
+      n="$(mon__remove_cron_for "$project")"; log_ok "cron 削除: $project ($n 件)"
+    else
+      force="--force"
+    fi
+  fi
+  bash "$SCRIPT_DIR/autonomy.sh" start "$project" ${force:+$force} || true
+}
+
+# mon__action <l|s|x> — 登録一覧から選んでアクション実行 (ダッシュボードのサブ操作)
+mon__action() {
+  local key="$1" label
+  local -a regs; mapfile -t regs < <(mon__registered_projects)
+  tput cnorm 2>/dev/null || true
+  clear 2>/dev/null || true
+  case "$key" in
+    l) label="起動 (自律1セッション / BG)" ;;
+    s) label="supervisor 開始 (Goal到達まで自律再開)" ;;
+    x) label="supervisor 停止" ;;
+  esac
+  printf '\n  %s== %s ==%s\n' "$C_CYAN" "$label" "$C_RESET"
+  if (( ${#regs[@]} == 0 )); then
+    printf '  登録プロジェクトがありません (項14で cron 登録 / autonomy.sh start)\n'
+    read -rp "  Enter で戻る " _ || true; tput civis 2>/dev/null || true; return 0
+  fi
+  local i; for i in "${!regs[@]}"; do printf '   [%d] %s\n' "$((i + 1))" "${regs[$i]}"; done
+  local sel p; read -rp "  番号 (0=キャンセル): " sel || true
+  if [[ "$sel" =~ ^[0-9]+$ ]] && (( sel >= 1 && sel <= ${#regs[@]} )); then
+    p="${regs[$((sel - 1))]}"
+    case "$key" in
+      l) bash "$SCRIPT_DIR/cron-schedule.sh" run-now --project "$p" || true ;;
+      s) mon__supervise_start "$p" ;;
+      x) bash "$SCRIPT_DIR/autonomy.sh" stop "$p" || true ;;
+    esac
+    read -rp "  Enter で戻る " _ || true
+  fi
+  tput civis 2>/dev/null || true
+}
+
+# ------------------------------------------------------------
 # 描画
 # ------------------------------------------------------------
 mon__hr() { printf '  %s%s%s\n' "$C_GRAY" "$(printf '─%.0s' {1..56})" "$C_RESET"; }
 
 mon__render_once() {
   local stamp; stamp="$(date '+%Y-%m-%d %H:%M:%S')"
-  printf '\n  %s📺 ClaudeOS ライブ監視%s  (%s秒更新)        %s%s%s\n' \
+  printf '\n  %s🎛️  ClaudeOS コントロールセンター%s  (%s秒更新)   %s%s%s\n' \
     "$C_CYAN" "$C_RESET" "$MON_REFRESH" "$C_GRAY" "$stamp" "$C_RESET"
   mon__hr
-  printf '   %s#  %-26s %-9s %-9s%s\n' "$C_GRAY" "プロジェクト" "経過" "残り" "$C_RESET"
+  # --- 実行中セッション (タブ) ---
+  printf '   %s● 実行中セッション%s  %s#  %-22s %-9s %-9s%s\n' \
+    "$C_GREEN" "$C_RESET" "$C_GRAY" "プロジェクト" "経過" "残り" "$C_RESET"
   local any=0 tab proj el rem has ic rem_s
   while IFS='|' read -r tab proj el rem has; do
     [[ -z "$tab" ]] && continue
     any=1
     ic="$(mon__status_icon "$rem" "$has")"
     if [[ "$has" == "1" ]]; then rem_s="$(mon__fmt_hms "$rem")"; else rem_s="—"; fi
-    printf '  %s%2s%s  %-26s %-9s %-9s %s\n' \
+    printf '   %s%2s%s  %-22s %-9s %-9s %s\n' \
       "$C_YELLOW" "$tab" "$C_RESET" "$proj" "$(mon__fmt_hms "$el")" "$rem_s" "$ic"
   done < <(mon__collect)
-  (( any == 0 )) && printf '   %s(実行中の ClaudeOS セッションなし)%s\n' "$C_GRAY" "$C_RESET"
+  (( any == 0 )) && printf '   %s(実行中なし)%s\n' "$C_GRAY" "$C_RESET"
   mon__hr
-  printf '   %s[1-9]%s そのタブへ(FG)   %sCtrl-b 0%s 監視へ戻る   %s[r]%s更新 %s[q]%s終了\n' \
-    "$C_GREEN" "$C_RESET" "$C_CYAN" "$C_RESET" "$C_YELLOW" "$C_RESET" "$C_YELLOW" "$C_RESET"
+  # --- 登録プロジェクト + supervisor ---
+  printf '   %s● 登録 / supervisor%s  %s#  %-22s %-7s %-13s rst/min%s\n' \
+    "$C_GREEN" "$C_RESET" "$C_GRAY" "プロジェクト" "session" "supervisor" "$C_RESET"
+  local rn=0 rp rrun rstat rrst rmin sicon supcol
+  while IFS='|' read -r rp rrun rstat rrst rmin; do
+    [[ -z "$rp" ]] && continue
+    rn=$(( rn + 1 ))
+    if [[ "$rrun" == "1" ]]; then sicon="●稼働"; else sicon="○停止"; fi
+    case "$rstat" in
+      running)            supcol="$C_GREEN" ;;
+      goal-reached)       supcol="$C_CYAN" ;;
+      blocked|crash-loop) supcol="$C_RED" ;;
+      *)                  supcol="$C_GRAY" ;;
+    esac
+    printf '   %s%2s%s  %-22s %-7s %s%-13s%s %s/%s\n' \
+      "$C_YELLOW" "$rn" "$C_RESET" "$rp" "$sicon" "$supcol" "$rstat" "$C_RESET" "$rrst" "$rmin"
+  done < <(mon__collect_registered)
+  (( rn == 0 )) && printf '   %s(登録なし — 項14 cron 登録 / autonomy.sh start)%s\n' "$C_GRAY" "$C_RESET"
+  mon__hr
+  printf '   %s[1-9]%s介入FG %sCtrl-b 0%s監視 %s[l]%s起動 %s[s]%s監督開始 %s[x]%s監督停止 %s[r]%s更新 %s[q]%s終了\n' \
+    "$C_GREEN" "$C_RESET" "$C_CYAN" "$C_RESET" "$C_YELLOW" "$C_RESET" "$C_YELLOW" "$C_RESET" \
+    "$C_YELLOW" "$C_RESET" "$C_YELLOW" "$C_RESET" "$C_YELLOW" "$C_RESET"
 }
 
 # mon__dashboard — window 0 で動くライブループ (open が内部起動)
@@ -182,6 +298,9 @@ mon__dashboard() {
     case "$key" in
       q|Q) break ;;
       [1-9]) "$TMUX_BIN" select-window -t "$MON_SESSION:$key" 2>/dev/null || true ;;
+      l|L) mon__action l ;;
+      s|S) mon__action s ;;
+      x|X) mon__action x ;;
       *) : ;;   # r / 空(タイムアウト) → 再描画
     esac
   done
@@ -218,11 +337,13 @@ Usage: monitor-sessions.sh [open|dashboard|sync|--once|--help]
   --once     ダッシュボードを1回描画して終了 (非対話 / テスト)
   --help     このヘルプ
 
-キー操作 (監視タブ表示中):
-  [1-9]     その番号のプロジェクトタブへ切替 (フォアグラウンド)
-  Ctrl-b 0  監視ダッシュボードへ戻る
-  Ctrl-b n  次のタブ / Ctrl-b p 前のタブ (tmux 標準)
-  [q]       監視ダッシュボードを終了 (各プロジェクトは BG で継続)
+キー操作 (コントロールセンター表示中):
+  [1-9]     その番号のプロジェクトタブへ切替 (フォアグラウンド/介入)
+  Ctrl-b 0  ダッシュボードへ戻る   Ctrl-b n/p  次/前のタブ (tmux 標準)
+  [l]       登録から選んで自律1セッション起動 (BG)
+  [s]       登録から選んで supervisor 開始 (Goal到達まで自律再開)
+  [x]       supervisor 停止
+  [q]       ダッシュボードを終了 (各セッション/supervisor は継続)
 EOF
 }
 

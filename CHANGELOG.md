@@ -2,6 +2,28 @@
 
 # CHANGELOG
 
+## [v3.4.1] - 2026-06-02 — 統合コントロールセンター（Autonomy Supervisor Phase 2 / TUI）
+
+### 🎯 概要
+ライブ監視タブ `claudeos-monitor` を **統合コントロールセンター** に拡張（Phase 2）。1 画面で「実行中セッション（タブ/FG 介入）＋ 登録プロジェクト一覧 ＋ supervisor 状態」を表示し、キー操作で 起動・supervisor 開始/停止・介入 をまとめて行える。当初ゴール「インタラクティブ TUI + 完全自律」の TUI 側を実現。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `bin/monitor-sessions.sh` | 登録/supervisor セクション追加（cron ∪ supervisor 一覧 + session稼働/status/restarts/minutes）。キー `l`起動 `s`監督開始 `x`監督停止。`s` は cron 競合時に「外して切替」プロンプト |
+| `bin/menu.sh` | `MO` ラベルを「🎛️ コントロールセンター」に更新 |
+| `tests/bats/unit/monitor-sessions.bats` | 登録セクション 5 件追加（複数 supervisor の連結バグ回帰含む）|
+
+### ✅ 主な内容
+
+- 操作キー: `[1-9]` 介入FG / `[l]` 自律1セッション起動(BG) / `[s]` supervisor 開始 / `[x]` 停止 / `Ctrl-b 0` 監視へ
+- `s`（supervisor 開始）は cron 登録があれば「外して supervisor へ切替えますか?」を確認（承認方針: 競合回避）
+- **修正**: supervisor 状態ファイル複数時に project 名が改行なしで連結される不具合（`json_get` の改行欠落）→ 視覚スモークで検出、回帰テスト追加
+- 全 bats **193 件** / shellcheck error 0 / check-doc-versions PASS
+
+---
+
 ## [v3.4.0] - 2026-06-02 — Autonomy Supervisor（Goal到達まで自律再開・Phase 1/CLI）
 
 ### 🎯 概要
