@@ -2,6 +2,28 @@
 
 # CHANGELOG
 
+## [v3.4.2] - 2026-06-02 — 二重起動防止ロック + supervisor schema（Autonomy Supervisor Phase 3 / 仕上げ）
+
+### 🎯 概要
+cron(OS) と Autonomy Supervisor の **二重起動を flock で確実に防止**（従来の start 時警告を「保証」に格上げ）。`state.schema.json` / `state.json.example` に supervisor ガードレールを正式定義し、上限値の上書き方法を明文化。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `Claude/templates/linux/cron-launcher.sh`（+配布） | **flock 二重起動防止**: 同一プロジェクトの cron-launcher を直列化し後発は skip。`trap finalize` より前に exit するため skip 時は session.json/メールを生成せず、稼働中セッションも巻き込まない |
+| `state.schema.json` / `state.json.example` | `supervisor` ブロック（`daily_max_minutes` 等 6 キー）を正式定義 |
+| `tests/bats/unit/supervisor.bats` | 再起動ループ E2E（`deploy.ready` 動的反転 → goal-reached）追加 |
+
+### ✅ 検証
+
+- **flock 実機スモーク**: 後発が `lock held — skip`、先発は正常実行
+- **実機 tmux スモーク**: supervisor → deployed cron-launcher → 実 `claudeos-<proj>` セッション + keeper + lock 生成を確認（本番 tmux 無傷）
+- 再起動ループ E2E bats 追加。全 bats **194 件** / shellcheck error 0 / validate-state-example PASS
+- 注: メニュー専用項目（#1）は `MO` コントロールセンターで完結するため不要としスキップ
+
+---
+
 ## [v3.4.1] - 2026-06-02 — 統合コントロールセンター（Autonomy Supervisor Phase 2 / TUI）
 
 ### 🎯 概要

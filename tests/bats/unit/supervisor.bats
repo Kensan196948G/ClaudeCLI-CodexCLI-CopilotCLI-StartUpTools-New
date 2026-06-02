@@ -114,3 +114,19 @@ teardown() { _bats_common_teardown; }
   [ "$(sup__get Demo status '')" = "stopped" ]
   [ "$(sup__get Demo restarts_today 0)" = "0" ]
 }
+
+@test "sup__loop: 再起動ループ中に deploy.ready 反転で goal-reached (E2E)" {
+  # cron-launcher stub: 2回目の呼び出しで project state.json の deploy.ready を true に
+  cat > "$CCSU_SUP_CRON_LAUNCHER" <<EOF
+#!/usr/bin/env bash
+c="$TEST_TEMP/count"; n=\$(( \$(cat "\$c" 2>/dev/null || echo 0) + 1 )); echo "\$n" > "\$c"
+if (( n >= 2 )); then echo '{ "deploy": {"ready": true} }' > "$TEST_TEMP/projects/Demo/state.json"; fi
+exit 0
+EOF
+  chmod +x "$CCSU_SUP_CRON_LAUNCHER"
+  echo '{ "deploy": {"ready": false}, "supervisor": {"crash_loop_min_seconds": 0, "max_restarts_per_day": 100} }' > "$TEST_TEMP/projects/Demo/state.json"
+  run sup__loop Demo 5
+  # 2 セッション走って 2 回目後に goal 検出 → 停止
+  [ "$(sup__get Demo status '')" = "goal-reached" ]
+  [ "$(sup__get Demo restarts_today 0)" = "2" ]
+}

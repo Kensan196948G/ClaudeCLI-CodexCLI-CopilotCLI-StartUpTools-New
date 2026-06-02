@@ -356,6 +356,18 @@
         "post_deploy_verified": { "type": "boolean" },
         "notes": { "type": "string" }
       }
+    },
+    "supervisor": {
+      "type": "object",
+      "description": "Autonomy Supervisor (bin/autonomy.sh) のガードレール。全て任意で既定値を上書きする。",
+      "properties": {
+        "daily_max_minutes": { "type": "integer", "description": "1日の合計自律実行上限(分)。既定 600" },
+        "max_restarts_per_day": { "type": "integer", "description": "1日の再起動回数上限。既定 6" },
+        "session_minutes": { "type": "integer", "description": "1セッションの時間(分)。既定 300" },
+        "cooldown_seconds": { "type": "integer", "description": "再起動間のクールダウン(秒)。既定 30" },
+        "crash_loop_threshold": { "type": "integer", "description": "短命セッション連続で crash-loop 停止する回数。既定 3" },
+        "crash_loop_min_seconds": { "type": "integer", "description": "この秒数未満を短命セッションとみなす。既定 120" }
+      }
     }
   }
 }
