@@ -103,7 +103,12 @@ tmux_run() {
   fi
 
   # tmux セッション起動 (detached)。-c で作業ディレクトリ指定
-  "$TMUX_BIN" new-session -d -s "$session" -c "$project_dir" -x 220 -y 50 "$claude_cmd"
+  # -n "$safe" で安定ウィンドウ名を付与 (ライブ監視タブ monitor-sessions.sh の link 照合用)
+  "$TMUX_BIN" new-session -d -s "$session" -n "$safe" -c "$project_dir" -x 220 -y 50 "$claude_cmd"
+  # 監視タブ用メタデータ (cron-launcher.sh と同一規則。best-effort)
+  "$TMUX_BIN" set-option -w -t "$session:0" automatic-rename off 2>/dev/null || true
+  "$TMUX_BIN" set-option -w -t "$session:0" @ccsu_project "$project" 2>/dev/null || true
+  "$TMUX_BIN" set-option -w -t "$session:0" @ccsu_duration_min "$duration_min" 2>/dev/null || true
 
   # pipe-pane: TUI 制御シーケンスを除去してログへ (cron-launcher.sh L333 と同一 sed)
   "$TMUX_BIN" pipe-pane -t "$session" -o \

@@ -11,7 +11,8 @@
 #   cron-schedule.sh add --project P --time 21:00 --dow 1,2,3,4,5,6 [--duration 300]
 #   cron-schedule.sh remove --id <id>
 #   cron-schedule.sh remove-all
-#   cron-schedule.sh run-now --project P [--duration 300]
+#   cron-schedule.sh run-now --project P [--duration 300] [--foreground]  # 既定 BG
+#   cron-schedule.sh launch [--project P[,P2]] [--duration N] [--all]     # 登録から一括 BG
 # ============================================================
 
 set -euo pipefail
@@ -80,20 +81,115 @@ cs__remove() {
   if [[ "$n" -gt 0 ]]; then log_ok "削除: id=$id ($n 件)"; else log_warn "該当エントリなし: id=$id"; fi
 }
 
-# --- 非対話: run-now (cron-launcher.sh を即実行) ---
-cs__run_now() {
-  local project="" duration="$DEFAULT_DURATION"
+# --- BG 起動: cron-launcher.sh を端末から切り離して非ブロッキング起動 ---
+#   setsid (無ければ nohup) で起動。claude UI は tmux セッション claudeos-<safe> に入り、
+#   ライブ監視タブ (monitor-sessions.sh) / 項15 / tmux attach で後から閲覧できる。
+cs__launch_bg() {
+  local project="$1" duration="${2:-$DEFAULT_DURATION}" safe logp runner
+  [[ -n "$project" ]] || { log_error "BG 起動: project が空です"; return 1; }
+  [[ -f "$CRON_LAUNCHER" ]] || { log_error "cron-launcher.sh が見つかりません: $CRON_LAUNCHER"; return 1; }
+  safe="$(ccsu_safe_name "$project")"
+  mkdir -p "$CRON_LOGS_DIR"
+  logp="$CRON_LOGS_DIR/cron-$(date +%Y%m%d-%H%M%S)-${safe}.log"
+  if has_cmd setsid; then runner=setsid; else runner=nohup; fi
+  "$runner" bash "$CRON_LAUNCHER" "$project" "$duration" >> "$logp" 2>&1 < /dev/null &
+  disown 2>/dev/null || true
+  log_ok "BG 起動: $project (duration=${duration}m) → claudeos-${safe}"
+  log_info "  ログ: $logp"
+  log_info "  監視: メニュー MO (ライブ監視タブ) / 項15 / tmux attach -t claudeos-${safe}"
+}
+
+# --- 登録済み cron プロジェクト一覧 (重複除外。出力: project<TAB>duration) ---
+cs__registered_projects() {
+  cron__list | awk -F'|' 'NF>=3 && $2!="" && !seen[$2]++ { print $2"\t"$3 }'
+}
+
+# --- 非対話/対話: 登録済みプロジェクトを選んで一括 BG 起動 ---
+#   cs__launch [--project P[,P2,...]] [--duration N] [--all]
+#   引数なし → 登録一覧から番号 (複数可: 1,3 / すべて: a) を選択
+cs__launch() {
+  local projects_csv="" duration="" all=0
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --project)  project="$2"; shift 2 ;;
+      --project)  projects_csv="$2"; shift 2 ;;
       --duration) duration="$2"; shift 2 ;;
+      --all)      all=1; shift ;;
+      *) log_error "launch: 不明な引数: $1"; return 1 ;;
+    esac
+  done
+
+  # 「project<TAB>duration」の登録一覧を読む
+  local -a reg_p=() reg_d=(); local p d
+  while IFS=$'\t' read -r p d; do
+    [[ -z "$p" ]] && continue
+    reg_p+=("$p"); reg_d+=("${d:-$DEFAULT_DURATION}")
+  done < <(cs__registered_projects)
+
+  local -a chosen_p=() chosen_d=()
+  if [[ -n "$projects_csv" ]]; then
+    # 明示指定: 登録 duration があれば流用、無ければ既定
+    local -a names; IFS=',' read -ra names <<< "$projects_csv"
+    local nm i
+    for nm in "${names[@]}"; do
+      [[ -z "$nm" ]] && continue
+      local dd="$DEFAULT_DURATION"
+      for i in "${!reg_p[@]}"; do
+        if [[ "${reg_p[$i]}" == "$nm" ]]; then dd="${reg_d[$i]}"; break; fi
+      done
+      chosen_p+=("$nm"); chosen_d+=("${duration:-$dd}")
+    done
+  elif (( all )); then
+    local i
+    for i in "${!reg_p[@]}"; do chosen_p+=("${reg_p[$i]}"); chosen_d+=("${duration:-${reg_d[$i]}}"); done
+  else
+    # 対話選択
+    (( ${#reg_p[@]} == 0 )) && { log_warn "登録済み cron プロジェクトがありません ([1] 新規登録で追加してください)"; return 0; }
+    local i
+    for i in "${!reg_p[@]}"; do printf '  [%d] %s (%sm)\n' "$((i+1))" "${reg_p[$i]}" "${reg_d[$i]}" >&2; done
+    printf '  複数可: 1,3 / すべて: a\n' >&2
+    local raw; read -rp "  起動する番号: " raw
+    raw="$(printf '%s' "$raw" | tr -d ' ')"
+    if [[ "${raw,,}" == "a" || "${raw,,}" == "all" ]]; then
+      for i in "${!reg_p[@]}"; do chosen_p+=("${reg_p[$i]}"); chosen_d+=("${reg_d[$i]}"); done
+    else
+      local -a idxs; IFS=',' read -ra idxs <<< "$raw"
+      local n
+      for n in "${idxs[@]}"; do
+        if [[ "$n" =~ ^[0-9]+$ ]] && (( n >= 1 && n <= ${#reg_p[@]} )); then
+          chosen_p+=("${reg_p[$((n-1))]}"); chosen_d+=("${reg_d[$((n-1))]}")
+        fi
+      done
+    fi
+  fi
+
+  (( ${#chosen_p[@]} == 0 )) && { log_warn "起動対象がありません"; return 0; }
+  local i
+  for i in "${!chosen_p[@]}"; do
+    cs__launch_bg "${chosen_p[$i]}" "${chosen_d[$i]}" || log_warn "起動失敗: ${chosen_p[$i]}"
+  done
+  log_ok "${#chosen_p[@]} 件を BG 起動しました"
+}
+
+# --- 非対話: run-now (BG 既定。--foreground で従来の同期実行) ---
+cs__run_now() {
+  local project="" duration="$DEFAULT_DURATION" fg=0
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --project)         project="$2"; shift 2 ;;
+      --duration)        duration="$2"; shift 2 ;;
+      --foreground|--fg) fg=1; shift ;;
+      --background|--bg) fg=0; shift ;;
       *) log_error "run-now: 不明な引数: $1"; return 1 ;;
     esac
   done
   [[ -n "$project" ]] || { log_error "run-now: --project は必須"; return 1; }
   [[ -f "$CRON_LAUNCHER" ]] || { log_error "cron-launcher.sh が見つかりません: $CRON_LAUNCHER"; return 1; }
-  log_info "今すぐ実行: $project (duration=${duration}m)"
-  bash "$CRON_LAUNCHER" "$project" "$duration"
+  if (( fg )); then
+    log_info "今すぐ実行 (フォアグラウンド): $project (duration=${duration}m)"
+    bash "$CRON_LAUNCHER" "$project" "$duration"
+  else
+    cs__launch_bg "$project" "$duration"
+  fi
 }
 
 # --- 対話: 曜日選択 (0=日〜6=土、カンマ区切り) ---
@@ -126,7 +222,8 @@ cs__menu() {
     printf '    %s[2]%s 一覧\n' "$C_YELLOW" "$C_RESET"
     printf '    %s[4]%s 削除 (ID 指定)\n' "$C_YELLOW" "$C_RESET"
     printf '    %s[5]%s 全解除\n' "$C_YELLOW" "$C_RESET"
-    printf '    %s[6]%s 今すぐ実行\n' "$C_GREEN" "$C_RESET"
+    printf '    %s[6]%s 今すぐ実行 (BG既定 / fg は確認あり)\n' "$C_GREEN" "$C_RESET"
+    printf '    %s[7]%s 登録から選んで一括BG起動 + ライブ監視\n' "$C_GREEN" "$C_RESET"
     printf '    %s[0]%s 戻る\n\n' "$C_GRAY" "$C_RESET"
     local choice; read -rp "  番号: " choice
     case "$choice" in
@@ -138,7 +235,19 @@ cs__menu() {
       4) cs__list_display; local rid; read -rp "  削除する ID: " rid
          [[ -n "$rid" ]] && { cs__remove --id "$rid" || true; }; read -rp "  Enter で戻る " _ ;;
       5) local n; n="$(cron__remove_all)"; log_ok "全解除: $n 件"; read -rp "  Enter で戻る " _ ;;
-      6) local p; p="$(cs__prompt_project)"; [[ -n "$p" ]] && { cs__run_now --project "$p" || true; }
+      6) local p; p="$(cs__prompt_project)"
+         if [[ -n "$p" ]]; then
+           local fg; read -rp "  フォアグラウンドで実行しますか? (BG既定) [y/N]: " fg
+           if [[ "${fg,,}" == "y" || "${fg,,}" == "yes" ]]; then
+             cs__run_now --project "$p" --foreground || true
+           else
+             cs__run_now --project "$p" || true
+           fi
+         fi
+         read -rp "  Enter で戻る " _ ;;
+      7) cs__launch || true
+         local op; read -rp "  ライブ監視タブを開きますか? [Y/n]: " op
+         [[ "${op,,}" != "n" && "${op,,}" != "no" ]] && bash "$SCRIPT_DIR/monitor-sessions.sh" open || true
          read -rp "  Enter で戻る " _ ;;
       0) return 0 ;;
       *) log_warn "無効な入力"; sleep 1 ;;
@@ -153,8 +262,9 @@ main() {
     remove)     shift; cs__remove "$@" ;;
     remove-all) cron__remove_all; printf '\n' ;;
     run-now)    shift; cs__run_now "$@" ;;
+    launch)     shift; cs__launch "$@" ;;
     menu|"")    cs__menu ;;
-    *) log_error "不明なサブコマンド: $1 (list|add|remove|remove-all|run-now|menu)"; exit 1 ;;
+    *) log_error "不明なサブコマンド: $1 (list|add|remove|remove-all|run-now|launch|menu)"; exit 1 ;;
   esac
 }
 

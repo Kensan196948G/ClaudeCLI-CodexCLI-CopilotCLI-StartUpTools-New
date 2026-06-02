@@ -88,14 +88,62 @@ teardown() { _bats_common_teardown; }
   [[ "$output" == *"ありません"* ]]
 }
 
-@test "run-now: cron-launcher.sh を project/duration 付きで呼ぶ" {
+@test "run-now --foreground: cron-launcher.sh を同期で project/duration 付きで呼ぶ" {
   cat > "$CCSU_CRON_LAUNCHER" <<'EOF'
 #!/usr/bin/env bash
 echo "launcher called: $1 $2"
 EOF
   chmod +x "$CCSU_CRON_LAUNCHER"
-  run bash "$SCRIPT" run-now --project MyProj --duration 5
+  run bash "$SCRIPT" run-now --project MyProj --duration 5 --foreground
   [[ "$output" == *"launcher called: MyProj 5"* ]]
+}
+
+@test "run-now: 既定は BG (メニューをブロックせず BG 起動メッセージ)" {
+  cat > "$CCSU_CRON_LAUNCHER" <<'EOF'
+#!/usr/bin/env bash
+sleep 5; echo "should-not-block"
+EOF
+  chmod +x "$CCSU_CRON_LAUNCHER"
+  run bash "$SCRIPT" run-now --project MyProj --duration 5
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BG 起動: MyProj"* ]]
+  [[ "$output" == *"claudeos-MyProj"* ]]
+  # BG 用ログファイルが生成される
+  run bash -c "ls '$CCSU_CRON_LOGS_DIR'/cron-*-MyProj.log 2>/dev/null | head -1"
+  [ -n "$output" ]
+}
+
+@test "launch --project: 明示指定で BG 起動" {
+  cat > "$CCSU_CRON_LAUNCHER" <<'EOF'
+#!/usr/bin/env bash
+true
+EOF
+  chmod +x "$CCSU_CRON_LAUNCHER"
+  run bash "$SCRIPT" launch --project MyProj
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BG 起動: MyProj"* ]]
+  [[ "$output" == *"1 件を BG 起動"* ]]
+}
+
+@test "launch --all: 登録済みを全件 BG 起動" {
+  cat > "$CCSU_CRON_LAUNCHER" <<'EOF'
+#!/usr/bin/env bash
+true
+EOF
+  chmod +x "$CCSU_CRON_LAUNCHER"
+  bash "$SCRIPT" add --project MyProj --time 21:00 --dow 1 >/dev/null
+  bash "$SCRIPT" add --project Other --time 08:00 --dow 2 >/dev/null
+  run bash "$SCRIPT" launch --all
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BG 起動: MyProj"* ]]
+  [[ "$output" == *"BG 起動: Other"* ]]
+  [[ "$output" == *"2 件を BG 起動"* ]]
+}
+
+@test "launch --all: 登録ゼロなら警告して何もしない" {
+  run bash "$SCRIPT" launch --all
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"BG 起動:"* ]]
 }
 
 @test "不明サブコマンドでエラー" {
