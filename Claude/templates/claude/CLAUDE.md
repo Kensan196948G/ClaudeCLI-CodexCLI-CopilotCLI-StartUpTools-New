@@ -361,7 +361,7 @@ claude agents
 > 3 階層マトリクスは `claudeos/core/04-agent-teams.md`「dynamic workflows」§ を正本とする。
 > `.github/workflows/*.yml`（CI）とは別物。
 
-### 6.7 Agent Teams 品質ゲート Hooks（v2.1.159+）
+### 🛡️ 6.7 Agent Teams 品質ゲート Hooks（v2.1.159+）
 
 Agent Teams 専用フックで品質を自動強制できる。
 
@@ -380,7 +380,7 @@ Agent Teams 専用フックで品質を自動強制できる。
 }
 ```
 
-### 6.8 Agent Teams キーボードショートカット（in-process モード）
+### ⌨️ 6.8 Agent Teams キーボードショートカット（in-process モード）
 
 | キー | 動作 |
 |---|---|
@@ -389,7 +389,7 @@ Agent Teams 専用フックで品質を自動強制できる。
 | `Enter` | チームメイトのセッション詳細を確認 |
 | `Esc` | チームメイト操作を中断 |
 
-### 6.9 Agent Teams ベストプラクティス（公式推奨）
+### 🧭 6.9 Agent Teams ベストプラクティス（公式推奨）
 
 - **チームサイズ**: 3〜5 チームメイト が最適。それ以上は協調オーバーヘッドが増大
 - **タスク粒度**: 1 チームメイトにつき 5〜6 タスク が目安
@@ -398,7 +398,7 @@ Agent Teams 専用フックで品質を自動強制できる。
 - **待機**: リードがチームメイトより先に実装を始める場合 → `Wait for your teammates to complete their tasks`
 - **プラン承認**: 重要タスクは `Require plan approval before they make any changes` でリードにレビューさせる
 
-### 6.10 Dynamic Workflows 詳細（`/workflows`・v2.1.154+）
+### 🔁 6.10 Dynamic Workflows 詳細（`/workflows`・v2.1.154+）
 
 | コマンド | 説明 |
 |---|---|
@@ -430,7 +430,7 @@ Agent Teams 専用フックで品質を自動強制できる。
 **ワークフローの keyword トリガー:**
 プロンプトに `workflow` という単語を含めるだけで、Claude がそのタスク用ワークフローを自動作成する。
 
-```
+```text
 # 例
 Run a workflow to audit every API endpoint under src/routes/ for missing auth checks
 ```
@@ -753,7 +753,7 @@ Agent Teams で並列に動き、Agent View で監視する。
 固定ループではなく、状況に応じて最適解を自律選択する。
 ```
 
-## 23. v2.1.159+ 新機能・設定リファレンス
+## 📌 23. v2.1.159+ 新機能・設定リファレンス
 
 ### 🆕 新スラッシュコマンド（v2.1.159+）
 
