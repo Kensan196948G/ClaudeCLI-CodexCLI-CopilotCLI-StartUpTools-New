@@ -2,6 +2,40 @@
 
 # CHANGELOG
 
+## [v3.4.0] - 2026-06-02 — Autonomy Supervisor（Goal到達まで自律再開・Phase 1/CLI）
+
+### 🎯 概要
+登録プロジェクトを **Goal/Release 到達まで自律再開** させる Autonomy Supervisor を追加（Phase 1: CLI）。各セッションは `cron-launcher.sh` 経由（claude TUI + 自律 + メール + 監視タブメタ）を再利用し、終了を検知して再起動する。暴走/コスト対策のガードレールを必須化し、既定は OFF（opt-in）。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `lib/supervisor.sh` | **新規**。ガードレール純粋関数（goal/abnormal/cap/crash）＋自律ループ＋状態I/O（`~/.claudeos/supervisor/<safe>.json`） |
+| `bin/autonomy.sh` | **新規**。CLI（`start`/`stop`/`status`/`list`）。`setsid` 常駐起動・cron 競合検知・グレースフル/即時停止 |
+| `tests/bats/unit/supervisor.bats` / `autonomy.bats` | **新規 37 件** |
+
+### ✅ ガードレール（暴走/コスト対策・state.json `supervisor` ブロックで上書き可）
+
+- **停止条件**: Goal到達(`deploy.ready` / `phase_mode∈{maintenance,released}`) / 異常(`kpi.security_critical>0` / `blocked_issues` 非空) / 日次上限(既定 **600分・6回**) / crash-loop(短命セッション連続) / 手動(stop フラグ・kill)
+- **既定 OFF**: 明示 `start` するまで何も自走しない
+- **cron 競合回避**: supervisor 管理プロジェクトに cron 登録が残っていれば `start` 時に警告（`--force` で続行）
+- テスト: 全 bats **188 件**パス / shellcheck error 0
+
+### 🔑 CLI
+
+```bash
+bash bin/autonomy.sh start  <project> [--duration N] [--force]
+bash bin/autonomy.sh stop   <project> [--now]
+bash bin/autonomy.sh status [project]
+bash bin/autonomy.sh list
+```
+
+### 🔜 次フェーズ
+Phase 2: `claudeos-monitor` を統合コントロールセンターに拡張（TUI から 起動 + ライブ監督 + 介入(FG) + supervisor 状態表示）。
+
+---
+
 ## [v3.3.8] - 2026-06-02 — Cron BG 既定化 + ライブ監視タブ（tmux）
 
 ### 🎯 概要

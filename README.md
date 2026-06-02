@@ -51,7 +51,7 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.3.8** (Cron BG既定化 + tmux ライブ監視タブ + 手動メール対応) — 旧: v3.3.7 |
+| バージョン | **v3.4.0** (Autonomy Supervisor — Goal到達まで自律再開 / Phase 1 CLI) — 旧: v3.3.8 |
 | テスト | **776件** — Pester (Unit 21 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | **v9.0** (`/goal` 駆動 / Agent Teams パターン A/B/C / Agent View / 動的判断 / 週次フェーズ制御 / learning パターン記録 / Stop Conditions 厳格化 / Opus 4.7 最適化 / 1H cache / PreCompact hook) |
@@ -417,6 +417,26 @@ bash bin/monitor-sessions.sh open                          # ライブ監視タ�
 > **📧 終了レポートメール**: `~/.env-claudeos` に SMTP 設定 + `CLAUDEOS_EMAIL_ENABLED=1` があると、
 > セッション終了時に HTML レポートメール（`report-and-mail.py`）が送信されます。cron / BG 一括起動に加え、
 > **手動起動（L1/S1）も対応**（`setsid` 常駐 watcher が終了を検知）。手動分のみ止めたい場合は `CLAUDEOS_MANUAL_EMAIL=0`。
+
+#### 🤖 Autonomy Supervisor（Goal到達まで自律再開）— v3.4.0 / Phase 1
+
+登録プロジェクトを **Goal/Release 到達まで止めずに自律実行** させる supervisor（既定 OFF / opt-in）。セッション終了を検知し、未到達なら `cron-launcher.sh` を再起動して文脈継続（`state.json` resume）。暴走/コスト対策のガードレールで必ず停止します。
+
+```bash
+bash bin/autonomy.sh start  <project> [--duration N] [--force]  # 自律再開を開始（setsid 常駐）
+bash bin/autonomy.sh stop   <project> [--now]                   # 停止（--now で現セッションも即kill）
+bash bin/autonomy.sh status [project] | list                   # 状態（restarts/minutes/最終理由）
+```
+
+| 停止条件 | 内容 |
+|---|---|
+| Goal 到達 | `deploy.ready=true` / `phase_mode∈{maintenance,released}` |
+| 異常 | `kpi.security_critical>0` / `blocked_issues` 非空 |
+| 日次上限 | 既定 **600 分 / 6 回**（`state.json` の `supervisor` ブロックで上書き可） |
+| crash-loop / 手動 | 短命セッション連続 / `stop` |
+
+> ⚠️ supervisor 管理プロジェクトは **cron 登録を外す**（二重起動回避）。残っている場合 `start` は警告し、`--force` で続行。
+> 🔜 Phase 2 でライブ監視タブ（`claudeos-monitor`）から起動・監督・介入を統合予定。
 
 Linux native メニューを使う場合は `./start.sh` を実行します。項目 `7` は `~/.claudeos/{logs,sessions,tmp}` と `~/.tmux.conf` の ClaudeOS 管理ブロックを作成・更新します。
 
