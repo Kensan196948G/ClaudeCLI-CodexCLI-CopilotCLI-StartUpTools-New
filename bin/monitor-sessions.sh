@@ -95,39 +95,51 @@ mon__window_index_for() {
     | awk -v n="$safe" '$2 == n { print $1; exit }'
 }
 
-# mon__sync_tabs — 実行中プロジェクトをタブとして link、消滅したタブを unlink
-#   照合キーはウィンドウ名 (= safe project = claudeos-<safe> のサフィックス)。
-#   ※ source セッション kill 後も link は残る (実機検証済) ため unlink が必須。
+# mon__sync_tabs — 実行中プロジェクトをタブとして link、不要/重複タブを unlink
+#   照合キーは window_id (#{window_id})。リンク元と共有され、リネームやセッション
+#   再生成に影響されないため、名前ベースで起きていた二重リンクを防げる。
 mon__sync_tabs() {
   mon__exists || return 0
 
-  # --- 1) 未リンクのプロジェクトを追加 ---
-  local names s safe ni
-  names="$("$TMUX_BIN" list-windows -t "$MON_SESSION" -F '#{window_name}' 2>/dev/null || true)"
+  # 有効な source の window_id 集合 (= 実行中プロジェクトの window 0)
+  local valid_wids s wid
+  valid_wids="$(
+    while IFS= read -r s; do
+      [[ -z "$s" ]] && continue
+      "$TMUX_BIN" display-message -p -t "${s}:0" '#{window_id}' 2>/dev/null || true
+    done < <(mon__project_sessions)
+  )"
+
+  # --- 1) 未リンクのプロジェクトを追加 (window_id で照合) ---
+  local mon_wids ni
+  mon_wids="$("$TMUX_BIN" list-windows -t "$MON_SESSION" -F '#{window_id}' 2>/dev/null || true)"
   while IFS= read -r s; do
     [[ -z "$s" ]] && continue
-    safe="${s#claudeos-}"
-    if ! printf '%s\n' "$names" | grep -qxF "$safe"; then
+    wid="$("$TMUX_BIN" display-message -p -t "${s}:0" '#{window_id}' 2>/dev/null || true)"
+    [[ -z "$wid" ]] && continue
+    if ! printf '%s\n' "$mon_wids" | grep -qxF "$wid"; then
       ni="$(mon__next_index)"
       if "$TMUX_BIN" link-window -s "${s}:0" -t "$MON_SESSION:$ni" 2>/dev/null; then
-        # 安定名を付与 (link 後も次 tick で名前照合できるよう automatic-rename を切る)
         "$TMUX_BIN" set-option -w -t "$MON_SESSION:$ni" automatic-rename off 2>/dev/null || true
-        "$TMUX_BIN" rename-window -t "$MON_SESSION:$ni" "$safe" 2>/dev/null || true
-        names="$names"$'\n'"$safe"
+        "$TMUX_BIN" rename-window -t "$MON_SESSION:$ni" "${s#claudeos-}" 2>/dev/null || true
+        mon_wids="$mon_wids"$'\n'"$wid"
       fi
     fi
   done < <(mon__project_sessions)
 
-  # --- 2) source セッションが消えたタブを除去 (window 0=ダッシュボードは保持) ---
-  local idx nm
-  while read -r idx nm; do
+  # --- 2) 不要/重複タブを除去 (dashboard=window名 monitor は常に保持) ---
+  #   無効な window_id (source 消滅) または既出 (重複リンク) を unlink。
+  local idx w nm seen=""
+  while read -r idx w nm; do
     [[ -z "$idx" ]] && continue
     (( idx == 0 )) && continue
     [[ "$nm" == "monitor" ]] && continue
-    if ! "$TMUX_BIN" has-session -t "claudeos-$nm" 2>/dev/null; then
+    if ! printf '%s\n' "$valid_wids" | grep -qxF "$w" || printf '%s\n' "$seen" | grep -qxF "$w"; then
       "$TMUX_BIN" unlink-window -k -t "$MON_SESSION:$idx" 2>/dev/null || true
+    else
+      seen="$seen"$'\n'"$w"
     fi
-  done < <("$TMUX_BIN" list-windows -t "$MON_SESSION" -F '#{window_index} #{window_name}' 2>/dev/null || true)
+  done < <("$TMUX_BIN" list-windows -t "$MON_SESSION" -F '#{window_index} #{window_id} #{window_name}' 2>/dev/null || true)
 }
 
 # mon__collect — 実行中セッションを「tab|project|elapsed|remaining|has_dur」で列挙
@@ -349,6 +361,7 @@ mon__render_once() {
   printf '   %s[1-9]%s介入FG %sCtrl-b 0%s監視 %s[n]%s新規追加 %s[l]%s起動 %s[s]%s監督開始 %s[x]%s監督停止 %s[q]%s終了\n' \
     "$C_GREEN" "$C_RESET" "$C_CYAN" "$C_RESET" "$C_GREEN" "$C_RESET" "$C_YELLOW" "$C_RESET" \
     "$C_YELLOW" "$C_RESET" "$C_YELLOW" "$C_RESET" "$C_YELLOW" "$C_RESET"
+  printf '   %s※ 操作キーはこの画面でのみ有効。Claude介入中は Ctrl-b 0 で戻ってから押す%s\n' "$C_GRAY" "$C_RESET"
 }
 
 # mon__dashboard — window 0 で動くライブループ (open が内部起動)
@@ -387,6 +400,12 @@ mon__open() {
     log_ok "ライブ監視セッションを作成: $MON_SESSION"
   fi
   mon__sync_tabs
+  # 常にダッシュボード(window名 monitor)を選択してから接続する。
+  # 前回プロジェクトタブ(Claude)を見たまま離脱していても、開いた直後は必ず
+  # ダッシュボードに居るので n/l/s/x が効く (キーが Claude に入る誤操作を防ぐ)。
+  local dw
+  dw="$("$TMUX_BIN" list-windows -t "$MON_SESSION" -F '#{window_index} #{window_name}' 2>/dev/null | awk '$2=="monitor"{print $1; exit}')"
+  [[ -n "$dw" ]] && "$TMUX_BIN" select-window -t "$MON_SESSION:$dw" 2>/dev/null || true
   if [[ -n "${TMUX:-}" ]]; then
     "$TMUX_BIN" switch-client -t "$MON_SESSION"
   else
