@@ -51,7 +51,7 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.4.1** (統合コントロールセンター — TUI から監視+起動+supervisor+介入 / Phase 2) — 旧: v3.4.0 |
+| バージョン | **v3.4.2** (二重起動防止ロック + supervisor schema / Phase 3 仕上げ) — 旧: v3.4.1 |
 | テスト | **776件** — Pester (Unit 21 / Integration 11 / Smoke 1) |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | **v9.0** (`/goal` 駆動 / Agent Teams パターン A/B/C / Agent View / 動的判断 / 週次フェーズ制御 / learning パターン記録 / Stop Conditions 厳格化 / Opus 4.7 最適化 / 1H cache / PreCompact hook) |
@@ -432,8 +432,10 @@ bash bin/autonomy.sh status [project] | list                   # 状態（restar
 |---|---|
 | Goal 到達 | `deploy.ready=true` / `phase_mode∈{maintenance,released}` |
 | 異常 | `kpi.security_critical>0` / `blocked_issues` 非空 |
-| 日次上限 | 既定 **600 分 / 6 回**（`state.json` の `supervisor` ブロックで上書き可） |
+| 日次上限 | 既定 **600 分 / 6 回**（`state.json` の `supervisor` ブロックで上書き可、`state.json.example` 参照） |
 | crash-loop / 手動 | 短命セッション連続 / `stop` |
+
+> 🔒 **二重起動防止（v3.4.2）**: cron-launcher が `flock` で同一プロジェクトを直列化。cron(OS) と supervisor が同時発火しても後発は安全に skip するため、cron を外し忘れても稼働中セッションを巻き込みません（推奨は引き続き cron 削除）。
 
 > ⚠️ supervisor 管理プロジェクトは **cron 登録を外す**（二重起動回避）。残っている場合 `start` は警告し、`--force` で続行。
 
