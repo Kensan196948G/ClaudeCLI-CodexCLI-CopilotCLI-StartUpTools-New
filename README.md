@@ -164,6 +164,7 @@ bash bin/autonomy.sh list                      # すべての Supervisor 一覧
 |---|---|
 | `1`〜`9` / `Ctrl-b <番号>` | そのプロジェクトの AI 画面に**入って直接指示**（介入） |
 | `Ctrl-b 0` | コントロールセンター（監視画面）へ戻る |
+| `n` | 🆕 **全プロジェクトから選んで自律管理に追加**（状態バッジ付き → supervisor / 1回起動 / cron登録） |
 | `l` | 登録から選んで**1 回だけ自律実行**（バックグラウンド） |
 | `s` | 登録から選んで**Supervisor 開始**（Goal まで自動再開） |
 | `x` | Supervisor 停止 |
@@ -256,7 +257,7 @@ bash bin/cron-schedule.sh add --project A --time 21:00 --dow 1,2,3,4,5,6
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.4.2** — 二重起動防止ロック + Autonomy Supervisor 完成（Phase 1〜3） / 旧: v3.4.1 |
+| バージョン | **v3.4.3** — コントロールセンターに新規プロジェクト・オンボード（n キー）/ 旧: v3.4.2 |
 | 実行基盤 | 🐧 **Linux ネイティブ**（`start.sh` / `bin/*.sh` / tmux / cron） |
 | テスト | ✅ **bats 194 件**（Linux）+ **Pester**（pwsh / Windows CI）/ shellcheck 0 |
 | CI | ✅ SUCCESS（ShellCheck+bats / test-and-validate / Secrets / PSScriptAnalyzer / CodeRabbit） |

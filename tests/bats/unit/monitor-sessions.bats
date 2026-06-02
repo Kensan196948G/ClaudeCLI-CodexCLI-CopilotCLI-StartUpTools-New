@@ -47,6 +47,10 @@ esac
 '
   # supervisor 状態ディレクトリ (空 → supervisor なし)
   export CCSU_SUP_DIR="$TEST_TEMP/sup"
+  # config (全プロジェクト列挙 mon__all_projects 用)
+  export AI_STARTUP_CONFIG_PATH="$TEST_TEMP/config.json"
+  printf '{ "linuxBase": "%s/projects" }\n' "$TEST_TEMP" > "$AI_STARTUP_CONFIG_PATH"
+  mkdir -p "$TEST_TEMP/projects/Alpha" "$TEST_TEMP/projects/Beta"
 }
 teardown() { _bats_common_teardown; }
 
@@ -209,4 +213,35 @@ EOF
   export MON_TEST_SESSIONS=""
   run bash "$SCRIPT" --once
   [[ "$output" == *"登録なし"* ]]
+}
+
+# ---- 新規プロジェクトのオンボード (n キー / v3.4.3) ----
+@test "mon__all_projects: config_projects_dir 配下の全dirを列挙" {
+  run bash -c "source '$SCRIPT'; mon__all_projects"
+  [[ "$output" == *"Alpha"* ]]
+  [[ "$output" == *"Beta"* ]]
+}
+
+@test "mon__project_state_badge: 未管理は ⚪" {
+  run bash -c "source '$SCRIPT'; mon__project_state_badge Alpha"
+  [[ "$output" == *"未管理"* ]]
+}
+
+@test "mon__project_state_badge: cron 登録は 📅" {
+  _mon_seed_cron Alpha
+  run bash -c "source '$SCRIPT'; mon__project_state_badge Alpha"
+  [[ "$output" == *"cron登録"* ]]
+}
+
+@test "mon__project_state_badge: 稼働中は 🟢" {
+  export MON_TEST_SESSIONS="claudeos-Alpha"
+  run bash -c "source '$SCRIPT'; mon__project_state_badge Alpha"
+  [[ "$output" == *"稼働中"* ]]
+}
+
+@test "mon__project_state_badge: supervisor 稼働は 🔁" {
+  mkdir -p "$CCSU_SUP_DIR"
+  printf '{ "project":"Alpha","status":"running","pid":%s }\n' "$$" > "$CCSU_SUP_DIR/Alpha.json"
+  run bash -c "source '$SCRIPT'; mon__project_state_badge Alpha"
+  [[ "$output" == *"自律中"* ]]
 }

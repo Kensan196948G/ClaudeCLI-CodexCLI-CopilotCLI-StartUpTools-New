@@ -2,6 +2,27 @@
 
 # CHANGELOG
 
+## [v3.4.3] - 2026-06-02 — コントロールセンターに新規プロジェクト・オンボード（n キー）
+
+### 🎯 概要
+コントロールセンター（`claudeos-monitor`）に **`n` キー** を追加。全プロジェクトを**状態バッジ付き**で一覧し、まだ管理下にないプロジェクトをその場で自律管理（supervisor 開始 / 1 回起動 / cron 登録）に**追加（オンボード）**できる。「登録台帳」を新設せず、start 操作そのものが登録になるため、管理下の真実は常に cron/supervisor の実体と一致（ドリフトしない）。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `bin/monitor-sessions.sh` | `n` キー追加。`mon__all_projects` / `mon__project_state_badge`（🟢稼働 / 🔁自律 / 📅cron / ⚪未管理）/ `mon__onboard`（選択 → supervisor 開始 / 1回起動 / cron登録）/ `mon__cron_register` |
+| `tests/bats/unit/monitor-sessions.bats` | オンボード 5 件追加（全列挙・各状態バッジ） |
+
+### ✅ 内容
+
+- 全プロジェクトを状態バッジ付きで一覧 → 未管理を選んで管理下へ（バッジで二重追加を防止）
+- 既存プリミティブ（`autonomy.sh` / `cron-schedule.sh`）へ委譲し、専用の登録ファイルは作らない（SoT 維持）
+- 設計方針: 1 画面は「実行中/管理下」に集中し、母集合（全 dir）は `n` でオンデマンド表示（TUI ベストプラクティス）
+- 全 bats **199 件** / shellcheck error 0 / check-doc-versions PASS
+
+---
+
 ## [v3.4.2] - 2026-06-02 — 二重起動防止ロック + supervisor schema（Autonomy Supervisor Phase 3 / 仕上げ）
 
 ### 🎯 概要
