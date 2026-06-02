@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # ============================================================
-# monitor-sessions.sh — ライブ監視タブ + 統合コントロールセンター (ClaudeOS v3.4.1)
+# monitor-sessions.sh — ライブ監視タブ + 統合コントロールセンター (ClaudeOS v3.4.3)
 #   (Phase 2: 登録プロジェクト一覧 + supervisor 起動/停止/介入を 1 画面に統合)
+#   (v3.4.3: n キーで全プロジェクトから選んで自律管理に追加するオンボード)
 #
 # 役割:
 #   専用 tmux セッション "claudeos-monitor" を用意し、実行中の
@@ -237,6 +238,72 @@ mon__action() {
 }
 
 # ------------------------------------------------------------
+# 新規プロジェクトのオンボード (n キー: 全プロジェクトから選んで管理下へ)
+# ------------------------------------------------------------
+
+# mon__all_projects — config_projects_dir 配下の全プロジェクト名 (隠し除外)
+mon__all_projects() {
+  local base; base="$(config_projects_dir)"
+  [[ -d "$base" ]] || return 0
+  ls -1 "$base" 2>/dev/null | grep -v '^\.' || true
+}
+
+# mon__project_state_badge <project> — 現状を表す状態バッジ (誤操作防止の可視化)
+mon__project_state_badge() {
+  local project="$1" safe; safe="$(ccsu_safe_name "$project")"
+  if sup__is_running "$project"; then printf '🔁 自律中(supervisor)'; return 0; fi
+  if "$TMUX_BIN" has-session -t "claudeos-$safe" 2>/dev/null; then printf '🟢 稼働中'; return 0; fi
+  if cron__list 2>/dev/null | awk -F'|' -v p="$project" '$2==p {f=1} END{exit !f}'; then printf '📅 cron登録'; return 0; fi
+  printf '⚪ 未管理'
+}
+
+# mon__cron_register <project> — cron スケジュール登録 (cron-schedule.sh add へ委譲)
+mon__cron_register() {
+  local project="$1" t d
+  read -rp "  時刻 (HH:MM): " t || true
+  printf '  0=日 1=月 2=火 3=水 4=木 5=金 6=土 (月〜土なら 1,2,3,4,5,6)\n'
+  read -rp "  曜日 (例 1,2,3,4,5,6): " d || true
+  if [[ -n "$t" && -n "$d" ]]; then
+    bash "$SCRIPT_DIR/cron-schedule.sh" add --project "$project" --time "$t" --dow "$d" || log_warn "cron 登録に失敗"
+  else
+    log_warn "時刻/曜日が未入力のためキャンセル"
+  fi
+}
+
+# mon__onboard — 全プロジェクトを状態バッジ付きで選択し、自律管理に追加
+mon__onboard() {
+  local -a projs; mapfile -t projs < <(mon__all_projects)
+  tput cnorm 2>/dev/null || true
+  clear 2>/dev/null || true
+  printf '\n  %s== 🆕 新規プロジェクトを自律管理に追加 ==%s\n' "$C_CYAN" "$C_RESET"
+  if (( ${#projs[@]} == 0 )); then
+    printf '  プロジェクトがありません (%s)\n' "$(config_projects_dir)"
+    read -rp "  Enter で戻る " _ || true; tput civis 2>/dev/null || true; return 0
+  fi
+  local i; for i in "${!projs[@]}"; do
+    printf '   %s[%d]%s %-26s %s\n' "$C_YELLOW" "$((i + 1))" "$C_RESET" "${projs[$i]}" "$(mon__project_state_badge "${projs[$i]}")"
+  done
+  local sel p; read -rp "  番号 (0=キャンセル): " sel || true
+  if [[ "$sel" =~ ^[0-9]+$ ]] && (( sel >= 1 && sel <= ${#projs[@]} )); then
+    p="${projs[$((sel - 1))]}"
+    printf '\n  %s─ %s に対して ─%s\n' "$C_CYAN" "$p" "$C_RESET"
+    printf '   [1] 🔁 supervisor 開始 (Goal到達まで自律再開)\n'
+    printf '   [2] ▶️  1回だけ自律起動 (BG)\n'
+    printf '   [3] 📅 cron スケジュール登録\n'
+    printf '   [0] キャンセル\n'
+    local act; read -rp "  選択: " act || true
+    case "$act" in
+      1) mon__supervise_start "$p" ;;
+      2) bash "$SCRIPT_DIR/cron-schedule.sh" run-now --project "$p" || true ;;
+      3) mon__cron_register "$p" ;;
+      *) : ;;
+    esac
+    read -rp "  Enter で戻る " _ || true
+  fi
+  tput civis 2>/dev/null || true
+}
+
+# ------------------------------------------------------------
 # 描画
 # ------------------------------------------------------------
 mon__hr() { printf '  %s%s%s\n' "$C_GRAY" "$(printf '─%.0s' {1..56})" "$C_RESET"; }
@@ -279,8 +346,8 @@ mon__render_once() {
   done < <(mon__collect_registered)
   (( rn == 0 )) && printf '   %s(登録なし — 項14 cron 登録 / autonomy.sh start)%s\n' "$C_GRAY" "$C_RESET"
   mon__hr
-  printf '   %s[1-9]%s介入FG %sCtrl-b 0%s監視 %s[l]%s起動 %s[s]%s監督開始 %s[x]%s監督停止 %s[r]%s更新 %s[q]%s終了\n' \
-    "$C_GREEN" "$C_RESET" "$C_CYAN" "$C_RESET" "$C_YELLOW" "$C_RESET" "$C_YELLOW" "$C_RESET" \
+  printf '   %s[1-9]%s介入FG %sCtrl-b 0%s監視 %s[n]%s新規追加 %s[l]%s起動 %s[s]%s監督開始 %s[x]%s監督停止 %s[q]%s終了\n' \
+    "$C_GREEN" "$C_RESET" "$C_CYAN" "$C_RESET" "$C_GREEN" "$C_RESET" "$C_YELLOW" "$C_RESET" \
     "$C_YELLOW" "$C_RESET" "$C_YELLOW" "$C_RESET" "$C_YELLOW" "$C_RESET"
 }
 
@@ -298,6 +365,7 @@ mon__dashboard() {
     case "$key" in
       q|Q) break ;;
       [1-9]) "$TMUX_BIN" select-window -t "$MON_SESSION:$key" 2>/dev/null || true ;;
+      n|N) mon__onboard ;;
       l|L) mon__action l ;;
       s|S) mon__action s ;;
       x|X) mon__action x ;;
@@ -340,6 +408,7 @@ Usage: monitor-sessions.sh [open|dashboard|sync|--once|--help]
 キー操作 (コントロールセンター表示中):
   [1-9]     その番号のプロジェクトタブへ切替 (フォアグラウンド/介入)
   Ctrl-b 0  ダッシュボードへ戻る   Ctrl-b n/p  次/前のタブ (tmux 標準)
+  [n]       全プロジェクトから選んで自律管理に追加 (supervisor / 1回起動 / cron登録)
   [l]       登録から選んで自律1セッション起動 (BG)
   [s]       登録から選んで supervisor 開始 (Goal到達まで自律再開)
   [x]       supervisor 停止
