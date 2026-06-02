@@ -24,6 +24,7 @@ JSON
   mkdir -p "$TEST_TEMP/projects/MyProj" "$TEST_TEMP/projects/Other"
   export CCSU_CRON_LAUNCHER="$TEST_TEMP/cron-launcher.sh"
   export CCSU_CRON_LOGS_DIR="$TEST_TEMP/logs"
+  export CCSU_SUP_DIR="$TEST_TEMP/sup"   # supervised 判定が実 ~/.claudeos を見ないように
   SCRIPT="$REPO_ROOT/bin/cron-schedule.sh"
 }
 teardown() { _bats_common_teardown; }
@@ -144,6 +145,35 @@ EOF
   run bash "$SCRIPT" launch --all
   [ "$status" -eq 0 ]
   [[ "$output" != *"BG 起動:"* ]]
+}
+
+@test "bulk-register: dry-run で曜日分散の計画を表示 (実登録しない)" {
+  run bash "$SCRIPT" bulk-register --dow 1,2 --start 9 --spacing 3
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"DRY-RUN"* ]]
+  [[ "$output" == *"MyProj"* ]]
+  [[ "$output" == *"月曜 09:00"* ]]
+  # crontab には書かれない
+  [[ "$output" != *"crontab 更新"* ]]
+  run bash "$SCRIPT" list
+  [[ "$output" == *"ありません"* ]]
+}
+
+@test "bulk-register --apply: crontab に登録される" {
+  run bash "$SCRIPT" bulk-register --dow 1 --apply
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"一括登録: 登録"* ]]
+  run cat "$CRON_STORE"
+  [[ "$output" == *"project=MyProj"* ]]
+  [[ "$output" == *"project=Other"* ]]
+}
+
+@test "bulk-register --unmanaged-only: cron 登録済みを除外" {
+  bash "$SCRIPT" add --project MyProj --time 21:00 --dow 1 >/dev/null
+  run bash "$SCRIPT" bulk-register --unmanaged-only --dow 1
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"1 件"* ]]
+  [[ "$output" == *"Other"* ]]
 }
 
 @test "不明サブコマンドでエラー" {

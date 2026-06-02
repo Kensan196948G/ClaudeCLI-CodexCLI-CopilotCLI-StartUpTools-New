@@ -282,20 +282,41 @@ mon__cron_register() {
   fi
 }
 
-# mon__onboard — 全プロジェクトを状態バッジ付きで選択し、自律管理に追加
+# mon__is_github <project> — .git + remote origin があれば 0 (GitHub レポジトリ判定)
+mon__is_github() {
+  local d; d="$(config_projects_dir)/$1"
+  [[ -d "$d/.git" ]] || return 1
+  git -C "$d" remote get-url origin >/dev/null 2>&1
+}
+
+# mon__onboard [filter] — 全プロジェクトを 状態/GitHub バッジ付きで選び、自律管理に追加
+#   filter="unmanaged" で未管理(⚪)のみ表示 (u/a キーで切替)
 mon__onboard() {
-  local -a projs; mapfile -t projs < <(mon__all_projects)
+  local filter="${1:-}"
+  local -a all; mapfile -t all < <(mon__all_projects)
+  local -a projs=(); local p
+  for p in "${all[@]}"; do
+    if [[ "$filter" == "unmanaged" && "$(mon__project_state_badge "$p")" != *"未管理"* ]]; then continue; fi
+    projs+=("$p")
+  done
   tput cnorm 2>/dev/null || true
   clear 2>/dev/null || true
-  printf '\n  %s== 🆕 新規プロジェクトを自律管理に追加 ==%s\n' "$C_CYAN" "$C_RESET"
+  printf '\n  %s== 🆕 新規プロジェクトを自律管理に追加%s ==%s\n' \
+    "$C_CYAN" "$([[ "$filter" == unmanaged ]] && printf ' (未管理のみ)')" "$C_RESET"
   if (( ${#projs[@]} == 0 )); then
-    printf '  プロジェクトがありません (%s)\n' "$(config_projects_dir)"
+    printf '  対象プロジェクトがありません%s\n' "$([[ "$filter" == unmanaged ]] && printf ' (未管理なし)')"
     read -rp "  Enter で戻る " _ || true; tput civis 2>/dev/null || true; return 0
   fi
-  local i; for i in "${!projs[@]}"; do
-    printf '   %s[%d]%s %-26s %s\n' "$C_YELLOW" "$((i + 1))" "$C_RESET" "${projs[$i]}" "$(mon__project_state_badge "${projs[$i]}")"
+  local i gh; for i in "${!projs[@]}"; do
+    if mon__is_github "${projs[$i]}"; then gh="🐙"; else gh="　"; fi
+    printf '   %s[%d]%s %s %-30s %s\n' "$C_YELLOW" "$((i + 1))" "$C_RESET" "$gh" "${projs[$i]}" "$(mon__project_state_badge "${projs[$i]}")"
   done
-  local sel p; read -rp "  番号 (0=キャンセル): " sel || true
+  printf '   %s🐙=GitHubレポジトリ  ⚪未管理 が追加候補%s\n' "$C_GRAY" "$C_RESET"
+  local sel p; read -rp "  番号 (0=キャンセル / u=未管理のみ / a=全表示): " sel || true
+  case "$sel" in
+    u|U) mon__onboard unmanaged; return 0 ;;
+    a|A) mon__onboard; return 0 ;;
+  esac
   if [[ "$sel" =~ ^[0-9]+$ ]] && (( sel >= 1 && sel <= ${#projs[@]} )); then
     p="${projs[$((sel - 1))]}"
     printf '\n  %s─ %s に対して ─%s\n' "$C_CYAN" "$p" "$C_RESET"

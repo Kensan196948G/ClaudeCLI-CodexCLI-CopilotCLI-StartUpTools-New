@@ -205,6 +205,25 @@ bash bin/autonomy.sh list                      # すべての Supervisor 一覧
 > 🧠 **裏側のしくみ（安心ポイント）**: 「追加」とは “supervisor を開始する／cron に登録する” こと **そのもの**です。
 > 別の管理リストを作らないので、画面の表示と実際の動きが**ズレません**。
 
+**🐙 GitHub バッジ & フィルタ**: 一覧では GitHub レポジトリを持つプロジェクトに `🐙` が付きます。
+プロジェクトが多いときは `u`（未管理のみ）/ `a`（全表示）で絞り込めます。
+
+### 📅 たくさんのプロジェクトをまとめて登録（曜日分散）
+
+> プロジェクトが多くて 1 つずつ登録するのが大変なときは、**未管理の GitHub プロジェクトを曜日・時刻に自動で振り分けて一括登録**できます（全部いっぺんに動かすとマシンが重くなるので、自動で分散します）。
+
+```bash
+# ① まず計画を確認（DRY-RUN：登録はされません）
+bash bin/cron-schedule.sh bulk-register --github-only --unmanaged-only
+#   例: 18 件を 月〜土 × 09:00 / 14:00 / 19:00 に分散（セッションが重ならない間隔）
+
+# ② 計画に納得したら適用
+bash bin/cron-schedule.sh bulk-register --github-only --unmanaged-only --apply
+```
+
+> 💡 既定の時間間隔は 1 セッションの長さ（5 時間）に合わせてあり、**同じ日のセッションが重なりません**。
+> もっと詰めたい/空けたい場合は `--start 9`（開始時刻）`--spacing 5`（間隔h）`--dow 1,2,3,4,5,6`（曜日）で調整できます。
+
 ---
 
 ## 📧 メール通知 & 🌐 Web ダッシュボード
@@ -290,7 +309,7 @@ bash bin/cron-schedule.sh add --project A --time 21:00 --dow 1,2,3,4,5,6
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.4.4** — コントロールセンターの UX 修正（キー誤入力 / 重複タブ）/ 旧: v3.4.3 |
+| バージョン | **v3.4.5** — 多数プロジェクト管理の効率化（GitHubバッジ / 未管理フィルタ / 一括cron登録）/ 旧: v3.4.4 |
 | 実行基盤 | 🐧 **Linux ネイティブ**（`start.sh` / `bin/*.sh` / tmux / cron） |
 | テスト | ✅ **bats 194 件**（Linux）+ **Pester**（pwsh / Windows CI）/ shellcheck 0 |
 | CI | ✅ SUCCESS（ShellCheck+bats / test-and-validate / Secrets / PSScriptAnalyzer / CodeRabbit） |

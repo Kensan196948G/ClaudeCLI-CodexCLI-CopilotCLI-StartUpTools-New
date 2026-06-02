@@ -2,6 +2,37 @@
 
 # CHANGELOG
 
+## [v3.4.5] - 2026-06-02 — 多数プロジェクト管理の効率化（GitHub バッジ / 未管理フィルタ / 一括 cron 登録）
+
+### 🎯 概要
+多数のプロジェクト（GitHub レポジトリ 21 件等）を効率よく管理できるよう 3 点を追加。①コントロールセンターの `n` ピッカーに **GitHub バッジ（🐙）と未管理フィルタ（`u`/`a`）**、②未管理プロジェクトを**曜日・時刻に分散して一括 cron 登録**するヘルパ（`bulk-register`）、③存在しない dir を指す stale cron の掃除（運用）。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `bin/monitor-sessions.sh` | `n` ピッカーに `mon__is_github`（🐙 バッジ）+ 未管理フィルタ（`u`=未管理のみ / `a`=全表示） |
+| `bin/cron-schedule.sh` | **`bulk-register`** サブコマンド追加（`--github-only` / `--unmanaged-only` / `--start` / `--spacing` / `--duration` / `--dow` / `--apply`）。既定 **dry-run**、既定間隔 = duration 時間で**重複ゼロ**、重複設定時は警告 |
+| `tests/bats/unit/*` | `bulk-register` 3 件 + `mon__is_github` 2 件追加 |
+
+### ✅ 内容
+
+- 32 プロジェクトから**未管理の GitHub プロジェクトを一目で選べる**（🐙 + ⚪/📅/🔁/🟢 バッジ、`u` で未管理のみ）
+- 一括登録は**曜日 round-robin + 時刻スロットで負荷分散**（全件同時起動を回避）。既定間隔は duration と同じ時間にして**同日のセッション重複を防止**（例: 300m → 09:00/14:00/19:00）
+- 既定 **dry-run（計画プレビュー）** → `--apply` で実登録。**コスト/負荷を確認してから適用**できる
+- 全 bats **204 件** / shellcheck error 0
+
+### 🔑 使い方
+
+```bash
+# 未管理の GitHub プロジェクトを曜日分散で一括登録（まず計画を確認）
+bash bin/cron-schedule.sh bulk-register --github-only --unmanaged-only
+# 計画に納得したら適用
+bash bin/cron-schedule.sh bulk-register --github-only --unmanaged-only --apply
+```
+
+---
+
 ## [v3.4.4] - 2026-06-02 — コントロールセンターの UX 修正（キー誤入力 / 重複タブ）
 
 ### 🎯 概要
