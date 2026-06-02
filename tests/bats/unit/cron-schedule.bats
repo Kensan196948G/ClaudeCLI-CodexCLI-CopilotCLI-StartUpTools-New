@@ -21,7 +21,7 @@ esac
   cat > "$AI_STARTUP_CONFIG_PATH" <<JSON
 { "linuxBase": "$TEST_TEMP/projects", "projectsDir": "$TEST_TEMP/projects" }
 JSON
-  mkdir -p "$TEST_TEMP/projects/MyProj" "$TEST_TEMP/projects/Other"
+  mkdir -p "$TEST_TEMP/projects/MyProj/.git" "$TEST_TEMP/projects/Other/.git"
   export CCSU_CRON_LAUNCHER="$TEST_TEMP/cron-launcher.sh"
   export CCSU_CRON_LOGS_DIR="$TEST_TEMP/logs"
   export CCSU_SUP_DIR="$TEST_TEMP/sup"   # supervised 判定が実 ~/.claudeos を見ないように

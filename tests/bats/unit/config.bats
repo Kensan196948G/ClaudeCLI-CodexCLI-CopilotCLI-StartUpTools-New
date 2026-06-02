@@ -104,3 +104,17 @@ teardown() { _bats_common_teardown; }
   run config_require
   [ "$status" -ne 0 ]
 }
+
+@test "config_project_list: dir+.git のみ列挙 (ファイル/非Git/隠し除外)" {
+  local base="$TEST_TEMP/pl"
+  mkdir -p "$base/RepoA/.git" "$base/RepoB/.git" "$base/PlainDir"
+  touch "$base/file.md" "$base/.hidden"
+  printf '{ "linuxBase": "%s" }\n' "$base" > "$TEST_TEMP/pl-config.json"
+  CCSU_CONFIG_PATH="$TEST_TEMP/pl-config.json"
+  run config_project_list
+  [[ "$output" == *"RepoA"* ]]
+  [[ "$output" == *"RepoB"* ]]
+  [[ "$output" != *"PlainDir"* ]]
+  [[ "$output" != *"file.md"* ]]
+  [[ "$output" != *".hidden"* ]]
+}

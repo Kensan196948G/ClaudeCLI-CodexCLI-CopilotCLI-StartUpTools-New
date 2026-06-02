@@ -30,6 +30,21 @@ config_projects_dir() {
   if [[ -n "$base" ]]; then printf '%s' "$base"; else config_get '.projectsDir' "$HOME/Projects"; fi
 }
 
+# --- プロジェクト列挙 (正本) ---
+#   条件: config_projects_dir 直下の「ディレクトリ かつ Git リポジトリ(.git 保有)」のみ。
+#   ファイル・非 Git ディレクトリ・隠しエントリは除外。出力は名前を 1 行 1 件 (名前順)。
+#   ※ */ グロブがディレクトリのみ・隠し除外を満たすため、.md/.sh/.json 等は自然に落ちる。
+config_project_list() {
+  local base; base="$(config_projects_dir)"
+  [[ -d "$base" ]] || return 0
+  local d
+  for d in "$base"/*/; do
+    [[ -d "$d" ]] || continue         # マッチ無し時の literal "*/" 対策
+    [[ -d "${d}.git" ]] || continue   # Git リポジトリのみ (.git サブディレクトリ保有)
+    basename "$d"
+  done
+}
+
 # --- 接続情報 (移行後はローカル実行のため参考値) ---
 config_linux_host() { config_get '.linuxHost' ''; }
 config_linux_user() { config_get '.linuxUser' "$USER"; }

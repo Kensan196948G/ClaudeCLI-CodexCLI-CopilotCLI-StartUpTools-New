@@ -16,12 +16,8 @@ _CCSU_LAUNCHER_LOADED=1
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/config-loader.sh"
 
-# launcher__project_list — config_projects_dir 配下のプロジェクト名 (隠し除外)
-launcher__project_list() {
-  local base; base="$(config_projects_dir)"
-  [[ -d "$base" ]] || return 0
-  ls -1 "$base" 2>/dev/null | grep -v '^\.' || true
-}
+# launcher__project_list — プロジェクト列挙 (config_project_list: dir かつ Git リポジトリのみ)
+launcher__project_list() { config_project_list; }
 
 # launcher__project_dir <project> — プロジェクトの絶対パス
 launcher__project_dir() { printf '%s/%s' "$(config_projects_dir)" "$1"; }
