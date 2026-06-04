@@ -267,7 +267,6 @@ function Show-Menu {
         " 9  🤝 Agent Teams ランタイム",
         "10  🌿 Worktree Manager",
         "11  🏛️  Architecture Check",
-        "12  📊 Statusline 設定",
         "16  🤝 Agent Teams Status (CLI 表示)",
         "PD  🌐 Projects Dashboard (進捗 WebUI)",
         "MC  🎛️  Mission Control (統合管理 / Agent Teams 計測)",
@@ -440,7 +439,6 @@ while ($true) {
         "9"  { Invoke-MenuScript -File "scripts\test\Test-AgentTeams.ps1" }
         "10" { Invoke-MenuScript -File "scripts\test\Test-WorktreeManager.ps1" }
         "11" { Invoke-MenuScript -File "scripts\test\Test-ArchitectureCheck.ps1" }
-        "12" { Invoke-MenuScript -File "scripts\main\Set-Statusline.ps1" }
         "14" {
             # 自律実行スケジュール: Register-AutoRunTask.ps1 (Windows タスクスケジューラ) の登録/解除/状態。
             $arProj = Select-LocalProject

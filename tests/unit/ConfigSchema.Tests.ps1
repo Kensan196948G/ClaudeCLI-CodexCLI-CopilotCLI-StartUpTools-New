@@ -12,10 +12,6 @@ BeforeAll {
         [PSCustomObject]@{
             version        = '2.0.0'
             projectsDir    = 'D:\'
-            sshProjectsDir = 'auto'
-            projectsDirUnc = '\\192.168.0.1\Projects'
-            linuxHost      = '192.168.0.1'
-            linuxBase      = '/home/user/Projects'
             tools          = [PSCustomObject]@{
                 defaultTool = 'claude'
                 claude      = [PSCustomObject]@{
@@ -102,13 +98,6 @@ Describe 'Test-StartupConfigSchema' {
             $cfg.version = $null
             $result = Test-StartupConfigSchema -Config $cfg
             $result | Should -Contain '必須フィールドが不足しています: version'
-        }
-
-        It 'reports error when linuxHost is empty string' {
-            $cfg = Get-ValidConfig
-            $cfg.linuxHost = ''
-            $result = Test-StartupConfigSchema -Config $cfg
-            $result | Should -Contain '必須フィールドが不足しています: linuxHost'
         }
 
         It 'reports error when projectsDir is whitespace only' {
@@ -257,26 +246,6 @@ Describe 'Test-StartupConfigSchema' {
             }) -Force
             $result = Test-StartupConfigSchema -Config $cfg
             $result | Should -Contain 'logging.enabled は boolean である必要があります'
-        }
-    }
-
-    Context 'optional ssh validation' {
-        It 'reports error when ssh.autoCleanup is not boolean' {
-            $cfg = Get-ValidConfig
-            $cfg | Add-Member -NotePropertyName 'ssh' -NotePropertyValue ([PSCustomObject]@{
-                autoCleanup = 'yes'
-            }) -Force
-            $result = Test-StartupConfigSchema -Config $cfg
-            $result | Should -Contain 'ssh.autoCleanup は boolean である必要があります'
-        }
-
-        It 'reports error when ssh.options is not an array' {
-            $cfg = Get-ValidConfig
-            $cfg | Add-Member -NotePropertyName 'ssh' -NotePropertyValue ([PSCustomObject]@{
-                options = '-t'
-            }) -Force
-            $result = Test-StartupConfigSchema -Config $cfg
-            $result | Should -Contain 'ssh.options は配列である必要があります'
         }
     }
 
