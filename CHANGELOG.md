@@ -2,9 +2,49 @@
 
 # CHANGELOG
 
+## [v3.4.9] - 2026-06-04 — 全プロセス統合 Supervisor daemon 新設 + Windows ローカル一本化完全移行
+
+### 🎯 概要
+
+Phase 1〜6 完走。`supervisor-daemon.js` による全プロセス一元監視・自動再起動（指数バックオフ cooldown / maxRestarts 10）、OS ネイティブ登録（Windows Task Scheduler / Linux systemd user service）、SSH 名残 150+ 箇所除去、Windows ローカル一本化を完了。Pester 891件・bats supervisor 9件追加。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `scripts/dashboards/supervisor-daemon.js` | 全プロセス統合 supervisor daemon（新規）— Node.js built-in のみ、win32/linux 両対応 |
+| `config/processes.json` | supervisor プロセス定義（dashboard / claude-session）|
+| `scripts/main/Register-SupervisorTask.ps1` | Windows Task Scheduler への supervisor 登録 |
+| `scripts/dashboards/start-supervisor-task.ps1` | Windows 上での supervisor 起動ラッパー |
+| `scripts/dashboards/install-supervisor-service.sh` | Linux systemd user service インストール |
+| `scripts/dashboards/serve-dashboard.js` | `/api/supervisor/status` + SSE `supervisor-update` 追加（fs.watchFile 疎結合）|
+| `scripts/dashboards/mission-control.html` | SupervisorPanel 追加（プロセス状態テーブル + 操作ボタン）|
+| `scripts/main/Start-ClaudeAutoTimeout.ps1` | Windows 自律ランチャ（新規）— cron-launcher.sh PS 移植 |
+| `scripts/main/Register-AutoRunTask.ps1` | Windows Task Scheduler への自律実行登録 |
+| `scripts/lib/SessionManager.psm1` | session.json CRUD（Linux bash 版と同一スキーマ）|
+| `scripts/main/Start-Menu.ps1` | S1→ローカル BG / 項14→AutoRun Task Scheduler / 項15→Watch-SessionInfo |
+| `tests/unit/Supervisor.Tests.ps1` | supervisor Pester 32件（新規）|
+| `tests/bats/unit/install-supervisor-service.bats` | install-supervisor-service.sh bats 9件（新規）|
+| `README.md` | Phase 1〜6 完了、supervisor 設計詳細、全プロセス監視アーキテクチャ追記 |
+
+### ✅ 主な改善内容
+
+- **supervisor daemon**: 8秒ループ死活監視（http=GET /api/health / session-file=status+staleMin / PID補助）
+- **自動再起動**: 指数バックオフ（`backoffBaseSec×2^失敗回数`、上限300s）/ maxRestarts 到達で `disabled`
+- **PID 二重起動防止**: `~/.claudeos/supervisor/supervisor.pid` による排他制御
+- **疎結合設計**: daemon → `~/.claudeos/supervisor/state.json` / serve-dashboard.js が `fs.watchFile` で読取
+- **Windows 自律ランチャ**: `Start-ClaudeAutoTimeout.ps1` + `Register-AutoRunTask.ps1`（Phase 1）
+- **Start-Menu ローカル化**: S1/項14/項15 をすべてローカル動作に切替（Phase 2）
+- **SSH 名残除去**: `linuxHost` 150+ 箇所・SSH 実行パスを削除（Phase 3）
+- **config schema 整理**: SSH キー除去・`linuxBase`→`projectsDir` 改名（Phase 4）
+- **テスト**: Pester 891件（+32件）/ bats 9件（supervisor 新規）
+
+---
+
 ## [v3.4.8] - 2026-06-04 — Docker オーケストレーション統合 (compose 検出 / 台帳 CRUD / 雛形生成 / Hub 連携)
 
 ### 🎯 概要
+
 登録プロジェクトの Docker 統合管理機能を新設。**自動インストール・自動ログインは一切行わず**、compose 検出・スタック判定・台帳 CRUD・サービス起動/停止・Hub イメージ一覧を提供。`bin/menu.sh` の `DK` メニューから対話操作可能。
 
 ### 🔧 新規ファイル
@@ -35,9 +75,6 @@
 ---
 
 ## [v3.4.7] - 2026-06-02 — プロジェクト列挙を「Git リポジトリのディレクトリのみ」に統一
-
-### 🎯 概要
-プロジェクト選択の対象を **「ディレクトリ かつ Git リポジトリ（`.git` 保有）」** に限定。ファイル（`.md`/`.sh`/`.json` 等）や非 Git ディレクトリ（整理用フォルダ等）を一覧から除外。共通ヘルパ `config_project_list` を新設し、`n` ピッカー / cron 登録 / 手動起動（L1/S1）で共有（単一の定義 = SoT）。
 
 ### 🔧 変更対象
 

@@ -3,15 +3,15 @@
 # ============================================================
 
 # Required field definitions (script scope — shared with dot-sourced siblings)
-$script:RequiredFields = @('version', 'linuxHost', 'tools')
-$script:TemplateRequiredFields = @('version', 'projectsDir', 'sshProjectsDir', 'projectsDirUnc', 'linuxHost', 'linuxBase', 'tools')
+$script:RequiredFields = @('version', 'tools')
+$script:TemplateRequiredFields = @('version', 'projectsDir', 'tools')
 $script:TemplateToolRequiredFields = @{
     claude  = @('enabled', 'command', 'args', 'installCommand', 'env', 'apiKeyEnvVar')
     codex   = @('enabled', 'command', 'args', 'installCommand', 'env', 'apiKeyEnvVar')
     copilot = @('enabled', 'command', 'args', 'installCommand', 'env')
 }
 $script:AllowedDefaultTools = @('claude', 'codex', 'copilot')
-$script:AllowedLauncherModes = @('local', 'ssh')
+$script:AllowedLauncherModes = @('local')
 
 function Test-IntegerValueInRange {
     param(
@@ -86,7 +86,7 @@ function Test-StartupConfigSchema {
         Add-SchemaError -Errors $errors -Message "tools.defaultTool は claude/codex/copilot のいずれかである必要があります"
     }
 
-    foreach ($pathField in @('projectsDir', 'sshProjectsDir', 'projectsDirUnc', 'linuxHost', 'linuxBase')) {
+    foreach ($pathField in @('projectsDir')) {
         $value = $Config.PSObject.Properties[$pathField]?.Value
         if ($null -ne $value -and $value -isnot [string]) {
             Add-SchemaError -Errors $errors -Message "$pathField は文字列である必要があります"
@@ -176,18 +176,6 @@ function Test-StartupConfigSchema {
         }
         if ($null -ne $logFailureKeep -and -not (Test-IntegerValueInRange -Value $logFailureKeep -Minimum 1 -Maximum 3650)) {
             Add-SchemaError -Errors $errors -Message "logging.failureKeepDays は 1 から 3650 の整数である必要があります"
-        }
-    }
-
-    $ssh = $Config.PSObject.Properties['ssh']?.Value
-    if ($null -ne $ssh) {
-        $sshAutoCleanup = $ssh.PSObject.Properties['autoCleanup']?.Value
-        $sshOptions     = $ssh.PSObject.Properties['options']?.Value
-        if ($null -ne $sshAutoCleanup -and $sshAutoCleanup -isnot [bool]) {
-            Add-SchemaError -Errors $errors -Message "ssh.autoCleanup は boolean である必要があります"
-        }
-        if ($null -ne $sshOptions -and $sshOptions -isnot [System.Array]) {
-            Add-SchemaError -Errors $errors -Message "ssh.options は配列である必要があります"
         }
     }
 

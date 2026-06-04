@@ -51,11 +51,9 @@ try {
     }
 
     $Local = Resolve-LauncherMode -Config $config -Local:$Local -NonInteractive:$NonInteractive -ConfigPath $ConfigPath
-    $linuxHost = $config.linuxHost
-    $linuxBase = $config.linuxBase
-    $Project = Resolve-LauncherProject -Config $config -Project $Project -Local:$Local -NonInteractive:$NonInteractive -LinuxHost $linuxHost
+    $Project = Resolve-LauncherProject -Config $config -Project $Project -Local:$Local -NonInteractive:$NonInteractive
     $modeName = Get-LauncherModeName -Local:$Local
-    $modeLabel = Get-LauncherModeLabel -Project $Project -Local:$Local -ProjectsDir $config.projectsDir -LinuxHost $linuxHost -LinuxBase $linuxBase
+    $modeLabel = Get-LauncherModeLabel -Project $Project -Local:$Local -ProjectsDir $config.projectsDir
 
     $launchContext.Project = $Project
     $launchContext.Mode = $modeName
@@ -97,36 +95,6 @@ try {
         $launchContext.Result = if ($exitCode -eq 0) { 'success' } else { 'failure' }
         exit $exitCode
     }
-
-    $linuxProject = "$linuxBase/$Project"
-
-    # SSH（Linux）モードでは config と同じ copilot --yolo を使用
-    $sshArgs = if (@($arguments).Count -gt 0) { $arguments -join ' ' } else { '--yolo' }
-    $runScript = "cd '$linuxProject' && $command $sshArgs"
-
-    if ($DryRun) {
-        $lines = New-LauncherDryRunMessage -Command $command -LinuxHost $linuxHost -RemoteScript $runScript
-        Write-Info $lines[0]
-        Write-Host $lines[1]
-        $launchContext.Result = 'success'
-        exit 0
-    }
-
-    # SSH起動通知音
-    Invoke-LauncherNotificationSound -Tool 'copilot' -Config $config -Wait $false
-
-    Write-Info "Connecting via SSH: $linuxHost"
-    $sshExitCode = Invoke-LauncherSshScript -LinuxHost $linuxHost -RunScript $runScript -RemoteScriptName "run-copilot-$Project.sh"
-    # 255 は SSH 接続失敗（Invoke-LauncherSshScript 内で診断メッセージ表示済み）
-    # それ以外の終了コードはツールの正常終了として扱う
-    if ($sshExitCode -eq 255) {
-        $launchContext.Result = 'failure'
-        exit $sshExitCode
-    }
-
-    $launchContext.Result = 'success'
-    Write-Ok 'GitHub Copilot CLI session finished.'
-    exit 0
 }
 catch {
     if ($_.Exception.Message -eq 'USER_CANCELLED') {

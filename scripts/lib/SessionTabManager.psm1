@@ -127,7 +127,9 @@ function Set-SessionStatus {
     param(
         [Parameter(Mandatory)][string]$SessionId,
         [Parameter(Mandatory)]
-        [ValidateSet('running', 'completed', 'cancelled', 'exited', 'failed')]
+        # 'timeout' は cron-launcher.sh / Start-ClaudeAutoTimeout.ps1 の時間到達(exit 124 相当)。
+        # 失敗ではなく「計画時間を完走」の正常系。両OSの session.json スキーマを統一する。
+        [ValidateSet('running', 'completed', 'cancelled', 'exited', 'failed', 'timeout')]
         [string]$Status,
         [string]$ConfigSessionsDir = ''
     )

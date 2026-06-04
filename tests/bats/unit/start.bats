@@ -8,7 +8,7 @@ load '../helpers/common-setup'
 setup() {
   _bats_common_setup
   export AI_STARTUP_CONFIG_PATH="$TEST_TEMP/config.json"
-  echo '{ "linuxBase": "/home/kensan/Projects", "projectsDir": "/home/kensan/Projects" }' > "$AI_STARTUP_CONFIG_PATH"
+  echo '{ "projects": "/home/kensan/Projects", "projectsDir": "/home/kensan/Projects" }' > "$AI_STARTUP_CONFIG_PATH"
   export CCSU_STATE_FILE="$TEST_TEMP/state.json"
   echo '{}' > "$CCSU_STATE_FILE"
   export CLAUDEOS_PLAIN_OUTPUT=1

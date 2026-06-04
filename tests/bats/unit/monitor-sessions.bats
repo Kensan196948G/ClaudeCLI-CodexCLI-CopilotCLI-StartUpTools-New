@@ -49,7 +49,7 @@ esac
   export CCSU_SUP_DIR="$TEST_TEMP/sup"
   # config (全プロジェクト列挙 mon__all_projects 用)
   export AI_STARTUP_CONFIG_PATH="$TEST_TEMP/config.json"
-  printf '{ "linuxBase": "%s/projects" }\n' "$TEST_TEMP" > "$AI_STARTUP_CONFIG_PATH"
+  printf '{ "projects": "%s/projects" }\n' "$TEST_TEMP" > "$AI_STARTUP_CONFIG_PATH"
   mkdir -p "$TEST_TEMP/projects/Alpha/.git" "$TEST_TEMP/projects/Beta/.git"
 }
 teardown() { _bats_common_teardown; }

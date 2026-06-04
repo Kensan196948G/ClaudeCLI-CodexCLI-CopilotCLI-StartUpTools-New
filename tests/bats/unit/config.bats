@@ -12,9 +12,8 @@ setup() {
   cat > "$AI_STARTUP_CONFIG_PATH" <<'JSON'
 {
   "projectsDir": "D:\\",
-  "linuxHost": "192.168.0.185",
   "linuxUser": "kensan",
-  "linuxBase": "/home/kensan/Projects",
+  "projects": "/home/kensan/Projects",
   "tools": {
     "defaultTool": "claude",
     "claude": { "enabled": true, "command": "claude" },
@@ -31,14 +30,9 @@ JSON
 }
 teardown() { _bats_common_teardown; }
 
-@test "config_projects_dir: linuxBase を優先 (Windows D:\\ ではなく)" {
+@test "config_projects_dir: projects を優先 (Windows D:\\ ではなく)" {
   run config_projects_dir
   [ "$output" = "/home/kensan/Projects" ]
-}
-
-@test "config_linux_host: linuxHost を取得" {
-  run config_linux_host
-  [ "$output" = "192.168.0.185" ]
 }
 
 @test "config_linux_user: linuxUser を取得" {
@@ -109,7 +103,7 @@ teardown() { _bats_common_teardown; }
   local base="$TEST_TEMP/pl"
   mkdir -p "$base/RepoA/.git" "$base/RepoB/.git" "$base/PlainDir"
   touch "$base/file.md" "$base/.hidden"
-  printf '{ "linuxBase": "%s" }\n' "$base" > "$TEST_TEMP/pl-config.json"
+  printf '{ "projects": "%s" }\n' "$base" > "$TEST_TEMP/pl-config.json"
   CCSU_CONFIG_PATH="$TEST_TEMP/pl-config.json"
   run config_project_list
   [[ "$output" == *"RepoA"* ]]

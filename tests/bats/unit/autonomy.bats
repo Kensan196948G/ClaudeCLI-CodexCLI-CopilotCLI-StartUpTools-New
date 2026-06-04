@@ -9,7 +9,7 @@ load '../helpers/common-setup'
 setup() {
   _bats_common_setup
   export AI_STARTUP_CONFIG_PATH="$TEST_TEMP/config.json"
-  printf '{ "linuxBase": "%s/projects" }\n' "$TEST_TEMP" > "$AI_STARTUP_CONFIG_PATH"
+  printf '{ "projects": "%s/projects" }\n' "$TEST_TEMP" > "$AI_STARTUP_CONFIG_PATH"
   mkdir -p "$TEST_TEMP/projects/Demo"
   export CCSU_SUP_DIR="$TEST_TEMP/sup"
   export CCSU_SUP_CRON_LAUNCHER="$TEST_TEMP/cron-launcher.sh"

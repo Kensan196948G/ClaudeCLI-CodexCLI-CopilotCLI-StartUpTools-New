@@ -21,15 +21,9 @@
         $cmdPath = Join-Path $script:BinRoot "$cmd.cmd"
         Set-Content -Path $cmdPath -Encoding ASCII -Value "@echo off`recho $cmd stub"
     }
-    $script:SshCaptureRoot = Join-Path $TestDrive 'ssh-capture'
-
     $config = @{
         version        = '2.0.0'
         projectsDir    = $script:ProjectsRoot
-        projectsDirUnc = '\\test-host\projects'
-        sshProjectsDir = $script:SshProjectsRoot
-        linuxHost      = 'test-linux'
-        linuxBase      = '/home/kensan/Projects'
         localExcludes  = @()
         tools          = @{
             defaultTool = 'claude'
@@ -71,13 +65,11 @@
 
     $env:AI_STARTUP_CONFIG_PATH = $script:ConfigPath
     $env:PATH = "$script:BinRoot;$script:OriginalPath"
-    $env:AI_STARTUP_SSH_CAPTURE_DIR = $script:SshCaptureRoot
 }
 
 AfterAll {
     $env:PATH = $script:OriginalPath
     $env:AI_STARTUP_CONFIG_PATH = $script:OriginalConfigOverride
-    Remove-Item Env:AI_STARTUP_SSH_CAPTURE_DIR -ErrorAction SilentlyContinue
 }
 
 Describe 'Start-*.ps1 dry-run flows' {
@@ -139,36 +131,6 @@ Describe 'Start-*.ps1 dry-run flows' {
         (Test-Path $metadataPath) | Should -BeTrue
         (Get-Content $metadataPath -Raw -Encoding UTF8) | Should -Match '"project":"demo"'
         (Get-Content $metadataPath -Raw -Encoding UTF8) | Should -Match '"tool":"claude"'
-    }
-
-    It 'Start-ClaudeCode.ps1 が SSH 実行経路を通過できること' {
-        $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-ClaudeCode.ps1'
-        Remove-Item $script:SshCaptureRoot -Recurse -Force -ErrorAction SilentlyContinue
-        $output = & $script:PowerShellExe -NoProfile -File $scriptPath -Project demo -NonInteractive 2>&1 | Out-String
-        $LASTEXITCODE | Should -Be 0
-        $output | Should -Match 'SSH_CAPTURE'
-        (Get-Content (Join-Path $script:SshCaptureRoot 'script-name.txt') -Raw) | Should -Match 'run-claude-demo\.sh'
-        (Get-Content (Join-Path $script:SshCaptureRoot 'script.sh') -Raw) | Should -Match 'claude'
-    }
-
-    It 'Start-CodexCLI.ps1 が SSH 実行経路を通過できること' {
-        $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-CodexCLI.ps1'
-        Remove-Item $script:SshCaptureRoot -Recurse -Force -ErrorAction SilentlyContinue
-        $output = & $script:PowerShellExe -NoProfile -File $scriptPath -Project demo -NonInteractive 2>&1 | Out-String
-        $LASTEXITCODE | Should -Be 0
-        $output | Should -Match 'SSH_CAPTURE'
-        (Get-Content (Join-Path $script:SshCaptureRoot 'script-name.txt') -Raw) | Should -Match 'run-codex-demo\.sh'
-        (Get-Content (Join-Path $script:SshCaptureRoot 'script.sh') -Raw) | Should -Match 'codex'
-    }
-
-    It 'Start-CopilotCLI.ps1 が SSH 実行経路を通過できること' {
-        $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-CopilotCLI.ps1'
-        Remove-Item $script:SshCaptureRoot -Recurse -Force -ErrorAction SilentlyContinue
-        $output = & $script:PowerShellExe -NoProfile -File $scriptPath -Project demo -NonInteractive 2>&1 | Out-String
-        $LASTEXITCODE | Should -Be 0
-        $output | Should -Match 'SSH_CAPTURE'
-        (Get-Content (Join-Path $script:SshCaptureRoot 'script-name.txt') -Raw) | Should -Match 'run-copilot-demo\.sh'
-        (Get-Content (Join-Path $script:SshCaptureRoot 'script.sh') -Raw) | Should -Match 'copilot'
     }
 
     It 'Start-ClaudeOS.ps1 が正常終了してブートサマリーを出力すること' {
@@ -279,10 +241,6 @@ Describe 'Start-Menu helper flows' {
         @{
             version = '2.0.0'
             projectsDir = $script:ProjectsRoot
-            sshProjectsDir = $script:SshProjectsRoot
-            projectsDirUnc = '\\test-host\projects'
-            linuxHost = 'test-linux'
-            linuxBase = '/home/kensan/Projects'
             localExcludes = @()
             tools = @{
                 defaultTool = 'claude'

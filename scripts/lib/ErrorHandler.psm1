@@ -49,7 +49,7 @@ $script:CategorySolutions = @{
     )
     CONFIG_INVALID = @(
         "1. config.json の JSON 構文を確認",
-        "2. 必須フィールドが存在するか確認: version, linuxHost, tools",
+        "2. 必須フィールドが存在するか確認: version, projectsDir, tools",
         "3. config.json.template と比較して不足項目を確認"
     )
     DEPENDENCY_MISSING = @(
@@ -70,9 +70,9 @@ $script:CategorySolutions = @{
         "4. 環境変数に設定: `$env:ANTHROPIC_API_KEY = 'your-key'" # arch-check:ignore
     )
     DRIVE_ACCESS = @(
-        "1. ドライブ診断を実行: start.bat → オプション 6",
-        "2. config.json に projectsDirUnc を設定",
-        "3. UNC パスへの直接アクセスを確認: Test-Path '\\\\server\\share'"
+        "1. ツール診断を実行: start.bat → オプション 5",
+        "2. config.json の projects (Linux) / projectsDir (Windows) パスを確認",
+        "3. パスの存在を確認: Test-Path '<projects パス>'"
     )
     PERMISSION_DENIED = @(
         "1. 管理者権限で PowerShell を起動",

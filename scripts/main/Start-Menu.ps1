@@ -21,8 +21,6 @@ if ($env:AI_STARTUP_MENU_TEST_EXPORT -ne '1') {
 
     $ConfigPath = Get-StartupConfigPath -StartupRoot $ProjectRoot
     $Config = Import-LauncherConfig -ConfigPath $ConfigPath
-    $LinuxHost = if ($Config.linuxHost) { $Config.linuxHost } else { "未設定" }
-    $LinuxBase = if ($Config.linuxBase) { $Config.linuxBase } else { "未設定" }
     $LocalDir  = if ($Config.projectsDir) { $Config.projectsDir } else { "未設定" }
     $ShellExe = Get-LauncherShell
 }
@@ -223,8 +221,6 @@ function Show-Menu {
 
     Write-Host "  📋 フェーズ: " -NoNewline -ForegroundColor DarkGray
     Write-Host "$phaseLabel$deployBadge" -ForegroundColor $phaseColor
-    Write-Host "  🔗 " -NoNewline -ForegroundColor Yellow
-    Write-Host "$LinuxHost ➜ $LinuxBase" -NoNewline -ForegroundColor White
     Write-Host "  📂 " -NoNewline -ForegroundColor Green
     Write-Host "$LocalDir" -ForegroundColor DarkGreen
     Write-Host ""
@@ -232,10 +228,10 @@ function Show-Menu {
     # 起動
     Write-Host "  🚀 " -NoNewline -ForegroundColor Cyan
     Write-Host "起動" -ForegroundColor DarkCyan
-    Write-Host "   " -NoNewline; Write-Host " S1 " -NoNewline -ForegroundColor Black -BackgroundColor Yellow
-    Write-Host "  ☁️  SSH (cron 自律 / 5h)" -ForegroundColor Yellow
     Write-Host "   " -NoNewline; Write-Host " L1 " -NoNewline -ForegroundColor Black -BackgroundColor Green
-    Write-Host "  🖥️  ローカル (即起動)" -ForegroundColor Green
+    Write-Host "  🖥️  ローカル即起動 (フォアグラウンド)" -ForegroundColor Green
+    Write-Host "   " -NoNewline; Write-Host " S1 " -NoNewline -ForegroundColor Black -BackgroundColor Yellow
+    Write-Host "  🌙 ローカルBG自律 (バックグラウンド / 5h)" -ForegroundColor Yellow
     Write-Host ""
 
     # デプロイ・保守移行（開発フェーズのみ）
@@ -271,8 +267,6 @@ function Show-Menu {
         " 9  🤝 Agent Teams ランタイム",
         "10  🌿 Worktree Manager",
         "11  🏛️  Architecture Check",
-        "12  📊 Statusline 設定",
-        "13  📡 Claude ログ監視タブを開く",
         "16  🤝 Agent Teams Status (CLI 表示)",
         "PD  🌐 Projects Dashboard (進捗 WebUI)",
         "MC  🎛️  Mission Control (統合管理 / Agent Teams 計測)",
@@ -283,12 +277,11 @@ function Show-Menu {
 
     # Cron
     Write-Host "  ⏰ " -NoNewline -ForegroundColor Yellow
-    Write-Host "Linux Cron 管理 " -NoNewline -ForegroundColor Yellow
-    Write-Host "[SSH 専用]" -ForegroundColor DarkYellow
+    Write-Host "自律実行 / セッション監視" -ForegroundColor Yellow
     Write-Host "   " -NoNewline; Write-Host " 14 " -NoNewline -ForegroundColor Black -BackgroundColor DarkBlue
-    Write-Host "  📅  Cron スケジュール 登録・編集・削除" -ForegroundColor Cyan
+    Write-Host "  📅  自律実行スケジュール (タスクスケジューラ 登録/解除/状態)" -ForegroundColor Cyan
     Write-Host "   " -NoNewline; Write-Host " 15 " -NoNewline -ForegroundColor Black -BackgroundColor DarkBlue
-    Write-Host "  📺  Linux セッション状態監視 (リアルタイム)" -ForegroundColor Cyan
+    Write-Host "  📺  セッション状態監視 (ローカル / リアルタイム)" -ForegroundColor Cyan
     Write-Host ""
 
     Write-Host $hr -ForegroundColor DarkGray
@@ -350,6 +343,32 @@ function Invoke-ToolFromMenu {
     Invoke-MenuScript -File "scripts\main\Start-All.ps1" -ScriptArgs $scriptArgs
 }
 
+# projectsDir 直下のプロジェクトを番号選択させ、選ばれた名前を返す (S1 / 項14 共通)。
+# 0 / 無効入力 / プロジェクト無しは $null を返す。
+function Select-LocalProject {
+    $projRoot = $Config.projectsDir
+    $projDirs = @(
+        Get-ChildItem -Path $projRoot -Directory -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -notin $Config.localExcludes } |
+            Sort-Object Name
+    )
+    if ($projDirs.Count -eq 0) {
+        Write-Host "  プロジェクトが見つかりません: $projRoot" -ForegroundColor Yellow
+        return $null
+    }
+    Write-Host ""
+    Write-Host "  === プロジェクトを選択 ===" -ForegroundColor Cyan
+    for ($i = 0; $i -lt $projDirs.Count; $i++) {
+        Write-Host ("   [{0}] {1}" -f ($i + 1), $projDirs[$i].Name)
+    }
+    Write-Host "   [0] 戻る" -ForegroundColor DarkGray
+    $sel = Read-Host "  プロジェクト番号"
+    if ($sel -match '^\d+$' -and [int]$sel -ge 1 -and [int]$sel -le $projDirs.Count) {
+        return $projDirs[[int]$sel - 1].Name
+    }
+    return $null
+}
+
 if ($env:AI_STARTUP_MENU_TEST_EXPORT -eq '1') {
     return
 }
@@ -359,7 +378,22 @@ while ($true) {
     $choice = Read-Host "  番号を入力してください"
 
     switch ($choice.ToUpper()) {
-        "S1" { Invoke-ToolFromMenu -Tool "claude" }
+        "S1" {
+            # ローカルBG自律: Start-ClaudeAutoTimeout.ps1 を別プロセスで起動し即メニューへ戻る。
+            # 進捗は項15 (session.json 監視) で確認する (bash版 nohup BG 自律と同モデル)。
+            $bgProj = Select-LocalProject
+            if ($bgProj) {
+                $autoScript = Join-Path $ProjectRoot "scripts\main\Start-ClaudeAutoTimeout.ps1"
+                Start-Process $ShellExe -ArgumentList @(
+                    '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $autoScript,
+                    '-Project', $bgProj, '-DurationMinutes', '300', '-Trigger', 'manual'
+                )
+                Write-Host ""
+                Write-Host "  🌙 $bgProj をバックグラウンド自律起動しました (最大5時間)。" -ForegroundColor Green
+                Write-Host "  📺 項15 でセッション状態を監視できます。" -ForegroundColor DarkGray
+                Start-Sleep -Seconds 2
+            }
+        }
         "L1" { Invoke-ToolFromMenu -Tool "claude" -Local }
         "DP" { Invoke-MenuScript -File "scripts\main\Start-DeployPrep.ps1" }
         "M"  {
@@ -377,7 +411,6 @@ while ($true) {
         "I"  { Invoke-MenuScript -File "scripts\main\Start-IncidentResponse.ps1" }
         "W"  { Invoke-MenuScript -File "scripts\main\Start-WeeklyDevOps.ps1" }
         "5"  { Invoke-MenuScript -File "scripts\test\Test-AllTools.ps1" }
-        "6"  { Invoke-MenuScript -File "scripts\test\test-drive-mapping.ps1" }
         "7"  {
             $wtBgImage = if (
                 ($Config.PSObject.Properties.Name -contains 'windowsTerminal') -and $Config.windowsTerminal -and
@@ -405,14 +438,25 @@ while ($true) {
         "9"  { Invoke-MenuScript -File "scripts\test\Test-AgentTeams.ps1" }
         "10" { Invoke-MenuScript -File "scripts\test\Test-WorktreeManager.ps1" }
         "11" { Invoke-MenuScript -File "scripts\test\Test-ArchitectureCheck.ps1" }
-        "12" { Invoke-MenuScript -File "scripts\main\Set-Statusline.ps1" }
-        "13" {
-            $watchScript = Join-Path $ProjectRoot "scripts\tools\Watch-ClaudeLog.ps1"
-            & $ShellExe -NoProfile -ExecutionPolicy Bypass -File $watchScript -NewTab
-            Write-Host ""
-            Read-Host "  Enterキーでメニューに戻ります"
+        "14" {
+            # 自律実行スケジュール: Register-AutoRunTask.ps1 (Windows タスクスケジューラ) の登録/解除/状態。
+            $arProj = Select-LocalProject
+            if ($arProj) {
+                Write-Host ""
+                Write-Host "  [1] 自律実行を登録 (週次)" -ForegroundColor Cyan
+                Write-Host "  [2] 登録を解除" -ForegroundColor Cyan
+                Write-Host "  [3] 状態を確認" -ForegroundColor Cyan
+                Write-Host "  [0] 戻る" -ForegroundColor DarkGray
+                $arAct = Read-Host "  操作を選択"
+                $arFile = "scripts\main\Register-AutoRunTask.ps1"
+                switch ($arAct) {
+                    '1' { Invoke-MenuScript -File $arFile -ScriptArgs @('-Project', $arProj, '-NonInteractive') }
+                    '2' { Invoke-MenuScript -File $arFile -ScriptArgs @('-Project', $arProj, '-Unregister', '-NonInteractive') }
+                    '3' { Invoke-MenuScript -File $arFile -ScriptArgs @('-Project', $arProj, '-Status', '-NonInteractive') }
+                    default { }
+                }
+            }
         }
-        "14" { Invoke-MenuScript -File "scripts\main\New-CronSchedule.ps1" }
         "PD" { Invoke-MenuScript -File "scripts\main\Start-Dashboard.ps1" }
         "MC" {
             $env:AI_STARTUP_PROJECTS_DIR = $Config.projectsDir
@@ -437,8 +481,17 @@ while ($true) {
             Read-Host "  Enterキーでメニューに戻ります"
         }
         "15" {
-            $watchScript = Join-Path $ProjectRoot "scripts\tools\Watch-SessionInfoSSH.ps1"
-            & $ShellExe -NoProfile -ExecutionPolicy Bypass -File $watchScript
+            # ローカル session.json を監視 (Watch-SessionInfo.ps1)。
+            # アクティブな running セッションを Get-ActiveSession で選んで渡す。
+            Import-Module (Join-Path $ProjectRoot "scripts\lib\SessionTabManager.psm1") -Force -DisableNameChecking
+            $active = Get-ActiveSession
+            if ($null -eq $active) {
+                Write-Host ""
+                Write-Host "  実行中のセッションがありません。" -ForegroundColor Yellow
+            } else {
+                $watchScript = Join-Path $ProjectRoot "scripts\tools\Watch-SessionInfo.ps1"
+                & $ShellExe -NoProfile -ExecutionPolicy Bypass -File $watchScript -SessionId $active.sessionId
+            }
             Write-Host ""
             Read-Host "  Enterキーでメニューに戻ります"
         }

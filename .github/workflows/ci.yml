@@ -80,10 +80,7 @@ jobs:
           $config = @{
             version = '2.0.0'
             projectsDir = $projects
-            sshProjectsDir = $projects
-            projectsDirUnc = '\\server\share'
-            linuxHost = 'host'
-            linuxBase = '/home/kensan/Projects'
+            projects = '/home/kensan/Projects'
             localExcludes = @()
             tools = @{
               defaultTool = 'claude'
@@ -289,3 +286,4 @@ jobs:
         run: |
           node scripts/validate-state-example.js
           node scripts/check-doc-versions.js
+          node scripts/test/test-supervisor-smoke.js

@@ -254,7 +254,7 @@ function Complete-LauncherExecutionContext {
         mode = $Context.Mode
         result = $Context.Result
         elapsedMs = $elapsedMs
-        host = if ($Config.linuxHost) { $Config.linuxHost } else { $env:COMPUTERNAME }
+        host = $env:COMPUTERNAME
     })
 }
 
