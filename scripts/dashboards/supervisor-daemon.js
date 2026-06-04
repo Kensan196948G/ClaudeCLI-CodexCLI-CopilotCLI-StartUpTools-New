@@ -13,9 +13,9 @@ const { spawn } = require('child_process');
 
 // ── Paths ────────────────────────────────────────────────────────────────────
 const PROJ_ROOT      = path.resolve(__dirname, '..', '..');
-const PROCESSES_CFG  = path.join(PROJ_ROOT, 'config', 'processes.json');
-const SUPERVISOR_DIR = path.join(os.homedir(), '.claudeos', 'supervisor');
-const STATE_FILE     = path.join(SUPERVISOR_DIR, 'state.json');
+const PROCESSES_CFG  = process.env.SUPERVISOR_PROCESSES_CFG || path.join(PROJ_ROOT, 'config', 'processes.json');
+const SUPERVISOR_DIR = process.env.SUPERVISOR_STATE_DIR     || path.join(os.homedir(), '.claudeos', 'supervisor');
+const STATE_FILE     = process.env.SUPERVISOR_STATE_FILE    || path.join(SUPERVISOR_DIR, 'state.json');
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const CHECK_INTERVAL_MS  = 8000;   // main loop cadence

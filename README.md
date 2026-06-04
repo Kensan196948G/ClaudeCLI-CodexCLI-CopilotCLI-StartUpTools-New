@@ -13,8 +13,8 @@
 > **🚀 ClaudeOS v9.0 — `/goal` + Agent Teams + Agent View 完全統合**
 > Claude Code v2.1.139+ の公式機能を全統合。`/goal` コマンドで達成条件を設定し Haiku が自動判定、Agent Teams で並列協調開発、`claude agents`（Agent View）でセッション監視。固定ループ → 動的判断型へ移行。詳細は [`CLAUDE.md`](./CLAUDE.md) を参照。
 
-> **🔄 v3.3.8 — 全プロセス統合 Supervisor daemon 新設**
-> `supervisor-daemon.js` で Dashboard・watch-runner・claude-session を一元監視（8秒ループ死活判定・自動再起動・指数バックオフ cooldown・ログ集約）。Windows は `Register-SupervisorTask.ps1`（Task Scheduler）、Linux は `install-supervisor-service.sh`（systemd user service + loginctl linger）で OS ネイティブ登録。`serve-dashboard.js` に `/api/supervisor/status` + SSE `supervisor-update` を追加し、Mission Control SupervisorPanel でリアルタイム表示。Pester **891件**（32件追加）・bats supervisor **9テスト**追加。
+> **🔄 v3.3.8 — 全プロセス統合 Supervisor daemon 新設 + CI smoke test**
+> `supervisor-daemon.js` で Dashboard・watch-runner・claude-session を一元監視（8秒ループ死活判定・自動再起動・指数バックオフ cooldown・ログ集約）。Windows は `Register-SupervisorTask.ps1`（Task Scheduler）、Linux は `install-supervisor-service.sh`（systemd user service + loginctl linger）で OS ネイティブ登録。`serve-dashboard.js` に `/api/supervisor/status` + SSE `supervisor-update` を追加し、Mission Control SupervisorPanel でリアルタイム表示。Pester **891件**（32件追加）・bats supervisor **9テスト**追加。CI（ubuntu）に Node.js supervisor smoke test（`test-supervisor-smoke.js`）を追加 — env override パターンで副作用ゼロの daemon 起動・state.json 構造検証を自動実行。
 
 > **🎨 v3.3.6 — Mission Control 6項目 UI 大幅改善**
 > Projects: Cron のみデフォルト表示（簡易 12件除外）/ Dashboard: 稼働プロジェクトバナー（名前/経過/フェーズ/Goal）/ 健全性: 全プロジェクト健全性テーブル / CI/GitHub: プロジェクト選択 + 全STABLE一覧タブ / Cron: 06/01(月) 08:30 フル日時表示。
@@ -355,7 +355,7 @@ bash bin/cron-schedule.sh add --project A --time 21:00 --dow 1,2,3,4,5,6
 | 項目 | 状態 |
 |------|------|
 | バージョン | **v3.4.8** (全プロセス統合 Supervisor daemon 新設 + Linux bash 移行) — 旧: v3.4.7 |
-| テスト | **891件** — Pester (Unit 21 / Integration 11 / Smoke 1) + bats supervisor 9件 |
+| テスト | **891件** Pester + bats + Node.js supervisor smoke 1件 — Pester (Unit 21 / Integration 11 / Smoke 1) + bats supervisor 9件 + Node.js supervisor smoke 1件（CI ubuntu） |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | **v9.0** (`/goal` 駆動 / Agent Teams パターン A/B/C / Agent View / 動的判断 / 週次フェーズ制御 / learning パターン記録 / Stop Conditions 厳格化 / Opus 4.7 最適化 / 1H cache / PreCompact hook) |
 | Agents | **44体** の特化サブエージェント (v3.3.5 SOT同期でテンプレートから16体追加) |
