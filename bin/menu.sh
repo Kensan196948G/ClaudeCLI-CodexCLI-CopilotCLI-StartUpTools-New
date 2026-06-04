@@ -98,6 +98,11 @@ show_menu() {
   done
   printf '\n'
 
+  # Docker
+  printf '  %s🐳 Docker 統合%s\n' "$C_BLUE" "$C_RESET"
+  printf '   %s DK %s  📦  登録プロジェクトの Docker 制御 (状態/走査/台帳/起動・停止/Hub連携)\n' "$C_BG_DKBLUE" "$C_RESET"
+  printf '\n'
+
   # Cron
   printf '  %s⏰ Linux Cron 管理%s\n' "$C_YELLOW" "$C_RESET"
   printf '   %s 14 %s  📅  Cron スケジュール 登録・編集・削除 / 選んで一括BG起動\n' "$C_BG_DKBLUE" "$C_RESET"
@@ -136,6 +141,46 @@ launch_claude() {
   run_menu_script "$BIN/start-claude.sh" --project "$project" "--$mode"
 }
 
+# DK: Docker 統合サブメニュー (docker-control.sh への薄い対話ラッパ)
+docker_submenu() {
+  local dc="$BIN/docker-control.sh"
+  if [[ ! -f "$dc" ]]; then log_warn "docker-control.sh が見つかりません"; sleep 1; return 0; fi
+  while true; do
+    printf '\n  %s🐳 Docker 統合制御%s\n' "$C_CYAN" "$C_RESET"
+    printf '   %s 1 %s  📊 状態 (status: daemon/compose/login)\n' "$C_BG_DKBLUE" "$C_RESET"
+    printf '   %s 2 %s  🔍 走査 (scan: Projects の compose/stack/登録状況)\n' "$C_BG_DKBLUE" "$C_RESET"
+    printf '   %s 3 %s  📒 台帳一覧 (list)\n' "$C_BG_DKBLUE" "$C_RESET"
+    printf '   %s 4 %s  ➕ 未登録を一括登録 (register-all)\n' "$C_BG_GREEN" "$C_RESET"
+    printf '   %s 5 %s  🚀 起動 (up <name>)\n' "$C_BG_GREEN" "$C_RESET"
+    printf '   %s 6 %s  🛑 停止 (down <name>)\n' "$C_BG_YELLOW" "$C_RESET"
+    printf '   %s 7 %s  🚀 autostart 一括起動 (up-all)\n' "$C_BG_GREEN" "$C_RESET"
+    printf '   %s 8 %s  🧱 雛形生成 (scaffold <name>)\n' "$C_BG_DKBLUE" "$C_RESET"
+    printf '   %s 9 %s  🔐 login 状態 (login-status: 未ログインは手動案内)\n' "$C_BG_DKBLUE" "$C_RESET"
+    printf '   %s10 %s  ☁️  Hub イメージ一覧 (hub-images)\n' "$C_BG_DKBLUE" "$C_RESET"
+    printf '    0  ⬅️  戻る\n'
+    local c; read -rp "  番号を入力してください: " c
+    case "$c" in
+      1) bash "$dc" status || true ;;
+      2) bash "$dc" scan || true ;;
+      3) bash "$dc" list || true ;;
+      4) bash "$dc" register-all || true ;;
+      5) bash "$dc" list || true; local n; read -rp "  起動するプロジェクト名: " n
+         [[ -n "$n" ]] && { bash "$dc" up "$n" || true; } ;;
+      6) bash "$dc" list || true; local n; read -rp "  停止するプロジェクト名: " n
+         [[ -n "$n" ]] && { bash "$dc" down "$n" || true; } ;;
+      7) bash "$dc" up-all || true ;;
+      8) local n; read -rp "  雛形生成するプロジェクト名: " n
+         [[ -n "$n" ]] && { bash "$dc" scaffold "$n" || true; } ;;
+      9) bash "$dc" login-status || true ;;
+      10) local ns; read -rp "  namespace (空欄=ログインユーザー): " ns
+          bash "$dc" hub-images ${ns:+"$ns"} || true ;;
+      0) return 0 ;;
+      *) printf '%s  無効な入力です。%s\n' "$C_RED" "$C_RESET"; sleep 1; continue ;;
+    esac
+    read -rp "  Enter で戻る " _ || true
+  done
+}
+
 menu_loop() {
   while true; do
     show_menu
@@ -156,6 +201,7 @@ menu_loop() {
       11) run_menu_script "$LIBEXEC/diag-architecture.sh" ;;
       12) run_menu_script "$BIN/set-statusline.sh" ;;
       13) run_menu_script "$LIBEXEC/watch-claude-log.sh" ;;
+      DK) docker_submenu ;;
       14) run_menu_script "$BIN/cron-schedule.sh" ;;
       15) bash "$LIBEXEC/watch-session.sh" || true ;;   # 内部に 0=戻る の対話メニューを持つため直接実行
       MO) bash "$BIN/monitor-sessions.sh" open || true ;;  # claudeos-monitor へ attach (Ctrl-b d / q で戻る)

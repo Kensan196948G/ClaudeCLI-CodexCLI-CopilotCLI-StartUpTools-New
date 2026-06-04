@@ -311,9 +311,9 @@ bash bin/cron-schedule.sh add --project A --time 21:00 --dow 1,2,3,4,5,6
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.4.7** — プロジェクト列挙を Git リポジトリのディレクトリのみに統一 / 旧: v3.4.6 |
+| バージョン | **v3.4.8** — Docker オーケストレーション統合（compose 検出 / 台帳 CRUD / 雛形生成 / Hub 連携） / 旧: v3.4.7 |
 | 実行基盤 | 🐧 **Linux ネイティブ**（`start.sh` / `bin/*.sh` / tmux / cron） |
-| テスト | ✅ **bats 194 件**（Linux）+ **Pester**（pwsh / Windows CI）/ shellcheck 0 |
+| テスト | ✅ **bats 232 件**（Linux）+ **Pester**（pwsh / Windows CI）/ shellcheck 0 |
 | CI | ✅ SUCCESS（ShellCheck+bats / test-and-validate / Secrets / PSScriptAnalyzer / CodeRabbit） |
 | ClaudeOS | **v9.0**（`/goal` 駆動 / Agent Teams A・B・C / Agent View / 動的判断 / 週次フェーズ制御 / Stop Conditions） |
 | Agents | **44体** の特化サブエージェント（CTO・開発・QA・Security・レビュー・ビルド解決・CMDB・監査…） |
