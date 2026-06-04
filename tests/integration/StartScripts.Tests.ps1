@@ -24,8 +24,6 @@
     $config = @{
         version        = '2.0.0'
         projectsDir    = $script:ProjectsRoot
-        projectsDirUnc = '\\test-host\projects'
-        sshProjectsDir = $script:SshProjectsRoot
         localExcludes  = @()
         tools          = @{
             defaultTool = 'claude'
@@ -243,8 +241,6 @@ Describe 'Start-Menu helper flows' {
         @{
             version = '2.0.0'
             projectsDir = $script:ProjectsRoot
-            sshProjectsDir = $script:SshProjectsRoot
-            projectsDirUnc = '\\test-host\projects'
             localExcludes = @()
             tools = @{
                 defaultTool = 'claude'

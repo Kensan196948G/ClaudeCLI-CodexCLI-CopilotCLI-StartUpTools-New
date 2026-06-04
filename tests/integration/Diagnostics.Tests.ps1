@@ -1,167 +1,8 @@
 ﻿BeforeAll {
     $script:RepoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-    . (Join-Path $script:RepoRoot 'scripts\test\test-drive-mapping.ps1')
     . (Join-Path $script:RepoRoot 'scripts\test\Test-AllTools.ps1')
-Import-Module (Join-Path $script:RepoRoot 'scripts\lib\MenuCommon.psm1') -Force -DisableNameChecking
+    Import-Module (Join-Path $script:RepoRoot 'scripts\lib\MenuCommon.psm1') -Force -DisableNameChecking
     $script:PowerShellExe = (Get-Process -Id $PID).Path
-}
-
-Describe 'Get-DriveMappingReport' {
-    It '直接アクセス可能な共有ドライブ情報を返すこと' {
-        Mock Test-Path {
-            param($Path)
-            switch ($Path) {
-                'Z:\' { $true }
-                'HKCU:\Network\Z' { $true }
-                '\\server\share' { $true }
-                default { $false }
-            }
-        }
-        Mock Get-ChildItem { @([pscustomobject]@{ Name = 'a'; PSIsContainer = $true }, [pscustomobject]@{ Name = 'b'; PSIsContainer = $true }) }
-        Mock Get-ItemProperty { [pscustomobject]@{ RemotePath = '\\server\share' } }
-        Mock Get-SmbMapping { [pscustomobject]@{ LocalPath = 'Z:'; RemotePath = '\\server\share'; Status = 'OK' } }
-        Mock Get-PSDrive { [pscustomobject]@{ Root = 'Z:\'; DisplayRoot = '\\server\share'; Provider = 'FileSystem' } }
-        Mock Get-NetUseLine { 'OK Z: \\server\share' }
-
-        $configInfo = [pscustomobject]@{
-            sshProjectsDir = 'Z:\'
-            projectsDirUnc = '\\server\share'
-            configFound = $true
-        }
-
-        $report = Get-DriveMappingReport -ConfigInfo $configInfo
-        $report.directAccess | Should -Be $true
-        $report.directoryCount | Should -Be 2
-        $report.registryRemotePath | Should -Be '\\server\share'
-        $report.recommendation | Should -Be 'DirectAccess'
-    }
-
-    It 'マッピングが無ければ MissingMapping を返すこと' {
-        Mock Test-Path { $false }
-        Mock Get-ChildItem { @() }
-        Mock Get-ItemProperty { [pscustomobject]@{} }
-        Mock Get-SmbMapping { param($ErrorAction) $null = $ErrorAction; $null }
-        Mock Get-PSDrive { param($Name, $ErrorAction) $null = $Name; $null = $ErrorAction; $null }
-        Mock Get-NetUseLine { $null }
-
-        $configInfo = [pscustomobject]@{
-            sshProjectsDir = 'Z:\'
-            projectsDirUnc = $null
-            configFound = $true
-        }
-
-        $report = Get-DriveMappingReport -ConfigInfo $configInfo
-        $report.directAccess | Should -Be $false
-        $report.uncCandidates.Count | Should -Be 0
-        $report.recommendation | Should -Be 'MissingMapping'
-        $report.remapCommand | Should -Match 'New-PSDrive'
-        $report.repairAdvice.Count | Should -BeGreaterThan 0
-    }
-
-    It 'SMB 切断時は再マッピング提案を返すこと' {
-        Mock Test-Path {
-            param($Path)
-            switch ($Path) {
-                'Z:\' { $false }
-                'HKCU:\Network\Z' { $true }
-                '\\server\share' { $true }
-                default { $false }
-            }
-        }
-        Mock Get-ChildItem { @() }
-        Mock Get-ItemProperty { [pscustomobject]@{ RemotePath = '\\server\share' } }
-        Mock Get-SmbMapping { [pscustomobject]@{ LocalPath = 'Z:'; RemotePath = '\\server\share'; Status = 'Disconnected' } }
-        Mock Get-PSDrive { [pscustomobject]@{ Root = 'Z:\'; DisplayRoot = '\\server\share'; Provider = 'FileSystem' } }
-        Mock Get-NetUseLine { 'Disconnected Z: \\server\share' }
-
-        $configInfo = [pscustomobject]@{
-            sshProjectsDir = 'Z:\'
-            projectsDirUnc = '\\server\share'
-            configFound = $true
-        }
-
-        $report = Get-DriveMappingReport -ConfigInfo $configInfo
-        $report.recommendation | Should -Be 'RemapDisconnectedSmb'
-        $report.remapCommand | Should -Match 'Remove-PSDrive'
-    }
-
-    It '資格情報エラー時は再認証提案を返すこと' {
-        Mock Test-Path { $false }
-        Mock Get-ChildItem { @() }
-        Mock Get-ItemProperty { [pscustomobject]@{} }
-        Mock Get-SmbMapping { param($ErrorAction) $null = $ErrorAction; $null }
-        Mock Get-PSDrive { param($Name, $ErrorAction) $null = $Name; $null = $ErrorAction; $null }
-        Mock Get-NetUseLine { 'System error 1219 has occurred. credential conflict' }
-
-        $configInfo = [pscustomobject]@{
-            sshProjectsDir = 'Z:\'
-            projectsDirUnc = '\\server\share'
-            configFound = $true
-        }
-
-        $report = Get-DriveMappingReport -ConfigInfo $configInfo
-        $report.netUseIssue | Should -Be 'CredentialError'
-        $report.recommendation | Should -Be 'CheckCredentials'
-    }
-
-    It '名前解決失敗時は DNS 確認提案を返すこと' {
-        Mock Test-Path { $false }
-        Mock Get-ChildItem { @() }
-        Mock Get-ItemProperty { [pscustomobject]@{} }
-        Mock Get-SmbMapping { param($ErrorAction) $null = $ErrorAction; $null }
-        Mock Get-PSDrive { param($Name, $ErrorAction) $null = $Name; $null = $ErrorAction; $null }
-        Mock Get-NetUseLine { 'System error 53 has occurred. The network path was not found.' }
-
-        $configInfo = [pscustomobject]@{
-            sshProjectsDir = 'Z:\'
-            projectsDirUnc = '\\server\share'
-            configFound = $true
-        }
-
-        $report = Get-DriveMappingReport -ConfigInfo $configInfo
-        $report.netUseIssue | Should -Be 'NameResolutionFailure'
-        $report.recommendation | Should -Be 'CheckNameResolution'
-    }
-
-    It 'SMB 445 が閉じている場合は SMB ポート確認提案を返すこと' {
-        Mock Test-Path { $false }
-        Mock Get-ChildItem { @() }
-        Mock Get-ItemProperty { [pscustomobject]@{ RemotePath = '\\server\share' } }
-        Mock Get-SmbMapping { param($ErrorAction) $null = $ErrorAction; $null }
-        Mock Get-PSDrive { param($Name, $ErrorAction) $null = $Name; $null = $ErrorAction; $null }
-        Mock Get-NetUseLine { $null }
-        Mock Resolve-DnsName { [pscustomobject]@{ Name = 'server' } }
-        Mock Test-Connection { $true }
-        Mock Test-NetConnection { $false }
-
-        $configInfo = [pscustomobject]@{
-            sshProjectsDir = 'Z:\'
-            projectsDirUnc = '\\server\share'
-            configFound = $true
-        }
-
-        $report = Get-DriveMappingReport -ConfigInfo $configInfo
-        $report.smbPort445Reachable | Should -BeFalse
-        $report.recommendation | Should -Be 'CheckSmbPort445'
-    }
-
-    It 'UNC 候補から net use 再接続コマンドを生成すること' {
-        Mock Test-Path { $false }
-        Mock Get-ChildItem { @() }
-        Mock Get-ItemProperty { [pscustomobject]@{ RemotePath = '\\server\share' } }
-        Mock Get-SmbMapping { [pscustomobject]@{ LocalPath = 'Z:'; RemotePath = '\\server\share'; Status = 'Disconnected' } }
-        Mock Get-PSDrive { [pscustomobject]@{ Root = 'Z:\'; DisplayRoot = '\\server\share'; Provider = 'FileSystem' } }
-        Mock Get-NetUseLine { 'Disconnected Z: \\server\share' }
-
-        $configInfo = [pscustomobject]@{
-            sshProjectsDir = 'Z:\'
-            projectsDirUnc = '\\server\share'
-            configFound = $true
-        }
-
-        $report = Get-DriveMappingReport -ConfigInfo $configInfo
-        (@($report.reconnectCommands | Where-Object { $_ -match 'net use Z:' })).Count | Should -BeGreaterThan 0
-    }
 }
 
 Describe 'Test-AllTools Json output' {
@@ -224,9 +65,6 @@ echo OpenSSH_9
         $config = @{
             version = '2.0.0'
             projectsDir = $script:ProjectsRoot
-            sshProjectsDir = $script:ProjectsRoot
-            projectsDirUnc = '\\server\share'
-
             localExcludes = @()
             tools = @{
                 defaultTool = 'claude'
@@ -565,9 +403,6 @@ Describe 'Start-Menu recent projects' {
         @{
             version = '2.0.0'
             projectsDir = 'D:\Projects'
-            sshProjectsDir = 'Z:\'
-            projectsDirUnc = '\\server\share'
-
             localExcludes = @()
             tools = @{
                 defaultTool = 'claude'

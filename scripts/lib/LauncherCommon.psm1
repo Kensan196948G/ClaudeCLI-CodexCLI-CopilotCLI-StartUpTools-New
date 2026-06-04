@@ -87,63 +87,6 @@ function Find-AvailableDriveLetter {
 
 <#
 .SYNOPSIS
-    Resolves the SSH projects directory path, auto-mapping a UNC drive when sshProjectsDir is 'auto'.
-#>
-function Resolve-SshProjectsDir {
-    [CmdletBinding()]
-    [OutputType([System.String])]
-    param(
-        [Parameter(Mandatory)]
-        [object]$Config
-    )
-
-    $sshDir = $Config.sshProjectsDir
-
-    if ([string]::IsNullOrWhiteSpace($sshDir) -or $sshDir -eq 'auto') {
-        # Auto-detect: check if already mapped to projectsDirUnc
-        $uncPath = $Config.projectsDirUnc
-        if (-not [string]::IsNullOrWhiteSpace($uncPath)) {
-            $existingDrive = Get-SmbMapping -ErrorAction SilentlyContinue |
-                Where-Object { $_.RemotePath -eq $uncPath -and $_.Status -eq 'OK' } |
-                Select-Object -First 1
-
-            if ($existingDrive) {
-                $letter = ($existingDrive.LocalPath -replace ':', '')
-                Write-Host "[INFO]  既存マッピング検出: ${letter}:\ -> $uncPath" -ForegroundColor Cyan
-                return "${letter}:\"
-            }
-        }
-
-        # No existing mapping — find available letter and map
-        $letter = Find-AvailableDriveLetter
-        if (-not $letter) {
-            throw "空きドライブレターが見つかりません。config.json の sshProjectsDir に明示的なドライブレターを指定してください。"
-        }
-
-        if (-not [string]::IsNullOrWhiteSpace($uncPath)) {
-            try {
-                $null = New-PSDrive -Name $letter -PSProvider FileSystem -Root $uncPath -Persist -Scope Global -ErrorAction Stop
-                Write-Host "[INFO]  ドライブ自動マッピング: ${letter}:\ -> $uncPath" -ForegroundColor Green
-            }
-            catch {
-                Write-Warning "ドライブ自動マッピングに失敗しました (${letter}: -> $uncPath): $_"
-                Write-Host "[INFO]  SSH 直接接続にフォールバックします。" -ForegroundColor Yellow
-                return "auto:unmapped"
-            }
-        }
-        else {
-            Write-Host "[INFO]  projectsDirUnc 未設定のため、SSH 直接接続を使用します。" -ForegroundColor Yellow
-            return "auto:unmapped"
-        }
-
-        return "${letter}:\"
-    }
-
-    return $sshDir
-}
-
-<#
-.SYNOPSIS
     Returns true if the specified command is available in the current environment.
 #>
 function Test-LauncherCommand {
@@ -277,15 +220,14 @@ function Resolve-LauncherProject {
         return $Project
     }
 
-    # Phase 2b: projectsDir が存在すれば -Local フラグなしでもローカル優先。
+    # Phase 4: ローカル一本化完了。projectsDir のみ使用。
     $localDir = $Config.projectsDir
-    $useLocal = $Local -or ($localDir -and (Test-Path $localDir))
-    $projectsRoot = if ($useLocal) { $localDir } else { Resolve-SshProjectsDir -Config $Config }
+    $projectsRoot = $localDir
     $dirs = $null
 
     if (Test-Path $projectsRoot) {
         $dirs = Get-ChildItem -Path $projectsRoot -Directory | Sort-Object Name
-        if ($useLocal -and $Config.localExcludes) {
+        if ($Config.localExcludes) {
             $dirs = $dirs | Where-Object { $_.Name -notin $Config.localExcludes }
         }
     }

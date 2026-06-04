@@ -10,7 +10,7 @@ setup() {
   _bats_common_setup
   export AI_STARTUP_CONFIG_PATH="$TEST_TEMP/config.json"
   cat > "$AI_STARTUP_CONFIG_PATH" <<JSON
-{ "linuxBase": "/home/kensan/Projects", "projectsDir": "/home/kensan/Projects" }
+{ "projects": "/home/kensan/Projects", "projectsDir": "/home/kensan/Projects" }
 JSON
   export CCSU_STATE_FILE="$TEST_TEMP/state.json"
   export CLAUDEOS_PLAIN_OUTPUT=1

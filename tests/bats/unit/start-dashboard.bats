@@ -11,7 +11,7 @@ setup() {
   make_stub_bin node 'echo "node $*"; exit 0'
   make_stub_bin xdg-open 'exit 0'
   export AI_STARTUP_CONFIG_PATH="$TEST_TEMP/config.json"
-  echo '{ "linuxBase": "/tmp", "projectsDir": "/tmp" }' > "$AI_STARTUP_CONFIG_PATH"
+  echo '{ "projects": "/tmp", "projectsDir": "/tmp" }' > "$AI_STARTUP_CONFIG_PATH"
   SCRIPT="$REPO_ROOT/bin/start-dashboard.sh"
   TPORT=39917   # テスト専用の未使用ポート (3737 等の実稼働を避ける)
 }

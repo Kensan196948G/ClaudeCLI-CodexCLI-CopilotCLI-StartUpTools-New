@@ -182,7 +182,7 @@ sup__loop() {
   local project="$1" duration="${2:-}"
   local safe base project_dir pstate
   safe="$(ccsu_safe_name "$project")"
-  base="$(json_get "$CCSU_CONFIG_PATH" '.linuxBase' "$HOME/Projects")"
+  base="$(json_get "$CCSU_CONFIG_PATH" '.projects' "$HOME/Projects")"
   project_dir="$base/$project"
   pstate="$project_dir/state.json"
 

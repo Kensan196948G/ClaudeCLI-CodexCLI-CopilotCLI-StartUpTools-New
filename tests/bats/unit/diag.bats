@@ -11,7 +11,7 @@ setup() {
   mkdir -p "$CLAUDEOS_HOME/logs" "$CLAUDEOS_HOME/sessions"
   export AI_STARTUP_CONFIG_PATH="$TEST_TEMP/config.json"
   cat > "$AI_STARTUP_CONFIG_PATH" <<JSON
-{ "linuxBase": "$TEST_TEMP/projects", "projectsDir": "$TEST_TEMP/projects" }
+{ "projects": "$TEST_TEMP/projects", "projectsDir": "$TEST_TEMP/projects" }
 JSON
   mkdir -p "$TEST_TEMP/projects/Alpha"
   export CCSU_STATE_FILE="$TEST_TEMP/state.json"

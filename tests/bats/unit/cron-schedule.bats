@@ -19,7 +19,7 @@ esac
 '
   export AI_STARTUP_CONFIG_PATH="$TEST_TEMP/config.json"
   cat > "$AI_STARTUP_CONFIG_PATH" <<JSON
-{ "linuxBase": "$TEST_TEMP/projects", "projectsDir": "$TEST_TEMP/projects" }
+{ "projects": "$TEST_TEMP/projects", "projectsDir": "$TEST_TEMP/projects" }
 JSON
   mkdir -p "$TEST_TEMP/projects/MyProj/.git" "$TEST_TEMP/projects/Other/.git"
   export CCSU_CRON_LAUNCHER="$TEST_TEMP/cron-launcher.sh"

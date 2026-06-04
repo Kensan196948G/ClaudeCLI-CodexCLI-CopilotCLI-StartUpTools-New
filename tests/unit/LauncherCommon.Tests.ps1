@@ -45,36 +45,6 @@ Describe 'Find-AvailableDriveLetter' {
     }
 }
 
-Describe 'Resolve-SshProjectsDir' {
-
-    It 'auto 以外の値はそのまま返すこと' {
-        $config = [pscustomobject]@{
-            sshProjectsDir = 'P:\'
-            projectsDirUnc = '\\server\share'
-        }
-        $result = Resolve-SshProjectsDir -Config $config
-        $result | Should -Be 'P:\'
-    }
-
-    It '空文字列の場合は auto として扱われること' {
-        $config = [pscustomobject]@{
-            sshProjectsDir = ''
-            projectsDirUnc = $null
-        }
-        $result = Resolve-SshProjectsDir -Config $config
-        # projectsDirUnc が null なので auto:unmapped になる
-        $result | Should -Be 'auto:unmapped'
-    }
-
-    It 'auto で projectsDirUnc が未設定なら auto:unmapped を返すこと' {
-        $config = [pscustomobject]@{
-            sshProjectsDir = 'auto'
-            projectsDirUnc = $null
-        }
-        $result = Resolve-SshProjectsDir -Config $config
-        $result | Should -Be 'auto:unmapped'
-    }
-}
 
 Describe 'Resolve-LauncherMode (Phase 2b)' {
 
@@ -120,9 +90,6 @@ Describe 'Resolve-LauncherProject (Phase 2b)' {
         $config = [pscustomobject]@{
             projectsDir    = $projRoot
             localExcludes  = $null
-            linuxBase      = $null
-            sshProjectsDir = $null
-            projectsDirUnc = $null
         }
         # -NonInteractive なので、プロジェクトが見つかっても選択不要でエラーになる（正常動作確認）
         { Resolve-LauncherProject -Config $config -NonInteractive } | Should -Throw '*非対話モード*'
@@ -135,9 +102,6 @@ Describe 'Resolve-LauncherProject (Phase 2b)' {
         $config = [pscustomobject]@{
             projectsDir    = $projRoot
             localExcludes  = @('Skip')
-            linuxBase      = $null
-            sshProjectsDir = $null
-            projectsDirUnc = $null
         }
         { Resolve-LauncherProject -Config $config -Local -NonInteractive } | Should -Throw '*非対話モード*'
     }
