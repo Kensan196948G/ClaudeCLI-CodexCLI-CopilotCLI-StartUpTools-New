@@ -74,13 +74,43 @@ main() {
   fi
 
   if [[ "$_sup_status" =~ ^(blocked|stopped|goal-reached)$ ]]; then
-    log_warn "supervisor 停止 (status=$_sup_status, reason=$_sup_reason)"
+    log_warn "supervisor 停止 (status=$_sup_status)"
+    log_warn "  停止理由: $_sup_reason"
+
+    # プロジェクトの blocked_issues をリスト表示
+    local _pstate _blocked_list
+    _pstate="$(config_projects_dir)/$project/state.json"
+    if [[ -f "$_pstate" ]] && has_cmd jq; then
+      _blocked_list="$(jq -r '.blocked_issues[]? // empty' "$_pstate" 2>/dev/null || true)"
+      if [[ -n "$_blocked_list" ]]; then
+        log_warn "  Blocked Issues:"
+        while IFS= read -r _bi; do
+          log_warn "    - $_bi"
+        done <<< "$_blocked_list"
+      fi
+    fi
+
+    printf "\n"
+    log_info "  ※ supervisorは blocked_issues が存在する間、自律起動を行いません"
+    log_info "  ※ Y で起動した場合: 自動再起動なし (手動起動モード)"
+
     if [[ "$mode" == "foreground" ]]; then
       local _ans
-      printf "  supervisorのガードレールを迂回して直接起動しますか? (Y/N): "
+      printf "  直接起動しますか? (Y/N): "
       read -r _ans
       if [[ "${_ans^^}" == "Y" ]]; then
-        log_info "supervisor 迂回: tmux_run で直接起動します"
+        log_info "手動モードで起動します (supervisor なし・自動再起動なし)"
+        tmux_run "$project" "$duration" "$mode"
+      else
+        log_info "起動をキャンセルしました"
+        log_info "  blocked_issues を解消すると supervisor 経由で正常起動できます"
+      fi
+    elif [[ "$mode" == "background" ]]; then
+      local _ans
+      printf "  直接起動しますか? (Y/N) [背景: 自動再起動なし]: "
+      read -r _ans
+      if [[ "${_ans^^}" == "Y" ]]; then
+        log_info "手動モードで起動します (supervisor なし・自動再起動なし)"
         tmux_run "$project" "$duration" "$mode"
       else
         log_info "起動をキャンセルしました"
