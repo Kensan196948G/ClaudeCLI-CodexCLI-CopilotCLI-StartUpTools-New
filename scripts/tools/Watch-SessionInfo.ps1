@@ -65,6 +65,7 @@ function Get-StatusColor {
         'exited'    { return 'Cyan' }
         'cancelled' { return 'Yellow' }
         'failed'    { return 'Red' }
+        'timeout'   { return 'Cyan' }
         default     { return 'Gray' }
     }
 }
@@ -189,7 +190,7 @@ try {
 
         Show-SessionFrame -Session $session
 
-        if ($session.status -in @('completed', 'exited', 'cancelled', 'failed')) {
+        if ($session.status -in @('completed', 'exited', 'cancelled', 'failed', 'timeout')) {
             Write-Host ("   -> セッション終了 ({0})。{1} 秒後に閉じます..." -f $session.status, $AutoCloseAfterExitSeconds) -ForegroundColor Magenta
             Start-Sleep -Seconds $AutoCloseAfterExitSeconds
             exit 0
