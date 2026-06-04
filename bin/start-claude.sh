@@ -56,15 +56,40 @@ main() {
 
   notify__play claude   # 起動通知音 (非ブロッキング・失敗無害)
 
+  local safe session
+  safe="$(ccsu_safe_name "$project")"
+  session="claudeos-$safe"
+
   # supervisor 経由で起動 (--force: cron 競合があっても手動起動を優先)
   bash "$SCRIPT_DIR/autonomy.sh" start "$project" --duration "$duration" --force || {
     log_error "supervisor 起動に失敗しました: $project"; exit 1
   }
 
+  # supervisor が即時停止した場合 (blocked/stopped/goal-reached) を検出し対処
+  local _sup_state="$HOME/.claudeos/supervisor/${safe}.json"
+  local _sup_status="" _sup_reason=""
+  if [[ -f "$_sup_state" ]]; then
+    _sup_status="$(jq -r '.status // ""' "$_sup_state" 2>/dev/null || true)"
+    _sup_reason="$(jq -r '.last_reason // ""' "$_sup_state" 2>/dev/null || true)"
+  fi
+
+  if [[ "$_sup_status" =~ ^(blocked|stopped|goal-reached)$ ]]; then
+    log_warn "supervisor 停止 (status=$_sup_status, reason=$_sup_reason)"
+    if [[ "$mode" == "foreground" ]]; then
+      local _ans
+      printf "  supervisorのガードレールを迂回して直接起動しますか? (Y/N): "
+      read -r _ans
+      if [[ "${_ans^^}" == "Y" ]]; then
+        log_info "supervisor 迂回: tmux_run で直接起動します"
+        tmux_run "$project" "$duration" "$mode"
+      else
+        log_info "起動をキャンセルしました"
+      fi
+    fi
+    return 0
+  fi
+
   if [[ "$mode" == "foreground" ]]; then
-    local safe session
-    safe="$(ccsu_safe_name "$project")"
-    session="claudeos-$safe"
     # tmux セッションが起動するまで最大30秒待機
     local i
     for ((i = 0; i < 60; i++)); do
