@@ -249,6 +249,88 @@ mon__action() {
   tput civis 2>/dev/null || true
 }
 
+# mon__deregister — 登録プロジェクトを一覧から選んで削除
+#   削除対象: cron エントリ / supervisor state file / stop file
+#   tmux セッション停止は任意確認
+mon__deregister() {
+  local -a regs; mapfile -t regs < <(mon__registered_projects)
+  tput cnorm 2>/dev/null || true
+  clear 2>/dev/null || true
+  printf '\n  %s== 🗑️  登録削除 ==%s\n' "$C_RED" "$C_RESET"
+  if (( ${#regs[@]} == 0 )); then
+    printf '  登録プロジェクトがありません\n'
+    read -rp "  Enter で戻る " _ || true; tput civis 2>/dev/null || true; return 0
+  fi
+  local i p safe cron_n sup_file running
+  for i in "${!regs[@]}"; do
+    p="${regs[$i]}"
+    safe="$(ccsu_safe_name "$p")"
+    # 現在の状態バッジを表示
+    printf '   %s[%d]%s %-28s %s' "$C_YELLOW" "$((i + 1))" "$C_RESET" "$p" "$(mon__project_state_badge "$p")"
+    printf '\n'
+  done
+  local sel; read -rp "  削除する番号 (0=キャンセル): " sel || true
+  if ! [[ "$sel" =~ ^[0-9]+$ ]] || (( sel < 1 || sel > ${#regs[@]} )); then
+    printf '  キャンセルしました\n'
+    read -rp "  Enter で戻る " _ || true; tput civis 2>/dev/null || true; return 0
+  fi
+  p="${regs[$((sel - 1))]}"
+  safe="$(ccsu_safe_name "$p")"
+  sup_file="$(sup__state_file "$p")"
+
+  # 削除内容をプレビュー
+  printf '\n  %s削除対象: %s%s\n' "$C_RED" "$p" "$C_RESET"
+  cron_n="$(cron__list 2>/dev/null | awk -F'|' -v pp="$p" '$2==pp{c++} END{print c+0}')"
+  printf '   - cron エントリ: %s 件\n' "$cron_n"
+  if [[ -f "$sup_file" ]]; then
+    printf '   - supervisor state: %s\n' "$sup_file"
+  fi
+  if [[ -f "$(sup__stop_file "$p")" ]]; then
+    printf '   - supervisor stop flag: %s\n' "$(sup__stop_file "$p")"
+  fi
+  if "$TMUX_BIN" has-session -t "claudeos-$safe" 2>/dev/null; then
+    running=1
+    printf '   - tmux セッション: claudeos-%s (稼働中)\n' "$safe"
+  else
+    running=0
+  fi
+
+  printf '\n'
+  local ans; read -rp "  本当に削除しますか? (Y/N): " ans || true
+  if [[ "${ans^^}" != "Y" ]]; then
+    printf '  キャンセルしました\n'
+    read -rp "  Enter で戻る " _ || true; tput civis 2>/dev/null || true; return 0
+  fi
+
+  # supervisor 停止 (実行中なら)
+  if sup__is_running "$p" 2>/dev/null || [[ -f "$sup_file" ]]; then
+    bash "$SCRIPT_DIR/autonomy.sh" stop "$p" 2>/dev/null || true
+  fi
+
+  # cron 削除
+  if (( cron_n > 0 )); then
+    local removed; removed="$(mon__remove_cron_for "$p")"
+    log_ok "cron 削除: $p ($removed 件)"
+  fi
+
+  # supervisor state file / stop file 削除
+  [[ -f "$sup_file" ]] && rm -f "$sup_file" && log_ok "supervisor state 削除: $sup_file"
+  local _stop_f; _stop_f="$(sup__stop_file "$p")"
+  [[ -f "$_stop_f" ]] && rm -f "$_stop_f"
+
+  # tmux セッション停止 (任意)
+  if (( running == 1 )); then
+    local kill_ans; read -rp "  tmux セッション claudeos-$safe も停止しますか? (Y/N): " kill_ans || true
+    if [[ "${kill_ans^^}" == "Y" ]]; then
+      "$TMUX_BIN" kill-session -t "claudeos-$safe" 2>/dev/null && log_ok "tmux セッション停止: claudeos-$safe" || true
+    fi
+  fi
+
+  log_ok "登録削除完了: $p"
+  read -rp "  Enter で戻る " _ || true
+  tput civis 2>/dev/null || true
+}
+
 # ------------------------------------------------------------
 # 新規プロジェクトのオンボード (n キー: 全プロジェクトから選んで管理下へ)
 # ------------------------------------------------------------
@@ -376,9 +458,9 @@ mon__render_once() {
   done < <(mon__collect_registered)
   (( rn == 0 )) && printf '   %s(登録なし — 項14 cron 登録 / autonomy.sh start)%s\n' "$C_GRAY" "$C_RESET"
   mon__hr
-  printf '   %s[1-9]%s介入FG %sCtrl-b 0%s監視 %s[n]%s新規追加 %s[l]%s起動 %s[s]%s監督開始 %s[x]%s監督停止 %s[q]%s終了\n' \
+  printf '   %s[1-9]%s介入FG %sCtrl-b 0%s監視 %s[n]%s新規追加 %s[l]%s起動 %s[s]%s監督開始 %s[x]%s監督停止 %s[d]%s登録削除 %s[q]%s終了\n' \
     "$C_GREEN" "$C_RESET" "$C_CYAN" "$C_RESET" "$C_GREEN" "$C_RESET" "$C_YELLOW" "$C_RESET" \
-    "$C_YELLOW" "$C_RESET" "$C_YELLOW" "$C_RESET" "$C_YELLOW" "$C_RESET"
+    "$C_YELLOW" "$C_RESET" "$C_YELLOW" "$C_RESET" "$C_RED" "$C_RESET" "$C_YELLOW" "$C_RESET"
   printf '   %s※ 操作キーはこの画面でのみ有効。Claude介入中は Ctrl-b 0 で戻ってから押す%s\n' "$C_GRAY" "$C_RESET"
 }
 
@@ -404,6 +486,7 @@ mon__dashboard() {
       l|L) mon__action l ;;
       s|S) mon__action s ;;
       x|X) mon__action x ;;
+      d|D) mon__deregister ;;
       *) : ;;   # r / 空(タイムアウト) → 再描画
     esac
   done
@@ -453,6 +536,7 @@ Usage: monitor-sessions.sh [open|dashboard|sync|--once|--help]
   [l]       登録から選んで自律1セッション起動 (BG)
   [s]       登録から選んで supervisor 開始 (Goal到達まで自律再開)
   [x]       supervisor 停止
+  [d]       登録削除 (cron/supervisor state を削除してプロジェクトを管理外へ)
   [q]       ダッシュボードを終了 (各セッション/supervisor は継続)
 EOF
 }
