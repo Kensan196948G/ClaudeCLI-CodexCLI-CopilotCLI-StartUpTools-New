@@ -2,7 +2,7 @@
 
 # CHANGELOG
 
-## [v3.4.8] - 2026-06-04 — 全プロセス統合 Supervisor daemon 新設 + Windows ローカル一本化完全移行
+## [v3.4.9] - 2026-06-04 — 全プロセス統合 Supervisor daemon 新設 + Windows ローカル一本化完全移行
 
 ### 🎯 概要
 
@@ -38,6 +38,39 @@ Phase 1〜6 完走。`supervisor-daemon.js` による全プロセス一元監視
 - **SSH 名残除去**: `linuxHost` 150+ 箇所・SSH 実行パスを削除（Phase 3）
 - **config schema 整理**: SSH キー除去・`linuxBase`→`projectsDir` 改名（Phase 4）
 - **テスト**: Pester 891件（+32件）/ bats 9件（supervisor 新規）
+
+---
+
+## [v3.4.8] - 2026-06-04 — Docker オーケストレーション統合 (compose 検出 / 台帳 CRUD / 雛形生成 / Hub 連携)
+
+### 🎯 概要
+
+登録プロジェクトの Docker 統合管理機能を新設。**自動インストール・自動ログインは一切行わず**、compose 検出・スタック判定・台帳 CRUD・サービス起動/停止・Hub イメージ一覧を提供。`bin/menu.sh` の `DK` メニューから対話操作可能。
+
+### 🔧 新規ファイル
+
+| ファイル | 内容 |
+|---|---|
+| `lib/docker-manager.sh` | Docker 統合ライブラリ（compose 検出 / スタック判定 / 台帳 CRUD / サービス制御 / Hub 連携） |
+| `bin/docker-control.sh` | CLI エントリ（status / scan / list / register / register-all / up / down / up-all / scaffold / login-status / hub-images） |
+| `config/docker-registry.json` | 登録プロジェクト台帳（初期登録済み）|
+| `tests/bats/unit/docker-manager.bats` | docker-manager.sh ユニットテスト 30 件（daemon 非依存の純関数のみ） |
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `bin/menu.sh` | `DK` メニュー追加（`docker_submenu` 関数）|
+| `.gitignore` | `config/*.lock`（flock 副産物）除外追記 |
+
+### ✅ 内容
+
+- `docker_find_compose`: root → docker/ → infra/docker/ → deploy/ の優先順で compose ファイルを検出
+- `docker_detect_stack`: node / python / fullstack / go / rust / dotnet / java-maven / java-gradle / php / ruby / static / unknown を自動判定
+- `docker_registry_*`: `config/docker-registry.json` への CRUD（`jq`）
+- `_scaffold_fullstack`: multi-stage Dockerfile.frontend（Node build → nginx:alpine serve）を自動生成
+- login 状態検出: `docker_logged_in` は `~/.docker/config.json` の `auths` を確認するのみ。決してログインしない
+- 全 bats **232 件** / shellcheck error 0
 
 ---
 

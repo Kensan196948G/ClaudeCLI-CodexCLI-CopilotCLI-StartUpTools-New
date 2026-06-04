@@ -354,8 +354,8 @@ bash bin/cron-schedule.sh add --project A --time 21:00 --dow 1,2,3,4,5,6
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.4.8** (全プロセス統合 Supervisor daemon 新設 + Linux bash 移行) — 旧: v3.4.7 |
-| テスト | **891件** Pester + bats + Node.js supervisor smoke 1件 — Pester (Unit 21 / Integration 11 / Smoke 1) + bats supervisor 9件 + Node.js supervisor smoke 1件（CI ubuntu） |
+| バージョン | **v3.4.9** (全プロセス統合 Supervisor daemon 新設 + Windows ローカル一本化 + Docker オーケストレーション統合) — 旧: v3.4.8 |
+| テスト | **891件** Pester + **232件** bats（Linux）+ Node.js supervisor smoke 1件 — shellcheck 0 |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | **v9.0** (`/goal` 駆動 / Agent Teams パターン A/B/C / Agent View / 動的判断 / 週次フェーズ制御 / learning パターン記録 / Stop Conditions 厳格化 / Opus 4.7 最適化 / 1H cache / PreCompact hook) |
 | Agents | **44体** の特化サブエージェント (v3.3.5 SOT同期でテンプレートから16体追加) |
