@@ -141,36 +141,6 @@ Describe 'Start-*.ps1 dry-run flows' {
         (Get-Content $metadataPath -Raw -Encoding UTF8) | Should -Match '"tool":"claude"'
     }
 
-    It 'Start-ClaudeCode.ps1 が SSH 実行経路を通過できること' {
-        $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-ClaudeCode.ps1'
-        Remove-Item $script:SshCaptureRoot -Recurse -Force -ErrorAction SilentlyContinue
-        $output = & $script:PowerShellExe -NoProfile -File $scriptPath -Project demo -NonInteractive 2>&1 | Out-String
-        $LASTEXITCODE | Should -Be 0
-        $output | Should -Match 'SSH_CAPTURE'
-        (Get-Content (Join-Path $script:SshCaptureRoot 'script-name.txt') -Raw) | Should -Match 'run-claude-demo\.sh'
-        (Get-Content (Join-Path $script:SshCaptureRoot 'script.sh') -Raw) | Should -Match 'claude'
-    }
-
-    It 'Start-CodexCLI.ps1 が SSH 実行経路を通過できること' {
-        $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-CodexCLI.ps1'
-        Remove-Item $script:SshCaptureRoot -Recurse -Force -ErrorAction SilentlyContinue
-        $output = & $script:PowerShellExe -NoProfile -File $scriptPath -Project demo -NonInteractive 2>&1 | Out-String
-        $LASTEXITCODE | Should -Be 0
-        $output | Should -Match 'SSH_CAPTURE'
-        (Get-Content (Join-Path $script:SshCaptureRoot 'script-name.txt') -Raw) | Should -Match 'run-codex-demo\.sh'
-        (Get-Content (Join-Path $script:SshCaptureRoot 'script.sh') -Raw) | Should -Match 'codex'
-    }
-
-    It 'Start-CopilotCLI.ps1 が SSH 実行経路を通過できること' {
-        $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-CopilotCLI.ps1'
-        Remove-Item $script:SshCaptureRoot -Recurse -Force -ErrorAction SilentlyContinue
-        $output = & $script:PowerShellExe -NoProfile -File $scriptPath -Project demo -NonInteractive 2>&1 | Out-String
-        $LASTEXITCODE | Should -Be 0
-        $output | Should -Match 'SSH_CAPTURE'
-        (Get-Content (Join-Path $script:SshCaptureRoot 'script-name.txt') -Raw) | Should -Match 'run-copilot-demo\.sh'
-        (Get-Content (Join-Path $script:SshCaptureRoot 'script.sh') -Raw) | Should -Match 'copilot'
-    }
-
     It 'Start-ClaudeOS.ps1 が正常終了してブートサマリーを出力すること' {
         $scriptPath = Join-Path $script:RepoRoot 'scripts\main\Start-ClaudeOS.ps1'
         $output = & $script:PowerShellExe -NoProfile -File $scriptPath -NonInteractive 2>&1 | Out-String

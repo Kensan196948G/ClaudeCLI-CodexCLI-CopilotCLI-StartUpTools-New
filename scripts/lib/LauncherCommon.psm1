@@ -245,7 +245,7 @@ function Show-LauncherApiKeyWarning {
 
 <#
 .SYNOPSIS
-    Determines whether to run in local or SSH mode, prompting the user if linuxHost is unconfigured.
+    Determines whether to run in local mode. Always returns $true (Phase 3: SSH removed).
 #>
 function Resolve-LauncherMode {
     param(
@@ -257,39 +257,7 @@ function Resolve-LauncherMode {
         [string]$ConfigPath
     )
 
-    if ($Local) {
-        return $true
-    }
-
-    if ($Config.linuxHost) {
-        return $false
-    }
-
-    Write-Host ""
-    Write-Host "=== Linux接続先未設定 ===" -ForegroundColor Yellow
-    Write-Host "config.json に linuxHost が設定されていません。" -ForegroundColor Yellow
-    Write-Host "リモート実行を使うには設定が必要です。" -ForegroundColor Yellow
-    Write-Host ""
-
-    if ($NonInteractive) {
-        throw "config.json に linuxHost が未設定のため、非対話モードでは続行できません: $ConfigPath"
-    }
-
-    Write-Host "[L] ローカル実行を続ける" -ForegroundColor Cyan
-    Write-Host "[C] config.json を開いて設定する" -ForegroundColor Cyan
-    Write-Host "[0] 終了" -ForegroundColor Cyan
-    $choice = Read-Host "選択してください"
-
-    switch ($choice.ToUpper()) {
-        "L" { return $true }
-        "C" {
-            Write-Host "config.json を開いてください: $ConfigPath" -ForegroundColor Yellow
-            throw "USER_CANCELLED"
-        }
-        default {
-            throw "USER_CANCELLED"
-        }
-    }
+    return $true
 }
 
 <#
@@ -310,12 +278,15 @@ function Resolve-LauncherProject {
         return $Project
     }
 
-    $projectsRoot = if ($Local) { $Config.projectsDir } else { Resolve-SshProjectsDir -Config $Config }
+    # Phase 2b: projectsDir が存在すれば -Local フラグなしでもローカル優先。
+    $localDir = $Config.projectsDir
+    $useLocal = $Local -or ($localDir -and (Test-Path $localDir))
+    $projectsRoot = if ($useLocal) { $localDir } else { Resolve-SshProjectsDir -Config $Config }
     $dirs = $null
 
     if (Test-Path $projectsRoot) {
         $dirs = Get-ChildItem -Path $projectsRoot -Directory | Sort-Object Name
-        if ($Local -and $Config.localExcludes) {
+        if ($useLocal -and $Config.localExcludes) {
             $dirs = $dirs | Where-Object { $_.Name -notin $Config.localExcludes }
         }
     }

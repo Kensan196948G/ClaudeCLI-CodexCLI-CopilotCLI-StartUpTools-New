@@ -1250,6 +1250,26 @@ function handleJobStatus(res) {
   }, null, 2));
 }
 
+// ── Supervisor Status ─────────────────────────────────────────────────────
+const SUPERVISOR_STATE_FILE = path.join(os.homedir(), '.claudeos', 'supervisor', 'state.json');
+
+function handleSupervisorStatus(res) {
+  try {
+    if (!fs.existsSync(SUPERVISOR_STATE_FILE)) {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
+      res.end(JSON.stringify({ running: false, message: 'Supervisor not started', processes: {}, generated: new Date().toISOString() }));
+      return;
+    }
+    const content = fs.readFileSync(SUPERVISOR_STATE_FILE, 'utf8');
+    const state   = JSON.parse(content);
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
+    res.end(JSON.stringify({ running: true, ...state }, null, 2));
+  } catch (e) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: e.message }));
+  }
+}
+
 // ── System Health ─────────────────────────────────────────────────────────
 const SKIP_DIRS = new Set(['node_modules', '.git', '__pycache__', '.venv', 'dist', 'build', 'snapshots']);
 
@@ -1538,6 +1558,19 @@ function watchFiles() {
       }
     } catch {}
   });
+
+  // ── supervisor state.json 監視 ──────────────────────────────────────────
+  const supervisorStateFile = path.join(os.homedir(), '.claudeos', 'supervisor', 'state.json');
+  let lastSupervisorContent = '';
+  fs.watchFile(supervisorStateFile, { interval: 2000 }, () => {
+    try {
+      const content = fs.readFileSync(supervisorStateFile, 'utf8');
+      if (content === lastSupervisorContent) return;
+      lastSupervisorContent = content;
+      const s = JSON.parse(content);
+      pushEvent('supervisor-update', { processes: s.processes, generated: s.generated });
+    } catch {}
+  });
 }
 
 if (typeof module !== 'undefined') {
@@ -1610,6 +1643,7 @@ if (require.main === module) {
     }
     if (pn === '/api/events')                         { return handleSSE(req, res); }
     if (pn === '/api/system-health')                  { return handleSystemHealth(res); }
+    if (pn === '/api/supervisor/status')              { return handleSupervisorStatus(res); }
     // Cron registry CRUD
     if (req.method === 'GET'    && pn === '/api/cron') { return handleCronList(res); }
     if (req.method === 'POST'   && pn === '/api/cron') { return handleCronRegister(req, res); }

@@ -70,13 +70,6 @@ Describe 'Import-StartupConfig' {
             { Import-StartupConfig -ConfigPath $tempPath } | Should -Throw
         }
 
-        It 'linuxHost が欠けている場合に例外をスローすること' {
-            $tempPath = Join-Path $TestDrive 'missing-host.json'
-            @{ version = '2.0.0'; tools = @{ defaultTool = 'claude' } } |
-                ConvertTo-Json | Set-Content $tempPath
-            { Import-StartupConfig -ConfigPath $tempPath } | Should -Throw
-        }
-
         It 'tools が欠けている場合に例外をスローすること' {
             $tempPath = Join-Path $TestDrive 'missing-tools.json'
             @{ version = '2.0.0'; linuxHost = 'host' } |

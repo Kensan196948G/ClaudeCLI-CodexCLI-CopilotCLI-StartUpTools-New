@@ -480,6 +480,7 @@ const NAV_ITEMS = [
   { id:"cron",      icon:"🕐", label:"Cron管理" },
   { id:"boot",      icon:"🚀", label:"Boot Sequence" },
   { id:"log",       icon:"📜", label:"イベントログ" },
+  { id:"supervisor",icon:"🔭", label:"Supervisor" },
 ];
 
 function SideNav({ active, onChange }) {
@@ -2520,6 +2521,120 @@ window.LogPanel = LogPanel;
   </script>
 
   <!-- ═══════════════════════════════════════════════════
+       BLOCK 10.5: Supervisor Panel
+  ═══════════════════════════════════════════════════ -->
+  <script type="text/babel">
+const STATUS_COLOR = {
+  running:  '#00d4ff',
+  starting: '#a78bfa',
+  cooldown: '#fbbf24',
+  stale:    '#fbbf24',
+  idle:     '#6b7280',
+  stopped:  '#6b7280',
+  disabled: '#ff6b6b',
+  unhealthy:'#ff6b6b',
+  unknown:  '#6b7280',
+};
+
+const SupervisorPanel = ({ supervisorData }) => {
+  const procs = supervisorData?.processes ? Object.values(supervisorData.processes) : [];
+  const isRunning = supervisorData?.running === true;
+  const generated = supervisorData?.generated;
+
+  const fmtTime = iso => {
+    if (!iso) return '—';
+    try { return new Date(iso).toLocaleString('ja-JP', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit' }); }
+    catch { return iso; }
+  };
+
+  const StatusBadge = ({ status }) => {
+    const color = STATUS_COLOR[status] || '#6b7280';
+    return (
+      <span style={{ display:'inline-block', padding:'2px 8px', borderRadius:4,
+                     background: color + '22', color, fontSize:11, fontWeight:700,
+                     border:`1px solid ${color}44`, letterSpacing:'0.05em' }}>
+        {status?.toUpperCase() || '—'}
+      </span>
+    );
+  };
+
+  return (
+    <Panel icon="🔭" title="Supervisor" badge={isRunning ? '稼働中' : '停止中'} badgeColor={isRunning ? '#00d4ff' : '#ff6b6b'}>
+      {/* サービスステータスバナー */}
+      <div style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 12px',
+                    background: isRunning ? '#00d4ff11' : '#ff6b6b11',
+                    border:`1px solid ${isRunning ? '#00d4ff33' : '#ff6b6b33'}`,
+                    borderRadius:6, marginBottom:12, fontSize:13 }}>
+        <span style={{ fontSize:16 }}>{isRunning ? '🟢' : '🔴'}</span>
+        <span style={{ color: isRunning ? '#00d4ff' : '#ff6b6b', fontWeight:600 }}>
+          {isRunning ? 'Supervisor Daemon 稼働中' : 'Supervisor Daemon 停止中'}
+        </span>
+        {generated && (
+          <span style={{ marginLeft:'auto', color:'#6b7280', fontSize:11 }}>
+            更新: {fmtTime(generated)}
+          </span>
+        )}
+      </div>
+
+      {/* プロセス一覧テーブル */}
+      {procs.length === 0 ? (
+        <div style={{ color:'#6b7280', fontSize:13, padding:'20px 0', textAlign:'center' }}>
+          {isRunning ? 'プロセスなし' : 'Supervisor 未起動 — state.json 未生成'}
+        </div>
+      ) : (
+        <div style={{ overflowX:'auto' }}>
+          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+            <thead>
+              <tr style={{ borderBottom:`1px solid ${MC.border}` }}>
+                {['名前', 'タイプ', '状態', 'PID', '起動時刻', '再起動回数', '次回リトライ'].map(h => (
+                  <th key={h} style={{ padding:'6px 10px', textAlign:'left', color:'#9ca3af', fontWeight:600, whiteSpace:'nowrap' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {procs.map(p => (
+                <tr key={p.id} style={{ borderBottom:`1px solid ${MC.border}22` }}>
+                  <td style={{ padding:'7px 10px', color:'#e5e7eb', fontWeight:500 }}>{p.name || p.id}</td>
+                  <td style={{ padding:'7px 10px', color:'#9ca3af' }}>{p.type}</td>
+                  <td style={{ padding:'7px 10px' }}><StatusBadge status={p.status} /></td>
+                  <td style={{ padding:'7px 10px', color:'#9ca3af', fontFamily:'monospace' }}>{p.pid || '—'}</td>
+                  <td style={{ padding:'7px 10px', color:'#9ca3af', whiteSpace:'nowrap' }}>{fmtTime(p.startedAt)}</td>
+                  <td style={{ padding:'7px 10px', color: p.restartCount > 5 ? '#fbbf24' : '#9ca3af', textAlign:'center' }}>{p.restartCount ?? 0}</td>
+                  <td style={{ padding:'7px 10px', color:'#9ca3af', whiteSpace:'nowrap' }}>
+                    {p.status === 'cooldown' && p.nextRetryAt ? fmtTime(p.nextRetryAt) : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* セッション監視（session-file type の補足情報） */}
+      {procs.filter(p => p.type === 'session-file').map(p => p.activeSession && (
+        <div key={p.id} style={{ marginTop:10, padding:'8px 12px', background:'#ffffff08',
+                                  border:`1px solid ${MC.border}`, borderRadius:6, fontSize:12 }}>
+          <span style={{ color:'#9ca3af' }}>🟡 アクティブセッション: </span>
+          <span style={{ color:'#e5e7eb' }}>{p.activeSession.sessionId}</span>
+          {p.activeSession.project && <span style={{ color:'#9ca3af' }}> / {p.activeSession.project}</span>}
+          <span style={{ color: p.activeSession.staleSec > 600 ? '#fbbf24' : '#9ca3af', marginLeft:8 }}>
+            ({Math.floor(p.activeSession.staleSec / 60)}分前に更新)
+          </span>
+        </div>
+      ))}
+
+      {/* 操作ヒント */}
+      <div style={{ marginTop:12, padding:'8px 12px', background:'#ffffff06', borderRadius:6, fontSize:11, color:'#6b7280' }}>
+        起動: <code style={{ color:'#a78bfa' }}>Register-SupervisorTask.ps1</code> (Windows) /{' '}
+        <code style={{ color:'#a78bfa' }}>bash install-supervisor-service.sh</code> (Linux)
+      </div>
+    </Panel>
+  );
+};
+window.SupervisorPanel = SupervisorPanel;
+  </script>
+
+  <!-- ═══════════════════════════════════════════════════
        BLOCK 10: App Root
   ═══════════════════════════════════════════════════ -->
   <script type="text/babel">
@@ -2540,6 +2655,7 @@ const App = () => {
   const [sseConnected, setSseConnected] = React.useState(false);
   const [livePhase, setLivePhase]       = React.useState(null);
   const [liveLines, setLiveLines]       = React.useState([]);
+  const [supervisorData, setSupervisorData] = React.useState(null);
 
   React.useEffect(() => {
     applyTheme(t.darkMode);
@@ -2578,6 +2694,12 @@ const App = () => {
           setLiveLines(prev => [...prev.slice(-199), { line: `[cron] ${d.action}: ${d.project}`, at: new Date().toISOString() }]);
         } catch {}
       });
+      es.addEventListener('supervisor-update', e => {
+        try {
+          const d = JSON.parse(e.data);
+          setSupervisorData(prev => ({ ...prev, running: true, processes: d.processes, generated: d.generated }));
+        } catch {}
+      });
     };
 
     // Fetch token if auth is enabled (falls back to no-auth mode)
@@ -2604,6 +2726,10 @@ const App = () => {
         .then(r => r.json())
         .then(d => setAgentTeamsActivity(d))
         .catch(() => { /* 取得失敗時は前回値を継続表示 */ });
+      fetch('/api/supervisor/status')
+        .then(r => r.json())
+        .then(d => setSupervisorData(d))
+        .catch(() => {});
     };
     fetchAll();
     const tid = setInterval(fetchAll, 30000);
@@ -2627,6 +2753,7 @@ const App = () => {
       case "cron":      return <CronPanel liveData={liveData} />;
       case "boot":      return <BootPanel state={state} liveData={liveData} />;
       case "log":       return <LogPanel liveData={liveData} liveLines={liveLines} />;
+      case "supervisor":return <SupervisorPanel supervisorData={supervisorData} />;
       default:          return <ProjectsPanel />;
     }
   };

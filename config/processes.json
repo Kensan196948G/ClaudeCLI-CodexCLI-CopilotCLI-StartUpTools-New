@@ -1,0 +1,43 @@
+{
+  "version": "1.0.0",
+  "comment": "ClaudeOS Supervisor — managed process definitions. Loaded by supervisor-daemon.js.",
+  "processes": [
+    {
+      "id": "dashboard",
+      "type": "http",
+      "name": "ClaudeOS Dashboard",
+      "command": "node",
+      "args": ["scripts/dashboards/serve-dashboard.js"],
+      "cwd": "${PROJ_ROOT}",
+      "healthUrl": "http://localhost:3737/api/health",
+      "healthIntervalMs": 10000,
+      "backoffBaseSec": 5,
+      "maxRestarts": 10,
+      "minUptimeSec": 10,
+      "enabled": true
+    },
+    {
+      "id": "watch-runner",
+      "type": "http",
+      "name": "Watch-and-Run Job Runner",
+      "command": "node",
+      "args": ["scripts/dashboards/watch-and-run.js"],
+      "cwd": "${PROJ_ROOT}",
+      "healthUrl": "http://localhost:3737/api/jobs/status",
+      "healthIntervalMs": 15000,
+      "backoffBaseSec": 5,
+      "maxRestarts": 10,
+      "minUptimeSec": 10,
+      "enabled": false,
+      "comment": "Set enabled=true if running watch-and-run.js as standalone process"
+    },
+    {
+      "id": "claude-session",
+      "type": "session-file",
+      "name": "Claude Auto Session",
+      "sessionDir": "${HOME}/.claudeos/sessions",
+      "staleMinutes": 15,
+      "enabled": true
+    }
+  ]
+}
