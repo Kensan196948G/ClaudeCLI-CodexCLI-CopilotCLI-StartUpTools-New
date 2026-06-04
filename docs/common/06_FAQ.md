@@ -85,7 +85,14 @@ Slash command が `session.json` の `max_duration_minutes` を書き換え、`e
 
 ## Q7. tmux や DevTools は必須ですか？
 
-いいえ。現行構成の標準フローでは必須ではありません。旧構成由来の説明は現在の標準運用ではありません。
+DevTools は不要です。tmux はバックグラウンド起動や実行中セッションへの接続で使います。
+
+Linux native メニューでは `7. tmux / 端末セットアップ` から初期設定できます。直接実行する場合は次を使います。
+
+```bash
+./libexec/setup-terminal.sh --apply
+./libexec/setup-terminal.sh --locale-ja
+```
 
 ---
 
