@@ -127,8 +127,6 @@ function findConfig(filename) {
 
 // config.json を読む
 let PROJECTS_DIR = (process.env.AI_STARTUP_PROJECTS_DIR || 'D:\\').replace(/\\/g, path.sep);
-let LINUX_BASE   = '/home/kensan/Projects';
-let LINUX_HOST   = '';
 // Basic Auth: DASHBOARD_PASSWORD env var OR config.json.dashboardAuth.password
 let AUTH_USER = process.env.DASHBOARD_USER || 'admin';
 let AUTH_PASS = process.env.DASHBOARD_PASSWORD || '';
@@ -137,8 +135,6 @@ try {
   if (cfgPath) {
     const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
     if (cfg.projectsDir) PROJECTS_DIR = cfg.projectsDir.replace(/\\/g, path.sep);
-    if (cfg.linuxBase)   LINUX_BASE   = cfg.linuxBase;
-    if (cfg.linuxHost)   LINUX_HOST   = cfg.linuxHost;
     if (cfg.dashboardAuth?.password && !AUTH_PASS) {
       AUTH_USER = cfg.dashboardAuth.user     || AUTH_USER;
       AUTH_PASS = cfg.dashboardAuth.password;
@@ -236,7 +232,6 @@ function normalizeEntry(e) {
     project:     e.project     || e.Project     || '',
     id:          e.id          || e.Id          || '',
     created:     e.created     || e.RegisteredAt || e.registeredAt || '',
-    linuxHost:   e.linuxHost   || e.LinuxHost   || '',
     duration:    e.duration    || e.DurationMinutes || e.durationMinutes || 300,
     dayOfWeek:   e.dayOfWeek   || e.DayOfWeek   || [],
     time:        e.time        || e.Time        || '',
@@ -291,7 +286,6 @@ function getAllProjects() {
         // Cron info (only if registered)
         id:        cronEntry?.id       || '',
         created:   cronEntry?.created  || '',
-        linuxHost: cronEntry?.linuxHost || LINUX_HOST,
         duration:  cronEntry?.duration  || 300,
         dayOfWeek: cronEntry?.dayOfWeek || [],
         time:      cronEntry?.time      || '',
@@ -304,7 +298,6 @@ function getRegisteredProjects() {
   const all = getAllProjects();
   return all.filter(e => e.hasCron).map(e => ({
     ...e,
-    linuxPath:         `${LINUX_BASE}/${e.project}`,
     cronSchedule:      buildCronSchedule(e),
   }));
 }
@@ -402,8 +395,6 @@ function buildProjectData(entry) {
     githubPrivate:      entry.githubPrivate       || false,
     githubDescription:  entry.githubDescription   || '',
     githubLanguage:     entry.githubLanguage      || '',
-    linuxHost:          entry.linuxHost           || LINUX_HOST,
-    linuxPath:          `${LINUX_BASE}/${entry.project}`,
     cronId:             entry.id                  || '',
     cronCreated:        entry.created             || '',
     cronSchedule:       buildCronSchedule(entry),
@@ -852,7 +843,6 @@ function getActiveCronProject() {
           const pct = Math.min(100, Math.round(diffMin / duration * 100));
           bestEntry = {
             project:            n.project,
-            host:               n.linuxHost || '—',
             scheduleTime:       n.time || '—',
             duration,
             isRunning,
@@ -1112,7 +1102,6 @@ async function handleMcData(res) {
         : '—';
       return {
         project:  n.project,
-        host:     n.linuxHost || LINUX_HOST,
         schedule: scheduleExpr,
         duration: n.duration  || 300,
         status:   'active',
@@ -1410,7 +1399,6 @@ function handleCronList(res) {
     return {
       id:              e.Id,
       project:         e.Project,
-      linuxHost:       e.LinuxHost || '',
       dayOfWeek:       dows,
       time:            e.Time || '09:00',
       durationMinutes: e.DurationMinutes || 300,
@@ -1434,7 +1422,7 @@ function handleCronRegister(req, res) {
       res.end(JSON.stringify({ error: 'Invalid JSON' }));
       return;
     }
-    const { project, linuxHost, dayOfWeek, time, durationMinutes } = data;
+    const { project, dayOfWeek, time, durationMinutes } = data;
     if (!project || typeof project !== 'string' || project.trim().length === 0) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'project is required' }));
@@ -1451,7 +1439,6 @@ function handleCronRegister(req, res) {
     const newEntry = {
       Id:              crypto.randomBytes(4).toString('hex'),
       Project:         project.trim(),
-      LinuxHost:       linuxHost || '',
       DayOfWeek:       dows,
       Time:            String(time || '09:00').replace(/[^0-9:]/g, ''),
       DurationMinutes: Math.min(Math.max(parseInt(durationMinutes) || 300, 30), 600),

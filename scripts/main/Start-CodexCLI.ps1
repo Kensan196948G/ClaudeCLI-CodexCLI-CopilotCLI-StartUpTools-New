@@ -53,14 +53,12 @@ try {
     Write-Ok 'Codex CLI is available.'
 
     $Local = Resolve-LauncherMode -Config $Config -Local:$Local -NonInteractive:$NonInteractive -ConfigPath $ConfigPath
-    $linuxHost = $Config.linuxHost
-    $linuxBase = $Config.linuxBase
-    $Project = Resolve-LauncherProject -Config $Config -Project $Project -Local:$Local -NonInteractive:$NonInteractive -LinuxHost $linuxHost
+    $Project = Resolve-LauncherProject -Config $Config -Project $Project -Local:$Local -NonInteractive:$NonInteractive
     $modeName = Get-LauncherModeName -Local:$Local
     $launchContext.Project = $Project
     $launchContext.Mode = $modeName
     $launchContext.Tool = 'codex'
-    $modeLabel = Get-LauncherModeLabel -Project $Project -Local:$Local -ProjectsDir $Config.projectsDir -LinuxHost $linuxHost -LinuxBase $linuxBase
+    $modeLabel = Get-LauncherModeLabel -Project $Project -Local:$Local -ProjectsDir $Config.projectsDir
 
     if (-not (Confirm-LauncherStart -ToolName 'Codex CLI' -Project $Project -ModeLabel $modeLabel -NonInteractive:$NonInteractive)) {
         Write-Info 'Cancelled.'

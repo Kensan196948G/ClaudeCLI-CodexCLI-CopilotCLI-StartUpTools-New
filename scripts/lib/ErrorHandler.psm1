@@ -49,7 +49,7 @@ $script:CategorySolutions = @{
     )
     CONFIG_INVALID = @(
         "1. config.json の JSON 構文を確認",
-        "2. 必須フィールドが存在するか確認: version, linuxHost, tools",
+        "2. 必須フィールドが存在するか確認: version, projectsDir, tools",
         "3. config.json.template と比較して不足項目を確認"
     )
     DEPENDENCY_MISSING = @(

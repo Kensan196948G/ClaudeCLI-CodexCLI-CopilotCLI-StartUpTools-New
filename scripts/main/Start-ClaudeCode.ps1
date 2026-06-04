@@ -124,59 +124,6 @@ function Get-StartPromptSection {
     }
 }
 
-function Invoke-ClaudeSshViaStdin {
-    param(
-        [Parameter(Mandatory)][string]$LinuxHost,
-        [Parameter(Mandatory)][string]$ScriptText
-    )
-
-    if ($env:AI_STARTUP_SSH_CAPTURE_DIR) {
-        $captureDir = $env:AI_STARTUP_SSH_CAPTURE_DIR
-        if (-not (Test-Path $captureDir)) {
-            New-Item -ItemType Directory -Force -Path $captureDir | Out-Null
-        }
-        Set-Content -Path (Join-Path $captureDir "deploy-script.sh") -Value $ScriptText -Encoding UTF8
-        Write-Host "[INFO] SSH_CAPTURE deploy $LinuxHost" -ForegroundColor DarkGray
-        return 0
-    }
-
-    # Bash on the remote side must receive LF-only content.
-    $normalizedScript = (($ScriptText -replace "`r`n", "`n") -replace "`r", "`n")
-
-    $sshCommand = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { 'ssh' }
-    $connectTimeout = if ($env:AI_STARTUP_SSH_CONNECT_TIMEOUT) { $env:AI_STARTUP_SSH_CONNECT_TIMEOUT } else { '10' }
-
-    # Windows OpenSSH は ControlMaster のUnixソケットをサポートしないため無効化する。
-    # Linuxでのみ ControlMaster=auto を使用して多重接続時の TCP 競合を回避する。
-    $sshControlArgs = if ($IsWindows -or $env:OS -eq 'Windows_NT') {
-        "-o ControlMaster=no"
-    } else {
-        $controlPath = "/tmp/ssh_cm_%r@%h_%p"
-        "-o ControlMaster=auto -o ControlPath=$controlPath -o ControlPersist=15"
-    }
-
-    $psi = [System.Diagnostics.ProcessStartInfo]::new()
-    $psi.FileName = $sshCommand
-    $psi.UseShellExecute = $false
-    $psi.RedirectStandardInput = $true
-    $psi.RedirectStandardOutput = $false
-    $psi.RedirectStandardError = $false
-    $psi.Arguments = ('-T -o ConnectTimeout={0} -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=60 -o ServerAliveCountMax=3 {1} {2} "bash -s"' -f $connectTimeout, $sshControlArgs, $LinuxHost)
-
-    $process = [System.Diagnostics.Process]::new()
-    $process.StartInfo = $psi
-
-    Write-Info "SSH 接続中: $LinuxHost ..."
-    [void]$process.Start()
-    $process.StandardInput.NewLine = "`n"
-    $process.StandardInput.Write($normalizedScript)
-    if (-not $normalizedScript.EndsWith("`n")) {
-        $process.StandardInput.WriteLine()
-    }
-    $process.StandardInput.Close()
-    $process.WaitForExit()
-    return $process.ExitCode
-}
 
 $launchContext = New-LauncherExecutionContext
 $Config = $null
@@ -204,14 +151,12 @@ try {
         Show-LauncherApiKeyWarning -ApiKeyName $apiKeyName -LoginHint 'Use /login after Claude Code starts if you rely on account auth.' -ApiHint "Set environment variable $apiKeyName for API auth."
     }
 
-    $linuxHost = $Config.linuxHost
-    $linuxBase = $Config.linuxBase
-    $Project = Resolve-LauncherProject -Config $Config -Project $Project -Local:$Local -NonInteractive:$NonInteractive -LinuxHost $linuxHost
+    $Project = Resolve-LauncherProject -Config $Config -Project $Project -Local:$Local -NonInteractive:$NonInteractive
     $modeName = Get-LauncherModeName -Local:$Local
     $launchContext.Project = $Project
     $launchContext.Mode = $modeName
     $launchContext.Tool = 'claude'
-    $modeLabel = Get-LauncherModeLabel -Project $Project -Local:$Local -ProjectsDir $Config.projectsDir -LinuxHost $linuxHost -LinuxBase $linuxBase
+    $modeLabel = Get-LauncherModeLabel -Project $Project -Local:$Local -ProjectsDir $Config.projectsDir
 
     if (-not (Confirm-LauncherStart -ToolName 'Claude Code' -Project $Project -ModeLabel $modeLabel -NonInteractive:$NonInteractive)) {
         Write-Info 'Cancelled.'

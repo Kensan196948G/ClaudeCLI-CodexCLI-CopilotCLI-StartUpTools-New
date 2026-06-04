@@ -21,15 +21,11 @@
         $cmdPath = Join-Path $script:BinRoot "$cmd.cmd"
         Set-Content -Path $cmdPath -Encoding ASCII -Value "@echo off`recho $cmd stub"
     }
-    $script:SshCaptureRoot = Join-Path $TestDrive 'ssh-capture'
-
     $config = @{
         version        = '2.0.0'
         projectsDir    = $script:ProjectsRoot
         projectsDirUnc = '\\test-host\projects'
         sshProjectsDir = $script:SshProjectsRoot
-        linuxHost      = 'test-linux'
-        linuxBase      = '/home/kensan/Projects'
         localExcludes  = @()
         tools          = @{
             defaultTool = 'claude'
@@ -71,13 +67,11 @@
 
     $env:AI_STARTUP_CONFIG_PATH = $script:ConfigPath
     $env:PATH = "$script:BinRoot;$script:OriginalPath"
-    $env:AI_STARTUP_SSH_CAPTURE_DIR = $script:SshCaptureRoot
 }
 
 AfterAll {
     $env:PATH = $script:OriginalPath
     $env:AI_STARTUP_CONFIG_PATH = $script:OriginalConfigOverride
-    Remove-Item Env:AI_STARTUP_SSH_CAPTURE_DIR -ErrorAction SilentlyContinue
 }
 
 Describe 'Start-*.ps1 dry-run flows' {
@@ -251,8 +245,6 @@ Describe 'Start-Menu helper flows' {
             projectsDir = $script:ProjectsRoot
             sshProjectsDir = $script:SshProjectsRoot
             projectsDirUnc = '\\test-host\projects'
-            linuxHost = 'test-linux'
-            linuxBase = '/home/kensan/Projects'
             localExcludes = @()
             tools = @{
                 defaultTool = 'claude'

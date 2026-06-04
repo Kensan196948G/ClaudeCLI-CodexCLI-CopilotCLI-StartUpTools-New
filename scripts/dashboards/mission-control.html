@@ -1792,7 +1792,7 @@ function formatNextRunDisplay(nextRunStr, expr) {
 // ── CronRegisterModal — 新規登録フォーム ─────────────────────────────────
 function CronRegisterModal({ onClose, onRegistered }) {
   const [form, setForm] = React.useState({
-    project: '', linuxHost: '192.168.0.185',
+    project: '',
     dayOfWeek: [1,2,3,4,5,6], time: '09:00', durationMinutes: 300
   });
   const [error, setError] = React.useState('');
@@ -1822,7 +1822,6 @@ function CronRegisterModal({ onClose, onRegistered }) {
         <p style={{ margin:'0 0 12px', fontSize:11, color:MC.textMuted }}>⚠️ ローカル台帳への追加のみ。実 crontab への反映はCLI [14] を実行してください。</p>
         {[
           { label:'プロジェクト名', key:'project', type:'text', placeholder:'MyProject' },
-          { label:'Linux ホスト', key:'linuxHost', type:'text', placeholder:'192.168.0.185' },
           { label:'開始時刻 (HH:MM)', key:'time', type:'text', placeholder:'09:00' },
           { label:'実行時間 (分)', key:'durationMinutes', type:'number', placeholder:'300' },
         ].map(({ label, key, type, placeholder }) => (
@@ -1868,7 +1867,7 @@ const CronPanel = ({ liveData }) => {
     const load = () => fetch('/api/cron').then(r => r.json()).then(d => {
       if (d.entries?.length) {
         setSchedules(d.entries.map(e => ({
-          project: e.project, host: e.linuxHost || '—',
+          project: e.project,
           schedule: e.schedule, duration: e.durationMinutes,
           status: 'active', lastRun: e.registeredAt?.slice(0,10) || '—',
           nextRun: e.nextRun, result: 'success',

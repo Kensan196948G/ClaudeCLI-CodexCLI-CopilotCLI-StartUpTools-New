@@ -51,11 +51,9 @@ try {
     }
 
     $Local = Resolve-LauncherMode -Config $config -Local:$Local -NonInteractive:$NonInteractive -ConfigPath $ConfigPath
-    $linuxHost = $config.linuxHost
-    $linuxBase = $config.linuxBase
-    $Project = Resolve-LauncherProject -Config $config -Project $Project -Local:$Local -NonInteractive:$NonInteractive -LinuxHost $linuxHost
+    $Project = Resolve-LauncherProject -Config $config -Project $Project -Local:$Local -NonInteractive:$NonInteractive
     $modeName = Get-LauncherModeName -Local:$Local
-    $modeLabel = Get-LauncherModeLabel -Project $Project -Local:$Local -ProjectsDir $config.projectsDir -LinuxHost $linuxHost -LinuxBase $linuxBase
+    $modeLabel = Get-LauncherModeLabel -Project $Project -Local:$Local -ProjectsDir $config.projectsDir
 
     $launchContext.Project = $Project
     $launchContext.Mode = $modeName
