@@ -240,7 +240,27 @@ mon__action() {
   if [[ "$sel" =~ ^[0-9]+$ ]] && (( sel >= 1 && sel <= ${#regs[@]} )); then
     p="${regs[$((sel - 1))]}"
     case "$key" in
-      l) bash "$SCRIPT_DIR/cron-schedule.sh" run-now --project "$p" || true ;;
+      l)
+        bash "$SCRIPT_DIR/cron-schedule.sh" run-now --project "$p" || true
+        # Wait up to 30s for the tmux session to actually appear (cron-launcher.sh
+        # has ~1-3s of Python3 initialization before tmux new-session runs)
+        local _safe _session _i _found=0
+        _safe="$(ccsu_safe_name "$p")"
+        _session="claudeos-$_safe"
+        printf '  起動確認中'
+        for ((_i = 0; _i < 60; _i++)); do
+          if "$TMUX_BIN" has-session -t "$_session" 2>/dev/null; then
+            _found=1; break
+          fi
+          sleep 0.5
+          printf '.'
+        done
+        if (( _found )); then
+          printf '\n  %s✓ セッション起動: %s%s\n' "$C_GREEN" "$_session" "$C_RESET"
+        else
+          printf '\n  %s⚠ 起動待ちタイムアウト (BG 継続中): %s%s\n' "$C_YELLOW" "$_session" "$C_RESET"
+        fi
+        ;;
       s) mon__supervise_start "$p" ;;
       x) bash "$SCRIPT_DIR/autonomy.sh" stop "$p" || true ;;
     esac
