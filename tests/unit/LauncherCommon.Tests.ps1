@@ -84,10 +84,10 @@ Describe 'Resolve-LauncherMode (Phase 2b)' {
         $result | Should -Be $true
     }
 
-    It 'linuxHost 設定済みかつ -Local なしで $false を返すこと' {
+    It 'linuxHost 設定があっても常にローカルとして $true を返すこと (Phase 3)' {
         $config = [pscustomobject]@{ linuxHost = '192.168.0.185' }
         $result = Resolve-LauncherMode -Config $config -ConfigPath 'dummy.json'
-        $result | Should -Be $false
+        $result | Should -Be $true
     }
 
     It 'linuxHost 未設定で -Local なし = ローカル一本化として $true を返すこと (Phase 2b)' {

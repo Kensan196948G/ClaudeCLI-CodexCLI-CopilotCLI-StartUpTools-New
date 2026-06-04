@@ -93,35 +93,6 @@ try {
         $launchContext.Result = if ($LASTEXITCODE -eq 0) { 'success' } else { 'failure' }
         exit $LASTEXITCODE
     }
-
-    $linuxProject = "$linuxBase/$Project"
-    $codexArgs = $toolConfig.args -join ' '
-
-    # ssh -tt HOST "cd PROJECT && codex ARGS" の直接コマンド
-    $runScript = "cd '$linuxProject' && codex $codexArgs"
-
-    if ($DryRun) {
-        $dryRunLines = New-LauncherDryRunMessage -Command 'codex' -LinuxHost $linuxHost -RemoteScript $runScript
-        Write-Info $dryRunLines[0]
-        Write-Host $dryRunLines[1]
-        $launchContext.Result = 'success'
-        exit 0
-    }
-
-    # SSH起動通知音
-    Invoke-LauncherNotificationSound -Tool 'codex' -Config $Config -Wait $false
-
-    Write-Info "Connecting via SSH: $linuxHost"
-    $sshExitCode = Invoke-LauncherSshScript -LinuxHost $linuxHost -RunScript $runScript -RemoteScriptName "run-codex-$Project.sh"
-    # 255 は SSH 接続失敗（Invoke-LauncherSshScript 内で診断メッセージ表示済み）
-    # それ以外の終了コードはツールの正常終了として扱う
-    if ($sshExitCode -eq 255) {
-        $launchContext.Result = 'failure'
-        exit $sshExitCode
-    }
-
-    $launchContext.Result = 'success'
-    Write-Ok 'Codex CLI session finished.'
 }
 catch {
     if ($_.Exception.Message -eq 'USER_CANCELLED') {

@@ -73,23 +73,8 @@ function Invoke-CloudCLI {
 function Invoke-CronAllSync {
     Write-Host ""
     Write-Host "  Cron 登録済みプロジェクトを Cloud Schedule に一括同期します。" -ForegroundColor Cyan
-    Write-Host "  SSH 経由で Cron エントリを取得中..." -ForegroundColor DarkGray
 
     $cronProjects = @()
-    try {
-        $ScriptRootCS = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-        $cronMgr      = Join-Path $ScriptRootCS 'scripts\lib\CronManager.psm1'
-        $cfgPath      = Join-Path $ScriptRootCS 'config\config.json'
-        if ((Test-Path $cronMgr) -and (Test-Path $cfgPath)) {
-            Import-Module $cronMgr -Force -DisableNameChecking -ErrorAction SilentlyContinue
-            $cfg = Get-Content $cfgPath -Raw | ConvertFrom-Json
-            $linuxHost = $cfg.linuxHost
-            if ($linuxHost -and $linuxHost -ne '<your-linux-host>') {
-                $entries = Get-ClaudeOSCronEntry -LinuxHost $linuxHost -ErrorAction SilentlyContinue
-                $cronProjects = @($entries | Where-Object { -not [string]::IsNullOrWhiteSpace($_.Project) } | Select-Object -ExpandProperty Project -Unique)
-            }
-        }
-    } catch { $null = $_ } # ssh/network failure is non-fatal
 
     if ($cronProjects.Count -eq 0) {
         Write-Host "  [INFO] Cron 登録済みプロジェクトが見つかりませんでした。" -ForegroundColor Yellow
@@ -186,41 +171,7 @@ Example: REPO_URL:https://github.com/user/repo
             }
         } catch { $null = $_ } # cloud schedule unavailable is non-fatal
 
-        # ── 2. Cron 登録済みプロジェクト（CronManager 経由、SSH）を取得してマージ ──
-        try {
-            $ScriptRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-            $cronMgr    = Join-Path $ScriptRoot 'scripts\lib\CronManager.psm1'
-            $cfgPath    = Join-Path $ScriptRoot 'config\config.json'
-            if (-not (Test-Path $cfgPath)) { $cfgPath = Join-Path $ScriptRoot 'Claude\templates\claude\config.json.template' }
-            if ((Test-Path $cronMgr) -and (Test-Path $cfgPath)) {
-                Import-Module $cronMgr -Force -DisableNameChecking -ErrorAction SilentlyContinue
-                $cfg = Get-Content $cfgPath -Raw | ConvertFrom-Json
-                $linuxHost = $cfg.linuxHost
-                if ($linuxHost -and $linuxHost -ne '<your-linux-host>') {
-                    $entries = Get-ClaudeOSCronEntry -LinuxHost $linuxHost -ErrorAction SilentlyContinue
-                    $cronOwner = ''
-                    try {
-                        $cronRemote = (& git remote get-url origin 2>$null) -join ''
-                        if ($cronRemote -match 'github\.com[:/]([^/]+)/') { $cronOwner = $matches[1] }
-                    } catch { $null = $_ } # git remote failure is non-fatal
-
-                    foreach ($e in @($entries)) {
-                        if ([string]::IsNullOrWhiteSpace($e.Project)) { continue }
-                        $guessUrl = if ($cronOwner) { "https://github.com/$cronOwner/$($e.Project)" } else { '' }
-
-                        $existing = $projects | Where-Object { $_.Label -eq $e.Project -or ($guessUrl -and $_.Url -eq $guessUrl) } | Select-Object -First 1
-                        if ($existing) {
-                            $existing.HasCron = $true
-                        } else {
-                            $url = if ($guessUrl) { $guessUrl } else { '' }
-                            $projects.Add([pscustomobject]@{ Label = $e.Project; Url = $url; HasCloud = $false; HasCron = $true })
-                        }
-                    }
-                }
-            }
-        } catch { $null = $_ } # ssh/cron module unavailable is non-fatal
-
-        # ── 3. 現在のディレクトリの git remote（未登録なら追加） ──
+        # ── 2. 現在のディレクトリの git remote（未登録なら追加） ──
         try {
             $rawUrl = (& git remote get-url origin 2>$null) -join ''
             if ($rawUrl -match 'github\.com') {

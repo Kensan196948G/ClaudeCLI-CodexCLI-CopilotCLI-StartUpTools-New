@@ -245,7 +245,7 @@ function Show-LauncherApiKeyWarning {
 
 <#
 .SYNOPSIS
-    Determines whether to run in local or SSH mode, prompting the user if linuxHost is unconfigured.
+    Determines whether to run in local mode. Always returns $true (Phase 3: SSH removed).
 #>
 function Resolve-LauncherMode {
     param(
@@ -257,16 +257,6 @@ function Resolve-LauncherMode {
         [string]$ConfigPath
     )
 
-    if ($Local) {
-        return $true
-    }
-
-    if ($Config.linuxHost) {
-        return $false
-    }
-
-    # linuxHost 未設定 = ローカル一本化 (D:\ 直下)。Phase 2b: プロンプトなしで即ローカルへ。
-    # SSH 設定がなければリモート実行は不可能なので、NonInteractive の有無に関わらず $true。
     return $true
 }
 
