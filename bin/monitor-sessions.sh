@@ -440,20 +440,23 @@ mon__render_once() {
   (( any == 0 )) && printf '   %s(実行中なし)%s\n' "$C_GRAY" "$C_RESET"
   mon__hr
   # --- 登録プロジェクト + supervisor ---
-  printf '   %s● 登録 / supervisor%s  %s#  %-22s %-7s %-13s rst/min%s\n' \
-    "$C_GREEN" "$C_RESET" "$C_GRAY" "プロジェクト" "session" "supervisor" "$C_RESET"
+  # NOTE: CJK header compensation: "プロジェクト"=6chars×2display_cols=12display.
+  #       %-20s → 6chars+14spaces = 12+14=26 display cols (matches data %-26s).
+  printf '   %s● 登録 / supervisor%s  %s#  %-20s %-4s %-14s %5s%s\n' \
+    "$C_GREEN" "$C_RESET" "$C_GRAY" "プロジェクト" "tmux" "supervisor" "rst/min" "$C_RESET"
   local rn=0 rp rrun rstat rrst rmin sicon supcol
   while IFS='|' read -r rp rrun rstat rrst rmin; do
     [[ -z "$rp" ]] && continue
     rn=$(( rn + 1 ))
-    if [[ "$rrun" == "1" ]]; then sicon="●稼働"; else sicon="○停止"; fi
+    # ASCII sicon avoids CJK double-width misalignment
+    if [[ "$rrun" == "1" ]]; then sicon="on "; else sicon="off"; fi
     case "$rstat" in
       running)            supcol="$C_GREEN" ;;
       goal-reached)       supcol="$C_CYAN" ;;
       blocked|crash-loop) supcol="$C_RED" ;;
       *)                  supcol="$C_GRAY" ;;
     esac
-    printf '   %s%2s%s  %-22s %-7s %s%-13s%s %s/%s\n' \
+    printf '   %s%2s%s  %-26s %-4s %s%-14s%s %3s/%-3s\n' \
       "$C_YELLOW" "$rn" "$C_RESET" "$rp" "$sicon" "$supcol" "$rstat" "$C_RESET" "$rrst" "$rmin"
   done < <(mon__collect_registered)
   (( rn == 0 )) && printf '   %s(登録なし — 項14 cron 登録 / autonomy.sh start)%s\n' "$C_GRAY" "$C_RESET"
