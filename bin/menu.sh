@@ -51,9 +51,9 @@ show_menu() {
   [[ "$deploy_ready" == "true" && $is_maint -eq 0 ]] && deploy_badge=" 🚀 デプロイ準備完了!"
 
   printf '\n'
-  printf '  %s╔══════════════════════════════════════════════════╗%s\n' "$C_CYAN" "$C_RESET"
-  printf '  %s║  🤖 ClaudeCode スタートアップツール v3.3 (Linux) ║%s\n' "$C_CYAN" "$C_RESET"
-  printf '  %s╚══════════════════════════════════════════════════╝%s\n' "$C_CYAN" "$C_RESET"
+  printf '  %s╔════════════════════════════════════════════════════╗%s\n' "$C_CYAN" "$C_RESET"
+  printf '  %s║  🤖 ClaudeCode スタートアップツール v3.4.8 (Linux) ║%s\n' "$C_CYAN" "$C_RESET"
+  printf '  %s╚════════════════════════════════════════════════════╝%s\n' "$C_CYAN" "$C_RESET"
   printf '  %s📋 フェーズ: %s%s%s%s\n' "$C_GRAY" "$C_RESET" "$phase_color" "$phase_label$deploy_badge" "$C_RESET"
   printf '  %s📂 %s%s%s\n' "$C_GREEN" "$C_DKGREEN" "$local_dir" "$C_RESET"
   printf '\n'
