@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # ============================================================
-# supervisor.bats — install-supervisor-service.sh のテスト
+# install-supervisor-service.bats — install-supervisor-service.sh のテスト
 # systemctl / loginctl / journalctl を PATH スタブ化して検証。
 # ============================================================
 
