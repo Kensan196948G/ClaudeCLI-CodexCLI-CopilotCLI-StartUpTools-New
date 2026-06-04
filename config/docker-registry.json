@@ -1,0 +1,119 @@
+{
+  "_comment": "Docker 管理対象プロジェクト台帳。docker-control.sh が読み書きする。compose=primary compose 相対パス, autostart=メニュー/cron 一括起動の対象, stack=検出スタック。",
+  "projects": {
+    "ArcSphere3D": {
+      "compose": "docker/docker-compose.yml",
+      "autostart": false,
+      "stack": "fullstack",
+      "registered_at": "2026-06-04T13:58:23+09:00"
+    },
+    "Civil-Construction-IMS": {
+      "compose": "docker-compose.yml",
+      "autostart": false,
+      "stack": "node",
+      "registered_at": "2026-06-04T13:58:23+09:00"
+    },
+    "Civil-Draw": {
+      "compose": "docker-compose.yml",
+      "autostart": false,
+      "stack": "node",
+      "registered_at": "2026-06-04T13:58:23+09:00"
+    },
+    "Civil-ITSM-Support": {
+      "compose": "docker-compose.yml",
+      "autostart": false,
+      "stack": "fullstack",
+      "registered_at": "2026-06-04T13:58:23+09:00"
+    },
+    "CivilPDF-DX": {
+      "compose": "docker-compose.yml",
+      "autostart": false,
+      "stack": "unknown",
+      "registered_at": "2026-06-04T13:58:23+09:00"
+    },
+    "Construction-DX-OS": {
+      "compose": "docker-compose.yml",
+      "autostart": false,
+      "stack": "python",
+      "registered_at": "2026-06-04T13:58:23+09:00"
+    },
+    "Construction-DX-OnePlatform": {
+      "compose": "docker-compose.yml",
+      "autostart": false,
+      "stack": "fullstack",
+      "registered_at": "2026-06-04T13:58:23+09:00"
+    },
+    "Construction-Enterprise-OS": {
+      "compose": "docker-compose.yml",
+      "autostart": false,
+      "stack": "node",
+      "registered_at": "2026-06-04T13:58:23+09:00"
+    },
+    "Construction-LegalOps-DX": {
+      "compose": "infra/docker/docker-compose.yml",
+      "autostart": false,
+      "stack": "fullstack",
+      "registered_at": "2026-06-04T13:58:23+09:00"
+    },
+    "Enterprise-AI-HelpDesk-System": {
+      "compose": "docker-compose.yml",
+      "autostart": false,
+      "stack": "fullstack",
+      "registered_at": "2026-06-04T13:58:23+09:00"
+    },
+    "IT-BCP-ITSCM-System": {
+      "compose": "docker-compose.yml",
+      "autostart": false,
+      "stack": "fullstack",
+      "registered_at": "2026-06-04T13:58:23+09:00"
+    },
+    "ITSM-Management": {
+      "compose": "docker-compose.yml",
+      "autostart": false,
+      "stack": "fullstack",
+      "registered_at": "2026-06-04T13:58:23+09:00"
+    },
+    "Open-BIM-Information-Platform": {
+      "compose": "docker-compose.yml",
+      "autostart": false,
+      "stack": "fullstack",
+      "registered_at": "2026-06-04T13:58:23+09:00"
+    },
+    "PC-Ops-Orchestrator": {
+      "compose": "docker-compose.yml",
+      "autostart": false,
+      "stack": "unknown",
+      "registered_at": "2026-06-04T13:58:23+09:00"
+    },
+    "Remote-Service-Platform": {
+      "compose": "docker-compose.yml",
+      "autostart": false,
+      "stack": "unknown",
+      "registered_at": "2026-06-04T13:58:23+09:00"
+    },
+    "ServiceHub-Construction-Platform": {
+      "compose": "docker-compose.yml",
+      "autostart": false,
+      "stack": "fullstack",
+      "registered_at": "2026-06-04T13:58:23+09:00"
+    },
+    "Synapse-OS": {
+      "compose": "docker-compose.yml",
+      "autostart": false,
+      "stack": "node",
+      "registered_at": "2026-06-04T13:58:23+09:00"
+    },
+    "Weather-Marine-Construction-Decision-Support-System": {
+      "compose": "docker-compose.yml",
+      "autostart": false,
+      "stack": "python",
+      "registered_at": "2026-06-04T13:58:23+09:00"
+    },
+    "Windows-Deploy-Management-System": {
+      "compose": "docker/docker-compose.yml",
+      "autostart": false,
+      "stack": "fullstack",
+      "registered_at": "2026-06-04T13:59:27+09:00"
+    }
+  }
+}
