@@ -10,6 +10,9 @@
 > **🚀 ClaudeOS v9.0 — `/goal` + Agent Teams + Agent View 完全統合**
 > Claude Code v2.1.139+ の公式機能を全統合。`/goal` コマンドで達成条件を設定し Haiku が自動判定、Agent Teams で並列協調開発、`claude agents`（Agent View）でセッション監視。固定ループ → 動的判断型へ移行。詳細は [`CLAUDE.md`](./CLAUDE.md) を参照。
 
+> **🔄 v3.3.8 — 全プロセス統合 Supervisor daemon 新設**
+> `supervisor-daemon.js` で Dashboard・watch-runner・claude-session を一元監視（8秒ループ死活判定・自動再起動・指数バックオフ cooldown・ログ集約）。Windows は `Register-SupervisorTask.ps1`（Task Scheduler）、Linux は `install-supervisor-service.sh`（systemd user service + loginctl linger）で OS ネイティブ登録。`serve-dashboard.js` に `/api/supervisor/status` + SSE `supervisor-update` を追加し、Mission Control SupervisorPanel でリアルタイム表示。Pester **891件**（32件追加）・bats supervisor **9テスト**追加。
+
 > **🎨 v3.3.6 — Mission Control 6項目 UI 大幅改善**
 > Projects: Cron のみデフォルト表示（簡易 12件除外）/ Dashboard: 稼働プロジェクトバナー（名前/経過/フェーズ/Goal）/ 健全性: 全プロジェクト健全性テーブル / CI/GitHub: プロジェクト選択 + 全STABLE一覧タブ / Cron: 06/01(月) 08:30 フル日時表示。
 
@@ -51,8 +54,8 @@
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.3.7** (プロジェクト別 CI/PR/Issues 実データ表示) — 旧: v3.3.6 |
-| テスト | **776件** — Pester (Unit 21 / Integration 11 / Smoke 1) |
+| バージョン | **v3.3.8** (全プロセス統合 Supervisor daemon 新設) — 旧: v3.3.7 |
+| テスト | **891件** — Pester (Unit 21 / Integration 11 / Smoke 1) + bats supervisor 9件 |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | **v9.0** (`/goal` 駆動 / Agent Teams パターン A/B/C / Agent View / 動的判断 / 週次フェーズ制御 / learning パターン記録 / Stop Conditions 厳格化 / Opus 4.7 最適化 / 1H cache / PreCompact hook) |
 | Agents | **44体** の特化サブエージェント (v3.3.5 SOT同期でテンプレートから16体追加) |
@@ -121,9 +124,11 @@
 | 動詞 | コマンド | 目的 |
 |---|---|---|
 | **lint** | `Invoke-ScriptAnalyzer -Path . -Recurse -Severity Error` | PSScriptAnalyzer による静的解析（Error 粒度で CI ゲート、Warning は非ブロッキング） |
-| **test** | `Invoke-Pester .\tests -CI` | Pester 全テスト（現在 680 件 / Unit + Integration + Smoke）。`-CI` で `testResults.xml` 生成 |
+| **test** | `Invoke-Pester .\tests -CI` | Pester 全テスト（現在 891 件 / Unit + Integration + Smoke）。`-CI` で `testResults.xml` 生成 |
 | **build** | `.\scripts\main\Start-ClaudeOS.ps1 -DryRun` | ブートシーケンス検証（Step 1 〜 9 を実行せず設定のみ確認） |
 | **security** | `.\scripts\test\Test-McpHealth.ps1` + `gitleaks detect --source .`（CI と同等目的） | MCP サーバーヘルス + secret 漏洩スキャン（CI では [`security-scan.yml`](./.github/workflows/security-scan.yml) が gitleaks 実行） |
+| **supervisor (Win)** | `.\scripts\main\Register-SupervisorTask.ps1 -Status` | Supervisor daemon 状態確認（`-RunNow` で起動・`-Unregister` で Task Scheduler 削除） |
+| **supervisor (Linux)** | `bash scripts/dashboards/install-supervisor-service.sh --status` | systemd user service 状態確認（`--logs` でログ表示・`--uninstall` で削除） |
 
 > CI 側の同等コマンドは [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) と [`.github/workflows/security-scan.yml`](./.github/workflows/security-scan.yml) を参照。
 
@@ -161,6 +166,14 @@ graph TD
     PLD --> AT_CHK["Agent Teams Check"]
 
     C --> N["CLAUDE.md / settings.json / commands/ deploy"]
+
+    SUP["🔄 supervisor-daemon.js\n(死活監視・自動再起動)"] --> SSTATE["~/.claudeos/supervisor/state.json"]
+    SSTATE --> DASH["serve-dashboard.js\n/api/supervisor/status + SSE"]
+    DASH --> MC["Mission Control\nSupervisorPanel"]
+    B --> SUP_REG["Register-SupervisorTask.ps1\n(Windows Task Scheduler)"]
+    CL --> SUP_SH["install-supervisor-service.sh\n(systemd user service)"]
+    SUP_REG --> SUP
+    SUP_SH --> SUP
 ```
 
 ## モジュール構成
@@ -311,6 +324,7 @@ flowchart TD
 | 🐰 CodeRabbit Review | ⭐ Claude 専用 | `/coderabbit:review` コマンドで 40+ 解析器による静的解析レビュー（Verify フェーズ補完）🆕 |
 | 👥 /team-onboarding | ⭐ Claude 専用 | 新メンバー向けオンボーディングガイドの自動生成・出力コマンド 🆕 |
 | 🔎 MCP ランタイムプローブ | ⭐ Claude 専用 | `Invoke-McpRuntimeProbe` で MCP サーバーの起動テストを実行 |
+| 🔄 Supervisor daemon | ⭐ Claude 専用 | `supervisor-daemon.js` で全プロセス一元監視・死活判定・自動再起動・指数バックオフ cooldown。OS ネイティブ登録（Windows: Task Scheduler / Linux: systemd user service）🆕 |
 
 ---
 
