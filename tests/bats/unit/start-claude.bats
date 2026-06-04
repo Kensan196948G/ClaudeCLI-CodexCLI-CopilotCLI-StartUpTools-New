@@ -27,6 +27,7 @@ esac
 JSON
   mkdir -p "$TEST_TEMP/projects/MyProj/.claude"
   export CLAUDEOS_HOME="$TEST_TEMP/claudeos"
+  export CCSU_SKIP_ENV_FILE=1   # 実 ~/.env-claudeos を読み込まない (メール watcher を起動させない)
   SCRIPT="$REPO_ROOT/bin/start-claude.sh"
 }
 teardown() { _bats_common_teardown; }

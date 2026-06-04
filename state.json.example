@@ -212,5 +212,13 @@
     "environment": null,
     "post_deploy_verified": false,
     "notes": ""
+  },
+  "supervisor": {
+    "daily_max_minutes": 600,
+    "max_restarts_per_day": 6,
+    "session_minutes": 300,
+    "cooldown_seconds": 30,
+    "crash_loop_threshold": 3,
+    "crash_loop_min_seconds": 120
   }
 }

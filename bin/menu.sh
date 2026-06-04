@@ -100,8 +100,9 @@ show_menu() {
 
   # Cron
   printf '  %s⏰ Linux Cron 管理%s\n' "$C_YELLOW" "$C_RESET"
-  printf '   %s 14 %s  📅  Cron スケジュール 登録・編集・削除\n' "$C_BG_DKBLUE" "$C_RESET"
-  printf '   %s 15 %s  📺  セッション状態監視 (tmux / リアルタイム)\n' "$C_BG_DKBLUE" "$C_RESET"
+  printf '   %s 14 %s  📅  Cron スケジュール 登録・編集・削除 / 選んで一括BG起動\n' "$C_BG_DKBLUE" "$C_RESET"
+  printf '   %s 15 %s  📺  セッション状態監視 (一覧 / 接続・停止)\n' "$C_BG_DKBLUE" "$C_RESET"
+  printf '   %s MO %s  🎛️  コントロールセンター (監視+起動+supervisor+介入 / claudeos-monitor)\n' "$C_BG_DKBLUE" "$C_RESET"
   printf '\n'
 
   local hr; hr="  $(printf '─%.0s' {1..52})"
@@ -157,6 +158,7 @@ menu_loop() {
       13) run_menu_script "$LIBEXEC/watch-claude-log.sh" ;;
       14) run_menu_script "$BIN/cron-schedule.sh" ;;
       15) bash "$LIBEXEC/watch-session.sh" || true ;;   # 内部に 0=戻る の対話メニューを持つため直接実行
+      MO) bash "$BIN/monitor-sessions.sh" open || true ;;  # claudeos-monitor へ attach (Ctrl-b d / q で戻る)
       16) if [[ -f "$CCSU_ROOT/scripts/tools/agent-teams-status.js" ]]; then
             ( cd "$CCSU_ROOT" && node scripts/tools/agent-teams-status.js ) || true
           else log_warn "agent-teams-status.js が見つかりません"; fi

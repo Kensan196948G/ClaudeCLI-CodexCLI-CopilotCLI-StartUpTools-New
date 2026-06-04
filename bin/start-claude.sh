@@ -41,6 +41,15 @@ main() {
 
   require_cmd claude "npm i -g @anthropic-ai/claude-code"
 
+  # メール送信用に ~/.env-claudeos を読み込む (SMTP creds / CLAUDEOS_EMAIL_ENABLED)。
+  # cron-launcher.sh と同様。set -a で sourced 変数を確実に export し、
+  # tmux_run が起動する終了レポート watcher (setsid 子プロセス) へ継承させる。
+  # テストは CCSU_SKIP_ENV_FILE=1 でスキップ。
+  if [[ "${CCSU_SKIP_ENV_FILE:-0}" != "1" && -f "$HOME/.env-claudeos" ]]; then
+    # shellcheck disable=SC1091
+    set -a; source "$HOME/.env-claudeos"; set +a
+  fi
+
   [[ -z "$project" ]] && project="$(launcher__select_project)"
   [[ -n "$project" ]] || { log_error "プロジェクトが選択されていません"; exit 1; }
   launcher__project_exists "$project" || { log_error "プロジェクトが存在しません: $(launcher__project_dir "$project")"; exit 1; }

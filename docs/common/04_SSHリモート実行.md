@@ -141,6 +141,7 @@ Host mydev
 - `claude` と `codex` が実行可能
 - `gh` と `gh-copilot` を使う場合は `gh auth login` 済み
 - `linuxBase` 配下に対象プロジェクトが存在
+- `tmux` が利用可能 (未設定の場合は Linux native メニュー項目 7、または `./libexec/setup-terminal.sh --apply`)
 - `base64` と `bash` が利用可能
 
 ---

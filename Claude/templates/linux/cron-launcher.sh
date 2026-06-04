@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # cron-launcher.sh - Linux 側で ClaudeCode を cron から起動するラッパ
-# ClaudeOS v3.2.31
+# ClaudeOS v3.4.2
 #
 # Usage: cron-launcher.sh <project> <duration-minutes>
 #
@@ -11,6 +11,8 @@
 #   - session.json の生成・更新（start/end/status）
 #   - ログを /home/kensan/.claudeos/logs/ へ
 #   - 終了時に HTML レポートメールを送信 (v3.2.0 追加)
+#   - tmux セッション claudeos-<safe> に監視タブ用メタデータを付与 (v3.3.8 追加)
+#     (安定ウィンドウ名 + @ccsu_project / @ccsu_duration_min → monitor-sessions.sh)
 # ============================================================
 
 set -euo pipefail
@@ -51,6 +53,22 @@ fi
 
 DURATION_SEC=$((DURATION_MIN * 60))
 SAFE_PROJECT=$(printf '%s' "$PROJECT" | tr -c 'A-Za-z0-9_-' '_')
+
+# --- 二重起動防止 (v3.4.2): 同一プロジェクトの cron-launcher を flock で直列化 ---
+# cron(OS) 経路と Autonomy Supervisor 経路が同時発火しても後発は安全に skip する。
+# trap finalize より前に exit するため、skip 時は session.json/メールを生成しない。
+# 既存の "先に kill-session" より前に抜けるので、稼働中セッションも巻き込まない。
+LOCK_DIR="$CLAUDEOS_HOME/locks"
+mkdir -p "$LOCK_DIR" 2>/dev/null || true
+LOCK_FILE="$LOCK_DIR/${SAFE_PROJECT}.lock"
+if command -v flock >/dev/null 2>&1; then
+  exec {LOCK_FD}>"$LOCK_FILE" || true
+  if [[ -n "${LOCK_FD:-}" ]] && ! flock -n "$LOCK_FD"; then
+    echo "[cron-launcher] $PROJECT は既に実行中 (lock held) — 二重起動を防止し skip" >&2
+    exit 0
+  fi
+fi
+
 STAMP=$(date +'%Y%m%d-%H%M%S')
 SESSION_ID="${STAMP}-${SAFE_PROJECT}"
 SESSION_FILE="$SESSIONS_DIR/${SESSION_ID}.json"
@@ -318,12 +336,18 @@ if command -v tmux >/dev/null 2>&1 && [[ "${CLAUDEOS_TMUX:-1}" == "1" ]]; then
   tmux kill-session -t "$_KEEPER_SESSION" 2>/dev/null || true
   tmux new-session -d -s "$_KEEPER_SESSION" "sleep $((DURATION_SEC + 120))" 2>>"$LOG_FILE" || true
 
-  tmux new-session -d -s "$TMUX_SESSION" -x 220 -y 50 \
+  tmux new-session -d -s "$TMUX_SESSION" -n "$SAFE_PROJECT" -x 220 -y 50 \
     -e "_CLAUDEOS_DURATION_SEC=$DURATION_SEC" \
     -e "_CLAUDEOS_EXIT_FILE=$CLAUDE_EXIT_FILE" \
     -e "_CLAUDEOS_TMUX_DONE=$_TMUX_DONE" \
     -e "_CLAUDEOS_PROMPT_FILE=$PROMPT_FILE" \
     "$CLAUDE_WRAPPER" 2>>"$LOG_FILE"
+  # ライブ監視タブ (monitor-sessions.sh / claudeos-monitor) 用メタデータ (best-effort)。
+  #   安定したウィンドウ名 (= SAFE_PROJECT) で link-window 照合を可能にし、
+  #   @ccsu_project/@ccsu_duration_min から経過・残り時間を算出できるようにする。
+  tmux set-option -w -t "$TMUX_SESSION:0" automatic-rename off 2>/dev/null || true
+  tmux set-option -w -t "$TMUX_SESSION:0" @ccsu_project "$PROJECT" 2>/dev/null || true
+  tmux set-option -w -t "$TMUX_SESSION:0" @ccsu_duration_min "$DURATION_MIN" 2>/dev/null || true
   # pipe-pane: tmux pane の出力をログファイルにも流す（Windows 側の Watch-ClaudeLog.ps1 で可視化するため）
   # sed で TUI 制御シーケンスを除去してからログに書く:
   #   s/.*\r//  : \r 上書き前テキスト除去（スピナー残骸防止）

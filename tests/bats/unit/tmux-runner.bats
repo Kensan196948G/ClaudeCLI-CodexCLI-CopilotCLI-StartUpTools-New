@@ -118,3 +118,57 @@ teardown() { _bats_common_teardown; }
   run tmux__stop NoSuchProj
   [ "$status" -ne 0 ]
 }
+
+# ---- 終了レポートメール (手動セッション) ----------------------
+
+@test "tmux__send_report: EMAIL_ENABLED 未設定なら python3 を呼ばない" {
+  make_stub_bin python3 'echo called > "$TEST_TEMP/py-called"; exit 0'
+  CCSU_REPORT_SCRIPT="$TEST_TEMP/report.py"; : > "$CCSU_REPORT_SCRIPT"
+  run tmux__send_report sid "$TEST_TEMP/log" completed s e 5 Proj
+  [ "$status" -eq 0 ]
+  [ ! -f "$TEST_TEMP/py-called" ]
+}
+
+@test "tmux__send_report: 有効時 report-and-mail.py を引数付きで呼ぶ" {
+  export CLAUDEOS_EMAIL_ENABLED=1
+  make_stub_bin python3 'echo "$@" > "$TEST_TEMP/py-called"; exit 0'
+  CCSU_REPORT_SCRIPT="$TEST_TEMP/report.py"; : > "$CCSU_REPORT_SCRIPT"
+  run tmux__send_report "manual-123-MyProj" "$TEST_TEMP/log" completed "2026-06-02T12:00:00" "2026-06-02T12:05:00" 5 "MyProj"
+  [ "$status" -eq 0 ]
+  [ -f "$TEST_TEMP/py-called" ]
+  grep -q -- "--session" "$TEST_TEMP/py-called"
+  grep -q "manual-123-MyProj" "$TEST_TEMP/py-called"
+  grep -q "completed" "$TEST_TEMP/py-called"
+}
+
+@test "tmux__send_report: 有効でも report スクリプト不在なら skip" {
+  export CLAUDEOS_EMAIL_ENABLED=1
+  make_stub_bin python3 'echo called > "$TEST_TEMP/py-called"; exit 0'
+  CCSU_REPORT_SCRIPT="$TEST_TEMP/does-not-exist.py"
+  run tmux__send_report sid "$TEST_TEMP/log" completed s e 5 Proj
+  [ "$status" -eq 0 ]
+  [ ! -f "$TEST_TEMP/py-called" ]
+}
+
+@test "tmux__send_report: CLAUDEOS_MANUAL_EMAIL=0 で手動メールのみ無効化" {
+  export CLAUDEOS_EMAIL_ENABLED=1 CLAUDEOS_MANUAL_EMAIL=0
+  make_stub_bin python3 'echo called > "$TEST_TEMP/py-called"; exit 0'
+  CCSU_REPORT_SCRIPT="$TEST_TEMP/report.py"; : > "$CCSU_REPORT_SCRIPT"
+  run tmux__send_report sid "$TEST_TEMP/log" completed s e 5 Proj
+  [ "$status" -eq 0 ]
+  [ ! -f "$TEST_TEMP/py-called" ]
+}
+
+@test "tmux_run: EMAIL_ENABLED=1 で終了レポート watcher を起動する案内" {
+  export CLAUDEOS_EMAIL_ENABLED=1
+  make_stub_bin setsid 'exit 0'   # 実 watcher は起動させずスパーン経路のみ通す
+  run tmux_run MyProj 5 background
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"終了時にレポート送信"* ]]
+}
+
+@test "tmux_run: EMAIL_ENABLED 未設定なら watcher 案内を出さない" {
+  run tmux_run MyProj 5 background
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"終了時にレポート送信"* ]]
+}

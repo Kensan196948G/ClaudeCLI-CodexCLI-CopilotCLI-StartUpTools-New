@@ -18,6 +18,9 @@
   "terminal": {
     "mode": "auto"
   },
+  "worktree": {
+    "baseRef": "head"
+  },
   "hooks": {
     "PreCompact": [
       {
@@ -81,6 +84,39 @@
           {
             "type": "command",
             "command": "node .claude/claudeos/scripts/hooks/agent-teams-tracker.js"
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/claudeos/scripts/hooks/teammate-idle-gate.js"
+          }
+        ]
+      }
+    ],
+    "TaskCreated": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/claudeos/scripts/hooks/task-created-gate.js"
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/claudeos/scripts/hooks/task-completed-gate.js"
           }
         ]
       }

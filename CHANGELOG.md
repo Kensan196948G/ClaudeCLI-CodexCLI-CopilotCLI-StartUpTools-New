@@ -2,7 +2,7 @@
 
 # CHANGELOG
 
-## [v3.3.8] - 2026-06-04 — 全プロセス統合 Supervisor daemon 新設 + Windows ローカル一本化完全移行
+## [v3.4.8] - 2026-06-04 — 全プロセス統合 Supervisor daemon 新設 + Windows ローカル一本化完全移行
 
 ### 🎯 概要
 
@@ -24,7 +24,7 @@ Phase 1〜6 完走。`supervisor-daemon.js` による全プロセス一元監視
 | `scripts/lib/SessionManager.psm1` | session.json CRUD（Linux bash 版と同一スキーマ）|
 | `scripts/main/Start-Menu.ps1` | S1→ローカル BG / 項14→AutoRun Task Scheduler / 項15→Watch-SessionInfo |
 | `tests/unit/Supervisor.Tests.ps1` | supervisor Pester 32件（新規）|
-| `tests/bats/unit/supervisor.bats` | install-supervisor-service.sh bats 9件（新規）|
+| `tests/bats/unit/install-supervisor-service.bats` | install-supervisor-service.sh bats 9件（新規）|
 | `README.md` | Phase 1〜6 完了、supervisor 設計詳細、全プロセス監視アーキテクチャ追記 |
 
 ### ✅ 主な改善内容
@@ -38,6 +38,229 @@ Phase 1〜6 完走。`supervisor-daemon.js` による全プロセス一元監視
 - **SSH 名残除去**: `linuxHost` 150+ 箇所・SSH 実行パスを削除（Phase 3）
 - **config schema 整理**: SSH キー除去・`linuxBase`→`projectsDir` 改名（Phase 4）
 - **テスト**: Pester 891件（+32件）/ bats 9件（supervisor 新規）
+
+---
+
+## [v3.4.7] - 2026-06-02 — プロジェクト列挙を「Git リポジトリのディレクトリのみ」に統一
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `lib/config-loader.sh` | **`config_project_list`** 新設（`config_projects_dir` 直下の dir かつ `.git` 保有のみ。ファイル/非 Git/隠しは `*/` グロブ＋`.git` チェックで除外） |
+| `bin/monitor-sessions.sh` / `bin/cron-schedule.sh` / `lib/launcher-common.sh` | 各 `*_project_list` を `config_project_list` に統一 |
+| `tests/bats/unit/*` | `config_project_list` + 非 Git/ファイル除外 のテスト追加 |
+
+### ✅ 内容
+
+- 実データ: 32 項目（6 ファイル + 5 非 Git ディレクトリ + 21 Git リポジトリ）→ 一覧は **21 件のみ**に
+- `n` ピッカー / cron 登録 / 手動起動（L1/S1）すべてで一貫（GitHub origin の有無は 🐙 バッジで表示）
+- 全 bats **206 件** / shellcheck error 0
+
+---
+
+## [v3.4.6] - 2026-06-02 — コントロールセンターの画面チラつき修正 + オンボード操作の明確化
+
+### 🎯 概要
+`MO` で開いた直後にダッシュボードが**点滅して見にくい**問題を修正。`n` オンボードで番号選択後の「管理方法メニュー」が見えにくく「追加キーがない」と感じる問題も改善。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `bin/monitor-sessions.sh` | ① ダッシュボードを **`clear` 全消去ループ → カーソルをホームへ戻して上書き + 末尾消去（`tput ed`）** に変更し**チラつきを解消**（固定幅整形＋`ed`で行ゴミも防止） ② `n` ピッカー: 番号選択後に画面を整理し **「🆕 <project> をどう自律管理しますか?」** の選択メニューを明確化、プロンプトを「**追加する番号**」に |
+
+### ✅ 内容
+
+- **点滅解消**: 毎フレーム `clear` していたのを上書き描画に変更。`MO` 直後のチラつきがなくなる
+- **「追加キーがない」解消**: 番号を選ぶ＝管理方法（supervisor / 1回起動 / cron登録）の選択に進む、を明示。32 件リストを消してメニューを見やすく表示
+- 全 bats **204 件** / shellcheck error 0
+
+---
+
+## [v3.4.5] - 2026-06-02 — 多数プロジェクト管理の効率化（GitHub バッジ / 未管理フィルタ / 一括 cron 登録）
+
+### 🎯 概要
+多数のプロジェクト（GitHub レポジトリ 21 件等）を効率よく管理できるよう 3 点を追加。①コントロールセンターの `n` ピッカーに **GitHub バッジ（🐙）と未管理フィルタ（`u`/`a`）**、②未管理プロジェクトを**曜日・時刻に分散して一括 cron 登録**するヘルパ（`bulk-register`）、③存在しない dir を指す stale cron の掃除（運用）。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `bin/monitor-sessions.sh` | `n` ピッカーに `mon__is_github`（🐙 バッジ）+ 未管理フィルタ（`u`=未管理のみ / `a`=全表示） |
+| `bin/cron-schedule.sh` | **`bulk-register`** サブコマンド追加（`--github-only` / `--unmanaged-only` / `--start` / `--spacing` / `--duration` / `--dow` / `--apply`）。既定 **dry-run**、既定間隔 = duration 時間で**重複ゼロ**、重複設定時は警告 |
+| `tests/bats/unit/*` | `bulk-register` 3 件 + `mon__is_github` 2 件追加 |
+
+### ✅ 内容
+
+- 32 プロジェクトから**未管理の GitHub プロジェクトを一目で選べる**（🐙 + ⚪/📅/🔁/🟢 バッジ、`u` で未管理のみ）
+- 一括登録は**曜日 round-robin + 時刻スロットで負荷分散**（全件同時起動を回避）。既定間隔は duration と同じ時間にして**同日のセッション重複を防止**（例: 300m → 09:00/14:00/19:00）
+- 既定 **dry-run（計画プレビュー）** → `--apply` で実登録。**コスト/負荷を確認してから適用**できる
+- 全 bats **204 件** / shellcheck error 0
+
+### 🔑 使い方
+
+```bash
+# 未管理の GitHub プロジェクトを曜日分散で一括登録（まず計画を確認）
+bash bin/cron-schedule.sh bulk-register --github-only --unmanaged-only
+# 計画に納得したら適用
+bash bin/cron-schedule.sh bulk-register --github-only --unmanaged-only --apply
+```
+
+---
+
+## [v3.4.4] - 2026-06-02 — コントロールセンターの UX 修正（キー誤入力 / 重複タブ）
+
+### 🎯 概要
+コントロールセンター（`MO`）の実機フィードバックに対応。「Claude 介入中に `n`/`l`/`s`/`x` を押すと Claude 側に入力されてしまう」「同一プロジェクトのタブが重複表示される」2 点を修正。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `bin/monitor-sessions.sh` | ① `mon__open` が接続前に**必ずダッシュボード（window 名 `monitor`）を選択** → 前回見ていた Claude タブに乗らず、開いた直後からキー操作が効く ② `mon__sync_tabs` を**`window_id` ベースの重複排除**に変更（リネーム/セッション再生成でも二重リンクしない） ③ ダッシュボードに「操作キーはこの画面でのみ有効。介入中は `Ctrl-b 0` で戻る」ヒント行を追加 |
+
+### ✅ 内容
+
+- **誤入力の解消**: ダッシュボードのキー（`n` 等）は window 0 でのみ有効。`MO` は常にダッシュボードから開くようにし、Claude 介入中は `Ctrl-b 0` で戻る運用を明示
+- **重複タブの解消**: タブ集約の照合キーをウィンドウ名 → `window_id` に変更。supervisor/cron による再起動で同一プロジェクトのタブが重複する不具合を修正（隔離 tmux で検証: 名前が変わっても重複 0）
+- 全 bats **199 件** / shellcheck error 0
+
+---
+
+## [v3.4.3] - 2026-06-02 — コントロールセンターに新規プロジェクト・オンボード（n キー）
+
+### 🎯 概要
+コントロールセンター（`claudeos-monitor`）に **`n` キー** を追加。全プロジェクトを**状態バッジ付き**で一覧し、まだ管理下にないプロジェクトをその場で自律管理（supervisor 開始 / 1 回起動 / cron 登録）に**追加（オンボード）**できる。「登録台帳」を新設せず、start 操作そのものが登録になるため、管理下の真実は常に cron/supervisor の実体と一致（ドリフトしない）。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `bin/monitor-sessions.sh` | `n` キー追加。`mon__all_projects` / `mon__project_state_badge`（🟢稼働 / 🔁自律 / 📅cron / ⚪未管理）/ `mon__onboard`（選択 → supervisor 開始 / 1回起動 / cron登録）/ `mon__cron_register` |
+| `tests/bats/unit/monitor-sessions.bats` | オンボード 5 件追加（全列挙・各状態バッジ） |
+
+### ✅ 内容
+
+- 全プロジェクトを状態バッジ付きで一覧 → 未管理を選んで管理下へ（バッジで二重追加を防止）
+- 既存プリミティブ（`autonomy.sh` / `cron-schedule.sh`）へ委譲し、専用の登録ファイルは作らない（SoT 維持）
+- 設計方針: 1 画面は「実行中/管理下」に集中し、母集合（全 dir）は `n` でオンデマンド表示（TUI ベストプラクティス）
+- 全 bats **199 件** / shellcheck error 0 / check-doc-versions PASS
+
+---
+
+## [v3.4.2] - 2026-06-02 — 二重起動防止ロック + supervisor schema（Autonomy Supervisor Phase 3 / 仕上げ）
+
+### 🎯 概要
+cron(OS) と Autonomy Supervisor の **二重起動を flock で確実に防止**（従来の start 時警告を「保証」に格上げ）。`state.schema.json` / `state.json.example` に supervisor ガードレールを正式定義し、上限値の上書き方法を明文化。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `Claude/templates/linux/cron-launcher.sh`（+配布） | **flock 二重起動防止**: 同一プロジェクトの cron-launcher を直列化し後発は skip。`trap finalize` より前に exit するため skip 時は session.json/メールを生成せず、稼働中セッションも巻き込まない |
+| `state.schema.json` / `state.json.example` | `supervisor` ブロック（`daily_max_minutes` 等 6 キー）を正式定義 |
+| `tests/bats/unit/supervisor.bats` | 再起動ループ E2E（`deploy.ready` 動的反転 → goal-reached）追加 |
+
+### ✅ 検証
+
+- **flock 実機スモーク**: 後発が `lock held — skip`、先発は正常実行
+- **実機 tmux スモーク**: supervisor → deployed cron-launcher → 実 `claudeos-<proj>` セッション + keeper + lock 生成を確認（本番 tmux 無傷）
+- 再起動ループ E2E bats 追加。全 bats **194 件** / shellcheck error 0 / validate-state-example PASS
+- 注: メニュー専用項目（#1）は `MO` コントロールセンターで完結するため不要としスキップ
+
+---
+
+## [v3.4.1] - 2026-06-02 — 統合コントロールセンター（Autonomy Supervisor Phase 2 / TUI）
+
+### 🎯 概要
+ライブ監視タブ `claudeos-monitor` を **統合コントロールセンター** に拡張（Phase 2）。1 画面で「実行中セッション（タブ/FG 介入）＋ 登録プロジェクト一覧 ＋ supervisor 状態」を表示し、キー操作で 起動・supervisor 開始/停止・介入 をまとめて行える。当初ゴール「インタラクティブ TUI + 完全自律」の TUI 側を実現。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `bin/monitor-sessions.sh` | 登録/supervisor セクション追加（cron ∪ supervisor 一覧 + session稼働/status/restarts/minutes）。キー `l`起動 `s`監督開始 `x`監督停止。`s` は cron 競合時に「外して切替」プロンプト |
+| `bin/menu.sh` | `MO` ラベルを「🎛️ コントロールセンター」に更新 |
+| `tests/bats/unit/monitor-sessions.bats` | 登録セクション 5 件追加（複数 supervisor の連結バグ回帰含む）|
+
+### ✅ 主な内容
+
+- 操作キー: `[1-9]` 介入FG / `[l]` 自律1セッション起動(BG) / `[s]` supervisor 開始 / `[x]` 停止 / `Ctrl-b 0` 監視へ
+- `s`（supervisor 開始）は cron 登録があれば「外して supervisor へ切替えますか?」を確認（承認方針: 競合回避）
+- **修正**: supervisor 状態ファイル複数時に project 名が改行なしで連結される不具合（`json_get` の改行欠落）→ 視覚スモークで検出、回帰テスト追加
+- 全 bats **193 件** / shellcheck error 0 / check-doc-versions PASS
+
+---
+
+## [v3.4.0] - 2026-06-02 — Autonomy Supervisor（Goal到達まで自律再開・Phase 1/CLI）
+
+### 🎯 概要
+登録プロジェクトを **Goal/Release 到達まで自律再開** させる Autonomy Supervisor を追加（Phase 1: CLI）。各セッションは `cron-launcher.sh` 経由（claude TUI + 自律 + メール + 監視タブメタ）を再利用し、終了を検知して再起動する。暴走/コスト対策のガードレールを必須化し、既定は OFF（opt-in）。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `lib/supervisor.sh` | **新規**。ガードレール純粋関数（goal/abnormal/cap/crash）＋自律ループ＋状態I/O（`~/.claudeos/supervisor/<safe>.json`） |
+| `bin/autonomy.sh` | **新規**。CLI（`start`/`stop`/`status`/`list`）。`setsid` 常駐起動・cron 競合検知・グレースフル/即時停止 |
+| `tests/bats/unit/supervisor.bats` / `autonomy.bats` | **新規 37 件** |
+
+### ✅ ガードレール（暴走/コスト対策・state.json `supervisor` ブロックで上書き可）
+
+- **停止条件**: Goal到達(`deploy.ready` / `phase_mode∈{maintenance,released}`) / 異常(`kpi.security_critical>0` / `blocked_issues` 非空) / 日次上限(既定 **600分・6回**) / crash-loop(短命セッション連続) / 手動(stop フラグ・kill)
+- **既定 OFF**: 明示 `start` するまで何も自走しない
+- **cron 競合回避**: supervisor 管理プロジェクトに cron 登録が残っていれば `start` 時に警告（`--force` で続行）
+- テスト: 全 bats **188 件**パス / shellcheck error 0
+
+### 🔑 CLI
+
+```bash
+bash bin/autonomy.sh start  <project> [--duration N] [--force]
+bash bin/autonomy.sh stop   <project> [--now]
+bash bin/autonomy.sh status [project]
+bash bin/autonomy.sh list
+```
+
+### 🔜 次フェーズ
+Phase 2: `claudeos-monitor` を統合コントロールセンターに拡張（TUI から 起動 + ライブ監督 + 介入(FG) + supervisor 状態表示）。
+
+---
+
+## [v3.3.8] - 2026-06-02 — Cron BG 既定化 + ライブ監視タブ（tmux）
+
+### 🎯 概要
+Cron 登録プロジェクトを **すべて既定でバックグラウンド（detached tmux）実行**にし、メニューをブロックしないよう変更。実行中セッションの **経過/残り時間・プロジェクト名** を専用タブ `claudeos-monitor` で 1 秒間隔ライブ表示し、キー操作でフォアグラウンド（前面）へ切替できる。GUI 端末なし（ヘッドレス）環境向けに「別ターミナルタブ = tmux ウィンドウ」で実装。
+
+### 🔧 変更対象
+
+| ファイル | 変更内容 |
+|---|---|
+| `bin/monitor-sessions.sh` | **新規**。専用 `claudeos-monitor` セッション + `link-window` で各プロジェクトをタブ集約。経過=`#{session_created}` / 残り=`@ccsu_duration_min` から算出。stale タブ自動 unlink |
+| `bin/cron-schedule.sh` | `run-now` を **BG 既定化**（`--foreground` で従来同期）。`launch`（登録から複数選択/全件 BG 起動）追加。メニュー `[7]` 追加 |
+| `Claude/templates/linux/cron-launcher.sh` | tmux セッションに安定ウィンドウ名 + `@ccsu_project` / `@ccsu_duration_min` を付与（監視タブ用メタデータ） |
+| `lib/tmux-runner.sh` | 手動起動セッションにも同メタデータを付与（監視タブで cron/手動を統一表示）。**終了レポートメール watcher**（`tmux__send_report` / `tmux__report_watcher`）追加 |
+| `bin/start-claude.sh` | `~/.env-claudeos` を読み込み（SMTP creds / `CLAUDEOS_EMAIL_ENABLED` を watcher へ継承） |
+| `bin/menu.sh` | メニュー `MO`（ライブ監視タブを開く）追加、項14/15 説明更新 |
+| `libexec/setup-terminal.sh` | 次手順にライブ監視タブのキー操作を追記 |
+
+### ✅ 主な改善内容
+
+- **BG 既定**: `run-now` / `launch` は detached tmux で起動しメニューを最大 5h ブロックしない
+- **キー切替 FG**: 監視ダッシュボードの数字キー `1-9` / `Ctrl-b <n>` で前面化、`Ctrl-b 0` で監視へ戻る
+- **ライブ監視タブ**: `claudeos-monitor` が経過/残り時間・プロジェクト名を 1 秒更新。cron/手動の全セッションを 1 枚に集約
+- **ヘッドレス対応**: GUI 端末非依存（tmux ウィンドウ = タブ）。`#{session_created}` ベースでファイル I/O 不要
+- **手動起動もメール対応**: L1/S1（`tmux-runner.sh`）の終了時も cron と同じ `report-and-mail.py` で HTML レポートメールを送信。`setsid` で常駐 watcher 化しセッション終了を検知。`CLAUDEOS_EMAIL_ENABLED=1` で有効、`CLAUDEOS_MANUAL_EMAIL=0` で手動分のみ無効化可
+- **テスト**: `monitor-sessions.bats` 新規（15 件）+ `cron-schedule.bats`（BG 既定/`launch`）+ `tmux-runner.bats`（レポートメール 6 件）更新。全 bats パス / shellcheck error 0
+
+### 🔑 操作
+
+```bash
+bash bin/cron-schedule.sh launch --all          # 登録済みを全件 BG 起動
+bash bin/cron-schedule.sh run-now --project A   # 1 件 BG 起動（既定）
+bash bin/monitor-sessions.sh open               # ライブ監視タブへ attach
+# 監視中: [1-9]/Ctrl-b<n>=FG, Ctrl-b 0=監視へ, q=監視終了（BG継続）
+```
 
 ---
 

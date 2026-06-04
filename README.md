@@ -1,6 +1,9 @@
-# Claude Code Autonomous Development StartUp Tools
+# 🤖 ClaudeOS — あなたの代わりに開発する「AI 開発チーム」
 
-> Windows から **Claude Code** を中心とした自律開発環境を立ち上げるためのスタートアップツールです。
+> 🌟 **ひとことで言うと**: 1 台の Linux マシンに住み込む “AI のソフトウェア開発チーム” です。
+> あなたが「このプロジェクトを、この曜日・時刻に進めて」と登録しておくだけで、AI（Claude Code）が
+> **設計 → 実装 → テスト → 修正 → レビュー → Pull Request** までを自動でこなします。
+> 進み具合は画面で見守れ、口を挟みたいときはいつでも割り込め、終わればメールで報告が届きます。
 
 `ClaudeOS v9.0` (/goal 駆動 / Agent Teams / Agent View / Boot Sequence / Self Evolution / Architecture Check / Issue Factory / CodeRabbit Review / Dynamic Orchestration) をカーネルに据え、ローカル起動・SSH リモート起動・診断・Pester テスト・GitHub Issues / Projects / Actions 連携を一括提供します。
 
@@ -50,11 +53,308 @@
 
 ---
 
-## 開発状況
+## 📖 はじめに（エンジニアでなくても大丈夫）
+
+> 💡 **たとえ話**: 優秀な開発チーム（CTO・実装担当・テスト担当・セキュリティ担当…）を 1 人雇って、
+> 「このアプリ、完成まで進めておいて」とお願いするイメージです。チームは自分たちで段取りを決めて働き、
+> 行き詰まったら自分で直し、危ないこと（暴走・無駄遣い）はしないよう **自動ブレーキ** が掛かっています。
+
+| ❓ よくある疑問 | ✅ 答え |
+|---|---|
+| プログラミングの知識は必要？ | 起動と監視は**メニューを選ぶだけ**。中身の開発は AI が担当します。 |
+| ずっと見ていないとダメ？ | いいえ。登録すれば**自動で動き**、終われば**メールが届きます**。 |
+| 勝手に暴走しない？ | しません。**時間・回数・コストの上限**と**停止条件**が常に効いています（後述）。 |
+| 途中で口を出せる？ | はい。コントロールセンターから**いつでも画面に入って指示**でき、抜ければまた自律に戻ります。 |
+
+---
+
+## 🗺️ ひと目でわかる全体像
+
+```mermaid
+flowchart TB
+    You["👤 あなた<br/>(指示は最初だけでOK)"]
+    Reg["📅 実行スケジュール<br/>(Linux cron / 曜日・時刻)"]
+    AI["🤖 AI 開発チーム<br/>(Claude Code)"]
+    Repo["📦 あなたのコード<br/>(GitHub)"]
+    TUI["🎛️ コントロールセンター<br/>(画面で監視・介入)"]
+    Mail["📧 メール通知<br/>(終了レポート)"]
+    Sup["🔁 Autonomy Supervisor<br/>(完成まで止めない・暴走させない)"]
+
+    You -->|"① 登録"| Reg
+    Reg -->|"② 自動で起動"| AI
+    AI -->|"設計・実装・テスト・修正"| Repo
+    AI -->|"③ 進捗を表示"| TUI
+    AI -->|"④ 終了レポート"| Mail
+    Sup -. "見守り＆自動再開" .-> AI
+    You -. "いつでも割込OK" .-> TUI
+```
+
+## 🚦 3 ステップで動きます
+
+```mermaid
+flowchart LR
+    S1["1️⃣ 登録<br/>どのプロジェクトを<br/>いつ開発するか決める"]
+    S2["2️⃣ 自律開発<br/>AI が自動で<br/>設計→実装→検証→改善"]
+    S3["3️⃣ 監視・受取<br/>画面で見守り<br/>完了でメール受信"]
+    S1 --> S2 --> S3
+```
+
+---
+
+## 🧩 主要コンセプトをやさしく
+
+| アイコン | 名前 | かんたん説明 |
+|---|---|---|
+| 👔 | **CTO（最高技術責任者）** | AI チームのリーダー。何を優先し、続けるか止めるかを判断します。 |
+| 🎯 | **Goal（ゴール）** | 「ここまでできたら完成」という到達条件。AI はこれを目指して働きます。 |
+| 🤝 | **Agent Teams** | 役割の違う AI（実装・テスト・セキュリティ…）が**チームで並行作業**する仕組み。 |
+| 🔁 | **Autonomy Supervisor** | **Goal 到達まで止めずに自動で再開**し続ける見守り役。暴走しないよう自動ブレーキ付き。 |
+| 🎛️ | **コントロールセンター** | 全プロジェクトの状況を 1 画面で見て、起動・停止・割り込みができる操作盤（TUI）。 |
+| ⏰ | **Linux cron** | 「月〜土の何時に動かす」という**自動起動のタイマー**。 |
+| 📧 | **メールレポート** | セッション終了時に、成果サマリを**HTML メール**でお届け。 |
+| 🌐 | **Mission Control** | ブラウザで見られる**Web ダッシュボード**（進捗・CI・健全性）。 |
+
+---
+
+## 🔄 AI はこう働きます（自律開発ループ）
+
+> AI は人間の開発者と同じように、**確認 → 作る → 試す → 良くする** を繰り返します。
+> 問題があれば自分で直し、十分な品質（STABLE）になったら Pull Request を出します。
+
+```mermaid
+flowchart LR
+    M["🔍 Monitor<br/>現状・課題の把握"]
+    B["🛠️ Build<br/>設計・実装・テスト追加"]
+    V["✅ Verify<br/>テスト/Lint/CI/レビュー"]
+    I["🚀 Improve<br/>リファクタ・改善・文書化"]
+    PR["📦 PR → Merge"]
+    Fix["🔧 自動修復"]
+    M --> B --> V --> I
+    I -->|"まだ未達"| B
+    I -->|"品質OK (STABLE)"| PR
+    V -->|"CI 失敗"| Fix --> V
+```
+
+| ループ | 目安 | やること |
+|---|---|---|
+| 🔍 Monitor | 30 分 | 要件・状態・GitHub を確認し、やることを分解 |
+| 🛠️ Build | 2 時間 | 実装・テスト追加（ブランチ作業、main へ直接 push しない） |
+| ✅ Verify | 1.25 時間 | テスト/Lint/ビルド/CI/レビューを確認し「STABLE」を判定 |
+| 🚀 Improve | 1.25 時間 | 命名整理・リファクタ・README/ドキュメント更新 |
+
+---
+
+## 🔁 Autonomy Supervisor — 「止まらない、でも暴走しない」
+
+> 🆕 **v3.4.x の目玉機能**。登録プロジェクトを **Goal/Release に到達するまで自動で再開** し続けます。
+> セッションが 5 時間で終わっても、Supervisor が状況を確認して**未完なら自動でもう一度**走らせます。
+> ただし、ここが肝心 — **きちんと止まるべき時には必ず止まります**。
+
+```mermaid
+flowchart TD
+    Start["▶️ autonomy.sh start<br/>(自律開始 / 既定はOFF)"]
+    Run["🛠️ 1 セッション実行<br/>(claude を最大5時間)"]
+    Check{"🎯 到達? / 🚨 異常? / ⏱️ 上限?"}
+    Done["🏁 完了<br/>(goal-reached)"]
+    Stop["⏹️ 停止<br/>(理由を記録)"]
+    Start --> Run --> Check
+    Check -->|"未到達・正常・余裕あり"| Run
+    Check -->|"✅ Goal 到達"| Done
+    Check -->|"異常 / 日次上限 / 手動停止"| Stop
+```
+
+### 🛡️ 自動ブレーキ（暴走・コスト対策）
+
+| 種類 | 止まる条件（既定） |
+|---|---|
+| 🎯 ゴール到達 | `deploy.ready=true` または保守/リリース済みフェーズ |
+| 🚨 異常検知 | セキュリティ重大課題あり / ブロッカーあり |
+| ⏱️ 日次上限 | **合計 600 分 / 再起動 6 回** を超えたら停止（`state.json` で変更可） |
+| 🔂 暴走ループ | 極端に短いセッションが連続したら停止 |
+| ✋ 手動 | `stop` でいつでも停止（`--now` で実行中のものも即停止） |
+
+> 🔒 **二重起動防止**: cron と Supervisor が同時に同じプロジェクトを起こしても、`flock` により
+> 後から来た方が安全に見送られます（稼働中のセッションを壊しません）。
+
+```bash
+bash bin/autonomy.sh start  <プロジェクト名>   # 自律再開を開始（バックグラウンド常駐）
+bash bin/autonomy.sh status <プロジェクト名>   # 状態（再起動回数 / 稼働分 / 最終理由）
+bash bin/autonomy.sh stop   <プロジェクト名>   # 停止（--now で実行中も即停止）
+bash bin/autonomy.sh list                      # すべての Supervisor 一覧
+```
+
+---
+
+## 🎛️ コントロールセンター — 1 画面で監視・操作・割り込み
+
+> メニューで `MO` を選ぶ（または `bash bin/monitor-sessions.sh open`）と、すべての状況が 1 画面に集約されます。
+> **見るだけでなく、その場で起動・停止・割り込み**ができます。
+
+```text
+ 🎛️  ClaudeOS コントロールセンター  (1秒更新)        2026-06-02 12:30
+ ──────────────────────────────────────────────────────────────
+  ● 実行中セッション   #  プロジェクト        経過       残り
+   1  WebApp                01:10:00   03:50:00  ✽   ← 数字キーで前面(介入)へ
+ ──────────────────────────────────────────────────────────────
+  ● 登録 / supervisor  #  プロジェクト   session  supervisor    rst/min
+   1  ApiSvc               ○停止   goal-reached  1/48
+   2  WebApp               ●稼働   running       3/215
+ ──────────────────────────────────────────────────────────────
+  [1-9]介入FG  Ctrl-b 0監視  [n]新規追加 [l]起動 [s]監督開始 [x]監督停止 [q]終了
+```
+
+| キー | できること |
+|---|---|
+| `1`〜`9` / `Ctrl-b <番号>` | そのプロジェクトの AI 画面に**入って直接指示**（介入） |
+| `Ctrl-b 0` | コントロールセンター（監視画面）へ戻る |
+| `n` | 🆕 **新しいプロジェクトを管理下に追加**（下で詳述） |
+| `l` | 登録から選んで**1 回だけ自律実行**（バックグラウンド） |
+| `s` | 登録から選んで**Supervisor 開始**（Goal まで自動再開） |
+| `x` | Supervisor 停止 |
+| `q` | 画面を閉じる（AI セッションは裏で継続） |
+
+> 💡 介入して指示し終えたら `Ctrl-b 0` で抜けるだけ。AI はそのまま自律作業に戻ります。
+>
+> ⚠️ **操作キー（`n`/`l`/`s`/`x`）はダッシュボード画面でのみ有効**です。プロジェクトに介入して
+> Claude の画面を見ている間は、キーは Claude への入力になります。**まず `Ctrl-b 0` でダッシュボードへ戻って**から押してください（`MO` で開いた直後は必ずダッシュボードに居ます）。
+
+### 🆕 新しいプロジェクトを管理下に追加（`n` キー）
+
+> 「**まだ動かしていないプロジェクトを、この画面から選んで AI に任せたい**」——そんなときは `n` を押します。
+> パソコン上のプロジェクトが**現在の状態つき**で一覧表示されるので、選んで「どう任せるか」を決めるだけです。
+
+```text
+ == 🆕 新規プロジェクトを自律管理に追加 ==
+   [1] ApiSvc                 📅 cron登録          ← もうスケジュール済み
+   [2] PaymentService         ⚪ 未管理            ← これを選べる（まだ何もしていない）
+   [3] Reporting              🔁 自律中(supervisor) ← もう自動再開で動いている
+   [4] WebApp                 🟢 稼働中            ← 今まさに動いている
+  番号 (0=キャンセル): 2
+   ─ PaymentService に対して ─
+   [1] 🔁 supervisor 開始 (Goal到達まで自律再開)   ← 完成まで任せる
+   [2] ▶️  1回だけ自律起動 (BG)                     ← まず1回だけ試す
+   [3] 📅 cron スケジュール登録 (曜日・時刻)         ← 毎週この時間に動かす
+```
+
+**状態バッジの見方**（選ぶ前に“今どうなっているか”が分かるので、二重に動かす心配がありません）:
+
+| バッジ | 意味 | おすすめ操作 |
+|---|---|---|
+| ⚪ 未管理 | まだ何もしていない | 👉 ここから `[1]`〜`[3]` で管理下へ |
+| 📅 cron登録 | 自動起動の予約済み | そのまま放置でOK |
+| 🔁 自律中 | Supervisor が完成まで自動再開中 | 介入したいときは数字キーで前面へ |
+| 🟢 稼働中 | 今まさに AI が作業中 | 数字キーで覗く / 指示する |
+
+> 🧠 **裏側のしくみ（安心ポイント）**: 「追加」とは “supervisor を開始する／cron に登録する” こと **そのもの**です。
+> 別の管理リストを作らないので、画面の表示と実際の動きが**ズレません**。
+
+**📂 一覧に出る条件**: `config_projects_dir`（既定 `~/Projects`）直下の **ディレクトリ かつ Git リポジトリ（`.git` を持つ）** のみが対象です。ファイル（`.md`/`.sh`/`.json` 等）や非 Git の整理用フォルダは**自動で除外**されます。
+
+**🐙 GitHub バッジ & フィルタ**: GitHub のリモート（origin）を持つプロジェクトに `🐙` が付きます。
+プロジェクトが多いときは `u`（未管理のみ）/ `a`（全表示）で絞り込めます。
+
+### 📅 たくさんのプロジェクトをまとめて登録（曜日分散）
+
+> プロジェクトが多くて 1 つずつ登録するのが大変なときは、**未管理の GitHub プロジェクトを曜日・時刻に自動で振り分けて一括登録**できます（全部いっぺんに動かすとマシンが重くなるので、自動で分散します）。
+
+```bash
+# ① まず計画を確認（DRY-RUN：登録はされません）
+bash bin/cron-schedule.sh bulk-register --github-only --unmanaged-only
+#   例: 18 件を 月〜土 × 09:00 / 14:00 / 19:00 に分散（セッションが重ならない間隔）
+
+# ② 計画に納得したら適用
+bash bin/cron-schedule.sh bulk-register --github-only --unmanaged-only --apply
+```
+
+> 💡 既定の時間間隔は 1 セッションの長さ（5 時間）に合わせてあり、**同じ日のセッションが重なりません**。
+> もっと詰めたい/空けたい場合は `--start 9`（開始時刻）`--spacing 5`（間隔h）`--dow 1,2,3,4,5,6`（曜日）で調整できます。
+
+---
+
+## 📧 メール通知 & 🌐 Web ダッシュボード
+
+- 📧 **終了レポートメール**: `~/.env-claudeos` に SMTP 設定 + `CLAUDEOS_EMAIL_ENABLED=1` を置くと、
+  セッション終了時に **HTML レポートメール**（成果サマリ・次フェーズ提案）が届きます。
+  cron・バックグラウンド・**手動起動（L1/S1）すべて対応**。手動分だけ止めるなら `CLAUDEOS_MANUAL_EMAIL=0`。
+- 🌐 **Mission Control（Web）**: `bash bin/start-dashboard.sh` で `http://localhost:3737/mission-control` を起動。
+  進捗・CI・健全性をブラウザで一覧。LAN 公開時は Basic 認証を有効化できます（後述）。
+
+---
+
+## ⚡ クイックスタート（Linux）
+
+### ✅ 前提条件
+
+- 🐧 Linux（Ubuntu などの一般的なディストリビューション）
+- 🤖 `claude`（Claude Code CLI） … `npm install -g @anthropic-ai/claude-code`
+- 🪟 `tmux`（画面の常駐・タブ切替に使用） / `git` / `jq` / `node` (18+) / `python3`
+
+### 🛠️ セットアップ（3 手順）
+
+```bash
+# ① 取得
+git clone <repository-url> ~/Projects/ClaudeCode-StartUpTools-New
+cd ~/Projects/ClaudeCode-StartUpTools-New
+
+# ② 端末まわりを準備（tmux 設定 / 作業ディレクトリ / 日本語ロケール）
+./libexec/setup-terminal.sh --apply
+./libexec/setup-terminal.sh --install --yes --apply   # tmux 未導入のとき
+./libexec/setup-terminal.sh --locale-ja               # 日本語表示にしたいとき
+
+# ③ 起動（メニューが開きます）
+./start.sh
+```
+
+> ⚙️ プロジェクトの置き場所などは `config/config.json`（`linuxBase` など）で調整できます。
+
+---
+
+## 🖱️ メニュー一覧（`./start.sh`）
+
+| メニュー | できること |
+|---|---|
+| `L1` | 🖥️ ローカル即起動（フォアグラウンド / その場で AI 画面に入る） |
+| `S1` | 🌙 バックグラウンド起動（自律 / 5 時間 / 裏で動かす） |
+| `5`–`11` | 🩺 各種診断（ツール / ネットワーク / tmux / MCP / Agent Teams / Worktree / Architecture） |
+| `12` | 📊 Statusline 設定 |
+| `13` | 📡 Claude ログ監視 |
+| `14` | 📅 Cron スケジュール 登録・編集・削除 / **登録から選んで一括バックグラウンド起動** |
+| `15` | 📺 セッション状態監視（一覧 / 接続・停止） |
+| `MO` | 🎛️ **コントロールセンター**（監視＋起動＋Supervisor＋介入 を 1 画面） |
+| `PD` / `MC` | 🌐 Mission Control（Web ダッシュボード） |
+
+> ⏰ **自動実行の仕組み**: Linux cron（月〜土 / プロジェクト別 / 1 セッション最大 5 時間）が起動トリガです。
+> メニュー `14`（`bin/cron-schedule.sh`）から登録・管理します。
+
+---
+
+## ⌨️ CLI チートシート
+
+```bash
+# ▶️ 起動（バックグラウンド既定）
+bash bin/cron-schedule.sh launch --all                 # 登録済みを全件バックグラウンド起動
+bash bin/cron-schedule.sh run-now  --project A          # 1 件だけ今すぐ（既定 BG）
+bash bin/cron-schedule.sh run-now  --project A --foreground   # 画面に入って同期実行
+
+# 🔁 完全自律（Goal まで自動再開）
+bash bin/autonomy.sh start  A        # 開始    /  stop A [--now] で停止
+bash bin/autonomy.sh list            # 状態一覧
+
+# 🎛️ 監視・介入
+bash bin/monitor-sessions.sh open    # コントロールセンターを開く
+tmux attach -t claudeos-A            # 特定プロジェクトの AI 画面に直接入る
+
+# 📅 スケジュール登録
+bash bin/cron-schedule.sh add --project A --time 21:00 --dow 1,2,3,4,5,6
+```
+
+---
+
+## 📊 開発状況
 
 | 項目 | 状態 |
 |------|------|
-| バージョン | **v3.3.8** (全プロセス統合 Supervisor daemon 新設) — 旧: v3.3.7 |
+| バージョン | **v3.4.8** (全プロセス統合 Supervisor daemon 新設 + Linux bash 移行) — 旧: v3.4.7 |
 | テスト | **891件** — Pester (Unit 21 / Integration 11 / Smoke 1) + bats supervisor 9件 |
 | CI | ✅ SUCCESS |
 | ClaudeOS (Claude Code 専用) | **v9.0** (`/goal` 駆動 / Agent Teams パターン A/B/C / Agent View / 動的判断 / 週次フェーズ制御 / learning パターン記録 / Stop Conditions 厳格化 / Opus 4.7 最適化 / 1H cache / PreCompact hook) |
@@ -218,82 +518,24 @@ graph LR
     end
 ```
 
-## Linux cron 完全自律実行 — セットアップから自律ループまでのフロー
+### 🤝 Agent Teams（チーム編成の例）
 
 ```mermaid
 flowchart TD
-    subgraph "Windows 側 (初回セットアップ)"
-        W1["🖥 start.bat"] --> W2["Start-Menu.ps1\n[14] Cron 登録"]
-        W2 --> W3["New-CronSchedule.ps1\nプロジェクト選択 / 曜日 / 時刻"]
-        W3 --> W4["🔑 SSH → Linux crontab 登録"]
-        W3 --> W5["📄 state.json 自動生成\n(未存在時のみ)"]
-    end
-
-    subgraph "Linux 側 (自律実行)"
-        L1["⏰ cron 発火\n(月〜土 / プロジェクト別)"] --> L2["cron-launcher.sh"]
-        L2 --> L3["state.json 読み込み\n前回 phase / consecutive 復元"]
-        L3 --> L4["START_PROMPT.md 読み込み\n復元情報を先頭に注入"]
-        L4 --> L5["claude --dangerously-skip-permissions\n(timeout 300m)"]
-    end
-
-    subgraph "Claude セッション (300分)"
-        C1["🔍 Monitor\n30m"] --> C2["🛠 Build\n120m"]
-        C2 --> C3["✅ Verify\n75m"]
-        C3 --> C4["🚀 Improve\n75m"]
-        C4 -->|STABLE未達| C2
-        C4 -->|STABLE達成| C5["📦 PR → Merge"]
-        C3 -->|CI失敗| C6["🔧 Auto Repair"]
-        C6 --> C3
-    end
-
-    subgraph "セッション終了"
-        E1["session-end.js\nlast_stop_at 更新"] --> E2["report-and-mail.py\nHTML メール送信"]
-        E2 --> E3["次回 cron まで待機"]
-    end
-
-    W4 --> L1
-    L5 --> C1
-    C5 --> E1
-    C4 --> E1
+    Task["📋 タスク"] --> CTO["👔 CTO<br/>統制・優先順位"]
+    CTO --> Dev["💻 Developer<br/>実装"]
+    CTO --> QA["🧪 QA<br/>テスト"]
+    CTO --> Sec["🔒 Security<br/>脆弱性確認"]
+    CTO --> Rev["🔍 Reviewer<br/>コードレビュー"]
+    CTO --> Ops["⚙️ DevOps<br/>CI/CD・PR"]
+    Dev --> Spec["🧬 専門エージェント<br/>(言語別レビュー / ビルド解決 を自動選定)"]
 ```
 
-## 自律開発ループ詳細
-
-```mermaid
-flowchart LR
-    M["🔍 Monitor<br/>30m"] --> B["🛠 Development<br/>60m"]
-    B --> V["✅ Verify<br/>45m"]
-    V --> I["🚀 Improvement<br/>45m"]
-    I -->|STABLE未達| B
-    I -->|STABLE達成| S["📦 Deploy"]
-    V -->|CI失敗| R["🔧 Auto Repair"]
-    R --> V
-    B --> SE["🧠 SelfEvolution<br/>Cycle"]
-    SE --> B
-```
-
-## Agent Teams ランタイム
-
-```mermaid
-flowchart TD
-    Task["Task Description"] --> Analyze["Get-TaskTypeAnalysis<br/>17パターン分類"]
-    Task --> Rules["Get-BacklogRuleMatch<br/>backlog-rules.json"]
-    Analyze --> Team["New-AgentTeam"]
-    Rules --> Team
-
-    Team --> Core["Core Team<br/>7 Roles"]
-    Team --> Spec["Specialists<br/>auto-selected"]
-
-    Core --> CTO["CTO"]
-    Core --> Arch["Architect"]
-    Core --> Dev["Developer"]
-    Core --> QA["QA"]
-    Core --> Sec["Security"]
-    Core --> Ops["DevOps"]
-    Core --> Rev["Reviewer"]
-
-    Spec --> S1["25 Agent定義から<br/>タスク種別で自動選定"]
-```
+| パターン | 使いどころ |
+|---|---|
+| **A 並列実装** | 複数機能を同時に作る（Backend / Frontend / テストを分担） |
+| **B 品質強化** | CI 失敗の修復 + セキュリティ + 回帰テストを同時対応 |
+| **C 調査・設計** | 新機能の設計検討（技術調査 + 設計 + 反証役） |
 
 ---
 
@@ -582,139 +824,94 @@ npm start
 
 ---
 
-## ディレクトリ構成
+## 🗂️ ディレクトリ構成（Linux ネイティブ）
 
 ```text
-config/              設定テンプレートと設定ドキュメント
-docs/                利用ガイド（共通/Claude/Codex/Copilot）
-scripts/lib/         共通モジュール (17 modules)
-  Config.psm1          設定管理
-  LauncherCommon.psm1  起動共通処理 (1545行 — 分割対象)
-  MenuCommon.psm1      メニュー共通処理
-  SSHHelper.psm1       SSH接続ヘルパー
-  ErrorHandler.psm1    エラーハンドリング
-  McpHealthCheck.psm1  MCPヘルスチェック
-  AgentTeams.psm1      Agent Teamsランタイム
-  WorktreeManager.psm1 Git Worktree管理
-  IssueSyncManager.psm1 Issue/Backlog同期
-  TokenBudget.psm1     Token Budget自動制御
-  ArchitectureCheck.psm1 アーキテクチャ違反検出
-  SelfEvolution.psm1   セッション学習・自己進化
-  CronManager.psm1     Cronスケジュール管理
-  LogManager.psm1      ログ管理
-  MessageBus.psm1      メッセージバス
-  SessionTabManager.psm1 セッションタブ管理
-  StatuslineManager.psm1 ステータスライン管理
-scripts/main/        起動スクリプト
-scripts/helpers/     PTY bridge 等のヘルパー
-scripts/templates/   各ツール向けテンプレート
-scripts/test/        診断スクリプト
-scripts/tools/       TASKS同期・バックログ管理
-tests/               Pester テスト (33 files / 731件 — Unit 21 / Integration 11 / Smoke 1)
-Claude/              ClaudeOS 互換ポリシー群
-Codex/               Codex AGENTS.md
-.claude/claudeos/    ClaudeOS カーネル（198ファイル、配備先 — 編集元は Claude/templates/claudeos/）
-.codex/              Codex 設定
-.github/             Copilot 設定 / CI ワークフロー
+start.sh                エントリ（メニューを開く）
+bin/                    実行スクリプト
+  menu.sh                 運用メニュー TUI
+  cron-schedule.sh        Cron 登録・編集・削除 / 一括 BG 起動
+  start-claude.sh         手動起動（L1/S1）
+  monitor-sessions.sh     🎛️ コントロールセンター（監視＋操作）
+  autonomy.sh             🔁 Autonomy Supervisor（自律再開）
+  start-dashboard.sh      🌐 Mission Control(Web) 起動
+lib/                    共通ライブラリ
+  common.sh / json.sh / config-loader.sh / cron-manager.sh
+  tmux-runner.sh          tmux 実行エンジン（手動起動）
+  supervisor.sh           Supervisor 本体（ガードレール＋自律ループ）
+libexec/                診断・ユーティリティ（メニュー 5〜15）
+  setup-terminal.sh       tmux/端末セットアップ
+  watch-session.sh        セッション状態監視
+Claude/templates/linux/ cron-launcher.sh（自律セッションの起動ラッパ） / report-and-mail.py（メール）
+tests/bats/             Linux 側ユニットテスト（bats）
+scripts/                Mission Control(Web) / 各種ツール / Pester テスト
+.claude/claudeos/       ClaudeOS カーネル（agents / commands / hooks / docs …）
+~/.claudeos/            実行時データ（logs / sessions / supervisor / locks / cron-launcher.sh）
 ```
 
 ---
 
-## 診断とテスト
+## 🔐 設定の要点
 
-```powershell
-# 全ツール診断
-.\scripts\test\Test-AllTools.ps1
+| キー（`config/config.json`） | 説明 |
+|---|---|
+| `linuxBase` | プロジェクトの置き場所（例 `/home/USER/Projects`） |
+| `tools.defaultTool` | 既定ツール（`claude`） |
+| `dashboardAuth.user` / `dashboardAuth.password` | Mission Control(Web) の Basic 認証（任意） |
 
-# MCP ヘルスチェック
-.\scripts\test\Test-McpHealth.ps1
+```bash
+# 🌐 Mission Control を LAN 公開する場合は認証を有効化（推奨）
+export DASHBOARD_PASSWORD="your-secret-password"
+export DASHBOARD_USER="admin"
+bash bin/start-dashboard.sh        # → http://<LAN-IP>:3737 で認証を要求
+```
 
-# Agent Teams ランタイム診断
-.\scripts\test\Test-AgentTeams.ps1
+メール送信は `~/.env-claudeos`（Git 管理外）に設定します:
 
-# Architecture Check (Phase 3) 🆕
-.\scripts\test\Test-ArchitectureCheck.ps1
-
-# JSON 出力
-.\scripts\test\Test-AllTools.ps1 -OutputFormat Json
-.\scripts\test\Test-McpHealth.ps1 -OutputFormat Json
-.\scripts\test\Test-AgentTeams.ps1 -OutputFormat Json -Task "Fix CI build"
-.\scripts\test\Test-ArchitectureCheck.ps1 -OutputFormat Json
-
-# Pester テスト (433件 — Unit:311 / E2E:122)
-Invoke-Pester .\tests\
+```bash
+export CLAUDEOS_SMTP_USER="you@gmail.com"
+export CLAUDEOS_SMTP_PASS="<Gmail アプリパスワード>"
+export CLAUDEOS_DEFAULT_TO="you@gmail.com"
+export CLAUDEOS_EMAIL_ENABLED=1     # 0 で無効
 ```
 
 ---
 
-## ドキュメント
+## 🩺 診断とテスト
 
-| カテゴリ | ファイル |
-|----------|----------|
-| 共通 | `docs/common/01_はじめに.md` 〜 `13_グローバル設定適用設計.md` |
-| Claude | `docs/claude/01_概要.md` 〜 `05_ベストプラクティス.md` |
-| Codex | `docs/codex/01_概要.md` 〜 `04_ベストプラクティス.md` |
-| Copilot | `docs/copilot/01_概要.md` 〜 `04_ベストプラクティス.md` |
+```bash
+# Linux 側ユニットテスト（bats）
+bats tests/bats/unit/
 
----
+# シェルスクリプト静的解析
+shellcheck -S error start.sh lib/*.sh bin/*.sh libexec/*.sh
 
-## 開発ロードマップ (v3.0.0) — Claude Code 専用
+# 各種診断（メニュー 5〜11 と同等）
+bash libexec/diag-all-tools.sh      # ツール一括診断
+bash libexec/diag-mcp-health.sh     # MCP ヘルスチェック
+```
 
-> Phase 2 以降のすべてのロードマップ項目は Claude Code / ClaudeOS スタック向けです。Codex CLI / GitHub Copilot CLI の機能拡張は本ロードマップに含まれません。
-
-| フェーズ | 状態 | 主な目標 |
-|----------|------|----------|
-| Phase 1 ✅ | 完了 (v2.7.0) | P1完了、モジュール基盤確立 |
-| Phase 2 ✅ | 完了 (v2.8.0) | Worktree並列開発、Issue自動生成、CI強化 |
-| Phase 3 ✅ | 完了 (v2.9.0) | Self Evolution / Architecture Check / Boot Sequence 完全実装 / Dashboard UI / Memory MCP 統合 / CodeRabbit 統合 |
-| Phase 4 🚧 | 着手中 (v3.0.0 準備) | リリースノート作成、E2E テスト整備、GitHub Release タグ作成、Issue Sync 修正 |
-
-### Phase 3 進捗 (v2.9.0) — 完了
-
-| タスク | 担当 | 状態 | PR |
-|--------|------|------|-----|
-| 🧠 Self Evolution システム | Architect | ✅ 完了 | #51 |
-| 🏗️ Architecture Check Loop | Architect | ✅ 完了 | #49 |
-| 📊 開発ダッシュボード UI (state.json KPI統合) | Developer | ✅ 完了 | #82 |
-| 💾 Memory MCP 永続化統合 (Boot Step 3) | Ops | ✅ 完了 | #81 |
-| 🔧 Boot Sequence 完全自動化 (Step 7 Agent Init) | Ops | ✅ 完了 | #80 |
-
-**Phase 3 完了率: 5/5 (100%) 🏆 COMPLETE**
-
-### Phase 4 計画 (v3.0.0 GA リリース準備)
-
-| タスク | 優先度 | 状態 |
-|--------|--------|------|
-| 📋 Issue Sync ワークフロー修正 | P3 | 🚧 Issue #85 追跡中 |
-| 📝 v3.0.0 リリースノート作成 | P2 | ⏸ 計画中 |
-| 🧪 E2E テスト整備 | P2 | ⏸ 計画中 |
-| 🏷 GitHub Release タグ作成 `v3.0.0` | P2 | ⏸ 計画中 |
-
-### 最近のマージ履歴
-
-| PR | 内容 | 日付 |
-|----|------|------|
-| #88 | feat(templates): ClaudeOS v7.5 テンプレート更新・ループ短縮・CodeRabbit 統合・/team-onboarding 実装 | 2026-04-14 |
-| #84 | chore: .gitignore に claude-mem 自動生成 CLAUDE.md を追加 | 2026-04-14 |
-| #83 | chore(claudeos): v7.5 — CodeRabbit 統合ポリシー + README Phase 3 完了反映 | 2026-04-14 |
-| #82 | feat(dashboard): Issue #71 — Step 9 Dashboard に state.json KPI/フェーズ統合 | 2026-04-14 |
-| #81 | feat(boot): Issue #70 — Step 3 Memory Restore を McpHealthCheck.psm1 でワイヤリング | 2026-04-14 |
-| #80 | feat(boot): Issue #68 PR-B — Step 7 Agent Init を AgentTeams.psm1 でワイヤリング | 2026-04-14 |
-| #79 | chore: フェーズ別モデル制御設定を追加 | 2026-04-14 |
-| #77 | chore: gitleaks workflow + Agent Teams Light mode | 2026-04-14 |
-| #69 | feat(boot): ClaudeOS Boot Sequence scaffold (MVP / PR-A) | 2026-04-10 |
-| #67 | fix: markdownlint MD024 を file-scoped inline disable 化 | 2026-04-10 |
-| #66 | fix: START_PROMPT テンプレを最大10回ループ + CTO全権委任に明確化 | 2026-04-10 |
-| #51 | Phase 3 — Self Evolution + Architecture Check Loop | 2026-04-08 |
+> 🪟 Windows/PowerShell 由来の Pester テスト（`tests/`）と Mission Control(Web) は CI で継続検証されています。
 
 ---
 
-## 注意事項
+## 📚 ドキュメント
 
-- `Claude Code` は設定上 `--dangerously-skip-permissions` を利用できます。開発環境専用です。
-- API キーをソースに保存しないでください。
-- SSH 実行では Linux 側の `linuxBase` と Windows 側の共有パスが同じプロジェクト群を指す前提です。
+| カテゴリ | 場所 |
+|---|---|
+| 運用ポリシー（正本） | [`CLAUDE.md`](./CLAUDE.md) |
+| 変更履歴 | [`CHANGELOG.md`](./CHANGELOG.md) |
+| 共通ガイド | `docs/common/` |
+| Claude / Codex / Copilot ガイド | `docs/claude/` ほか |
 
-## ライセンス
+---
+
+## ⚠️ 注意事項
+
+- 🔓 `Claude Code` は `--dangerously-skip-permissions` を利用します（**開発環境専用**）。
+- 🔑 API キー・パスワードは**ソースに保存しない**でください（`~/.env-claudeos` 等の Git 管理外へ）。
+- 🤖 Autonomy Supervisor は**既定 OFF**。`start` した時だけ自律再開します。
+
+## 📄 ライセンス
 
 MIT License
