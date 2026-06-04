@@ -79,25 +79,25 @@ Describe 'Resolve-SshProjectsDir' {
 Describe 'Resolve-LauncherMode (Phase 2b)' {
 
     It '-Local スイッチで $true を返すこと' {
-        $config = [pscustomobject]@{ linuxHost = $null }
+        $config = [pscustomobject]@{}
         $result = Resolve-LauncherMode -Config $config -Local -ConfigPath 'dummy.json'
         $result | Should -Be $true
     }
 
-    It 'linuxHost 設定があっても常にローカルとして $true を返すこと (Phase 3)' {
-        $config = [pscustomobject]@{ linuxHost = '192.168.0.185' }
+    It 'SSH 設定なしでも常にローカルとして $true を返すこと' {
+        $config = [pscustomobject]@{}
         $result = Resolve-LauncherMode -Config $config -ConfigPath 'dummy.json'
         $result | Should -Be $true
     }
 
-    It 'linuxHost 未設定で -Local なし = ローカル一本化として $true を返すこと (Phase 2b)' {
-        $config = [pscustomobject]@{ linuxHost = $null }
+    It '-Local なし = ローカル一本化として $true を返すこと (Phase 2b)' {
+        $config = [pscustomobject]@{}
         $result = Resolve-LauncherMode -Config $config -ConfigPath 'dummy.json'
         $result | Should -Be $true
     }
 
-    It 'linuxHost 未設定 + NonInteractive でも $true を返すこと (Phase 2b: throw しない)' {
-        $config = [pscustomobject]@{ linuxHost = $null }
+    It 'NonInteractive でも $true を返すこと (Phase 2b: throw しない)' {
+        $config = [pscustomobject]@{}
         { $result = Resolve-LauncherMode -Config $config -NonInteractive -ConfigPath 'dummy.json' } |
             Should -Not -Throw
         $result = Resolve-LauncherMode -Config $config -NonInteractive -ConfigPath 'dummy.json'
@@ -120,7 +120,6 @@ Describe 'Resolve-LauncherProject (Phase 2b)' {
         $config = [pscustomobject]@{
             projectsDir    = $projRoot
             localExcludes  = $null
-            linuxHost      = $null
             linuxBase      = $null
             sshProjectsDir = $null
             projectsDirUnc = $null
@@ -136,7 +135,6 @@ Describe 'Resolve-LauncherProject (Phase 2b)' {
         $config = [pscustomobject]@{
             projectsDir    = $projRoot
             localExcludes  = @('Skip')
-            linuxHost      = $null
             linuxBase      = $null
             sshProjectsDir = $null
             projectsDirUnc = $null

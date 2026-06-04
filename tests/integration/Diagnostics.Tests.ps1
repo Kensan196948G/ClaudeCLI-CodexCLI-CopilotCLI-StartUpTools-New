@@ -26,7 +26,6 @@ Describe 'Get-DriveMappingReport' {
         $configInfo = [pscustomobject]@{
             sshProjectsDir = 'Z:\'
             projectsDirUnc = '\\server\share'
-            linuxHost = 'host'
             configFound = $true
         }
 
@@ -48,7 +47,6 @@ Describe 'Get-DriveMappingReport' {
         $configInfo = [pscustomobject]@{
             sshProjectsDir = 'Z:\'
             projectsDirUnc = $null
-            linuxHost = 'host'
             configFound = $true
         }
 
@@ -79,7 +77,6 @@ Describe 'Get-DriveMappingReport' {
         $configInfo = [pscustomobject]@{
             sshProjectsDir = 'Z:\'
             projectsDirUnc = '\\server\share'
-            linuxHost = 'host'
             configFound = $true
         }
 
@@ -99,7 +96,6 @@ Describe 'Get-DriveMappingReport' {
         $configInfo = [pscustomobject]@{
             sshProjectsDir = 'Z:\'
             projectsDirUnc = '\\server\share'
-            linuxHost = 'host'
             configFound = $true
         }
 
@@ -119,7 +115,6 @@ Describe 'Get-DriveMappingReport' {
         $configInfo = [pscustomobject]@{
             sshProjectsDir = 'Z:\'
             projectsDirUnc = '\\server\share'
-            linuxHost = 'host'
             configFound = $true
         }
 
@@ -142,7 +137,6 @@ Describe 'Get-DriveMappingReport' {
         $configInfo = [pscustomobject]@{
             sshProjectsDir = 'Z:\'
             projectsDirUnc = '\\server\share'
-            linuxHost = 'host'
             configFound = $true
         }
 
@@ -162,7 +156,6 @@ Describe 'Get-DriveMappingReport' {
         $configInfo = [pscustomobject]@{
             sshProjectsDir = 'Z:\'
             projectsDirUnc = '\\server\share'
-            linuxHost = 'host'
             configFound = $true
         }
 
@@ -233,8 +226,7 @@ echo OpenSSH_9
             projectsDir = $script:ProjectsRoot
             sshProjectsDir = $script:ProjectsRoot
             projectsDirUnc = '\\server\share'
-            linuxHost = 'host'
-            linuxBase = '/home/kensan/Projects'
+
             localExcludes = @()
             tools = @{
                 defaultTool = 'claude'
@@ -575,8 +567,7 @@ Describe 'Start-Menu recent projects' {
             projectsDir = 'D:\Projects'
             sshProjectsDir = 'Z:\'
             projectsDirUnc = '\\server\share'
-            linuxHost = 'host'
-            linuxBase = '/home/kensan/Projects'
+
             localExcludes = @()
             tools = @{
                 defaultTool = 'claude'

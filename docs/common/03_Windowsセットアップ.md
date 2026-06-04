@@ -67,7 +67,6 @@ Copy-Item config\config.json.template config\config.json
   "projectsDir": "D:\\",
   "sshProjectsDir": "auto",
   "projectsDirUnc": "\\\\192.168.0.185\\Projects",
-  "linuxHost": "192.168.0.185",
   "linuxBase": "/home/kensan/Projects",
   "tools": {
     "defaultTool": "claude",

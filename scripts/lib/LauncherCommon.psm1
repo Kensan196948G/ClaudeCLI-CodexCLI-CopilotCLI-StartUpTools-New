@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-    Core launcher utility functions — config, mode, project selection, SSH, environment.
+    Core launcher utility functions — config, mode, project selection, environment.
     Template sync functions are in TemplateSyncManager.psm1.
     Session logging functions are in SessionLogger.psm1.
     Both are dot-sourced below for full backward compatibility with all callers.
@@ -270,8 +270,7 @@ function Resolve-LauncherProject {
         [object]$Config,
         [string]$Project,
         [switch]$Local,
-        [switch]$NonInteractive,
-        [string]$LinuxHost
+        [switch]$NonInteractive
     )
 
     if ($Project) {
@@ -290,41 +289,6 @@ function Resolve-LauncherProject {
             $dirs = $dirs | Where-Object { $_.Name -notin $Config.localExcludes }
         }
     }
-    elseif (-not $Local -and $LinuxHost -and $Config.linuxBase) {
-        # ドライブ未接続または auto:unmapped — SSH 経由でリモートのプロジェクト一覧を取得
-        if ($projectsRoot -eq 'auto:unmapped') {
-            Write-Host "[INFO] ドライブマッピングなし。SSH 経由でプロジェクト一覧を取得します..." -ForegroundColor Cyan
-        } else {
-            Write-Host "[INFO] $projectsRoot にアクセスできません。SSH 経由でプロジェクト一覧を取得します..." -ForegroundColor Cyan
-        }
-        $sshCommand = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { "ssh" }
-        $connectTimeout = if ($env:AI_STARTUP_SSH_CONNECT_TIMEOUT) { $env:AI_STARTUP_SSH_CONNECT_TIMEOUT } else { "10" }
-        try {
-            $remoteDirs = & $sshCommand -o "ConnectTimeout=$connectTimeout" -o "StrictHostKeyChecking=accept-new" $LinuxHost "ls -d $($Config.linuxBase)/*/ 2>/dev/null" 2>&1
-            if ($LASTEXITCODE -eq 0 -and $remoteDirs) {
-                $dirNames = @($remoteDirs | ForEach-Object { ($_ -replace '/$', '').Split('/')[-1] } | Sort-Object)
-                if ($dirNames.Count -gt 0) {
-                    $dirs = $dirNames | ForEach-Object { [pscustomobject]@{ Name = $_ } }
-                }
-            }
-            else {
-                throw "SSH 接続またはディレクトリ取得に失敗しました (exit=$LASTEXITCODE)"
-            }
-        }
-        catch {
-            throw @"
-SSH プロジェクトフォルダにアクセスできません。
-
-ローカルパス ($projectsRoot) が未接続で、SSH 経由の取得にも失敗しました:
-  $_
-
-確認事項:
-  1. Linux ホスト ($LinuxHost) が起動しているか確認
-  2. ssh $LinuxHost echo test で手動接続を確認
-  3. ネットワークドライブを接続: net use $($projectsRoot.Substring(0,2)) $($Config.projectsDirUnc)
-"@
-        }
-    }
     else {
         throw "プロジェクトルートが見つかりません: $projectsRoot"
     }
@@ -337,7 +301,7 @@ SSH プロジェクトフォルダにアクセスできません。
         throw "非対話モードでは -Project の指定が必要です。"
     }
 
-    Show-LauncherProjectChoice -Projects $dirs.Name -Local:$Local -LinuxHost $LinuxHost
+    Show-LauncherProjectChoice -Projects $dirs.Name
 
     $num = Read-Host "番号を入力してください"
     $numInt = $num -as [int]
@@ -355,16 +319,11 @@ SSH プロジェクトフォルダにアクセスできません。
 function Show-LauncherProjectChoice {
     param(
         [Parameter(Mandatory)]
-        [string[]]$Projects,
-        [switch]$Local,
-        [string]$LinuxHost
+        [string[]]$Projects
     )
 
     Write-Host ""
     Write-Host "=== プロジェクト選択 ===" -ForegroundColor Cyan
-    if (-not $Local -and $LinuxHost) {
-        Write-Host "接続先: $LinuxHost" -ForegroundColor DarkGray
-    }
     for ($i = 0; $i -lt $Projects.Count; $i++) {
         "{0,2}: {1}" -f ($i + 1), $Projects[$i] | Write-Host
     }
@@ -372,37 +331,27 @@ function Show-LauncherProjectChoice {
 
 <#
 .SYNOPSIS
-    Returns a human-readable label describing the current execution mode (local or SSH) and project path.
+    Returns a human-readable label describing the local execution mode and project path.
 #>
 function Get-LauncherModeLabel {
     param(
         [Parameter(Mandatory)]
         [string]$Project,
         [switch]$Local,
-        [string]$ProjectsDir,
-        [string]$LinuxHost,
-        [string]$LinuxBase
+        [string]$ProjectsDir
     )
 
-    if ($Local) {
-        return "ローカル  $ProjectsDir\$Project"
-    }
-
-    return "SSH  $LinuxHost → $LinuxBase/$Project"
+    return "ローカル  $ProjectsDir\$Project"
 }
 
 <#
 .SYNOPSIS
-    Returns 'local' or 'ssh' as the canonical mode name string.
+    Returns 'local' as the canonical mode name string (Phase 3: SSH removed).
 #>
 function Get-LauncherModeName {
     param([switch]$Local)
 
-    if ($Local) {
-        return 'local'
-    }
-
-    return 'ssh'
+    return 'local'
 }
 
 <#
@@ -415,17 +364,8 @@ function New-LauncherDryRunMessage {
         [Parameter(Mandatory)]
         [string]$Command,
         [string[]]$Arguments = @(),
-        [string]$WorkingDirectory = '',
-        [string]$LinuxHost = '',
-        [string]$RemoteScript = ''
+        [string]$WorkingDirectory = ''
     )
-
-    if (-not [string]::IsNullOrWhiteSpace($RemoteScript)) {
-        return @(
-            "[DryRun] SSH接続先: $LinuxHost"
-            $RemoteScript
-        )
-    }
 
     $joinedArgs = if ($Arguments.Count -gt 0) { " " + ($Arguments -join ' ') } else { '' }
     return @("[DryRun] cd $WorkingDirectory && $Command$joinedArgs")
@@ -501,75 +441,6 @@ function ConvertTo-BashExport {
     return ($lines -join "`n")
 }
 
-<#
-.SYNOPSIS
-    Executes a shell script on a remote Linux host via SSH and returns the exit code.
-#>
-function Invoke-LauncherSshScript {
-    param(
-        [Parameter(Mandatory)]
-        [string]$LinuxHost,
-        [Parameter(Mandatory)]
-        [string]$RunScript,
-        [Parameter(Mandatory)]
-        [string]$RemoteScriptName
-    )
-
-    # Bash on the remote side must receive LF-only content.
-    $normalizedRunScript = (($RunScript -replace "`r`n", "`n") -replace "`r", "`n")
-
-    if ($env:AI_STARTUP_SSH_CAPTURE_DIR) {
-        $captureDir = $env:AI_STARTUP_SSH_CAPTURE_DIR
-        if (-not (Test-Path $captureDir)) {
-            New-Item -ItemType Directory -Force -Path $captureDir | Out-Null
-        }
-
-        Set-Content -Path (Join-Path $captureDir "host.txt") -Value $LinuxHost -Encoding UTF8
-        Set-Content -Path (Join-Path $captureDir "script-name.txt") -Value $RemoteScriptName -Encoding UTF8
-        Set-Content -Path (Join-Path $captureDir "script.sh") -Value $normalizedRunScript -Encoding UTF8
-        Write-Host "[INFO] SSH_CAPTURE $LinuxHost $RemoteScriptName" -ForegroundColor DarkGray
-        return 0
-    }
-
-    $sshCommand = if ($env:AI_STARTUP_SSH_EXE) { $env:AI_STARTUP_SSH_EXE } else { "ssh" }
-    $connectTimeout = if ($env:AI_STARTUP_SSH_CONNECT_TIMEOUT) { $env:AI_STARTUP_SSH_CONNECT_TIMEOUT } else { "10" }
-
-    # PowerShell の & 演算子は対話型プログラムのコンソール制御を妨げることがある。
-    # Start-Process -NoNewWindow -Wait でコンソールを直接 SSH に渡す。
-    Write-Host "[INFO] SSH 接続中: $LinuxHost ..." -ForegroundColor Cyan
-
-    # Windows OpenSSH は ControlMaster のUnixソケットをサポートしないため無効化する。
-    # Linuxでのみ ControlMaster=auto を使用して多重接続時の TCP 競合を回避する。
-    $cmArgs = if ($IsWindows -or $env:OS -eq 'Windows_NT') {
-        @("-o", "ControlMaster=no")
-    } else {
-        @("-o", "ControlMaster=auto",
-          "-o", "ControlPath=/tmp/ssh_cm_%r@%h_%p",
-          "-o", "ControlPersist=15")
-    }
-    $sshArgList = @("-tt",
-        "-o", "ConnectTimeout=$connectTimeout",
-        "-o", "StrictHostKeyChecking=accept-new",
-        "-o", "ServerAliveInterval=60",
-        "-o", "ServerAliveCountMax=3") +
-        $cmArgs +
-        @($LinuxHost, $normalizedRunScript)
-
-    $process = Start-Process -FilePath $sshCommand -ArgumentList $sshArgList `
-        -NoNewWindow -Wait -PassThru
-    $exitCode = if ($null -ne $process.ExitCode) { $process.ExitCode } else { 0 }
-
-    if ($exitCode -eq 255) {
-        Write-Host "[ERR]  SSH 接続に失敗しました: $LinuxHost" -ForegroundColor Red
-        Write-Host "[INFO] 確認事項:" -ForegroundColor Cyan
-        Write-Host "  1. ssh $LinuxHost echo test  で手動接続を確認" -ForegroundColor White
-        Write-Host "  2. ~/.ssh/config のホスト名・鍵設定を確認" -ForegroundColor White
-        Write-Host "  3. ping $LinuxHost  でネットワーク疎通を確認" -ForegroundColor White
-        Write-Host "  4. ssh -vvv $LinuxHost  で詳細ログを確認" -ForegroundColor White
-    }
-
-    return $exitCode
-}
 
 <#
 .SYNOPSIS

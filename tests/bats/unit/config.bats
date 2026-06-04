@@ -12,7 +12,6 @@ setup() {
   cat > "$AI_STARTUP_CONFIG_PATH" <<'JSON'
 {
   "projectsDir": "D:\\",
-  "linuxHost": "192.168.0.185",
   "linuxUser": "kensan",
   "linuxBase": "/home/kensan/Projects",
   "tools": {
@@ -34,11 +33,6 @@ teardown() { _bats_common_teardown; }
 @test "config_projects_dir: linuxBase を優先 (Windows D:\\ ではなく)" {
   run config_projects_dir
   [ "$output" = "/home/kensan/Projects" ]
-}
-
-@test "config_linux_host: linuxHost を取得" {
-  run config_linux_host
-  [ "$output" = "192.168.0.185" ]
 }
 
 @test "config_linux_user: linuxUser を取得" {

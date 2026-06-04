@@ -75,7 +75,6 @@ Copy-Item .\config\agent-teams-backlog-rules.json.template .\config\agent-teams-
 - `projectsDir`
 - `sshProjectsDir`
 - `projectsDirUnc`
-- `linuxHost`
 - `linuxBase`
 - `localExcludes`
 
@@ -91,7 +90,6 @@ template のキーを追加・変更した場合は、少なくともこの表�
 | `projectsDir` | ローカル起動時のプロジェクトルート | `scripts/main/Start-*.ps1`, `scripts/test/Test-AllTools.ps1` |
 | `sshProjectsDir` | SSH 実行時に Windows 側で参照する共有ドライブ | `scripts/main/Start-*.ps1`, `scripts/test/test-drive-mapping.ps1` |
 | `projectsDirUnc` | UNC フォールバック | `scripts/test/test-drive-mapping.ps1`, `scripts/test/Test-AllTools.ps1` |
-| `linuxHost` | SSH 接続先 | `scripts/main/Start-*.ps1`, `scripts/main/Start-Menu.ps1` |
 | `linuxBase` | Linux 側プロジェクトルート | `scripts/main/Start-*.ps1`, `README.md` |
 | `localExcludes` | ローカル選択から除外するディレクトリ | `scripts/lib/LauncherCommon.psm1` |
 | `tools.defaultTool` | 統合ランチャーのデフォルト | `scripts/main/Start-All.ps1` |

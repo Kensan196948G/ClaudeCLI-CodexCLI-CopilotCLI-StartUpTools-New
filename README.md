@@ -458,9 +458,6 @@ graph TD
     WSI --> SJ["session.json (1s poll)"]
 
     J -->|Local| K["projectsDir\n(手動セッション)"]
-    J -->|SSH| L["linuxHost via SSH"]
-    L --> M["claude_pty_bridge.py"]
-
     C --> PLD["Pre-Launch Diagnostics"]
     PLD --> MCP_CHK["MCP Health Check"]
     PLD --> AT_CHK["Agent Teams Check"]
@@ -598,8 +595,6 @@ copy config\config.json.template config\config.json
 {
   "projectsDir": "D:\\",
   "sshProjectsDir": "auto",
-  "linuxHost": "your-linux-host",
-  "linuxBase": "/home/kensan/Projects",
   "tools": { "defaultTool": "claude" }
 }
 ```
@@ -790,8 +785,6 @@ flowchart LR
 |------|------|
 | `projectsDir` | ローカル参照用のプロジェクトルート |
 | `sshProjectsDir` | SSH 実行時の共有ドライブ (`"auto"` で空きレター自動検出) |
-| `linuxHost` | SSH 接続先 |
-| `linuxBase` | Linux 側のプロジェクトルート |
 | `tools.defaultTool` | `Start-All.ps1` のデフォルトツール |
 | `dashboardAuth.password` | Mission Control Basic Auth パスワード（任意） |
 | `dashboardAuth.user` | Mission Control ユーザー名（省略時 `admin`） |

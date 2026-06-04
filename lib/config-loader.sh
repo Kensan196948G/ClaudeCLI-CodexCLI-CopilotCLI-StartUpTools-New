@@ -45,8 +45,6 @@ config_project_list() {
   done
 }
 
-# --- 接続情報 (移行後はローカル実行のため参考値) ---
-config_linux_host() { config_get '.linuxHost' ''; }
 config_linux_user() { config_get '.linuxUser' "$USER"; }
 
 # --- ツール定義 ---

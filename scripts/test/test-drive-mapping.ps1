@@ -24,7 +24,6 @@ function Get-DriveMappingConfig {
         return [pscustomobject]@{
             sshProjectsDir = 'auto'
             projectsDirUnc = $null
-            linuxHost = $null
             configFound = $false
         }
     }
@@ -33,7 +32,6 @@ function Get-DriveMappingConfig {
     return [pscustomobject]@{
         sshProjectsDir = if ($config.sshProjectsDir) { $config.sshProjectsDir } else { $config.zDrive }
         projectsDirUnc = if ($config.projectsDirUnc) { $config.projectsDirUnc } else { $config.zDriveUncPath }
-        linuxHost = $config.linuxHost
         configFound = $true
     }
 }
