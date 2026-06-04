@@ -123,9 +123,6 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
             $config = @{
                 version        = '2.0.0'
                 projectsDir    = 'X:\'
-                sshProjectsDir = 'Z:\'
-                projectsDirUnc = '\\server\share'
-
                 tools          = @{
                     defaultTool = 'claude'
                     claude      = @{
@@ -163,9 +160,6 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
             $config = @{
                 version        = '2.0.0'
                 projectsDir    = 'X:\'
-                sshProjectsDir = 'Z:\'
-                projectsDirUnc = '\\server\share'
-
                 tools          = @{
                     defaultTool = 'claude'
                     claude      = @{
@@ -215,9 +209,6 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
             $config = @{
                 version        = '2.0.0'
                 projectsDir    = 'X:\'
-                sshProjectsDir = 'Z:\'
-                projectsDirUnc = '\\server\share'
-
                 tools          = @{
                     defaultTool = 'invalid'
                     claude      = @{
@@ -259,9 +250,6 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
             $config = @{
                 version        = '2.0.0'
                 projectsDir    = 'X:\'
-                sshProjectsDir = 'Z:\'
-                projectsDirUnc = '\\server\share'
-
                 tools          = @{
                     defaultTool = 'claude'
                     claude      = @{
@@ -303,9 +291,6 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
             $config = @{
                 version        = '2.0.0'
                 projectsDir    = 'X:\'
-                sshProjectsDir = 'Z:\'
-                projectsDirUnc = '\\server\share'
-
                 tools          = @{
                     defaultTool = 'claude'
                     claude      = @{ enabled = $true; command = 'claude'; args = @(); installCommand = 'install-claude'; env = @{}; apiKeyEnvVar = 'ANTHROPIC_API_KEY' }
@@ -327,9 +312,6 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
             $config = @{
                 version        = '2.0.0'
                 projectsDir    = 'X:\'
-                sshProjectsDir = 'Z:\'
-                projectsDirUnc = '\\server\share'
-
                 tools          = @{
                     defaultTool = 'claude'
                     claude      = @{ enabled = $true; command = 'claude'; args = @(); installCommand = 'install-claude'; env = @{}; apiKeyEnvVar = 'ANTHROPIC_API_KEY' }

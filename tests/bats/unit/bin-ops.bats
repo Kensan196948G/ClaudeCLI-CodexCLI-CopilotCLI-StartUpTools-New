@@ -15,7 +15,7 @@ setup() {
 { "deploy": { "ready": false }, "project": {}, "maintenance": { "phase_mode": "development", "sla_target_availability": 0.995, "mttr_target_hours": 4, "error_budget_remaining_pct": 100, "incident_count_30d": 0 } }
 JSON
   export AI_STARTUP_CONFIG_PATH="$TEST_TEMP/config.json"
-  echo '{ "linuxBase": "/tmp", "projectsDir": "/tmp" }' > "$AI_STARTUP_CONFIG_PATH"
+  echo '{ "projects": "/tmp", "projectsDir": "/tmp" }' > "$AI_STARTUP_CONFIG_PATH"
   # 実環境を汚さないスタブ群
   make_stub_bin systemctl 'exit 0'
   make_stub_bin loginctl 'exit 0'

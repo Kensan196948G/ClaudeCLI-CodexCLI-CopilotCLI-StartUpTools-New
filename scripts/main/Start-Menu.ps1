@@ -411,7 +411,6 @@ while ($true) {
         "I"  { Invoke-MenuScript -File "scripts\main\Start-IncidentResponse.ps1" }
         "W"  { Invoke-MenuScript -File "scripts\main\Start-WeeklyDevOps.ps1" }
         "5"  { Invoke-MenuScript -File "scripts\test\Test-AllTools.ps1" }
-        "6"  { Invoke-MenuScript -File "scripts\test\test-drive-mapping.ps1" }
         "7"  {
             $wtBgImage = if (
                 ($Config.PSObject.Properties.Name -contains 'windowsTerminal') -and $Config.windowsTerminal -and

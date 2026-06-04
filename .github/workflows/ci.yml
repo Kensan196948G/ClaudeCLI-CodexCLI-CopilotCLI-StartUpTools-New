@@ -80,9 +80,7 @@ jobs:
           $config = @{
             version = '2.0.0'
             projectsDir = $projects
-            sshProjectsDir = $projects
-            projectsDirUnc = '\\server\share'
-            linuxBase = '/home/kensan/Projects'
+            projects = '/home/kensan/Projects'
             localExcludes = @()
             tools = @{
               defaultTool = 'claude'
