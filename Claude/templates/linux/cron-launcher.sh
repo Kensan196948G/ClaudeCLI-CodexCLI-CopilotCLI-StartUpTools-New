@@ -282,6 +282,13 @@ fi
 export CLAUDE_RESUME_PHASE="$RESUME_PHASE"
 export CLAUDE_RESUME_CONSECUTIVE="$RESUME_CONSECUTIVE"
 
+# Copy latest START_PROMPT template to project before launch (always overwrite)
+_TMPL_SP="$PROJECTS_BASE/ClaudeCode-StartUpTools-New/Claude/templates/claude/START_PROMPT.md"
+if [[ -f "$_TMPL_SP" ]]; then
+  mkdir -p "$PROJECT_DIR/.claude"
+  cp "$_TMPL_SP" "$PROJECT_DIR/.claude/START_PROMPT.md"
+fi
+
 # START_PROMPT.md が存在すれば引数として渡し、ClaudeCode を auto mode で起動
 PROMPT_ARG=""
 if [[ -f "$PROJECT_DIR/.claude/START_PROMPT.md" ]]; then

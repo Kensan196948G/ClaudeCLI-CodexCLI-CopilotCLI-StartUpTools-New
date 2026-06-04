@@ -55,7 +55,30 @@ main() {
   launcher__project_exists "$project" || { log_error "プロジェクトが存在しません: $(launcher__project_dir "$project")"; exit 1; }
 
   notify__play claude   # 起動通知音 (非ブロッキング・失敗無害)
-  tmux_run "$project" "$duration" "$mode"
+
+  # supervisor 経由で起動 (--force: cron 競合があっても手動起動を優先)
+  bash "$SCRIPT_DIR/autonomy.sh" start "$project" --duration "$duration" --force || {
+    log_error "supervisor 起動に失敗しました: $project"; exit 1
+  }
+
+  if [[ "$mode" == "foreground" ]]; then
+    local safe session
+    safe="$(ccsu_safe_name "$project")"
+    session="claudeos-$safe"
+    # tmux セッションが起動するまで最大30秒待機
+    local i
+    for ((i = 0; i < 60; i++)); do
+      "$TMUX_BIN" has-session -t "$session" 2>/dev/null && break
+      sleep 0.5
+    done
+    if "$TMUX_BIN" has-session -t "$session" 2>/dev/null; then
+      log_info "セッションへ接続: $session"
+      "$TMUX_BIN" attach-session -t "$session"
+    else
+      log_warn "tmux セッション起動待ちタイムアウト: $session"
+      log_info "  確認: tmux ls  /  bash bin/autonomy.sh status $project"
+    fi
+  fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
