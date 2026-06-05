@@ -206,6 +206,16 @@ function Sync-LauncherClaudeGlobalConfig {
         -TargetDir (Join-Path $ProjectDir '.claude\hooks') `
         -Label '.claude/hooks'
 
+    # v3.4.9 (E-5): dynamic workflows (v2.1.154+) を runtime 有効化。
+    # Claude Code は .claude/workflows/*.js を直接 auto-discovery するため、
+    # .claude/claudeos 配下とは別に標準 path へ同期する。配布元は
+    # Claude\templates\claude\workflows (既存 .claude/claudeos/workflows の
+    # GitHub Actions YAML とは別物。dynamic workflow テンプレ .js 専用)。
+    Sync-ProjectTemplateDirectory `
+        -TemplateDir (Join-Path $StartupRoot 'Claude\templates\claude\workflows') `
+        -TargetDir (Join-Path $ProjectDir '.claude\workflows') `
+        -Label '.claude/workflows'
+
     # v3.2.53 (F): settings.json は Claude/templates/claude/settings.json に一本化
     $settingsTemplatePath = Join-Path $StartupRoot 'Claude\templates\claude\settings.json'
     Initialize-ProjectTemplate `

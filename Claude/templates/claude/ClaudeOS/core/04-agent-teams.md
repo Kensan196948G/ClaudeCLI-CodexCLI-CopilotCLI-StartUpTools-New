@@ -168,6 +168,41 @@ Agent Teams の上位スケール層であり、**tmux / 外部オーケスト�
 Agent Teams の「token 3-5倍」と逆で、5 時間 / token 予算（§13 / §14）に優しい。
 runtime に **16 並列 / 1000 agents 上限**が組み込まれ「暴走」を構造的に防ぐ。
 
+### 🧭 なぜ workflow を使うのか（3 失敗モードと ClaudeOS 対策の対応）
+
+単体 agent を長時間放任すると、LLM 由来の 3 つの失敗モードが必ず現れる。
+dynamic workflow が有効なのは「並列で速いから」ではなく、**script という決定論的ハーネスが
+この 3 失敗モードを構造的に封じる**からである。ClaudeOS はこれらを既存ルールで個別に
+対策済みだが、workflow は同じ対策を **1 つの実行単位に凝縮**する。
+
+| 失敗モード | 症状 | workflow による封じ方 | ClaudeOS 既存対策（§参照） |
+|---|---|---|---|
+| **Agentic laziness（早期停止）** | 「だいたい終わった」で打ち切り、残タスクを放置 | `loop-until-done` で **明示的な終了条件**を満たすまで script が反復継続 | 「止まらない。ただし暴走しない」原則 / `/goal` の `stop after N turns`（§00）/ Auto Repair リトライ（§12） |
+| **Self-preferential bias（自己びいき）** | 自分の出力を自分で検証すると甘く通す | **独立した検証 agent**が生成物を叩く。`isReal=false` / `survives=false` を既定にし「反証できなければ採用しない」 | Codex 対抗レビュー `/codex:adversarial-review`（§8）/ CodeRabbit 独立静的解析（§8.5）/ 既存 `code-review-parallel.js`・`bug-investigation.js` の反証既定値 |
+| **Goal drift（目標逸脱）** | ターンを重ねるうちに当初目的から逸れる | goal を **script 変数に保持**し、各 subagent の prompt へ毎回再注入。中間結果が context を汚さない | `/goal`（単一の真実・§00）/ state.json `goal` フィールド（§03）/ 5 時間セッション上限（§14）/ Haiku 達成判定（§19） |
+
+> 💡 **設計示唆**: 自作 workflow を書くときは、上 3 列の「封じ方」を必ず 1 つ以上組み込むこと。
+> 特に **生成と検証を別 agent に分離**（self-preferential bias 対策）するのは ClaudeOS の
+> 「Verify Mandatory」原則と完全に一致する。検証 agent の schema は `isReal` / `survives` の
+> ような **boolean を既定 false** にし、肯定するには根拠を要求する形にする。
+
+### 🎯 名前付きパターン語彙（CTO 選択メニュー）
+
+workflow の構造は少数の再利用可能な「型」に集約できる。CTO は新規 workflow を設計する際、
+まずこの表から型を選ぶ。**既存 3 スクリプトが各型の実装例**になっている。
+
+| パターン | 形（プリミティブ） | 主な対策 | 既存実装 / 配布テンプレ |
+|---|---|---|---|
+| **Fan-out-and-synthesize** | `parallel()` で多観点展開 → 1 agent で統合 | goal drift | `code-review-parallel.js`・`feature-development.js` |
+| **Adversarial verification** | 生成 → 独立 agent が反証（`isReal=false` 既定） | self-preferential bias | `code-review-parallel.js` |
+| **Tournament** | 競合候補を並列生成 → 相互反証で勝ち抜き | self-preferential bias | `bug-investigation.js`（5 仮説の反証） |
+| **Generate-and-filter** | 大量生成 → 機械的 / agent でふるい落とし | agentic laziness | 📦 `generate-and-filter.js`（配布テンプレ） |
+| **Loop-until-done** | 終了条件を満たすまで `while` で反復 | agentic laziness | 📦 `loop-until-done.js`（配布テンプレ） |
+| **Classify-and-act** | 入力を分類 → 種別ごとに分岐実行 | goal drift | 📦 `classify-and-act.js`（配布テンプレ） |
+
+> 📦 印は §「保存と全プロジェクト配布」で配る汎用テンプレ。コピーして `args` を差し替えるだけで
+> 各登録プロジェクトが即利用できる。既存 3 スクリプトは本プロジェクト固有の実例として残す。
+
 ### 🎬 起動方法
 
 | 方法 | 使い方 | ClaudeOS 方針 |
@@ -206,8 +241,28 @@ token をプラン上限に計上する。以下を厳守:
 ### 📦 保存と全プロジェクト配布
 
 `/workflows` → `s` で `.claude/workflows/<name>.js`（project）に保存すると `/<name>` 化される。
-project 配置分は TemplateSyncManager 経由で全登録プロジェクトへ配布可能。
-（ClaudeOS 専用 workflow の著作は live run 検証を伴うフォローアップで実施）
+project 配置分は TemplateSyncManager 経由で全登録プロジェクトへ配布される。
+
+**配布元と配布先**:
+
+| 配布元（テンプレ正本） | 配布先（各プロジェクト） | 同期手段 |
+|---|---|---|
+| `Claude/templates/claude/workflows/*.js` | `.claude/workflows/*.js` | `TemplateSyncManager.ps1` / `init-claudeos-project.js`（copy-if-missing） |
+
+> ⚠️ Claude Code は **`.claude/workflows/` 直下の `.js` のみ**を `/<name>` として自動検出する
+> （`agents` / `commands` / `skills` / `hooks` と同じ扱い）。そのため本体ツリー
+> `.claude/claudeos/` への配布とは **別エントリ**として sync マッピングを持つ必要がある。
+
+**配布する汎用テンプレ（v9.0+）**:
+
+| ファイル | パターン | args | 用途 |
+|---|---|---|---|
+| `generate-and-filter.js` | Generate-and-filter | `args.target` / `args.criteria` | 候補を大量生成し、独立 agent でふるい落とす（テストケース網羅・改善案抽出など） |
+| `loop-until-done.js` | Loop-until-done | `args.objective` / `args.maxRounds` | 終了条件を満たすまで反復（網羅収集・残課題ゼロ化など） |
+| `classify-and-act.js` | Classify-and-act | `args.items` / `args.categories` | 入力を分類し種別ごとに分岐処理（Issue トリアージ・ログ分類など） |
+
+> これらは **プロジェクト非依存の汎用形**。固有 workflow（`code-review-parallel` 等）は
+> 本プロジェクトに残し、テンプレは「型の出発点」として全プロジェクトへ配る。
 
 > 💡 **SSH 越しで migrate / 配布スクリプトを実行する時は `stdbuf -oL -eL node …` を使う**:
 > 非 TTY だと Node の stdout がブロックバッファされ、**完走していても出力が出ず「固まった」ように見える**。

@@ -38,6 +38,7 @@ const MAPPINGS = [
   { type: "dir",  src: "Claude/templates/claudeos/commands",      dest: ".claude/commands",      label: ".claude/commands" },
   { type: "dir",  src: "Claude/templates/claudeos/skills",        dest: ".claude/skills",        label: ".claude/skills" },
   { type: "dir",  src: "Claude/templates/claudeos/hooks",         dest: ".claude/hooks",         label: ".claude/hooks" },
+  { type: "dir",  src: "Claude/templates/claude/workflows",       dest: ".claude/workflows",     label: ".claude/workflows (dynamic workflows)" },
   { type: "dir",  src: "Claude/templates/claudeos/scripts/tools", dest: "scripts/tools",         label: "scripts/tools" },
   { type: "file", src: "Claude/templates/claude/CLAUDE.md",       dest: "CLAUDE.md",             label: "CLAUDE.md" },
   { type: "file", src: "scripts/templates/claude-mcp.json",       dest: ".mcp.json",             label: ".mcp.json" },
