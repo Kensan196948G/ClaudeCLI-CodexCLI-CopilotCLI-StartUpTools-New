@@ -1018,6 +1018,26 @@ const AgentsPanel = ({ state, liveData, agentTeamsActivity }) => {
           </span>
         )}
       </div>
+      {/* Live Sessions — `claude agents --json` (v2.1.145+) 由来のライブセッション */}
+      <div style={{ gridColumn:"1 / -1", background:MC.bgPanel, border:`1px solid ${MC.border}`, borderRadius:8, padding:"10px 14px", display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
+        <span style={{ fontSize:11, color:MC.textDim, fontWeight:600 }}>🛰️ Live Sessions (claude agents)</span>
+        {(liveData && liveData.agentsLive && liveData.agentsLive.length) ? (
+          liveData.agentsLive.map((s, i) => (
+            <span key={s.sessionId || i} style={{ fontSize:11, fontFamily:MC.mono, color:MC.textMuted, display:"inline-flex", alignItems:"center", gap:6, border:`1px solid ${MC.border}`, borderRadius:4, padding:"2px 8px" }}>
+              <b style={{ color: s.status==="working" ? MC.green : s.status==="completed" ? MC.accent : MC.textMuted }}>
+                {s.status==="working" ? "✽" : s.status==="waiting" ? "✻" : s.status==="completed" ? "✔" : "•"}
+              </b>
+              {s.name || s.sessionId || "(no name)"}
+              {(s.done!=null && s.total!=null) ? <span style={{ color:MC.textDim }}>{s.done}/{s.total}</span> : null}
+              {s.waitingFor ? <span style={{ color:MC.accent }}>⏳{s.waitingFor}</span> : null}
+            </span>
+          ))
+        ) : (
+          <span style={{ fontSize:11, color:MC.textMuted }}>
+            ライブセッションなし（claude agents --json が空 / 未起動）
+          </span>
+        )}
+      </div>
       <Panel title="エージェント一覧" icon="👥" noPad>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(220px, 1fr))", gap:1, background:MC.border }}>
           {agents.map(agent => (
