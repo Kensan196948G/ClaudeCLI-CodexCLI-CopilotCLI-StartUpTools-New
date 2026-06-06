@@ -23,22 +23,26 @@
 
 ClaudeOS には **2 種類の skill 層**があり、ロード機構が異なる。混同しないこと。
 
-| 層 | パス | ロード機構 | 用途 | 配布 |
-|---|---|---|---|---|
-| **① ClaudeOS カーネル skill** | `.claude/claudeos/skills/<name>/SKILL.md` | **本プロトコル**（フロントマター索引 → tier 別 on-demand） | ポータブルな実務ガイド集（言語/フレームワーク別等）。本 repo に無関係なドメインも多数含む配布ライブラリ | ✅ SOT (`Claude/templates/claudeos/skills/`) で全プロジェクトへ |
-| **② Claude Code ネイティブ skill** | `.claude/skills/<name>/SKILL.md` | **Claude Code 公式 discovery**（description で auto-trigger・`/skills` 表示） | 本 repo の運用 skill（CTO セッション開始・WebUI 健全性チェック等） | ❌ `.claude/` 直下は配布対象外（本 repo 専用） |
+| 層 | パス | ロード機構 |
+|---|---|---|
+| **① ClaudeOS カーネル skill** | `.claude/claudeos/skills/<name>/SKILL.md` | **本プロトコル**（フロントマター索引 → tier 別 on-demand）。入れ子パスのため Claude Code ネイティブ discovery 対象外 |
+| **② Claude Code ネイティブ skill** | `.claude/skills/<name>/SKILL.md` | **Claude Code 公式 discovery**（description で auto-trigger・`/skills` 表示） |
 
-### なぜ ① を ② に一括 mirror しないか
+### 配布時の挙動（重要 — repo により異なる）
 
-- Claude Code ネイティブ discovery は **`.claude/skills/` 直下のサブディレクトリのみ**を対象とし、入れ子の `.claude/claudeos/skills/` は**スキャンしない**（公式仕様）。
-- ① をネイティブ化（`.claude/skills/` へ全件 mirror）すると、**全 description が毎セッションの system prompt に載りトークンが肥大**する。これは本プロトコル（Issue #106）が解決した問題の再発であり、かつ 36/64 は削除候補（`docs/agents-skills-inventory-2026Q2.md`）。
-- したがって ① は本プロトコルで索引ロード、② は少数の運用 skill のみネイティブ化する、という二層を維持する。
+| 対象 | native `.claude/skills/`（②） | 意図 |
+|---|---|---|
+| **本 repo（SOT/ツール）** | 運用 skill のみ（`cto-session-start` / `webui-health-check` の 2 件） | 66 件は**配布用ライブラリ**で大半がこの repo に無関係なドメイン。自身では native 化せず kernel path（①）に置き本プロトコルで索引する |
+| **登録（downstream）プロジェクト** | **66 件すべて** | `TemplateSyncManager` E-3（v3.2.51）が `Claude/templates/claudeos/skills/` → `.claude/skills/` を同期。downstream では 66 を native discovery で使う。**frontmatter の `description` が auto-trigger を駆動**するため、SOT 更新後は E-3 再同期で配布する |
 
-> ⚠️ ② は **必ず `.claude/skills/<name>/SKILL.md`**（サブディレクトリ + `SKILL.md`）構造にすること。
-> フラットな `.claude/skills/foo.md` は Claude Code に discovery されない（2026-06-06 に cto-session-start /
-> webui-health-check で発生していた構造バグを修正済み）。
+> ⚠️ 以前ここには「① を ② へ一括 mirror しない（トークン肥大回避）」と記載していたが、これは**本 repo 限定の方針**であり、登録プロジェクトでは E-3 が native 66 を配布するのが正（2026-06-06 訂正）。「mirror しない」は globally な禁則ではない。
 >
-> 💡 frontmatter の `description` は **① の索引でも ② の auto-trigger でも読まれる**共通の高シグナル項目。両層とも description を整備する価値がある。
+> 💡 Claude Code の native discovery は **body を遅延ロード**（起動時は name+description のみ取得）するため、本プロトコルの主目的（body 遅延ロード）と機能的に重複する。本プロトコルは本 repo の kernel-path skill の索引用として残置している。
+
+### ② の構造要件
+
+- ② は **必ず `.claude/skills/<name>/SKILL.md`**（サブディレクトリ + `SKILL.md`）構造にすること。フラットな `.claude/skills/foo.md` は discovery されない（2026-06-06 に `cto-session-start` / `webui-health-check` で発生していた構造バグを修正済み）。
+- frontmatter の `description` は **① の索引でも ② の auto-trigger でも読まれる**共通の高シグナル項目。両層とも description を整備する価値がある（`docs/agents-skills-inventory-2026Q2.md` で 36/64 が削除候補に分類されている点も合わせて棚卸しの対象）。
 
 ---
 
