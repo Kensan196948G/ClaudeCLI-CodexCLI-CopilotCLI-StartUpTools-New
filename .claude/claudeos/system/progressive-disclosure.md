@@ -19,6 +19,29 @@
 
 ---
 
+## 二層スキル構造 — 本プロトコル vs Claude Code ネイティブ skill
+
+ClaudeOS には **2 種類の skill 層**があり、ロード機構が異なる。混同しないこと。
+
+| 層 | パス | ロード機構 | 用途 | 配布 |
+|---|---|---|---|---|
+| **① ClaudeOS カーネル skill** | `.claude/claudeos/skills/<name>/SKILL.md` | **本プロトコル**（フロントマター索引 → tier 別 on-demand） | ポータブルな実務ガイド集（言語/フレームワーク別等）。本 repo に無関係なドメインも多数含む配布ライブラリ | ✅ SOT (`Claude/templates/claudeos/skills/`) で全プロジェクトへ |
+| **② Claude Code ネイティブ skill** | `.claude/skills/<name>/SKILL.md` | **Claude Code 公式 discovery**（description で auto-trigger・`/skills` 表示） | 本 repo の運用 skill（CTO セッション開始・WebUI 健全性チェック等） | ❌ `.claude/` 直下は配布対象外（本 repo 専用） |
+
+### なぜ ① を ② に一括 mirror しないか
+
+- Claude Code ネイティブ discovery は **`.claude/skills/` 直下のサブディレクトリのみ**を対象とし、入れ子の `.claude/claudeos/skills/` は**スキャンしない**（公式仕様）。
+- ① をネイティブ化（`.claude/skills/` へ全件 mirror）すると、**全 description が毎セッションの system prompt に載りトークンが肥大**する。これは本プロトコル（Issue #106）が解決した問題の再発であり、かつ 36/64 は削除候補（`docs/agents-skills-inventory-2026Q2.md`）。
+- したがって ① は本プロトコルで索引ロード、② は少数の運用 skill のみネイティブ化する、という二層を維持する。
+
+> ⚠️ ② は **必ず `.claude/skills/<name>/SKILL.md`**（サブディレクトリ + `SKILL.md`）構造にすること。
+> フラットな `.claude/skills/foo.md` は Claude Code に discovery されない（2026-06-06 に cto-session-start /
+> webui-health-check で発生していた構造バグを修正済み）。
+>
+> 💡 frontmatter の `description` は **① の索引でも ② の auto-trigger でも読まれる**共通の高シグナル項目。両層とも description を整備する価値がある。
+
+---
+
 ## Tier 定義
 
 | Tier | ロード範囲 | 適用場面 | トークン節約 |
