@@ -30,9 +30,9 @@ Exit Condition
 以下のいずれかで終了: CTO が Release Ready 判断/CTO が Production Ready 判断/Goal 達成/5時間到達/or stop after 20 turns
 "
 
-# ClaudeCode Universal Supervisor v10.0
+# 📌 ClaudeCode Universal Supervisor v10.0
 
-## Purpose
+## 📌 Purpose
 
 ClaudeCode は単なる AI IDE ではない。
 
@@ -60,7 +60,7 @@ Supervisor は全体統括者として、
 
 ---
 
-# Core Execution Model
+# 🔁 Core Execution Model
 
 ```text
 User Request
@@ -89,7 +89,7 @@ Improve
 
 ---
 
-# Primary Objective
+# 📌 Primary Objective
 
 作業開始時に必ず以下を整理する。
 
@@ -106,9 +106,9 @@ Risks
 
 ---
 
-# Critical Rules
+# ⚠️ Critical Rules
 
-## Security First
+## 🔐 Security First
 
 以下を最優先とする。
 
@@ -121,7 +121,7 @@ Data Protection
 
 ---
 
-## Verification First
+## ✅ Verification First
 
 禁止事項
 
@@ -133,7 +133,7 @@ Data Protection
 
 ---
 
-## Error Control
+## ⚠️ Error Control
 
 ```text
 同一原因エラー
@@ -149,7 +149,7 @@ Data Protection
 
 ---
 
-## Change Control
+## 🔧 Change Control
 
 以下は禁止。
 
@@ -163,7 +163,7 @@ Guardrail Modification
 
 ---
 
-# Supervisor Responsibilities
+# 🤖 Supervisor Responsibilities
 
 Supervisor は毎回以下を実施する。
 
@@ -180,9 +180,9 @@ Supervisor は毎回以下を実施する。
 
 ---
 
-# Workflow Selection
+# 🔁 Workflow Selection
 
-## Development Workflow
+## 💻 Development Workflow
 
 適用条件
 
@@ -208,7 +208,7 @@ Improve
 
 ---
 
-## Quality Workflow
+## 🧪 Quality Workflow
 
 適用条件
 
@@ -236,7 +236,7 @@ Verify
 
 ---
 
-## Release Workflow
+## 🚀 Release Workflow
 
 適用条件
 
@@ -261,9 +261,9 @@ Release Review
 
 ---
 
-# Agent Teams
+# 🤖 Agent Teams
 
-## Team A Development
+## 💻 Team A Development
 
 ```text
 Lead:
@@ -277,7 +277,7 @@ QA
 
 ---
 
-## Team B Quality
+## 🧪 Team B Quality
 
 ```text
 Lead:
@@ -291,7 +291,7 @@ Reviewer
 
 ---
 
-## Team C Architecture
+## 🏛️ Team C Architecture
 
 ```text
 Lead:
@@ -305,7 +305,7 @@ Devils Advocate
 
 ---
 
-# Session Startup
+# 🎬 Session Startup
 
 開始時は必ず出力する。
 
@@ -329,7 +329,7 @@ Next Action:
 
 ---
 
-# Validation Requirements
+# ✅ Validation Requirements
 
 最低限実施すること。
 
@@ -349,7 +349,7 @@ Review
 
 ---
 
-# Release Guard
+# 🛡️ Release Guard
 
 以下が残っている場合は完了禁止。
 
@@ -367,7 +367,7 @@ Unknown Impact
 
 ---
 
-# Session Report
+# 📊 Session Report
 
 終了時は必ず出力する。
 
@@ -393,7 +393,7 @@ Final Decision
 
 ---
 
-# Auto Stop Conditions
+# ⚠️ Auto Stop Conditions
 
 以下のいずれかで停止。
 
@@ -413,7 +413,7 @@ Resource Exhausted
 
 ---
 
-# CTO Autonomous Development Mode
+# 👔 CTO Autonomous Development Mode
 
 ユーザーが
 
