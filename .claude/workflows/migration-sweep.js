@@ -95,11 +95,14 @@ const VERIFY_SCHEMA = {
 
 // --- 入力 ------------------------------------------------------------------
 
-const description = args?.description || "";
-const find        = args?.find || "";
-const globs       = Array.isArray(args?.globs) ? args.globs : [];
-const verifyCmd   = args?.verifyCmd || "";
-const apply       = args?.apply === true;
+// args が JSON 文字列で届くケース(自然言語起動など)に備え正規化
+const A = typeof args === "string" ? (() => { try { return JSON.parse(args) || {}; } catch { return {}; } })() : (args || {});
+
+const description = A.description || "";
+const find        = A.find || "";
+const globs       = Array.isArray(A.globs) ? A.globs : [];
+const verifyCmd   = A.verifyCmd || "";
+const apply       = A.apply === true;
 
 if (!description || !find) {
   log("⚠️ args.description と args.find は必須です。中止します。");

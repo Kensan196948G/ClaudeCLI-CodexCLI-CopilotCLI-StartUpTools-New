@@ -60,8 +60,11 @@ const VERIFY_SCHEMA = {
   },
 };
 
-const lookback = Math.max(5, Number(args?.lookback) || 40);
-const target   = args?.target === "CLAUDE.md" ? "CLAUDE.md" : "MEMORY.md";
+// args が JSON 文字列で届くケース(自然言語起動など)に備え正規化
+const A = typeof args === "string" ? (() => { try { return JSON.parse(args) || {}; } catch { return {}; } })() : (args || {});
+
+const lookback = Math.max(5, Number(A.lookback) || 40);
+const target   = A.target === "CLAUDE.md" ? "CLAUDE.md" : "MEMORY.md";
 
 log(`🧬 rule-distillation — 提案のみ (自動適用なし) / target=${target} / lookback=${lookback}コミット`);
 if (budget?.total) log(`📊 token 予算: 残 ${Math.round(budget.remaining() / 1000)}k`);
