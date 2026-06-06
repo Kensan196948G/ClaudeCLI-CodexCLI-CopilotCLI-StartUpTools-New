@@ -2,28 +2,28 @@
   "mcpServers": {
     "github": {
       "alwaysLoad": true,
-      "command": "cmd",
-      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-github"],
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
       "env": {
         "GITHUB_TOKEN": "${GITHUB_TOKEN}"
       }
     },
     "memory": {
       "alwaysLoad": true,
-      "command": "cmd",
-      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-memory"],
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
       "env": {
         "MEMORY_FILE_PATH": "${CLAUDE_MEMORY_FILE_PATH}"
       }
     },
     "sequential-thinking": {
-      "command": "cmd",
-      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-sequential-thinking"]
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
     },
     "context7": {
       "alwaysLoad": true,
-      "command": "cmd",
-      "args": ["/c", "npx", "-y", "@upstash/context7-mcp@latest"]
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
     }
   }
 }

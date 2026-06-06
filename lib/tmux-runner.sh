@@ -137,6 +137,13 @@ tmux_run() {
   export CLAUDEOS_HOOKS_DIR="$project_dir/.claude/claudeos/scripts/hooks"
   export CLAUDE_PROJECT="$project"
 
+  # Copy latest START_PROMPT template to project before launch (always overwrite)
+  local _tmpl_sp="$CCSU_ROOT/Claude/templates/claude/START_PROMPT.md"
+  if [[ -f "$_tmpl_sp" ]]; then
+    mkdir -p "$project_dir/.claude"
+    cp "$_tmpl_sp" "$project_dir/.claude/START_PROMPT.md"
+  fi
+
   # START_PROMPT.md があれば claude に渡す (cat 展開を tmux コマンド内で実行)
   local claude_cmd
   if [[ -f "$project_dir/.claude/START_PROMPT.md" ]]; then
