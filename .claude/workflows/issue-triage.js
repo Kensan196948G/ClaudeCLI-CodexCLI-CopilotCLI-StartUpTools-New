@@ -70,9 +70,12 @@ const CLASSIFY_SCHEMA = {
   },
 };
 
-const limit     = Math.max(1, Number(args?.limit) || 50);
-const batchSize  = Math.max(1, Number(args?.batchSize) || 8);
-const apply     = args?.apply === true;
+// args が JSON 文字列で届くケース(自然言語起動など)に備え正規化
+const A = typeof args === "string" ? (() => { try { return JSON.parse(args) || {}; } catch { return {}; } })() : (args || {});
+
+const limit     = Math.max(1, Number(A.limit) || 50);
+const batchSize  = Math.max(1, Number(A.batchSize) || 8);
+const apply     = A.apply === true;
 
 log(`📋 issue-triage — ${apply ? "⚡ APPLY (ラベル付けのみ)" : "🔍 DRY-RUN (提案のみ)"} / limit=${limit}`);
 if (budget?.total) log(`📊 token 予算: 残 ${Math.round(budget.remaining() / 1000)}k`);

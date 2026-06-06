@@ -104,12 +104,15 @@ const VERIFY_SCHEMA = {
 
 // --- 入力 ------------------------------------------------------------------
 
-const gate          = (args?.gate || "gate-1").toLowerCase();
-const batchSize     = Math.max(1, Number(args?.batchSize) || 10);
-const skipConditions = Array.isArray(args?.skipConditions) ? args.skipConditions : [];
-const changedFiles  = Array.isArray(args?.changedFilesHint) ? args.changedFilesHint : [];
-const appUrl        = args?.appUrl || "";
-const checklistPath = args?.checklistPath || "";
+// args が JSON 文字列で届くケース(自然言語起動など)に備え正規化
+const A = typeof args === "string" ? (() => { try { return JSON.parse(args) || {}; } catch { return {}; } })() : (args || {});
+
+const gate          = (A.gate || "gate-1").toLowerCase();
+const batchSize     = Math.max(1, Number(A.batchSize) || 10);
+const skipConditions = Array.isArray(A.skipConditions) ? A.skipConditions : [];
+const changedFiles  = Array.isArray(A.changedFilesHint) ? A.changedFilesHint : [];
+const appUrl        = A.appUrl || "";
+const checklistPath = A.checklistPath || "";
 
 // gate ごとの選別ルール (Parse エージェントへ渡す自然言語仕様)
 const GATE_RULES = {
