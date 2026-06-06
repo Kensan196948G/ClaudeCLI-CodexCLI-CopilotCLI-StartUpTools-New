@@ -1,3 +1,8 @@
+---
+name: python-patterns
+description: "Python の型、例外、責務分割、保守しやすい構成を整理するときに使う。"
+---
+
 # python-patterns
 
 ## 概要
@@ -50,6 +55,15 @@
 - 変更近傍のテストがあるか
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
+
+## ⚠️ Gotchas（陥りやすい失敗）
+
+- mutable default 引数 (`def f(x=[])`) で状態が共有される
+- bare `except:` で例外を握りつぶす / 原因を失う
+- `None` 比較に `==` を使う (`is None` が正)
+- モジュールレベル副作用 / 循環 import で読込順に依存する
+- CPU bound を thread で並列化して GIL に阻まれる (process/別実装へ)
+- ログを f-string で先評価し遅延評価の利点を失う
 
 ## 相性のよい command
 

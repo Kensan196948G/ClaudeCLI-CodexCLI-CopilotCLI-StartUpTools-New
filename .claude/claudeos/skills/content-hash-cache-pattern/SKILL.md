@@ -1,3 +1,8 @@
+---
+name: content-hash-cache-pattern
+description: "コンテンツハッシュを使って再処理を避けるキャッシュ戦略を整えるときに使う。"
+---
+
 # content-hash-cache-pattern
 
 ## 概要

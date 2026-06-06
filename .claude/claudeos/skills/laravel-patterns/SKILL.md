@@ -1,3 +1,8 @@
+---
+name: laravel-patterns
+description: "Laravel の controller、service、job、policy、Eloquent 設計を整えるときに使う。"
+---
+
 # laravel-patterns
 
 ## 概要
@@ -50,6 +55,14 @@
 - 変更近傍のテストがあるか
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
+
+## ⚠️ Gotchas（陥りやすい失敗）
+
+- Eloquent の N+1。`with()` eager loading 不足 (Telescope/Debugbar で検出)
+- controller に業務ロジック集中。service/action クラスへ分離する
+- `Model::all()` を大量データに使いメモリ枯渇 (`chunk`/`cursor` を使う)
+- queue job の冪等性欠如で再試行が二重実行になる
+- 実行時に `env()` を直接呼ぶと config cache で null になる。`config()` 経由にする
 
 ## 相性のよい command
 

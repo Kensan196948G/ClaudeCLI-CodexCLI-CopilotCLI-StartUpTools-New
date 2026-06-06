@@ -1,3 +1,8 @@
+---
+name: market-research
+description: "市場調査、競合比較、一次情報に基づく外部環境分析を行うときに使う。"
+---
+
 # market-research
 
 ## 概要

@@ -1,3 +1,8 @@
+---
+name: security-review
+description: "認証、認可、入力検証、秘密情報、監査ログの観点からセキュリティを点検するときに使う。"
+---
+
 # security-review
 
 ## 概要

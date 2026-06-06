@@ -1,3 +1,8 @@
+---
+name: laravel-verification
+description: "Laravel の route、policy、queue、DB 更新を検証するときに使う。"
+---
+
 # laravel-verification
 
 ## 概要
@@ -50,6 +55,13 @@
 - 変更近傍のテストがあるか
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
+
+## ⚠️ Gotchas（陥りやすい失敗）
+
+- route/policy/queue/DB 更新のうち queue の非同期挙動を検証しない
+- `php artisan route:list` で認可ミドルウェアの付与漏れを確認しない
+- migration の rollback を本番相当データで検証しない
+- config cache(`config:cache`) 後に挙動が変わる箇所を確認しない
 
 ## 相性のよい command
 

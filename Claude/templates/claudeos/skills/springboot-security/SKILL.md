@@ -1,3 +1,8 @@
+---
+name: springboot-security
+description: "Spring Security、認可、シークレット、設定分離を点検するときに使う。"
+---
+
 # springboot-security
 
 ## 概要
@@ -50,6 +55,16 @@
 - 変更近傍のテストがあるか
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
+
+## ⚠️ Gotchas（陥りやすい失敗）
+
+- `.anyRequest().permitAll()` の取り残しで全公開になる
+- REST 化で CSRF を全 disable するが cookie ベース認証が残り脆弱になる
+- `@PreAuthorize` が self-invocation(同クラス内呼び出し)で効かない
+- actuator(`/env`,`/heapdump`)を無認証で露出する
+- `NoOpPasswordEncoder` / 平文でパスワードを保存する
+- JWT で `alg=none` を受理 / secret が短小で総当たり可能
+- CORS `allowedOrigins("*")` と credentials を併用する
 
 ## 相性のよい command
 

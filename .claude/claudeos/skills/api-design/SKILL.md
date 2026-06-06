@@ -1,3 +1,8 @@
+---
+name: api-design
+description: "REST API の契約、ページネーション、互換性、エラー応答を設計するときに使う。"
+---
+
 # api-design
 
 ## 概要

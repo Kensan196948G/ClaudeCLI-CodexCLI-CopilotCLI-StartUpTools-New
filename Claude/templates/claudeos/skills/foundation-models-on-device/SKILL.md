@@ -1,3 +1,8 @@
+---
+name: foundation-models-on-device
+description: "Apple のオンデバイス Foundation Models 活用設計を支援するときに使う。"
+---
+
 # foundation-models-on-device
 
 ## 概要

@@ -1,3 +1,8 @@
+---
+name: deployment-patterns
+description: "CI/CD、環境差異、ヘルスチェック、ロールバックを設計するときに使う。"
+---
+
 # deployment-patterns
 
 ## 概要
@@ -50,6 +55,15 @@
 - 変更近傍のテストがあるか
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
+
+## ⚠️ Gotchas（陥りやすい失敗）
+
+- readiness と liveness を混同し、起動中に traffic を流す
+- rollback 手順未整備 / DB migration が rollback 不能
+- ビルド時 env と実行時 env を混同する (12-factor 違反)
+- secret を image / CI ログに露出する
+- zero-downtime 前提なのに in-place restart で瞬断する
+- canary/blue-green で新旧スキーマ非互換 (expand/contract で吸収する)
 
 ## 相性のよい command
 

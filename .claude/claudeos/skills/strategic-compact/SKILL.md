@@ -1,3 +1,8 @@
+---
+name: strategic-compact
+description: "長い文脈を圧縮する前に何を残し何を捨てるかを判断するときに使う。"
+---
+
 # strategic-compact
 
 ## 概要

@@ -1,3 +1,8 @@
+---
+name: postgres-patterns
+description: "PostgreSQL のクエリ最適化、インデックス、ロック、移行運用を扱うときに使う。"
+---
+
 # postgres-patterns
 
 ## 概要
@@ -50,6 +55,16 @@
 - 変更近傍のテストがあるか
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
+
+## ⚠️ Gotchas（陥りやすい失敗）
+
+- `WHERE lower(col)=...` 等の関数適用で index が無効化する (式 index が要る)
+- 長時間トランザクションで VACUUM を阻害し bloat を招く
+- `CREATE INDEX` を `CONCURRENTLY` 無しで実行し write lock を取る
+- 旧版で `ADD COLUMN ... DEFAULT` が full table rewrite + lock を引き起こす
+- 接続プール(pgbouncer 等)無しで接続枯渇する
+- `SELECT *` + N+1 で過剰取得する
+- `SERIALIZABLE` の競合 retry を実装しない
 
 ## 相性のよい command
 

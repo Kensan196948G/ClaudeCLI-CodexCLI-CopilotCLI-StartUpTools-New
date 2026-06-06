@@ -1,3 +1,8 @@
+---
+name: clickhouse-io
+description: "ClickHouse のテーブル設計、分析クエリ、集計基盤、データエンジニアリングを支援するときに使う。"
+---
+
 # clickhouse-io
 
 ## 概要
@@ -50,6 +55,16 @@
 - 変更近傍のテストがあるか
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
+
+## ⚠️ Gotchas（陥りやすい失敗）
+
+- 列指向なのに `SELECT *` で全列読込し I/O を浪費する
+- 行単位 INSERT を多発させ part 爆発 → merge 過負荷 (バッチ INSERT 必須)
+- `FINAL` 常用で性能劣化 / ReplacingMergeTree の重複解消を即時と誤解する
+- sorting key(`ORDER BY`)設計ミスで primary index が効かず full scan
+- 高カーディナリティの partition key で part 数が爆発する
+- `ALTER UPDATE/DELETE`(mutation) を OLTP 的に使う (非同期・高コスト)
+- `Nullable` 乱用でストレージと性能を劣化させる
 
 ## 相性のよい command
 

@@ -1,3 +1,8 @@
+---
+name: e2e-testing
+description: "Playwright の E2E テスト、Page Object Model、待機戦略を扱うときに使う。"
+---
+
 # e2e-testing
 
 ## 概要
@@ -50,6 +55,15 @@
 - 変更近傍のテストがあるか
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
+
+## ⚠️ Gotchas（陥りやすい失敗）
+
+- 固定 `sleep`/`waitForTimeout` で flaky 化 (web-first assertion / auto-wait を使う)
+- 脆い CSS セレクタ依存。role/label/test-id ベースにする
+- テスト間で DB/seed のリセットを怠り状態が漏れる
+- 認証を毎テスト UI 経由にする (storageState を使い回す)
+- 並列実行時のデータ競合を考慮しない
+- `networkidle` 待ちを過信して不安定化させる
 
 ## 相性のよい command
 

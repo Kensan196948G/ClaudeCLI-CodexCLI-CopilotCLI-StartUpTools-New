@@ -1,3 +1,8 @@
+---
+name: content-engine
+description: "1 つの原稿から複数媒体向けの投稿や配信用コンテンツへ再構成するときに使う。"
+---
+
 # content-engine
 
 ## 概要

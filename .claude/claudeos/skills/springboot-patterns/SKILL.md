@@ -1,3 +1,8 @@
+---
+name: springboot-patterns
+description: "Spring Boot の層構造、DI、設定管理、トランザクションを整理するときに使う。"
+---
+
 # springboot-patterns
 
 ## 概要
@@ -50,6 +55,14 @@
 - 変更近傍のテストがあるか
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
+
+## ⚠️ Gotchas（陥りやすい失敗）
+
+- `@Transactional` が self-invocation / private メソッドで無効になる
+- field injection でテスト困難化。constructor injection にする
+- `application.properties` に secret 直書き (profile/vault 分離する)
+- JPA entity を controller から直接返し lazy 例外・過剰公開を招く (DTO 化)
+- 読取専用処理に `@Transactional(readOnly=true)` を付けず不要 dirty checking が走る
 
 ## 相性のよい command
 

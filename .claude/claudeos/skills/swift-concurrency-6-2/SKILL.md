@@ -1,3 +1,8 @@
+---
+name: swift-concurrency-6-2
+description: "Swift 6.2 の concurrency を安全かつ段階的に導入するときに使う。"
+---
+
 # swift-concurrency-6-2
 
 ## 概要

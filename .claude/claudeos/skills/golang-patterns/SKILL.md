@@ -1,3 +1,8 @@
+---
+name: golang-patterns
+description: "Go の idiom、context、エラー処理、パッケージ分割を整えるときに使う。"
+---
+
 # golang-patterns
 
 ## 概要
@@ -50,6 +55,15 @@
 - 変更近傍のテストがあるか
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
+
+## ⚠️ Gotchas（陥りやすい失敗）
+
+- `err` を `_` で握りつぶす / wrap せず原因を失う (`fmt.Errorf("...: %w", err)`)
+- goroutine leak。context cancel / channel close 漏れを残す
+- Go 1.22 未満の loop 変数キャプチャを goroutine/closure が共有する
+- 共有 map への並行書込みで data race (`-race` で検出する)
+- nil map への書込み panic / nil interface 比較の落とし穴
+- ループ内 `defer` の多用でリソース解放が関数末尾まで遅延する
 
 ## 相性のよい command
 
