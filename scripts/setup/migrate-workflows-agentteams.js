@@ -5,6 +5,7 @@
 //   1. CLAUDE.md の「公式機能」誤記を修正 → 正しい「Experimental」表記に戻す
 //   2. settings.json に TeammateIdle / TaskCreated / TaskCompleted フックを追加
 //   3. .claude/workflows/ ディレクトリを作成（プロジェクトワークフロー保存場所）
+//   3b. dynamic workflow scripts を SOT (Claude/templates/claude/workflows) から配布
 //   4. フックスクリプトを各プロジェクトにコピー（3ファイル）
 //
 // 根拠:
@@ -21,9 +22,12 @@
 const fs   = require("fs");
 const path = require("path");
 
-const BACKUP_SUFFIX  = ".bak-workflows-agentteams";
-const PROJECTS_BASE  = path.resolve(__dirname, "../../..");
-const TEMPLATE_HOOKS = path.resolve(__dirname, "../../Claude/templates/claudeos/scripts/hooks");
+const BACKUP_SUFFIX      = ".bak-workflows-agentteams";
+const PROJECTS_BASE      = path.resolve(__dirname, "../../..");
+const TEMPLATE_HOOKS     = path.resolve(__dirname, "../../Claude/templates/claudeos/scripts/hooks");
+// dynamic workflow scripts の SOT。.claude/workflows/ で discovery されるため
+// Claude/templates/claudeos/ (一括同期 → .claude/claudeos/) とは別系統に置く。
+const TEMPLATE_WORKFLOWS = path.resolve(__dirname, "../../Claude/templates/claude/workflows");
 
 const args = process.argv.slice(2);
 const DRY_RUN  = args.includes("--dry-run");
@@ -141,6 +145,33 @@ function ensureWorkflowsDir(projectPath) {
   return { changed: true };
 }
 
+// ── 3b. dynamic workflow scripts シード（SOT → .claude/workflows/） ────────────
+// copyHookScripts と同じ copy-if-differ 方式。テンプレートに無い project 固有
+// workflow は対象外（消さない）。テンプレ管理対象のみ最新へ更新する。
+
+function seedWorkflowScripts(projectPath) {
+  if (!fs.existsSync(TEMPLATE_WORKFLOWS)) return { changed: false, reason: "template dir not found", count: 0 };
+
+  const wfDir = path.join(projectPath, ".claude", "workflows");
+  if (APPLY && !fs.existsSync(wfDir)) fs.mkdirSync(wfDir, { recursive: true });
+
+  const files = fs.readdirSync(TEMPLATE_WORKFLOWS).filter(f => f.endsWith(".js"));
+  let copied = 0;
+  for (const fname of files) {
+    const src  = path.join(TEMPLATE_WORKFLOWS, fname);
+    const dest = path.join(wfDir, fname);
+    if (fs.existsSync(dest)) {
+      const srcContent  = fs.readFileSync(src, "utf8");
+      const destContent = fs.readFileSync(dest, "utf8");
+      if (srcContent === destContent) continue; // up-to-date
+    }
+    if (APPLY) fs.copyFileSync(src, dest);
+    copied++;
+    if (VERBOSE) console.log(`  + workflow: ${fname}`);
+  }
+  return { changed: copied > 0, count: copied };
+}
+
 // ── 4. フックスクリプトコピー ─────────────────────────────────────────────────
 
 const HOOK_FILES = ["teammate-idle-gate.js", "task-created-gate.js", "task-completed-gate.js"];
@@ -224,6 +255,13 @@ for (const projectPath of projects) {
     if (r.changed) { console.log(`  ✅ .claude/workflows/ 作成`); }
     else           { console.log(`  ⬛ workflows/: ${r.reason}`); }
   } catch (e) { console.log(`  ❌ workflows/: ${e.message}`); totalErrors++; }
+
+  // dynamic workflow scripts シード（SOT → .claude/workflows/）
+  try {
+    const r = seedWorkflowScripts(projectPath);
+    if (r.changed) { console.log(`  ✅ workflow scripts ${r.count} 件配布`); }
+    else           { console.log(`  ⬛ workflow scripts: ${r.reason || "up-to-date"}`); }
+  } catch (e) { console.log(`  ❌ workflow seed: ${e.message}`); totalErrors++; }
 
   // フックスクリプトコピー
   try {
