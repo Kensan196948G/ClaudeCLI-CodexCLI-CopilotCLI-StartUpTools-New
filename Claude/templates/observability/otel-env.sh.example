@@ -1,0 +1,27 @@
+# ClaudeOS — Claude Code OpenTelemetry 有効化 env テンプレート (opt-in)
+# ------------------------------------------------------------------------------
+# 使い方: OTLP collector を起動した上で、本ファイルを ~/.env-claudeos 等に取り込むか
+#         cron/シェルで source してから claude を起動する。collector 不在のまま有効化すると
+#         export 先が無く無意味（軽微なエラーログ）になるため、collector 準備後に有効化すること。
+#
+# 出典: Claude Code CHANGELOG v2.1.145/152/157/161 (skill_activated / pull_request.count /
+#       active_time / OTEL_RESOURCE_ATTRIBUTES / OTEL_METRICS_INCLUDE_ENTRYPOINT / OTEL_LOG_TOOL_DETAILS)
+# ------------------------------------------------------------------------------
+
+# テレメトリ有効化
+export CLAUDE_CODE_ENABLE_TELEMETRY=1
+
+# エクスポータ (OTLP)。collector のプロトコルに合わせる (grpc=4317 / http/protobuf=4318)
+export OTEL_METRICS_EXPORTER=otlp
+export OTEL_LOGS_EXPORTER=otlp
+export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+
+# ClaudeOS 用のカスタム次元 (プロジェクト別に集計するためのラベル)
+# 例: project / phase をラベル化して Analyst が切り分けられるようにする
+export OTEL_RESOURCE_ATTRIBUTES="service.namespace=claudeos,deployment.environment=cron"
+export OTEL_METRICS_INCLUDE_ENTRYPOINT=true   # app.entrypoint 属性 (cron/手動の区別)
+export OTEL_LOG_TOOL_DETAILS=1                 # tool_decision に tool_parameters を含める
+
+# 任意: エクスポート間隔 (ms)。無人 cron では長めでよい
+export OTEL_METRIC_EXPORT_INTERVAL=60000

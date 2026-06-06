@@ -10,7 +10,22 @@
 const fs = require("fs");
 const path = require("path");
 
+// Hook 規約: 診断ログは stderr へ集約し、stdout は hookSpecificOutput JSON 専用にする。
+// Stop hook の stdout は Claude Code が JSON としてパースするため、ログが混入すると
+// additionalContext (E) が認識されない。本リダイレクトで stdout のクリーン性を保証する。
+console.log = (...args) => console.error(...args);
+
 const STATE_FILE = path.join(process.cwd(), "state.json");
+
+// Stop hook 入力 (stdin JSON)。stop_hook_active=true は既に Stop hook 継続中であることを示す
+// (Claude Code 標準フィールド)。継続中なら二度目の継続はせず、確実に停止させる。
+let STOP_HOOK_ACTIVE = false;
+try {
+  if (!process.stdin.isTTY) {
+    const inp = JSON.parse(fs.readFileSync(0, "utf8") || "{}");
+    STOP_HOOK_ACTIVE = inp && inp.stop_hook_active === true;
+  }
+} catch { /* 入力なし/非JSON時は false (= 通常停止扱い) */ }
 
 function readJson(file) {
   try {
@@ -28,6 +43,32 @@ function writeJsonAtomic(file, data) {
   fs.renameSync(tmp, file);
 }
 
+// --- E (CHANGELOG v2.1.163): Stop hook 継続ゲート -------------------------------
+// 本セッションで新規追加された actionable な品質 warning がある場合のみ、会話を 1 回だけ
+// 継続させ (hookSpecificOutput.additionalContext)、Claude に停止前の是正を促す。
+// ガード: stop_hook_active(継続ループ中) / 1 セッション 1 回上限 / 環境変数で無効化可能。
+// これにより「未検証のまま静かに停止」を防ぎつつ、暴走 (無限継続) を構造的に排除する。
+// newWarnings = この hook 実行中に push された warning のみ (既存の古い warning は対象外)。
+const STOP_CONTINUE_ACTIONABLE = new Set([
+  "quality_gate_breach", "tdd_required", "verify_subagent_missing", "audit_fail", "ultrareview_blocker",
+]);
+function decideStopContinuation(state, stopHookActive, warnCountBefore) {
+  if (stopHookActive) return { continue: false };                       // 既に継続中 → 確実に停止
+  if (process.env.CLAUDEOS_DISABLE_STOP_CONTINUE) return { continue: false };
+  const exec = state.execution || {};
+  if ((exec.stop_continue_count || 0) >= 1) return { continue: false }; // 1 セッション 1 回上限
+  const all = Array.isArray(state.warnings) ? state.warnings : [];
+  const fresh = all.slice(warnCountBefore).filter(w => w && STOP_CONTINUE_ACTIONABLE.has(w.kind));
+  if (fresh.length === 0) return { continue: false };
+  const kinds = [...new Set(fresh.map(w => w.kind))];
+  const message =
+    `⚠️ ClaudeOS Stop ゲート: 停止前に未解決の品質課題があります — ${kinds.join(" / ")}。\n` +
+    `可能なら本セッション内で是正してください (テスト追加 / lint 修正 / 必須 SubAgent 起動 / ` +
+    `ultrareview blocker 対応 等)。是正不能なら Issue 化し、その旨を要約に記録してから停止してください。\n` +
+    `(この通知は 1 セッション 1 回のみ。次の停止で確定します。)`;
+  return { continue: true, message };
+}
+
 let dreamingEnabled = false;
 
 try {
@@ -35,6 +76,9 @@ try {
   if (state) {
     state.execution = state.execution || {};
     state.execution.last_stop_at = new Date().toISOString();
+
+    // E: この hook 実行で新規 push された warning だけを継続判定に使うため、開始時点の件数を記録
+    const _warnCountBefore = Array.isArray(state.warnings) ? state.warnings.length : 0;
 
     // Dreaming フィールド初期化（初回のみ）
     if (!state.dreaming) {
@@ -157,6 +201,26 @@ try {
 
     writeJsonAtomic(STATE_FILE, state);
     console.log("[SessionEnd] state.json updated (last_stop_at + learning recorded)");
+
+    // E: Stop 継続ゲート — actionable な新規 warning があれば 1 回だけ会話を継続させる。
+    // 継続する場合は finalization(Webhook / notify / Dreaming) を実行せず、最終停止
+    // (次回の Stop, stop_hook_active=true) でまとめて 1 回だけ確定させる (二重実行防止)。
+    {
+      const cont = decideStopContinuation(state, STOP_HOOK_ACTIVE, _warnCountBefore);
+      if (cont.continue) {
+        state.execution.stop_continue_count = (state.execution.stop_continue_count || 0) + 1;
+        writeJsonAtomic(STATE_FILE, state);
+        process.stdout.write(JSON.stringify({
+          hookSpecificOutput: { hookEventName: "Stop", additionalContext: cont.message },
+        }) + "\n");
+        console.error("[SessionEnd] Stop 継続: actionable warning 検出 → additionalContext で是正を促し継続");
+        process.exit(0);  // finalization は最終停止に委ねる
+      }
+      if (state.execution.stop_continue_count) {
+        state.execution.stop_continue_count = 0;
+        writeJsonAtomic(STATE_FILE, state);
+      }
+    }
 
     // Webhook: session_end イベントを外部へ通知（detached spawn）
     try {
