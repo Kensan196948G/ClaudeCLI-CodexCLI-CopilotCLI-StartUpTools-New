@@ -281,7 +281,7 @@ mon__deregister() {
     printf '  登録プロジェクトがありません\n'
     read -rp "  Enter で戻る " _ || true; tput civis 2>/dev/null || true; return 0
   fi
-  local i p safe cron_n sup_file running
+  local i p safe cron_n sup_file
   for i in "${!regs[@]}"; do
     p="${regs[$i]}"
     safe="$(ccsu_safe_name "$p")"
@@ -309,10 +309,7 @@ mon__deregister() {
     printf '   - supervisor stop flag: %s\n' "$(sup__stop_file "$p")"
   fi
   if "$TMUX_BIN" has-session -t "claudeos-$safe" 2>/dev/null; then
-    running=1
     printf '   - tmux セッション: claudeos-%s (稼働中)\n' "$safe"
-  else
-    running=0
   fi
 
   printf '\n'
@@ -322,9 +319,12 @@ mon__deregister() {
     read -rp "  Enter で戻る " _ || true; tput civis 2>/dev/null || true; return 0
   fi
 
-  # supervisor 停止 (実行中なら)
+  # supervisor 停止 (実行中なら): --now で pid + tmux + keeper を同期 kill してから
+  # 下で state/stop flag を削除する。協調 stop (flag 書き込みのみで即 return) だと
+  # supervisor が flag を処理する前に flag を消してしまい、停止要求を見失った
+  # zombie supervisor が state を再生成する (= 登録削除が無効化される) レースになる。
   if sup__is_running "$p" 2>/dev/null || [[ -f "$sup_file" ]]; then
-    bash "$SCRIPT_DIR/autonomy.sh" stop "$p" 2>/dev/null || true
+    bash "$SCRIPT_DIR/autonomy.sh" stop "$p" --now 2>/dev/null || true
   fi
 
   # cron 削除
@@ -338,12 +338,12 @@ mon__deregister() {
   local _stop_f; _stop_f="$(sup__stop_file "$p")"
   [[ -f "$_stop_f" ]] && rm -f "$_stop_f"
 
-  # tmux セッション停止 (任意)
-  if (( running == 1 )); then
-    local kill_ans; read -rp "  tmux セッション claudeos-$safe も停止しますか? (Y/N): " kill_ans || true
-    if [[ "${kill_ans^^}" == "Y" ]]; then
-      "$TMUX_BIN" kill-session -t "claudeos-$safe" 2>/dev/null && log_ok "tmux セッション停止: claudeos-$safe" || true
-    fi
+  # tmux セッションが残っていれば停止 (登録削除 = 完全 teardown)。
+  # stop --now で supervisor 管理セッションは既に kill 済みのため、ここに残るのは
+  # supervisor を伴わない手動起動セッションのみ。登録を消しつつセッションだけ生かす
+  # 選択肢は矛盾するため、Y/N 確認なしで無条件 teardown する。
+  if "$TMUX_BIN" has-session -t "claudeos-$safe" 2>/dev/null; then
+    "$TMUX_BIN" kill-session -t "claudeos-$safe" 2>/dev/null && log_ok "tmux セッション停止: claudeos-$safe" || true
   fi
 
   log_ok "登録削除完了: $p"

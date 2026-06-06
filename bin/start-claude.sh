@@ -60,13 +60,29 @@ main() {
   safe="$(ccsu_safe_name "$project")"
   session="claudeos-$safe"
 
+  # supervisor state ファイル: start 前の mtime を baseline として記録する。
+  # start 後に mtime が前進する (= supervisor が今回 state を書き換えた) のを
+  # 待ってから status を読むことで、前回 run の stale な blocked/stopped/goal-reached
+  # を誤検出しないようにする (ファイル存在チェックだけでは古い状態を拾う)。
+  local _sup_state="$HOME/.claudeos/supervisor/${safe}.json"
+  local _sup_mtime_before
+  _sup_mtime_before="$(stat -c %Y "$_sup_state" 2>/dev/null || echo 0)"
+
   # supervisor 経由で起動 (--force: cron 競合があっても手動起動を優先)
   bash "$SCRIPT_DIR/autonomy.sh" start "$project" --duration "$duration" --force || {
     log_error "supervisor 起動に失敗しました: $project"; exit 1
   }
 
+  # supervisor が今回の起動で state を更新する (mtime 前進) のを最大 ~3 秒待機。
+  # mtime が動かないまま timeout した場合は従来どおり現状の state を読む。
+  local _w _sup_mtime_now
+  for ((_w = 0; _w < 15; _w++)); do
+    _sup_mtime_now="$(stat -c %Y "$_sup_state" 2>/dev/null || echo 0)"
+    [[ "$_sup_mtime_now" -gt "$_sup_mtime_before" ]] && break
+    sleep 0.2
+  done
+
   # supervisor が即時停止した場合 (blocked/stopped/goal-reached) を検出し対処
-  local _sup_state="$HOME/.claudeos/supervisor/${safe}.json"
   local _sup_status="" _sup_reason=""
   if [[ -f "$_sup_state" ]]; then
     _sup_status="$(jq -r '.status // ""' "$_sup_state" 2>/dev/null || true)"
