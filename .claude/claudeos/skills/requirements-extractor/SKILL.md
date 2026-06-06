@@ -1,3 +1,8 @@
+---
+name: requirements-extractor
+description: "議事録、要件メモ、メール、Slack ログなどの**非構造化テキスト**からための実務ガイド。"
+---
+
 # requirements-extractor
 
 ## 概要

@@ -1,3 +1,8 @@
+---
+name: django-patterns
+description: "Django の models、views、service 層、管理画面設計を整理するための実務ガイド。"
+---
+
 # django-patterns
 
 ## 概要

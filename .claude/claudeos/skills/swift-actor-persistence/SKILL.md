@@ -1,3 +1,8 @@
+---
+name: swift-actor-persistence
+description: "Swift actor を用いた安全な永続化と競合回避を扱うための実務ガイド。"
+---
+
 # swift-actor-persistence
 
 ## 概要

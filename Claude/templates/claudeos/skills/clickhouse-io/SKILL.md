@@ -1,3 +1,8 @@
+---
+name: clickhouse-io
+description: "ClickHouse のテーブル設計、分析クエリ、集計基盤、データエンジニアリングを支援するための実務ガイド。"
+---
+
 # clickhouse-io
 
 ## 概要

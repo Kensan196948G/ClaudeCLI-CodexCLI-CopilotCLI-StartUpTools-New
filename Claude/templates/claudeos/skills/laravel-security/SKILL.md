@@ -1,3 +1,8 @@
+---
+name: laravel-security
+description: "Laravel の認可、バリデーション、mass assignment、秘密情報管理を扱うための実務ガイド。"
+---
+
 # laravel-security
 
 ## 概要

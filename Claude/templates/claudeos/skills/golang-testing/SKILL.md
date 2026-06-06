@@ -1,3 +1,8 @@
+---
+name: golang-testing
+description: "Go の unit test、table-driven test、benchmark、TDD を支援するための実務ガイド。"
+---
+
 # golang-testing
 
 ## 概要

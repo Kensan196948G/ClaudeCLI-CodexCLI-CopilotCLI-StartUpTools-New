@@ -1,3 +1,8 @@
+---
+name: frontend-patterns
+description: "React と Next.js を中心に画面設計、状態管理、UI 分割、アクセシビリティを整理するための実務ガイド。"
+---
+
 # frontend-patterns
 
 ## 概要

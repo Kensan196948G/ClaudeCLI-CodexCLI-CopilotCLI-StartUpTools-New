@@ -1,3 +1,8 @@
+---
+name: perl-patterns
+description: "Modern Perl の責務分離、モジュール設計、読みやすい実装を扱うための実務ガイド。"
+---
+
 # perl-patterns
 
 ## 概要

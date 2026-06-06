@@ -1,3 +1,8 @@
+---
+name: verification-loop
+description: "変更近傍から全体へ広げる継続的検証ループを運用するための実務ガイド。"
+---
+
 # verification-loop
 
 ## 概要

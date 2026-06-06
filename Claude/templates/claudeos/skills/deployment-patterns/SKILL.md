@@ -1,3 +1,8 @@
+---
+name: deployment-patterns
+description: "CI/CD、環境差異、ヘルスチェック、ロールバックを設計するための実務ガイド。"
+---
+
 # deployment-patterns
 
 ## 概要

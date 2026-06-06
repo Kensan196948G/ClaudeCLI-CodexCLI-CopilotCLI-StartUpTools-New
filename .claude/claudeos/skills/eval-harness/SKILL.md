@@ -1,3 +1,8 @@
+---
+name: eval-harness
+description: "評価ハーネス、採点基準、実験条件、再現可能な検証を整備するための実務ガイド。"
+---
+
 # eval-harness
 
 ## 概要

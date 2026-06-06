@@ -1,3 +1,8 @@
+---
+name: springboot-patterns
+description: "Spring Boot の層構造、DI、設定管理、トランザクションを整理するための実務ガイド。"
+---
+
 # springboot-patterns
 
 ## 概要

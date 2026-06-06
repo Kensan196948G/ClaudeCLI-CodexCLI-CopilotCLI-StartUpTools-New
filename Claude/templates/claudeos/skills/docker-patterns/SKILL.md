@@ -1,3 +1,8 @@
+---
+name: docker-patterns
+description: "Docker Compose、ネットワーク、ボリューム、コンテナセキュリティを扱うための実務ガイド。"
+---
+
 # docker-patterns
 
 ## 概要

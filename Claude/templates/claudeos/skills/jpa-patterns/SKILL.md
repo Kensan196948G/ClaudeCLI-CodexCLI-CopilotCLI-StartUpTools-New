@@ -1,3 +1,8 @@
+---
+name: jpa-patterns
+description: "JPA と Hibernate の entity、fetch、transaction、query 設計を整理するための実務ガイド。"
+---
+
 # jpa-patterns
 
 ## 概要

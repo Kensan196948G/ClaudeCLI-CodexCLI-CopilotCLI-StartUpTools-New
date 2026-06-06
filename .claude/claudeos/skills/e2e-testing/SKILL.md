@@ -1,3 +1,8 @@
+---
+name: e2e-testing
+description: "Playwright の E2E テスト、Page Object Model、待機戦略を扱うための実務ガイド。"
+---
+
 # e2e-testing
 
 ## 概要

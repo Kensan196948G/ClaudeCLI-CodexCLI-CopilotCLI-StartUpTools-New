@@ -1,3 +1,8 @@
+---
+name: search-first
+description: "実装前に既存コード、仕様、外部資料を優先的に調べるための実務ガイド。"
+---
+
 # search-first
 
 ## 概要

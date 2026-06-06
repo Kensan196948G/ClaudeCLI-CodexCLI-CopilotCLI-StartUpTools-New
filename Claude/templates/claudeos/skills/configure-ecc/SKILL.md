@@ -1,3 +1,8 @@
+---
+name: configure-ecc
+description: "everything-claude-code の初期導入と設定整備を支援するための実務ガイド。"
+---
+
 # configure-ecc
 
 ## 概要

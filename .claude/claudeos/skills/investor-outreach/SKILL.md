@@ -1,3 +1,8 @@
+---
+name: investor-outreach
+description: "投資家や候補先への個別連絡文、フォローアップ文面を整えるための実務ガイド。"
+---
+
 # investor-outreach
 
 ## 概要

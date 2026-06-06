@@ -1,3 +1,8 @@
+---
+name: springboot-verification
+description: "Spring Boot の起動、統合試験、DB 接続、主要 API の検証を行うための実務ガイド。"
+---
+
 # springboot-verification
 
 ## 概要
