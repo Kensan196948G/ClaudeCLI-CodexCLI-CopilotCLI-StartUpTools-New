@@ -309,6 +309,13 @@ printf '%s' "$PROMPT_ARG" > "$PROMPT_FILE"
 cat > "$CLAUDE_WRAPPER" <<'WRAPPER_EOF'
 #!/usr/bin/env bash
 claude_exit=0
+# サブスク認証(利用クレジット)を優先する。ANTHROPIC_API_KEY が環境に残っていると
+# claude はそれ(=API org・spend cap 対象)で認証し、上限到達時にサブスクの利用クレジットで
+# 救済されない。OAuth 認証情報がある場合のみ API キーを外し、サブスク認証へ倒す。
+# OAuth 不在時はフォールバックとして API キーを維持し cron を壊さない。
+if [ -f "$HOME/.claude/.credentials.json" ]; then
+  unset ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN
+fi
 _prompt_file="${_CLAUDEOS_PROMPT_FILE:-}"
 if [[ -f "$_prompt_file" ]] && [[ -s "$_prompt_file" ]]; then
   _prompt_content="$(cat "$_prompt_file")"
