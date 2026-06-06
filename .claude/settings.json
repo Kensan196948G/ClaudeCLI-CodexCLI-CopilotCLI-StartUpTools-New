@@ -14,6 +14,7 @@
   "alwaysThinkingEnabled": true,
   "promptSuggestionEnabled": true,
   "autoUpdatesChannel": "latest",
+  "fallbackModel": "claude-opus-4-7,claude-sonnet-4-6",
   "prefersReducedMotion": false,
   "terminal": {
     "mode": "auto"

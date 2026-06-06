@@ -1,0 +1,4 @@
+{
+  "_comment": "Claude Code managed settings テンプレート (組織/IT 管理者が配置)。requiredMinimumVersion は通常の .claude/settings.json では効かない managed 専用キー。詳細は同ディレクトリの README.md。",
+  "requiredMinimumVersion": "2.1.154"
+}

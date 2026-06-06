@@ -906,6 +906,39 @@ function getAgentTeamsActivity() {
   }
 }
 
+/**
+ * Live Claude Code sessions via `claude agents --json` (v2.1.145+).
+ * トップレベルは配列。ライブセッション無し時は []。claude 不在/タイムアウト時も [] を返す。
+ * 15秒キャッシュで /api/mc-data ポーリングのブロッキングを抑制する。
+ */
+let _agentsLiveCache = { at: 0, data: [] };
+function getLiveAgentSessions() {
+  const now = Date.now();
+  if (now - _agentsLiveCache.at < 15000) return _agentsLiveCache.data;
+  let sessions = [];
+  try {
+    const raw = execSync('claude agents --json', {
+      encoding: 'utf8', timeout: 5000, stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (Array.isArray(parsed)) {
+      sessions = parsed.map(s => ({
+        sessionId:  s.sessionId || null,
+        name:       s.name || null,
+        status:     s.status || 'unknown',
+        waitingFor: s.waitingFor || null,
+        done:       typeof s.done  === 'number' ? s.done  : null,
+        total:      typeof s.total === 'number' ? s.total : null,
+        kind:       s.kind || null,
+        cwd:        s.cwd  || null,
+        startedAt:  s.startedAt || null,
+      }));
+    }
+  } catch { /* claude agents 不在/タイムアウト/非JSON時は空配列 */ }
+  _agentsLiveCache = { at: now, data: sessions };
+  return sessions;
+}
+
 /** Trust Score: trust-score.json を読み込んで返す（/health エンドポイント共用） */
 function readTrustScore() {
   try {
@@ -1121,6 +1154,7 @@ async function handleMcData(res) {
     const { agentTeams, eventLog } = getAgentAndEventData();
 
     const currentProjectInfo = getCurrentProjectInfo();
+    const agentsLive = getLiveAgentSessions();  // `claude agents --json` 由来のライブセッション
     const data = {
       currentProjectInfo,
       cronSchedules,
@@ -1129,6 +1163,7 @@ async function handleMcData(res) {
       openIssues:   ghData.openIssues,
       bootSteps,
       agentTeams,
+      agentsLive,
       eventLog,
       generated: new Date().toISOString(),
     };

@@ -775,7 +775,11 @@ Agent Teams で並列に動き、Agent View で監視する。
   "worktree": {
     "baseRef": "head"
   },
-  "skillOverrides": "user-invocable-only",
+  "fallbackModel": "claude-opus-4-7,claude-sonnet-4-6",
+  "skillOverrides": {
+    "django-patterns": "name-only",
+    "investor-materials": "off"
+  },
   "parentSettingsBehavior": "first-wins"
 }
 ```
@@ -784,9 +788,12 @@ Agent Teams で並列に動き、Agent View で監視する。
 |---|---|---|
 | `worktree.baseRef` | `"head"` / `"fresh"` | worktree 分岐元。`head`=現 HEAD、`fresh`=origin デフォルトブランチ |
 | `worktree.bgIsolation` | `"none"` | BG セッションで直接編集（worktree 不使用） |
-| `skillOverrides` | `"user-invocable-only"` | スキル起動制限（`off`/`user-invocable-only`/`name-only`） |
+| `fallbackModel` | `"id1,id2"` (CSV) | primary モデル不可時に左から順に試行（最大3個）。cron 耐障害性。例: `claude-opus-4-7,claude-sonnet-4-6` |
+| `skillOverrides` | **per-skill オブジェクト** | スキルごとの可視性。値: `on`(既定) / `name-only`(説明非表示・auto-trigger可) / `user-invocable-only`(自動起動禁止・`/`手動のみ) / `off`(完全非表示)。**グローバル文字列は不可（スキーマ違反）**。無関係ドメイン skill を `off`/`name-only` にして listing budget を削減 |
 | `sandbox.bwrapPath` | `/usr/bin/bwrap` | Linux sandboxing パス（Linux/WSL 環境で有効） |
 | `parentSettingsBehavior` | `"first-wins"` | 親設定のマージ方式 |
+
+> ⚙️ **managed settings 専用キー（`.claude/settings.json` 不可）**: `requiredMinimumVersion` / `requiredMaximumVersion`（CC バージョン下限/上限を semver で強制）。配置は Linux `/etc/claude-code/managed-settings.json` / Windows レジストリ `HKLM\SOFTWARE\Policies\ClaudeCode`。テンプレと手順は [`Claude/templates/managed-settings/`](../managed-settings/) を参照。
 
 ### 🔗 フック拡張（v2.1.159+）
 
