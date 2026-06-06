@@ -287,3 +287,4 @@ jobs:
           node scripts/validate-state-example.js
           node scripts/check-doc-versions.js
           node scripts/test/test-supervisor-smoke.js
+          node scripts/test/test-stop-continue-gate.js

@@ -10,7 +10,22 @@
 const fs = require("fs");
 const path = require("path");
 
+// Hook 規約: 診断ログは stderr へ集約し、stdout は hookSpecificOutput JSON 専用にする。
+// Stop hook の stdout は Claude Code が JSON としてパースするため、ログが混入すると
+// additionalContext (E) が認識されない。本リダイレクトで stdout のクリーン性を保証する。
+console.log = (...args) => console.error(...args);
+
 const STATE_FILE = path.join(process.cwd(), "state.json");
+
+// Stop hook 入力 (stdin JSON)。stop_hook_active=true は既に Stop hook 継続中であることを示す
+// (Claude Code 標準フィールド)。継続中なら二度目の継続はせず、確実に停止させる。
+let STOP_HOOK_ACTIVE = false;
+try {
+  if (!process.stdin.isTTY) {
+    const inp = JSON.parse(fs.readFileSync(0, "utf8") || "{}");
+    STOP_HOOK_ACTIVE = inp && inp.stop_hook_active === true;
+  }
+} catch { /* 入力なし/非JSON時は false (= 通常停止扱い) */ }
 
 function readJson(file) {
   try {
@@ -28,6 +43,13 @@ function writeJsonAtomic(file, data) {
   fs.renameSync(tmp, file);
 }
 
+// --- E (CHANGELOG v2.1.163): Stop hook 継続ゲート -------------------------------
+// 判定ロジックは ./stop-continue-gate.js に分離 (副作用なし・独立テスト可能)。
+// 本セッションで新規追加された actionable な品質 warning がある場合のみ、会話を 1 回だけ
+// 継続させ (hookSpecificOutput.additionalContext)、Claude に停止前の是正を促す。
+// ガード: stop_hook_active / 1 セッション 1 回上限 / CLAUDEOS_DISABLE_STOP_CONTINUE。
+const { decideStopContinuation } = require("./stop-continue-gate.js");
+
 let dreamingEnabled = false;
 
 try {
@@ -35,6 +57,9 @@ try {
   if (state) {
     state.execution = state.execution || {};
     state.execution.last_stop_at = new Date().toISOString();
+
+    // E: この hook 実行で新規 push された warning だけを継続判定に使うため、開始時点の件数を記録
+    const _warnCountBefore = Array.isArray(state.warnings) ? state.warnings.length : 0;
 
     // Dreaming フィールド初期化（初回のみ）
     if (!state.dreaming) {
@@ -229,6 +254,27 @@ try {
 
     writeJsonAtomic(STATE_FILE, state);
     console.log("[SessionEnd] state.json updated (last_stop_at + learning recorded)");
+
+    // E: Stop 継続ゲート — actionable な新規 warning があれば 1 回だけ会話を継続させる。
+    // 継続する場合は finalization(Trust Ledger / ReasoningBank / notify / Dreaming) を実行せず、
+    // 最終停止 (次回の Stop, stop_hook_active=true) でまとめて 1 回だけ確定させる (二重計上防止)。
+    {
+      const cont = decideStopContinuation(state, STOP_HOOK_ACTIVE, _warnCountBefore);
+      if (cont.continue) {
+        state.execution.stop_continue_count = (state.execution.stop_continue_count || 0) + 1;
+        writeJsonAtomic(STATE_FILE, state);
+        process.stdout.write(JSON.stringify({
+          hookSpecificOutput: { hookEventName: "Stop", additionalContext: cont.message },
+        }) + "\n");
+        console.error("[SessionEnd] Stop 継続: actionable warning 検出 → additionalContext で是正を促し継続");
+        process.exit(0);  // finalization は最終停止に委ねる
+      }
+      // 最終停止: 継続カウンタをリセットしてから finalization へ進む
+      if (state.execution.stop_continue_count) {
+        state.execution.stop_continue_count = 0;
+        writeJsonAtomic(STATE_FILE, state);
+      }
+    }
 
     // ① Trust Ledger: stable_achievements をセッション終了時に更新（formula 完全版）
     // GitHub Actions の trust-score-update.yml は CI runs のみ追跡するため
