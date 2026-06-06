@@ -69,7 +69,52 @@ PowerShell スクリプトの依存は **一方向** に固定します。逆方
 多くのディレクトリでは直下の `README.md` で目的を確認できます（`Claude/`, `reports/` 等）。
 `.codex/` のように `README.md` を置かず設定ファイル（`config.toml`）で役割を表現する例外もあります。
 
-## 3. 用語集
+## 3. リポジトリと実行マシンの対応（同一リポジトリの 2 チェックアウト）
+
+**最重要**: GitHub 上のリポジトリは
+[`ClaudeCode-StartUpTools-New`](https://github.com/Kensan196948G/ClaudeCode-StartUpTools-New)
+**ただ 1 つ**です。「Windows 版」「Linux 版」という別リポジトリは存在しません。
+**同一リポジトリを 2 台のマシンに clone した「2 チェックアウト」** として運用します。
+
+| マシン | パス（例） | 役割 | このマシンで起きること |
+|---|---|---|---|
+| 💻 **Windows 開発機** | `D:\ClaudeCode-StartUpTools-New` | 開発ワークステーション | Claude Code がコード編集・テスト・commit・push。SOT (`Claude/templates/`) の編集はここで行う |
+| 🐧 **Linux 実行機** | `<linuxBase>/ClaudeCode-StartUpTools-New`（例: `192.168.0.185`） | 自律実行ランタイム | crontab が `cron-launcher.sh` 経由で自律セッションを起動。全登録プロジェクトの goals/hooks 供給元 |
+
+```text
+        ┌──────────────────────────────────────────────┐
+        │  GitHub: ClaudeCode-StartUpTools-New  (1 つ)  │
+        └──────────────────────────────────────────────┘
+             ▲  push                       │ pull / clone
+             │ (開発成果)                  ▼ (デプロイ)
+   ┌────────────────────┐        ┌────────────────────┐
+   │ 💻 Windows  D:\     │        │ 🐧 Linux  185       │
+   │    開発機 (編集)    │        │    実行機 (cron)    │
+   └────────────────────┘        └────────────────────┘
+```
+
+開発フローは **「Windows `D:\` で編集 → GitHub に push → Linux 実行機で pull して実機検証」** です。
+
+### なぜ 1 リポジトリのままにするか（リネーム / 分割しない理由）
+
+`feat/linux-migration` のゴールは **「SSH/SMB 廃止・ローカル一本化」** です。リポジトリを
+Windows 版 / Linux 版に分割（fork）すると、この一本化と逆方向になり二重メンテが発生します。
+
+また **GitHub のリポジトリ名とローカルディレクトリ名は独立** です。GitHub をリネームしても
+ローカルフォルダ名は変わらず、逆にローカルフォルダ名を変えると次の **ローカルパス依存箇所が破断**
+します（特に Linux cron 基盤がサイレント劣化する）:
+
+| 破断する箇所 | 依存内容 |
+|---|---|
+| `Claude/templates/linux/cron-launcher.sh` | `CLAUDEOS_GOALS_DIR` / `_CANONICAL_HOOKS`（全プロジェクトの goals/hooks 供給元） |
+| `scripts/lib/TemplateSyncManager.ps1` | canonical hooks 修復元のパス |
+| `scripts/setup/migrate-*.js` | SOT 自身を配布対象から除外するフィルタ（`e.name !== "ClaudeCode-StartUpTools-New"`） |
+
+したがって**呼称の混乱は「リネーム」ではなく「本ドキュメントでの役割明記」で解消**する方針です
+（2026-06-06 決定）。リポジトリ名を変更したい場合は、上表のローカルパス依存箇所を
+環境変数化（`PROJECTS_BASE` 起点の SOT 名を単一定数化）してから行うこと。
+
+## 4. 用語集
 
 本プロジェクト固有の用語と、一般用語から意味が拡張されているものを列挙します。
 
@@ -88,8 +133,9 @@ PowerShell スクリプトの依存は **一方向** に固定します。逆方
 | **Issue Factory** | KPI 未達 / CI 失敗時に自動で Issue を生成する機構 | CLAUDE.md §7 |
 | **WorkTree** | 1 Issue = 1 WorkTree の並列開発単位。main への直 push 禁止 | CLAUDE.md §10 |
 | **hookify** | PreToolUse hook による CTO 委任違反などの自動検知機構 | `docs/common/17_hookify-CTO-guard.md` |
+| **2 チェックアウト構成** | GitHub 上の単一リポジトリを Windows 開発機（編集）と Linux 実行機（cron）の 2 台に clone して運用する形態。別リポジトリではない | 本書 §3 |
 
-## 4. 関連ドキュメント
+## 5. 関連ドキュメント
 
 | 目的 | ドキュメント |
 |---|---|
