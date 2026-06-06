@@ -267,12 +267,10 @@ function Get-AllToolsDiagnostic {
         }
 
         foreach ($pathInfo in @(
-            @{ id = 'projectsDir'; label = 'Local projectsDir'; path = $config.projectsDir },
-            @{ id = 'sshProjectsDir'; label = 'SSH projectsDir'; path = $config.sshProjectsDir },
-            @{ id = 'projectsDirUnc'; label = 'UNC path'; path = $config.projectsDirUnc }
+            @{ id = 'projectsDir'; label = 'Local projectsDir'; path = $config.projectsDir }
         )) {
             $exists = if ($pathInfo.path) { Test-Path $pathInfo.path } else { $false }
-            if (($pathInfo.id -ne 'projectsDirUnc') -and -not $exists) {
+            if (-not $exists) {
                 $report.summary.ok = $false
             }
             $report.paths += [pscustomobject]@{
@@ -280,7 +278,7 @@ function Get-AllToolsDiagnostic {
                 label = $pathInfo.label
                 path = $pathInfo.path
                 exists = $exists
-                projectCount = if ($exists -and $pathInfo.id -ne 'projectsDirUnc') { @(Get-ChildItem -Path $pathInfo.path -Directory -ErrorAction SilentlyContinue).Count } else { 0 }
+                projectCount = if ($exists) { @(Get-ChildItem -Path $pathInfo.path -Directory -ErrorAction SilentlyContinue).Count } else { 0 }
             }
         }
     }

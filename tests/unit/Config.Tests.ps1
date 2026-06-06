@@ -17,8 +17,6 @@ Describe 'Import-StartupConfig' {
             $script:ValidConfigPath = Join-Path $script:TempDir 'config.json'
             $validJson = @{
                 version   = '2.0.0'
-                linuxHost = 'testhost'
-                linuxBase = '/home/kensan/Projects'
                 tools     = @{
                     defaultTool = 'claude'
                     claude      = @{ enabled = $true; command = 'claude' }
@@ -30,16 +28,6 @@ Describe 'Import-StartupConfig' {
         It '読み込んだオブジェクトが $null でないこと' {
             $result = Import-StartupConfig -ConfigPath $script:ValidConfigPath
             $result | Should -Not -BeNullOrEmpty
-        }
-
-        It 'linuxHost フィールドが正しく読み込まれること' {
-            $result = Import-StartupConfig -ConfigPath $script:ValidConfigPath
-            $result.linuxHost | Should -Be 'testhost'
-        }
-
-        It 'linuxBase フィールドが正しく読み込まれること' {
-            $result = Import-StartupConfig -ConfigPath $script:ValidConfigPath
-            $result.linuxBase | Should -Be '/home/kensan/Projects'
         }
 
         It 'tools.defaultTool が正しく読み込まれること' {
@@ -65,21 +53,14 @@ Describe 'Import-StartupConfig' {
 
         It 'version が欠けている場合に例外をスローすること' {
             $tempPath = Join-Path $TestDrive 'missing-version.json'
-            @{ linuxHost = 'host'; tools = @{ defaultTool = 'claude' } } |
-                ConvertTo-Json | Set-Content $tempPath
-            { Import-StartupConfig -ConfigPath $tempPath } | Should -Throw
-        }
-
-        It 'linuxHost が欠けている場合に例外をスローすること' {
-            $tempPath = Join-Path $TestDrive 'missing-host.json'
-            @{ version = '2.0.0'; tools = @{ defaultTool = 'claude' } } |
+            @{ tools = @{ defaultTool = 'claude' } } |
                 ConvertTo-Json | Set-Content $tempPath
             { Import-StartupConfig -ConfigPath $tempPath } | Should -Throw
         }
 
         It 'tools が欠けている場合に例外をスローすること' {
             $tempPath = Join-Path $TestDrive 'missing-tools.json'
-            @{ version = '2.0.0'; linuxHost = 'host' } |
+            @{ version = '2.0.0' } |
                 ConvertTo-Json | Set-Content $tempPath
             { Import-StartupConfig -ConfigPath $tempPath } | Should -Throw
         }
@@ -93,8 +74,6 @@ Describe 'Import-StartupConfig' {
             $script:AliasConfigPath = Join-Path $script:TempDir2 'config.json'
             $validJson = @{
                 version   = '2.0.0'
-                linuxHost = 'alias-testhost'
-                linuxBase = '/home/kensan/Projects'
                 tools     = @{ defaultTool = 'claude'; claude = @{ enabled = $true } }
             } | ConvertTo-Json -Depth 5
             Set-Content -Path $script:AliasConfigPath -Value $validJson -Encoding UTF8
@@ -116,7 +95,7 @@ Describe 'Backup-ConfigFile' {
             New-Item -ItemType Directory -Path $script:BackupTempDir -Force | Out-Null
             $script:SourceConfig = Join-Path $script:BackupTempDir 'config.json'
             $script:BackupDir = Join-Path $script:BackupTempDir 'backups'
-            @{ version = '2.0.0'; linuxHost = 'host'; tools = @{} } |
+            @{ version = '2.0.0'; tools = @{} } |
                 ConvertTo-Json | Set-Content $script:SourceConfig -Encoding UTF8
         }
 
@@ -144,10 +123,6 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
             $config = @{
                 version        = '2.0.0'
                 projectsDir    = 'X:\'
-                sshProjectsDir = 'Z:\'
-                projectsDirUnc = '\\server\share'
-                linuxHost      = 'host'
-                linuxBase      = '/home/kensan/Projects'
                 tools          = @{
                     defaultTool = 'claude'
                     claude      = @{
@@ -185,10 +160,6 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
             $config = @{
                 version        = '2.0.0'
                 projectsDir    = 'X:\'
-                sshProjectsDir = 'Z:\'
-                projectsDirUnc = '\\server\share'
-                linuxHost      = 'host'
-                linuxBase      = '/home/kensan/Projects'
                 tools          = @{
                     defaultTool = 'claude'
                     claude      = @{
@@ -238,10 +209,6 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
             $config = @{
                 version        = '2.0.0'
                 projectsDir    = 'X:\'
-                sshProjectsDir = 'Z:\'
-                projectsDirUnc = '\\server\share'
-                linuxHost      = 'host'
-                linuxBase      = '/home/kensan/Projects'
                 tools          = @{
                     defaultTool = 'invalid'
                     claude      = @{
@@ -283,10 +250,6 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
             $config = @{
                 version        = '2.0.0'
                 projectsDir    = 'X:\'
-                sshProjectsDir = 'Z:\'
-                projectsDirUnc = '\\server\share'
-                linuxHost      = 'host'
-                linuxBase      = '/home/kensan/Projects'
                 tools          = @{
                     defaultTool = 'claude'
                     claude      = @{
@@ -328,10 +291,6 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
             $config = @{
                 version        = '2.0.0'
                 projectsDir    = 'X:\'
-                sshProjectsDir = 'Z:\'
-                projectsDirUnc = '\\server\share'
-                linuxHost      = 'host'
-                linuxBase      = '/home/kensan/Projects'
                 tools          = @{
                     defaultTool = 'claude'
                     claude      = @{ enabled = $true; command = 'claude'; args = @(); installCommand = 'install-claude'; env = @{}; apiKeyEnvVar = 'ANTHROPIC_API_KEY' }
@@ -353,10 +312,6 @@ Describe 'Test-StartupConfigSchema and Assert-StartupConfigSchema' {
             $config = @{
                 version        = '2.0.0'
                 projectsDir    = 'X:\'
-                sshProjectsDir = 'Z:\'
-                projectsDirUnc = '\\server\share'
-                linuxHost      = 'host'
-                linuxBase      = '/home/kensan/Projects'
                 tools          = @{
                     defaultTool = 'claude'
                     claude      = @{ enabled = $true; command = 'claude'; args = @(); installCommand = 'install-claude'; env = @{}; apiKeyEnvVar = 'ANTHROPIC_API_KEY' }

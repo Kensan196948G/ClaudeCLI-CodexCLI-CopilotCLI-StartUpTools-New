@@ -45,10 +45,6 @@ function Import-StartupConfig {
     }
     Write-Host "[ OK ]  必須フィールド検証OK" -ForegroundColor Green
 
-    if ($config.linuxHost -eq "<your-linux-host>") {
-        Write-Warning "config.json の linuxHost がプレースホルダーのままです。実際のホスト名に変更してください。"
-    }
-
     $validTools = @('claude', 'codex', 'copilot')
     foreach ($toolName in $validTools) {
         $toolConf = if ($null -ne $config.tools) { $config.tools.PSObject.Properties[$toolName]?.Value } else { $null }

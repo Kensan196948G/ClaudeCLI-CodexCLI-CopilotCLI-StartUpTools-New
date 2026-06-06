@@ -7,7 +7,7 @@
 #       config.json の各値を意味のある関数名で取り出す薄いラッパ。
 #
 # 設計: Linux ローカル一本化のため projectsDir(Windows: D:\) より
-#       linuxBase(/home/kensan/Projects) を優先する。
+#       projects(/home/kensan/Projects) を優先する。
 #
 # 前提: json.sh (jq) を source。
 # ============================================================
@@ -23,10 +23,10 @@ config_get()     { json_get "$CCSU_CONFIG_PATH" "$1" "${2:-}"; }
 # config_get_raw <jq-filter>  (配列/オブジェクト)
 config_get_raw() { json_get_raw "$CCSU_CONFIG_PATH" "$1"; }
 
-# --- プロジェクトディレクトリ (ローカル一本化: linuxBase 優先) ---
+# --- プロジェクトディレクトリ (ローカル一本化: projects 優先) ---
 config_projects_dir() {
   local base
-  base="$(config_get '.linuxBase' '')"
+  base="$(config_get '.projects' '')"
   if [[ -n "$base" ]]; then printf '%s' "$base"; else config_get '.projectsDir' "$HOME/Projects"; fi
 }
 
@@ -45,8 +45,6 @@ config_project_list() {
   done
 }
 
-# --- 接続情報 (移行後はローカル実行のため参考値) ---
-config_linux_host() { config_get '.linuxHost' ''; }
 config_linux_user() { config_get '.linuxUser' "$USER"; }
 
 # --- ツール定義 ---

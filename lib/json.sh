@@ -21,7 +21,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 # ------------------------------------------------------------
 # json_get <file> <jq-filter> [default]
 #   スカラ値を取得。file 不在 / null / empty なら default を返す。
-#   例: json_get config/config.json '.linuxBase' '/home/kensan/Projects'
+#   例: json_get config/config.json '.projects' '/home/kensan/Projects'
 #   例: json_get state.json '.maintenance.phase_mode' 'development'
 # ------------------------------------------------------------
 json_get() {
