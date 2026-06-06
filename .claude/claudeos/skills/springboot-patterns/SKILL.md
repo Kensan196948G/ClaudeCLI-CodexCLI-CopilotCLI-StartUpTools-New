@@ -56,7 +56,7 @@ description: "Spring Boot の層構造、DI、設定管理、トランザクシ�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - `@Transactional` が self-invocation / private メソッドで無効になる
 - field injection でテスト困難化。constructor injection にする

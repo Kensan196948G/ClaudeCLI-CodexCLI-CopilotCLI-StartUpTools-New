@@ -56,7 +56,7 @@ description: "Spring Security、認可、シークレット、設定分離を点
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - `.anyRequest().permitAll()` の取り残しで全公開になる
 - REST 化で CSRF を全 disable するが cookie ベース認証が残り脆弱になる

@@ -56,7 +56,7 @@ description: "Django をテスト先行で安全に実装するときに使う�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - `TestCase`(トランザクション) と `TransactionTestCase` の差異を無視し flaky 化
 - 実 DB/外部 API に依存したテストで遅く不安定になる

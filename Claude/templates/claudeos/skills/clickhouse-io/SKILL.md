@@ -56,7 +56,7 @@ description: "ClickHouse のテーブル設計、分析クエリ、集計基盤�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - 列指向なのに `SELECT *` で全列読込し I/O を浪費する
 - 行単位 INSERT を多発させ part 爆発 → merge 過負荷 (バッチ INSERT 必須)

@@ -56,7 +56,7 @@ description: "Docker Compose、ネットワーク、ボリューム、コンテ�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - `latest` タグ依存で再現性が壊れる。digest 固定か明示バージョンタグを使う
 - `.dockerignore` 未整備で `COPY . .` が `.git`/`node_modules`/secret を image へ焼き込む

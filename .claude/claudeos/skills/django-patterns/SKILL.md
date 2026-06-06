@@ -56,7 +56,7 @@ description: "Django の models、views、service 層、管理画面設計を整
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - `select_related` / `prefetch_related` 不足で N+1 クエリ
 - QuerySet の遅延評価を理解せずループ内でクエリを発行する

@@ -56,7 +56,7 @@ description: "PostgreSQL のクエリ最適化、インデックス、ロック�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - `WHERE lower(col)=...` 等の関数適用で index が無効化する (式 index が要る)
 - 長時間トランザクションで VACUUM を阻害し bloat を招く

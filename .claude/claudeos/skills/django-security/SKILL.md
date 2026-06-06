@@ -56,7 +56,7 @@ description: "Django の CSRF、認証認可、ORM 安全性、設定不備を�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - 本番 `DEBUG=True` 残置で例外画面に settings と secret が露出する
 - `ALLOWED_HOSTS` 未設定 / `["*"]` で Host ヘッダ injection を許す

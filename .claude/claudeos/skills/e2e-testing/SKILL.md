@@ -56,7 +56,7 @@ description: "Playwright の E2E テスト、Page Object Model、待機戦略を
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - 固定 `sleep`/`waitForTimeout` で flaky 化 (web-first assertion / auto-wait を使う)
 - 脆い CSS セレクタ依存。role/label/test-id ベースにする

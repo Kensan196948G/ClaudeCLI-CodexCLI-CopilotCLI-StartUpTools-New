@@ -56,7 +56,7 @@ description: "各種 ORM やフレームワークにおける安全な migration
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - rename/drop を deploy と同時実行し旧コードが落ちる (expand→contract の2段階に)
 - 後方互換を壊す変更を 1 migration に詰め込む

@@ -56,7 +56,7 @@ description: "Laravel の route、policy、queue、DB 更新を検証すると�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - route/policy/queue/DB 更新のうち queue の非同期挙動を検証しない
 - `php artisan route:list` で認可ミドルウェアの付与漏れを確認しない

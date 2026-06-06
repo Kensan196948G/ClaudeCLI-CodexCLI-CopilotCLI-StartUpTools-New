@@ -56,7 +56,7 @@ description: "Laravel の認可、バリデーション、mass assignment、秘�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - `$fillable` 未定義 + `$guarded=[]` で mass assignment (is_admin 等を更新される)
 - `{!! !!}` の raw 出力で XSS。既定は `{{ }}` を使う

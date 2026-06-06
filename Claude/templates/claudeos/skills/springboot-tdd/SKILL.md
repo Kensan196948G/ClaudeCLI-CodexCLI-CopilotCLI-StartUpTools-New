@@ -56,7 +56,7 @@ description: "Spring Boot を controller から service まで段階的に TDD �
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - `@SpringBootContext` 全起動を多用しテストが遅くなる (slice test を使う)
 - `@MockBean` 乱用で実結線の不具合を検出できなくなる

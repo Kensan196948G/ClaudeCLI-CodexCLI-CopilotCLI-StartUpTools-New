@@ -56,7 +56,7 @@ description: "Go の idiom、context、エラー処理、パッケージ分割�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - `err` を `_` で握りつぶす / wrap せず原因を失う (`fmt.Errorf("...: %w", err)`)
 - goroutine leak。context cancel / channel close 漏れを残す

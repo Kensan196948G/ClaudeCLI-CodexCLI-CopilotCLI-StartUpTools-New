@@ -56,7 +56,7 @@ description: "JPA と Hibernate の entity、fetch、transaction、query 設計�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - N+1。`FetchType.EAGER` 乱用 or lazy + ループ (fetch join / `@EntityGraph`)
 - session 外アクセスで `LazyInitializationException`

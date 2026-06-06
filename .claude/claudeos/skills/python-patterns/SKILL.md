@@ -56,7 +56,7 @@ description: "Python の型、例外、責務分割、保守しやすい構成�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - mutable default 引数 (`def f(x=[])`) で状態が共有される
 - bare `except:` で例外を握りつぶす / 原因を失う

@@ -38,7 +38,12 @@ const SKILL_DIRS = [
 
 const DRY_RUN = process.argv.includes("--dry-run");
 
-const SECTION_HEADING = "## Gotchas（陥りやすい失敗）";
+// CLAUDE.md §2.1「章タイトルは必ずアイコン付き」に準拠し ⚠️ を付与する。
+const SECTION_HEADING = "## ⚠️ Gotchas（陥りやすい失敗）";
+
+// 冪等チェック用: アイコン有無どちらの見出しでもヒットさせる
+// (旧版の `## Gotchas` を生成済みの登録プロジェクトでも重複挿入を防ぐ)。
+const SECTION_HEADING_RE = /^##\s+(?:⚠️\s+)?Gotchas（陥りやすい失敗）\s*$/m;
 
 // フォルダ名 -> ドメイン固有の失敗モード (実際に人を刺すものだけ)。
 const GOTCHAS = {
@@ -219,7 +224,7 @@ function buildSection(bullets) {
 function processSkillFile(skillMdPath, bullets) {
   const original = fs.readFileSync(skillMdPath, "utf8");
 
-  if (original.includes(SECTION_HEADING)) {
+  if (SECTION_HEADING_RE.test(original)) {
     return { status: "skip", reason: "Gotchas 既存" };
   }
 

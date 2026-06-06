@@ -56,7 +56,7 @@ description: "Laravel の controller、service、job、policy、Eloquent 設計�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - Eloquent の N+1。`with()` eager loading 不足 (Telescope/Debugbar で検出)
 - controller に業務ロジック集中。service/action クラスへ分離する

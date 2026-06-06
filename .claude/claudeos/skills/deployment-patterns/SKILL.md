@@ -56,7 +56,7 @@ description: "CI/CD、環境差異、ヘルスチェック、ロールバック�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - readiness と liveness を混同し、起動中に traffic を流す
 - rollback 手順未整備 / DB migration が rollback 不能

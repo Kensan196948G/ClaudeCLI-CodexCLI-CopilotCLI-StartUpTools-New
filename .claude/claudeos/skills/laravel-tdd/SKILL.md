@@ -56,7 +56,7 @@ description: "Laravel の feature test と unit test を軸に TDD を進める�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
-## Gotchas（陥りやすい失敗）
+## ⚠️ Gotchas（陥りやすい失敗）
 
 - Feature test で `RefreshDatabase` を付け忘れテスト間が汚染される
 - 実メール/実決済を mock せず外部に到達させる (`Mail::fake()` 等)
