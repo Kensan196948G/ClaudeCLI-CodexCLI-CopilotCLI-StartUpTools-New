@@ -1,3 +1,8 @@
+---
+name: springboot-security
+description: "Spring Security、認可、シークレット、設定分離を点検するための実務ガイド。"
+---
+
 # springboot-security
 
 ## 概要

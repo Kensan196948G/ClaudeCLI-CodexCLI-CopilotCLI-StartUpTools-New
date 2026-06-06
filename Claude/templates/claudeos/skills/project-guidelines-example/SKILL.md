@@ -1,3 +1,8 @@
+---
+name: project-guidelines-example
+description: "プロジェクト固有の skill を設計するための見本とテンプレートを示すための実務ガイド。"
+---
+
 # project-guidelines-example
 
 ## 概要

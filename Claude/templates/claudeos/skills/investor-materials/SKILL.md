@@ -1,3 +1,8 @@
+---
+name: investor-materials
+description: "ピッチ資料、1 ページ要約、投資家向け説明資料を構成するための実務ガイド。"
+---
+
 # investor-materials
 
 ## 概要

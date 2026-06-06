@@ -1,3 +1,8 @@
+---
+name: continuous-learning
+description: "セッションから学びを抽出して再利用可能な知見へまとめるための実務ガイド。"
+---
+
 # continuous-learning
 
 ## 概要

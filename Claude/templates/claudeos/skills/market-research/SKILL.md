@@ -1,3 +1,8 @@
+---
+name: market-research
+description: "市場調査、競合比較、一次情報に基づく外部環境分析を行うための実務ガイド。"
+---
+
 # market-research
 
 ## 概要

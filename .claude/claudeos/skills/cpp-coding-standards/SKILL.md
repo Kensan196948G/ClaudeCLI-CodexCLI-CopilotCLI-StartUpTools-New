@@ -1,3 +1,8 @@
+---
+name: cpp-coding-standards
+description: "C++ Core Guidelines を踏まえた安全な設計と実装を支援するための実務ガイド。"
+---
+
 # cpp-coding-standards
 
 ## 概要

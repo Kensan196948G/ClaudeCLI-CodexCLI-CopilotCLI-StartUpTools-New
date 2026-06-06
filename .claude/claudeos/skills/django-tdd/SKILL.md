@@ -1,3 +1,8 @@
+---
+name: django-tdd
+description: "Django をテスト先行で安全に実装するための実務ガイド。"
+---
+
 # django-tdd
 
 ## 概要

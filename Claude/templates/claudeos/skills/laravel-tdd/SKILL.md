@@ -1,3 +1,8 @@
+---
+name: laravel-tdd
+description: "Laravel の feature test と unit test を軸に TDD を進めるための実務ガイド。"
+---
+
 # laravel-tdd
 
 ## 概要

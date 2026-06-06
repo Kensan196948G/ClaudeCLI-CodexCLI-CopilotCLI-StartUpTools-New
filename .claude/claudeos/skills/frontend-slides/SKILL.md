@@ -1,3 +1,8 @@
+---
+name: frontend-slides
+description: "HTML スライド、プレゼン資料、PPTX 代替の Web ベース資料作成を支援するための実務ガイド。"
+---
+
 # frontend-slides
 
 ## 概要

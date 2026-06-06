@@ -1,3 +1,8 @@
+---
+name: performance-review
+description: "差分や既存コードを **性能観点** でレビューし、ホットスポット・計算量・I/O 回数・ための実務ガイド。"
+---
+
 # performance-review
 
 ## 概要

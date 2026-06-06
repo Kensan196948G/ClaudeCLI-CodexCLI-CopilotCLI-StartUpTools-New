@@ -1,3 +1,8 @@
+---
+name: security-scan
+description: "静的解析、依存監査、設定監査をまとめて実行するための実務ガイド。"
+---
+
 # security-scan
 
 ## 概要

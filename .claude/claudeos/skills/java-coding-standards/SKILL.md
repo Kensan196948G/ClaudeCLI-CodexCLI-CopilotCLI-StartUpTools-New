@@ -1,3 +1,8 @@
+---
+name: java-coding-standards
+description: "Java の命名、例外、レイヤ分離、読みやすい実装基準を揃えるための実務ガイド。"
+---
+
 # java-coding-standards
 
 ## 概要

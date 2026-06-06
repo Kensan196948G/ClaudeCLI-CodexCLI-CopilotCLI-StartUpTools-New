@@ -1,3 +1,8 @@
+---
+name: swift-protocol-di-testing
+description: "Swift の protocol ベース DI とテスト容易性向上を支援するための実務ガイド。"
+---
+
 # swift-protocol-di-testing
 
 ## 概要

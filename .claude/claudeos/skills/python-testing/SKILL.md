@@ -1,3 +1,8 @@
+---
+name: python-testing
+description: "pytest による fixture、parametrize、integration test を支援するための実務ガイド。"
+---
+
 # python-testing
 
 ## 概要
