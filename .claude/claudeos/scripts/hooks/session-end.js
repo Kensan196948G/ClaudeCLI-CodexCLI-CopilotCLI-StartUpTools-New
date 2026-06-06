@@ -44,30 +44,11 @@ function writeJsonAtomic(file, data) {
 }
 
 // --- E (CHANGELOG v2.1.163): Stop hook 継続ゲート -------------------------------
+// 判定ロジックは ./stop-continue-gate.js に分離 (副作用なし・独立テスト可能)。
 // 本セッションで新規追加された actionable な品質 warning がある場合のみ、会話を 1 回だけ
 // 継続させ (hookSpecificOutput.additionalContext)、Claude に停止前の是正を促す。
-// ガード: stop_hook_active(継続ループ中) / 1 セッション 1 回上限 / 環境変数で無効化可能。
-// これにより「未検証のまま静かに停止」を防ぎつつ、暴走 (無限継続) を構造的に排除する。
-// newWarnings = この hook 実行中に push された warning のみ (既存の古い warning は対象外)。
-const STOP_CONTINUE_ACTIONABLE = new Set([
-  "quality_gate_breach", "tdd_required", "verify_subagent_missing", "audit_fail", "ultrareview_blocker",
-]);
-function decideStopContinuation(state, stopHookActive, warnCountBefore) {
-  if (stopHookActive) return { continue: false };                       // 既に継続中 → 確実に停止
-  if (process.env.CLAUDEOS_DISABLE_STOP_CONTINUE) return { continue: false };
-  const exec = state.execution || {};
-  if ((exec.stop_continue_count || 0) >= 1) return { continue: false }; // 1 セッション 1 回上限
-  const all = Array.isArray(state.warnings) ? state.warnings : [];
-  const fresh = all.slice(warnCountBefore).filter(w => w && STOP_CONTINUE_ACTIONABLE.has(w.kind));
-  if (fresh.length === 0) return { continue: false };
-  const kinds = [...new Set(fresh.map(w => w.kind))];
-  const message =
-    `⚠️ ClaudeOS Stop ゲート: 停止前に未解決の品質課題があります — ${kinds.join(" / ")}。\n` +
-    `可能なら本セッション内で是正してください (テスト追加 / lint 修正 / 必須 SubAgent 起動 / ` +
-    `ultrareview blocker 対応 等)。是正不能なら Issue 化し、その旨を要約に記録してから停止してください。\n` +
-    `(この通知は 1 セッション 1 回のみ。次の停止で確定します。)`;
-  return { continue: true, message };
-}
+// ガード: stop_hook_active / 1 セッション 1 回上限 / CLAUDEOS_DISABLE_STOP_CONTINUE。
+const { decideStopContinuation } = require("./stop-continue-gate.js");
 
 let dreamingEnabled = false;
 
