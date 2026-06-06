@@ -56,6 +56,13 @@ description: "Spring Boot の起動、統合試験、DB 接続、主要 API の�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
+## Gotchas（陥りやすい失敗）
+
+- 起動・統合・DB 接続のうち lazy 関連の境界外アクセスを検証しない
+- actuator/health endpoint の応答だけで実依存(DB/MQ)の死活を判断する
+- flyway/liquibase の migration 適用順を本番相当で確認しない
+- 主要 API の異常系(401/403/409)の検証を省く
+
 ## 相性のよい command
 
 `/verify`

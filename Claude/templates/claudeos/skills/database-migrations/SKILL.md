@@ -56,6 +56,15 @@ description: "各種 ORM やフレームワークにおける安全な migration
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
+## Gotchas（陥りやすい失敗）
+
+- rename/drop を deploy と同時実行し旧コードが落ちる (expand→contract の2段階に)
+- 後方互換を壊す変更を 1 migration に詰め込む
+- 大テーブルの DDL で長時間 lock (オンライン DDL / batched backfill)
+- down migration(rollback)を未検証のまま出す
+- data migration を schema migration に混在させる
+- 本番でしか出ない順序依存・seed 依存を見逃す
+
 ## 相性のよい command
 
 `/plan`, `/verify`

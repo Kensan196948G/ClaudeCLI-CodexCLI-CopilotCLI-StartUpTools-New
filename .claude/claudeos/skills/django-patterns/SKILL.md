@@ -56,6 +56,15 @@ description: "Django の models、views、service 層、管理画面設計を整
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
+## Gotchas（陥りやすい失敗）
+
+- `select_related` / `prefetch_related` 不足で N+1 クエリ
+- QuerySet の遅延評価を理解せずループ内でクエリを発行する
+- fat views / fat models で service 層の責務分離が崩れる
+- model 変更後の `makemigrations` 忘れで schema と乖離する
+- signals 多用で副作用の追跡が不能になる
+- settings を環境分離せず単一 `settings.py` に `if` 分岐を詰め込む
+
 ## 相性のよい command
 
 `/plan`, `/verify`

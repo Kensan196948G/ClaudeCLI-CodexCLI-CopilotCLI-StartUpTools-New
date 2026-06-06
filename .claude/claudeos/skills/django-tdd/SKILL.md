@@ -56,6 +56,14 @@ description: "Django をテスト先行で安全に実装するときに使う�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
+## Gotchas（陥りやすい失敗）
+
+- `TestCase`(トランザクション) と `TransactionTestCase` の差異を無視し flaky 化
+- 実 DB/外部 API に依存したテストで遅く不安定になる
+- fixtures 肥大で意図が読めない。factory(`factory_boy`) で必要分だけ作る
+- `setUp` の重い処理を毎テスト実行して遅くする (`setUpTestData` を使う)
+- freeze せず `timezone.now()` 依存テストを書き時間で壊れる
+
 ## 相性のよい command
 
 `/tdd`

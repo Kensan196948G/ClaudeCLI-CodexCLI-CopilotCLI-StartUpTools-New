@@ -56,6 +56,13 @@ description: "Spring Boot を controller から service まで段階的に TDD �
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
+## Gotchas（陥りやすい失敗）
+
+- `@SpringBootContext` 全起動を多用しテストが遅くなる (slice test を使う)
+- `@MockBean` 乱用で実結線の不具合を検出できなくなる
+- `@DataJpaTest` の組込 DB と本番 DB の方言差で漏れる
+- test 用 `application.properties` の profile 分離漏れで本番設定を読む
+
 ## 相性のよい command
 
 `/tdd`

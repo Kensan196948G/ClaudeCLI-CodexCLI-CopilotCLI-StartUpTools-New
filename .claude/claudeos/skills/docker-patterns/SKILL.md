@@ -56,6 +56,16 @@ description: "Docker Compose、ネットワーク、ボリューム、コンテ�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
+## Gotchas（陥りやすい失敗）
+
+- `latest` タグ依存で再現性が壊れる。digest 固定か明示バージョンタグを使う
+- `.dockerignore` 未整備で `COPY . .` が `.git`/`node_modules`/secret を image へ焼き込む
+- root 実行のまま放置。`USER` 指定と read-only rootfs を検討する
+- `depends_on` は起動順を保証するが起動完了は保証しない。healthcheck + `condition: service_healthy` が要る
+- マルチステージビルド未使用で build ツールチェーンを本番 image に残し肥大化させる
+- secret を `build-arg` や ENV に渡すと image layer / `docker inspect` から漏れる
+- Linux の bind mount は host uid/gid 差異でコンテナ内書込みが失敗する
+
 ## 相性のよい command
 
 `/plan`, `/verify`

@@ -56,6 +56,17 @@ description: "Django の CSRF、認証認可、ORM 安全性、設定不備を�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
+## Gotchas（陥りやすい失敗）
+
+- 本番 `DEBUG=True` 残置で例外画面に settings と secret が露出する
+- `ALLOWED_HOSTS` 未設定 / `["*"]` で Host ヘッダ injection を許す
+- `SECRET_KEY` をコード/リポジトリにハードコードする
+- `.raw()` / `.extra()` / 文字列連結 SQL で ORM の injection 防御を迂回する
+- `mark_safe` / `|safe` / `format_html` 誤用で XSS を作る
+- `@csrf_exempt` の無自覚付与、SessionAuth の API で CSRF が抜ける
+- `get_object_or_404` だけで所有者チェックを省き IDOR を作る
+- session/CSRF cookie の `SECURE` / `HttpOnly` / `SameSite` 未設定
+
 ## 相性のよい command
 
 `/code-review`, `/verify`

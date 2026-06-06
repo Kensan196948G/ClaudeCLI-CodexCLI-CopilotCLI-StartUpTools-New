@@ -56,6 +56,13 @@ description: "Django の migration、permission、API、画面の検証を回す
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
+## Gotchas（陥りやすい失敗）
+
+- migration の前進だけ確認し rollback(逆 migration) を検証しない
+- permission/所有者チェックの検証を正常系だけで済ませる
+- `makemigrations --check --dry-run` を CI に入れず未生成 migration を見逃す
+- 本番相当データ量での性能/タイムアウトを確認しない
+
 ## 相性のよい command
 
 `/verify`

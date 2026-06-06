@@ -56,6 +56,15 @@ description: "JPA と Hibernate の entity、fetch、transaction、query 設計�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
+## Gotchas（陥りやすい失敗）
+
+- N+1。`FetchType.EAGER` 乱用 or lazy + ループ (fetch join / `@EntityGraph`)
+- session 外アクセスで `LazyInitializationException`
+- `equals`/`hashCode` を生成 ID で実装する (永続化前は null)
+- 更新で `save()` を多用する (dirty checking で不要)
+- cascade の過剰設定で意図しない delete が伝播する
+- `@Transactional` 境界外での lazy load を前提にする
+
 ## 相性のよい command
 
 `/plan`, `/verify`

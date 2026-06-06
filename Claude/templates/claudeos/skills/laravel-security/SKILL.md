@@ -56,6 +56,16 @@ description: "Laravel の認可、バリデーション、mass assignment、秘�
 - 主要フローに回帰がないか
 - ドキュメントと実装にズレがないか
 
+## Gotchas（陥りやすい失敗）
+
+- `$fillable` 未定義 + `$guarded=[]` で mass assignment (is_admin 等を更新される)
+- `{!! !!}` の raw 出力で XSS。既定は `{{ }}` を使う
+- `DB::raw()` / `whereRaw()` に未バインドのユーザー入力を渡す
+- 本番 `APP_DEBUG=true` 残置で Ignition がスタック/設定を露出する
+- route に policy/`authorize` を付け忘れて IDOR を作る
+- public disk 誤設定で非公開ファイルを `Storage::url` 経由で露出する
+- `VerifyCsrfToken::$except` へ安易に追加して CSRF を抜く
+
 ## 相性のよい command
 
 `/code-review`, `/verify`
