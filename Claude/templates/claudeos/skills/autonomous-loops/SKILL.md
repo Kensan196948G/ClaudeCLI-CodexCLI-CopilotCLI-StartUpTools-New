@@ -1,3 +1,8 @@
+---
+name: autonomous-loops
+description: "逐次ループ、PR ループ、DAG 型オーケストレーションを設計するときに使う。"
+---
+
 # autonomous-loops
 
 ## 概要

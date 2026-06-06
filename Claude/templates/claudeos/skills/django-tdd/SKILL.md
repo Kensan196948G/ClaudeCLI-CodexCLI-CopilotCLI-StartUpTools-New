@@ -1,3 +1,8 @@
+---
+name: django-tdd
+description: "Django をテスト先行で安全に実装するときに使う。"
+---
+
 # django-tdd
 
 ## 概要

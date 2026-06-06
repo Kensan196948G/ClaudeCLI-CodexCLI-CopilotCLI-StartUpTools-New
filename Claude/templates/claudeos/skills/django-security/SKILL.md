@@ -1,3 +1,8 @@
+---
+name: django-security
+description: "Django の CSRF、認証認可、ORM 安全性、設定不備を点検するときに使う。"
+---
+
 # django-security
 
 ## 概要

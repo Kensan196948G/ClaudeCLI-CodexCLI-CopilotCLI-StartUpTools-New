@@ -1,3 +1,8 @@
+---
+name: performance-review
+description: "差分や既存コードを性能観点でレビューし、ホットスポット・計算量・I/O 回数・並列性・メモリ・DB クエリのリグレッションを検出するときに使う。"
+---
+
 # performance-review
 
 ## 概要

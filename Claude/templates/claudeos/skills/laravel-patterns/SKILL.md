@@ -1,3 +1,8 @@
+---
+name: laravel-patterns
+description: "Laravel の controller、service、job、policy、Eloquent 設計を整えるときに使う。"
+---
+
 # laravel-patterns
 
 ## 概要

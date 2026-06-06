@@ -1,3 +1,8 @@
+---
+name: liquid-glass-design
+description: "Liquid Glass 系の UI 指針に沿って画面設計を整えるときに使う。"
+---
+
 # liquid-glass-design
 
 ## 概要

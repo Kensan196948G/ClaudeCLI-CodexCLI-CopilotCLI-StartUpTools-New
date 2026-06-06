@@ -1,3 +1,8 @@
+---
+name: postgres-patterns
+description: "PostgreSQL のクエリ最適化、インデックス、ロック、移行運用を扱うときに使う。"
+---
+
 # postgres-patterns
 
 ## 概要

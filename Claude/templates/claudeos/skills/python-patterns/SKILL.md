@@ -1,3 +1,8 @@
+---
+name: python-patterns
+description: "Python の型、例外、責務分割、保守しやすい構成を整理するときに使う。"
+---
+
 # python-patterns
 
 ## 概要

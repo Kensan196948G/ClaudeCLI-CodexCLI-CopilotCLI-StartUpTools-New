@@ -1,3 +1,8 @@
+---
+name: perl-security
+description: "Perl の taint mode、安全な I/O、外部入力の取り扱いを整理するときに使う。"
+---
+
 # perl-security
 
 ## 概要

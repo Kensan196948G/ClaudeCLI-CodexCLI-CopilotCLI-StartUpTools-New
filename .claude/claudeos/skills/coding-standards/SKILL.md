@@ -1,3 +1,8 @@
+---
+name: coding-standards
+description: "言語共通のコーディング規約、責務分離、命名、コメント、可読性を整えるときに使う。"
+---
+
 # coding-standards
 
 ## 概要

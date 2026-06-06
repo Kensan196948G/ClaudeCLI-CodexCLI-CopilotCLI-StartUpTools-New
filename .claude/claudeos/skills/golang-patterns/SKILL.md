@@ -1,3 +1,8 @@
+---
+name: golang-patterns
+description: "Go の idiom、context、エラー処理、パッケージ分割を整えるときに使う。"
+---
+
 # golang-patterns
 
 ## 概要

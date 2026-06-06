@@ -1,3 +1,8 @@
+---
+name: database-migrations
+description: "各種 ORM やフレームワークにおける安全な migration 運用を整理するときに使う。"
+---
+
 # database-migrations
 
 ## 概要

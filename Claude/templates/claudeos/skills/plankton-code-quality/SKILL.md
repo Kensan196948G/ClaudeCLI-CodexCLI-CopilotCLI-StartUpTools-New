@@ -1,3 +1,8 @@
+---
+name: plankton-code-quality
+description: "保存時や実装時に品質を前倒し確保するフック連携を整えるときに使う。"
+---
+
 # plankton-code-quality
 
 ## 概要

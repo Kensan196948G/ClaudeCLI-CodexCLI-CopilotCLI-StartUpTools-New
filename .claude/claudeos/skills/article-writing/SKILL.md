@@ -1,3 +1,8 @@
+---
+name: article-writing
+description: "自然で読みやすい長文記事、技術解説、社内ナレッジ文書を作成するときに使う。"
+---
+
 # article-writing
 
 ## 概要

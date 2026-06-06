@@ -1,3 +1,8 @@
+---
+name: tdd-workflow
+description: "Red、Green、Refactor の流れで安全に実装を進めるときに使う。"
+---
+
 # tdd-workflow
 
 ## 概要

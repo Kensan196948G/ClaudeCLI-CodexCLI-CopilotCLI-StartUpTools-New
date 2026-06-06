@@ -1,3 +1,8 @@
+---
+name: perl-testing
+description: "Perl の Test2::V0、prove、カバレッジ計測を支援するときに使う。"
+---
+
 # perl-testing
 
 ## 概要

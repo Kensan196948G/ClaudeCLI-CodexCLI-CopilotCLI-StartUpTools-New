@@ -1,3 +1,8 @@
+---
+name: continuous-learning-v2
+description: "学びを信頼度付きで記録し、採用候補と保留候補を分けて管理するときに使う。"
+---
+
 # continuous-learning-v2
 
 ## 概要

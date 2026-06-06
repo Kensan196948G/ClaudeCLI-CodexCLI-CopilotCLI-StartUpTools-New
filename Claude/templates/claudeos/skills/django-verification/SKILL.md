@@ -1,3 +1,8 @@
+---
+name: django-verification
+description: "Django の migration、permission、API、画面の検証を回すときに使う。"
+---
+
 # django-verification
 
 ## 概要

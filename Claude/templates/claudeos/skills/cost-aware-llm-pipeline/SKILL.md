@@ -1,3 +1,8 @@
+---
+name: cost-aware-llm-pipeline
+description: "モデル選択、ルーティング、トークン費用、予算上限を意識した LLM パイプラインを構成するときに使う。"
+---
+
 # cost-aware-llm-pipeline
 
 ## 概要

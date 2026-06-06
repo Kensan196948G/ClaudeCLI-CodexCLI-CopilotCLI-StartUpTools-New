@@ -1,3 +1,8 @@
+---
+name: requirements-extractor
+description: "議事録・要件メモ・メール・Slack ログなどの非構造化テキストから実行可能タスクと受け入れ基準を抽出し Issue 化するときに使う。"
+---
+
 # requirements-extractor
 
 ## 概要

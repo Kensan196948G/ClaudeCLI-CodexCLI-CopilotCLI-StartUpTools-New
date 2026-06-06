@@ -1,3 +1,8 @@
+---
+name: backend-patterns
+description: "API、DB、キャッシュ、非同期処理、認証認可を含むバックエンド設計の標準を示すときに使う。"
+---
+
 # backend-patterns
 
 ## 概要

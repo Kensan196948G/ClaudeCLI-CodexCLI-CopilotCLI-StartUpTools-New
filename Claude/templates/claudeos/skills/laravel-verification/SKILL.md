@@ -1,3 +1,8 @@
+---
+name: laravel-verification
+description: "Laravel の route、policy、queue、DB 更新を検証するときに使う。"
+---
+
 # laravel-verification
 
 ## 概要

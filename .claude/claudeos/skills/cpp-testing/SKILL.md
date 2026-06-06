@@ -1,3 +1,8 @@
+---
+name: cpp-testing
+description: "GoogleTest、CMake、CTest を使った C++ テスト戦略を整えるときに使う。"
+---
+
 # cpp-testing
 
 ## 概要
