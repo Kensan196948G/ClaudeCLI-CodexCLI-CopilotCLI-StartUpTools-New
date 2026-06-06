@@ -842,6 +842,13 @@ scripts/                Mission Control(Web) / 各種ツール / Pester テス�
 ~/.claudeos/            実行時データ（logs / sessions / supervisor / locks / cron-launcher.sh）
 ```
 
+> **📍 リポジトリは 1 つ・実行マシンは 2 つ（同一リポジトリの 2 チェックアウト）**
+> GitHub 上のリポジトリは `ClaudeCode-StartUpTools-New` **ただ 1 つ**です。「Windows 版」「Linux 版」という別リポジトリはありません。
+> - 💻 **Windows `D:\ClaudeCode-StartUpTools-New`** = 開発機（編集・push）
+> - 🐧 **Linux `<linuxBase>/ClaudeCode-StartUpTools-New`** = 実行機（cron 自律実行・goals/hooks 供給元）
+>
+> 同一リポジトリを 2 台に clone した「2 チェックアウト」です（リネーム / 分割はしない方針）。詳細は [`docs/common/18_ARCHITECTURE.md`](./docs/common/18_ARCHITECTURE.md) §3 を参照。
+
 ---
 
 ## 🔐 設定の要点
