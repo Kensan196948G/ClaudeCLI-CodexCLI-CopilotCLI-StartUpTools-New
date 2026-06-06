@@ -49,7 +49,7 @@ const MAPPINGS = [
 // 既存プロジェクトの settings.json は permissions/env をカスタムしている場合があり、
 // それらを保護しつつ ClaudeOS の hooks 登録 + 必要 env を *不足分だけ* 補完する。
 const SETTINGS_TEMPLATE = "Claude/templates/claude/settings.json";
-const STATE_TEMPLATE    = "Claude/templates/claude/ClaudeOS/templates/state.json";
+const STATE_TEMPLATE    = "Claude/templates/claude/claudeos/templates/state.json";
 const SKILLS_DIRTY       = ".claude/claudeos/.skills-dirty";
 
 // ──────────────────────────────────────────────────────────────────────
