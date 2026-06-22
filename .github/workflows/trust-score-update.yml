@@ -13,7 +13,7 @@ jobs:
   update-trust-score:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.event.workflow_run.head_branch }}
